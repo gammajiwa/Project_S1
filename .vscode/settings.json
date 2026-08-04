@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Project_S1.slnx"
+    "dotnet.defaultSolution": "Project_S1(fix).slnx"
 }

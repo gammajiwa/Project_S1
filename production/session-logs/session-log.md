@@ -26,3 +26,12 @@ ProjectSettings/ShaderGraphSettings.asset
 ProjectSettings/URPProjectSettings.asset
 ---
 
+## Session End: 20260804_165623
+### Commits
+fcd5ff0 add AI
+fc91b12 Initial check-in
+### Uncommitted Changes
+.mcp.json
+.vscode/settings.json
+---
+
