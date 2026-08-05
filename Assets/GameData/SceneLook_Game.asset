@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4ecd5aca2709ee488f23f7c9a0b404c, type: 3}
+  m_Name: SceneLook_Game
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.SceneLook
+  SunPitch: 34
+  SunYaw: -35
+  SunColor: {r: 1, g: 0.851, b: 0.627, a: 1}
+  SunIntensity: 2.9
+  ShadowStrength: 0.7
+  SkyColor: {r: 0.4, g: 0.46, b: 0.58, a: 1}
+  EquatorColor: {r: 0.62, g: 0.54, b: 0.44, a: 1}
+  GroundBounce: {r: 0.36, g: 0.29, b: 0.23, a: 1}
+  FogEnabled: 1
+  FogColor: {r: 0.3, g: 0.24, b: 0.22, a: 1}
+  FogStart: 55
+  FogEnd: 150
+  HorizonColor: {r: 0.22, g: 0.2, b: 0.23, a: 1}
+  GroundColor: {r: 0.2, g: 0.185, b: 0.15, a: 1}
+  PropColor: {r: 0.74, g: 0.7, b: 0.62, a: 1}
+  PlayerColor: {r: 0.95, g: 0.85, b: 0.5, a: 1}
+  SurfaceSmoothness: 0.05
+  PostProcess: {fileID: 11400000, guid: 78f77aa10a4b1bd4693e256b74bf6af5, type: 2}
