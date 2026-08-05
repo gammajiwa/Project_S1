@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_pusaran
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: pusaran
+  DisplayName: Pusaran
+  Stars: 1
+  Layer: 1
+  Shape: 1
+  Color: {r: 0.7, g: 0.5, b: 0.95, a: 1}
+  Kind: 4
+  Element: 3
+  BaseDamage: 6
+  BaseCooldown: 3.2
+  Radius: 4
+  Range: 10
+  Hits: 1
+  ManaCost: 10
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  AppliedStatus: {fileID: 11400000, guid: 5f75104041d796e438061522b1f08f0d, type: 2}
+  StatusDuration: 2.5
+  AppliedPoints: 1
+  LegacyStatus: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: 2 panjang. Damage kecil, tapi menyeret satu gerombolan jadi satu titik.
+    Pasangan wajib semua skill AoE.

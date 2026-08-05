@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_tintamengalir
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: tintamengalir
+  DisplayName: Tinta Mengalir
+  Stars: 1
+  Layer: 1
+  Shape: 5
+  Color: {r: 0.4, g: 0.8, b: 0.95, a: 1}
+  Kind: 4
+  Element: 3
+  BaseDamage: 0
+  BaseCooldown: 0.05
+  Radius: 0
+  Range: 0
+  Hits: 1
+  ManaCost: 0
+  Status: 0
+  StatusDuration: 0
+  Aura: 0
+  AuraValue: 0
+  Stat: 3
+  StatValue: 2.5
+  Blurb: Bentuk L. +2.5 mana per detik. Pasif - nggak nembak.

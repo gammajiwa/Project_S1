@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 708f84e157645974bb974a8a22340556, type: 3}
+  m_Name: GameBalance
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.GameBalance
+  GridWidth: 7
+  GridHeight: 7
+  BagWidth: 5
+  BagHeight: 4
+  BaseMaxHp: 100
+  BaseMaxMana: 60
+  BaseManaRegen: 5
+  BaseHpRegen: 0
+  HealPerWaveClear: 20
+  EnemiesBase: 5
+  EnemiesPerWave: 3
+  EnemyHpBase: 16
+  EnemyHpPerWave: 7
+  EnemySpeedMin: 1.5
+  EnemySpeedMax: 2.1
+  EnemySpeedPerWave: 0.04
+  EnemyContactDps: 14
+  SpawnIntervalBase: 0.6
+  SpawnIntervalPerWave: 0.02
+  SpawnIntervalMin: 0.2
+  MaxAliveEnemies: 200
+  KillDropChance: 0.04
+  WaveClearDrops: 1
+  RuneShareOfDrops: 0.25
+  ShopEveryWaves: 3
+  ShopSlots: 6
+  RerollCostStart: 20
+  RerollCostIncrement: 15
+  ShopHighRollChance: 0.18
+  PriceRune: 20
+  PriceSigil: 35
+  PriceStar1: 30
+  PriceHighBase: 40
+  PriceHighPerStar: 45
+  SellRune: 10
+  SellSkill: 15

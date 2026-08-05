@@ -11,6 +11,12 @@
 # Get latest from https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
 .utmp/
+
+# Editor-captured screenshots and shell crash dumps — scratch output, never source
+/[Aa]ssets/[Ss]creenshots/
+/[Aa]ssets/[Ss]creenshots.meta
+*.stackdump
+
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/

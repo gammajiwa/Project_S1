@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_segelvitalitas
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: segelvitalitas
+  DisplayName: Segel Vitalitas
+  Stars: 1
+  Layer: 1
+  Shape: 1
+  Color: {r: 0.9, g: 0.35, b: 0.4, a: 1}
+  Kind: 4
+  Element: 3
+  BaseDamage: 0
+  BaseCooldown: 0.05
+  Radius: 0
+  Range: 0
+  Hits: 1
+  ManaCost: 0
+  Status: 0
+  StatusDuration: 0
+  Aura: 0
+  AuraValue: 0
+  Stat: 1
+  StatValue: 30
+  Blurb: 2 panjang. +30 HP maksimum. Pasif - nggak nembak.

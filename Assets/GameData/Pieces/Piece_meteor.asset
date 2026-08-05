@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_meteor
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: meteor
+  DisplayName: Meteor
+  Stars: 3
+  Layer: 1
+  Shape: 1
+  Color: {r: 1, g: 0.55, b: 0.1, a: 1}
+  Kind: 1
+  Element: 0
+  BaseDamage: 62
+  BaseCooldown: 3.4
+  Radius: 5.5
+  Range: 5.5
+  Hits: 1
+  ManaCost: 26
+  AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
+  StatusDuration: 6
+  AppliedStacks: 1
+  LegacyStatus: 1
+  Aura: 0
+  AuraValue: 0
+  Stat: 0
+  StatValue: 0
+  Blurb: BINTANG 3. Hantaman meteor, damage besar + BURN lama.

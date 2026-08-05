@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_blizzard
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: blizzard
+  DisplayName: Blizzard
+  Stars: 2
+  Layer: 1
+  Shape: 2
+  Color: {r: 0.7, g: 0.92, b: 1, a: 1}
+  Kind: 1
+  Element: 1
+  BaseDamage: 21
+  BaseCooldown: 2.8
+  Radius: 6.5
+  Range: 6.5
+  Hits: 1
+  ManaCost: 22
+  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
+  StatusDuration: 5
+  AppliedStacks: 1
+  LegacyStatus: 2
+  Aura: 0
+  AuraValue: 0
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. Badai es, radius jauh lebih lebar.
