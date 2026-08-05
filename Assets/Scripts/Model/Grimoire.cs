@@ -346,10 +346,48 @@ namespace Proto
         /// Recipe groups currently sitting on the board, for the connector lines.
         /// Complete groups will merge at the end of the wave; partial ones are just a hint.
         /// </summary>
-        public List<EvoPreview> FindPendingGroups()
+        public List<EvoPreview> FindPendingGroups() => FindPendingGroups(null, default, 0);
+
+        /// <summary>
+        /// Same, but the piece the player is currently dragging counts as if it were already seated
+        /// at <paramref name="heldOrigin"/>. Without it the line only appears after the drop, which
+        /// is one move too late to help you aim.
+        /// </summary>
+        public List<EvoPreview> FindPendingGroups(PieceDefinition heldDef, Vector2Int heldOrigin, int heldRot)
         {
             var previews = new List<EvoPreview>();
             var used = new HashSet<RuneInstance>();
+
+            // Only preview a spot the piece could actually take: on runes, nothing else in the way.
+            RuneInstance ghost = null;
+            if (heldDef != null && heldDef.Layer == Layer.Skill && CanPlace(heldDef, heldOrigin, heldRot))
+            {
+                ghost = new RuneInstance { Def = heldDef, Origin = heldOrigin, Rot = heldRot };
+            }
+
+            var candidates = new List<RuneInstance>();
+            var group = new List<RuneInstance>();
+
+            // A finished recipe that uses the dragged piece is the answer the player is hunting for,
+            // so it is found first — recipe order must not bury it under someone else's partial.
+            if (ghost != null)
+            {
+                for (int r = 0; r < _db.Recipes.Count; r++)
+                {
+                    var recipe = _db.Recipes[r];
+                    if (recipe.Result == null) continue;
+
+                    CollectCandidates(recipe, ghost, used, candidates);
+                    if (candidates.Count < recipe.Ingredients.Length) continue;
+
+                    group.Clear();
+                    if (!FindClusterGroup(recipe, candidates, group, 0, recipe.Ingredients.Length, true, ghost)) continue;
+
+                    previews.Add(MakePreview(group, true, recipe.Result.DisplayName));
+                    for (int i = 0; i < group.Count; i++) used.Add(group[i]);
+                    break;
+                }
+            }
 
             for (int r = 0; r < _db.Recipes.Count; r++)
             {
@@ -357,25 +395,12 @@ namespace Proto
                 var result = recipe.Result;
                 if (result == null) continue;
 
-                var candidates = new List<RuneInstance>();
-                for (int i = 0; i < Placed.Count; i++)
-                {
-                    var p = Placed[i];
-                    if (p.Def.Layer != Layer.Skill || p.Locked || used.Contains(p)) continue;
-
-                    for (int k = 0; k < recipe.Ingredients.Length; k++)
-                    {
-                        if (p.Def != recipe.Ingredients[k]) continue;
-                        candidates.Add(p);
-                        break;
-                    }
-                }
-
+                CollectCandidates(recipe, ghost, used, candidates);
                 if (candidates.Count < 2) continue;
 
-                var group = new List<RuneInstance>();
+                group.Clear();
 
-                if (FindLineGroup(recipe, candidates, group, 0, recipe.Ingredients.Length, true))
+                if (FindClusterGroup(recipe, candidates, group, 0, recipe.Ingredients.Length, true, null))
                 {
                     previews.Add(MakePreview(group, true, result.DisplayName));
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
@@ -385,7 +410,7 @@ namespace Proto
                 for (int size = recipe.Ingredients.Length - 1; size >= 2; size--)
                 {
                     group.Clear();
-                    if (!FindLineGroup(recipe, candidates, group, 0, size, false)) continue;
+                    if (!FindClusterGroup(recipe, candidates, group, 0, size, false, null)) continue;
 
                     previews.Add(MakePreview(group, false, result.DisplayName));
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
@@ -396,19 +421,43 @@ namespace Proto
             return previews;
         }
 
-        bool FindLineGroup(RecipeDefinition recipe, List<RuneInstance> candidates,
-            List<RuneInstance> group, int startIndex, int targetSize, bool exact)
+        void CollectCandidates(RecipeDefinition recipe, RuneInstance ghost,
+            HashSet<RuneInstance> used, List<RuneInstance> into)
+        {
+            into.Clear();
+
+            for (int i = 0; i < Placed.Count; i++) AddIfIngredient(Placed[i], recipe, used, into);
+            if (ghost != null) AddIfIngredient(ghost, recipe, used, into);
+        }
+
+        static void AddIfIngredient(RuneInstance piece, RecipeDefinition recipe,
+            HashSet<RuneInstance> used, List<RuneInstance> into)
+        {
+            if (piece.Def.Layer != Layer.Skill || piece.Locked || used.Contains(piece)) return;
+
+            for (int k = 0; k < recipe.Ingredients.Length; k++)
+            {
+                if (piece.Def != recipe.Ingredients[k]) continue;
+                into.Add(piece);
+                return;
+            }
+        }
+
+        /// <param name="require">When set, only groups containing this piece count as a match.</param>
+        bool FindClusterGroup(RecipeDefinition recipe, List<RuneInstance> candidates,
+            List<RuneInstance> group, int startIndex, int targetSize, bool exact, RuneInstance require)
         {
             if (group.Count == targetSize)
             {
+                if (require != null && !group.Contains(require)) return false;
                 if (exact ? !MatchesIngredients(recipe, group) : !IsSubsetOfIngredients(recipe, group)) return false;
-                return FormsLine(group);
+                return FormsCluster(group);
             }
 
             for (int i = startIndex; i < candidates.Count; i++)
             {
                 group.Add(candidates[i]);
-                if (FindLineGroup(recipe, candidates, group, i + 1, targetSize, exact)) return true;
+                if (FindClusterGroup(recipe, candidates, group, i + 1, targetSize, exact, require)) return true;
                 group.RemoveAt(group.Count - 1);
             }
 
@@ -480,7 +529,7 @@ namespace Proto
             if (group.Count == recipe.Ingredients.Length)
             {
                 if (!MatchesIngredients(recipe, group)) return false;
-                if (!FormsLine(group)) return false;
+                if (!FormsCluster(group)) return false;
                 return Merge(group, result, log);
             }
 
@@ -552,10 +601,22 @@ namespace Proto
             return false;
         }
 
-        /// <summary>True when the whole group together occupies one contiguous row or column.</summary>
-        static bool FormsLine(List<RuneInstance> group)
+        static readonly Vector2Int[] Neighbours =
         {
-            var cells = new List<Vector2Int>();
+            new Vector2Int(1, 0), new Vector2Int(-1, 0), new Vector2Int(0, 1), new Vector2Int(0, -1)
+        };
+
+        /// <summary>
+        /// True when the group's cells form one orthogonally connected blob. Ingredients only have
+        /// to touch each other, not line up.
+        ///
+        /// This replaces an older "one straight row or column" rule. That rule made every recipe
+        /// with a 2x2, 3x3 or L ingredient impossible to ever trigger, because such a piece already
+        /// spans two rows on its own — six of the fourteen recipes could never fire.
+        /// </summary>
+        static bool FormsCluster(List<RuneInstance> group)
+        {
+            var cells = new HashSet<Vector2Int>();
             for (int i = 0; i < group.Count; i++)
             {
                 foreach (var c in group[i].Cells()) cells.Add(c);
@@ -563,40 +624,32 @@ namespace Proto
 
             if (cells.Count == 0) return false;
 
-            bool sameRow = true, sameCol = true;
-            int y0 = cells[0].y, x0 = cells[0].x;
+            var frontier = new Stack<Vector2Int>();
+            var seen = new HashSet<Vector2Int>();
 
-            for (int i = 0; i < cells.Count; i++)
+            foreach (var start in cells)
             {
-                if (cells[i].y != y0) sameRow = false;
-                if (cells[i].x != x0) sameCol = false;
+                frontier.Push(start);
+                seen.Add(start);
+                break;
             }
 
-            int min = int.MaxValue, max = int.MinValue;
-
-            if (sameRow)
+            while (frontier.Count > 0)
             {
-                for (int i = 0; i < cells.Count; i++)
+                var at = frontier.Pop();
+
+                for (int d = 0; d < Neighbours.Length; d++)
                 {
-                    if (cells[i].x < min) min = cells[i].x;
-                    if (cells[i].x > max) max = cells[i].x;
-                }
+                    var next = at + Neighbours[d];
+                    if (!cells.Contains(next)) continue;
+                    if (!seen.Add(next)) continue;
 
-                return max - min + 1 == cells.Count;
+                    frontier.Push(next);
+                }
             }
 
-            if (sameCol)
-            {
-                for (int i = 0; i < cells.Count; i++)
-                {
-                    if (cells[i].y < min) min = cells[i].y;
-                    if (cells[i].y > max) max = cells[i].y;
-                }
-
-                return max - min + 1 == cells.Count;
-            }
-
-            return false;
+            // Anything unreached means the group sits in two separate blobs.
+            return seen.Count == cells.Count;
         }
 
         void Rebuild()
@@ -648,7 +701,8 @@ namespace Proto
             foreach (var skill in Placed)
             {
                 if (skill.Def.Layer != Layer.Skill) continue;
-                if (skill.Def.Kind == CastKind.AuraOnly) continue;
+
+                // Sigils and aura-only pieces take up a slot but never cast.
                 if (skill.Def.Kind == CastKind.Passive) continue;
                 if (skill.Def.Kind == CastKind.AuraOnly) continue;
 

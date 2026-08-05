@@ -2,6 +2,7 @@
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
+using static Proto.GrimoireLayout;
 
 namespace Proto
 {
@@ -12,37 +13,11 @@ namespace Proto
     /// </summary>
     public class GrimoireUI : MonoBehaviour
     {
-        // grimoire
-        const int CellSize = 40;
-        const int CellGap = 3;
-        const int Margin = 20;
-        const int SkillInset = 8;
-
-        // right-hand column
-        const int BagCell = 34;
-        const int BagGap = 3;
-        const int BagY = 20;
-
-        const int SellW = 182;
-        const int SellH = 40;
-        const int SellY = 190;
-
+        // Pixel measurements and screen rects live in GrimoireLayout, pulled in by `using static`
+        // above. What stays here is pool sizing — how many widgets to allocate, not where they go.
         const int MaxSpellRows = 8;
-        const int SpellPanelW = 300;
         const int FloatPoolSize = 16;
-        const int CooldownDiameter = 26;
-
-        const int SpeedButtonW = 58;
-        const int SpeedButtonH = 34;
-
-        const int StartButtonW = 280;
-        const int StartButtonH = 56;
-
         const int LoosePoolSize = 24;
-
-        // Loose pieces are drawn at the exact grid scale so nothing changes size when placed.
-        const int LooseCellSize = CellSize;
-        const int LooseCellGap = CellGap;
         const int MaxCellsPerPiece = 9;
 
         static readonly float[] Speeds = { 1f, 2f, 3f, 5f };
@@ -61,6 +36,7 @@ namespace Proto
 
         ContentDatabase _db;
         GameBalance _balance;
+        TooltipBuilder _tooltips;
 
         Grimoire Book => Player.Book;
         readonly Backpack _bag = new Backpack();
@@ -83,16 +59,14 @@ namespace Proto
 
         // --- shop / recipes ---
         const int ShopSlots = 6;
-        const int ShopSlotW = 196;
-        const int ShopSlotH = 148;
-        const int PanelW = 632;
-        const int PanelH = 372;
 
         const int EvoLinePool = 8;
         
 
-        static readonly Color LineIncomplete = new Color(0.35f, 0.62f, 1f, 0.95f);
-        static readonly Color LineComplete = new Color(1f, 0.85f, 0.3f, 1f);
+        // Same blue and gold as before, but they fill an area now instead of drawing a bar, so the
+        // alpha has to stay low enough to read the pieces underneath.
+        static readonly Color AreaIncomplete = new Color(0.35f, 0.62f, 1f, 0.26f);
+        static readonly Color AreaComplete = new Color(1f, 0.85f, 0.3f, 0.34f);
 
         // Browsing the codex belongs to the main menu now. A run only ever writes to it.
         DiscoveryLog _codex;
@@ -104,6 +78,12 @@ namespace Proto
         Image[] _evoLines;
         List<EvoPreview> _previews = new List<EvoPreview>();
         float _previewTimer;
+
+        // Last previewed drag position, so the lines can be recomputed the moment the cursor moves
+        // instead of waiting out the idle throttle.
+        PieceDefinition _ghostDef;
+        Vector2Int _ghostOrigin;
+        int _ghostRot;
 
         Image _panelBg;
         Text _panelTitle;
@@ -141,9 +121,7 @@ namespace Proto
         int _speedSlot;
 
         // --- damage meter ---
-        readonly List<string> _meterNames = new List<string>(12);
-        readonly List<float> _meterValues = new List<float>(12);
-        float _meterTotal;
+        readonly DamageMeter _meter = new DamageMeter();
         Text _meterText;
         float _meterTimer;
 
@@ -151,11 +129,22 @@ namespace Proto
 
         Text _hudText;
         Image _hpBg;
+        Image _hpChip;
         Image _hpFill;
         Text _hpLabel;
         Image _manaBg;
         Image _manaFill;
         Text _manaLabel;
+
+        // Animated bar state. The fill chases the real value; the chip trails behind it so you can
+        // see how much was just taken off, which a bar that snaps can never show.
+        float _hpShown = 1f;
+        float _hpChipShown = 1f;
+        float _manaShown = 1f;
+        float _hurtFlash;
+        static readonly Color HpFillColor = new Color(0.85f, 0.28f, 0.3f, 0.95f);
+        static readonly Color HpChipColor = new Color(1f, 0.78f, 0.6f, 0.75f);
+        static readonly Color ManaFillColor = new Color(0.35f, 0.6f, 1f, 0.95f);
         Image _tipBg;
         Text _tipText;
         Text _statusText;
@@ -182,6 +171,7 @@ namespace Proto
             _camera = cam;
             _db = database;
             _balance = balance;
+            _tooltips = new TooltipBuilder(database, balance, OwnedCount);
             _rerollCost = balance.RerollCostStart;
 
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -203,7 +193,7 @@ namespace Proto
 
             Enemies.OnWaveCleared += OnWaveCleared;
             Enemies.OnKill += OnEnemyKilled;
-            Enemies.OnDamage += RecordDamage;
+            Enemies.OnDamage += _meter.Record;
             Player.OnCast += OnSpellCast;
             Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
 
@@ -430,36 +420,6 @@ namespace Proto
             }
         }
 
-        static void ShapeBounds(Vector2Int[] shape, out int w, out int h)
-        {
-            int maxX = 0, maxY = 0;
-            for (int i = 0; i < shape.Length; i++)
-            {
-                if (shape[i].x > maxX) maxX = shape[i].x;
-                if (shape[i].y > maxY) maxY = shape[i].y;
-            }
-
-            w = maxX + 1;
-            h = maxY + 1;
-        }
-
-        /// <summary>
-        /// The cell inside a shape that sits under the cursor. Placement and the on-cursor preview
-        /// both use this, otherwise the ghost and the real footprint drift apart.
-        /// </summary>
-        static Vector2Int AnchorOffset(PieceDefinition def, int rot)
-        {
-            ShapeBounds(Shapes.Rotate(def.Cells, rot), out int w, out int h);
-            return new Vector2Int((w - 1) / 2, (h - 1) / 2);
-        }
-
-        static Vector2 PieceSize(Vector2Int[] shape)
-        {
-            ShapeBounds(shape, out int w, out int h);
-            float step = LooseCellSize + LooseCellGap;
-            return new Vector2(w * step - LooseCellGap, h * step - LooseCellGap);
-        }
-
         /// <summary>Draws one piece centred on <paramref name="center"/>. Returns cells consumed.</summary>
         int DrawPiece(PieceDefinition def, int rot, Vector2 center, int cursor, float alpha)
         {
@@ -549,32 +509,6 @@ namespace Proto
                 "BARU: " + piece.DisplayName, new Color(0.8f, 0.95f, 1f));
         }
 
-        static Rect PanelRect()
-        {
-            return new Rect((Screen.width - PanelW) * 0.5f, (Screen.height - PanelH) * 0.5f, PanelW, PanelH);
-        }
-
-        static Rect ShopSlotRect(int i)
-        {
-            var p = PanelRect();
-            int col = i % 3;
-            int row = i / 3;
-
-            float x = p.xMin + 12f + col * (ShopSlotW + 8f);
-            float y = p.yMax - 46f - (row + 1) * ShopSlotH - row * 8f;
-            return new Rect(x, y, ShopSlotW, ShopSlotH);
-        }
-
-        static Rect RerollRect()
-        {
-            var p = PanelRect();
-            return new Rect(p.center.x - 120f, p.yMin + 12f, 240f, 34f);
-        }
-
-        static Rect ShopButtonRect() => new Rect(RightX(), SellY + SellH + 8, 88, 32);
-
-        static Rect RecipeButtonRect() => new Rect(RightX() + 94, SellY + SellH + 8, 88, 32);
-
         void RollShop()
         {
             for (int i = 0; i < ShopSlots; i++) _shop[i] = _db.ShopRoll(_balance.ShopHighRollChance);
@@ -638,8 +572,16 @@ namespace Proto
 
             _hpBg = MakeImage("HpBg", new Vector2(Margin, -50), new Vector2(260, 18),
                 new Color(0.16f, 0.07f, 0.08f, 0.9f), new Vector2(0f, 1f));
+
+            // Sits between background and fill: creation order is draw order on this canvas.
+            _hpChip = MakeImage("HpChip", new Vector2(Margin, -50), new Vector2(260, 18),
+                HpChipColor, new Vector2(0f, 1f));
+            _hpChip.type = Image.Type.Filled;
+            _hpChip.fillMethod = Image.FillMethod.Horizontal;
+            _hpChip.fillOrigin = 0;
+
             _hpFill = MakeImage("HpFill", new Vector2(Margin, -50), new Vector2(260, 18),
-                new Color(0.85f, 0.28f, 0.3f, 0.95f), new Vector2(0f, 1f));
+                HpFillColor, new Vector2(0f, 1f));
             _hpFill.type = Image.Type.Filled;
             _hpFill.fillMethod = Image.FillMethod.Horizontal;
             _hpFill.fillOrigin = 0;
@@ -692,67 +634,15 @@ namespace Proto
             _buffText.text = "";
         }
 
-        /// <summary>Damage per source across the whole run — the only way to prove balance.</summary>
-        void RecordDamage(string source, float amount)
-        {
-            if (string.IsNullOrEmpty(source) || amount <= 0f) return;
-
-            _meterTotal += amount;
-
-            for (int i = 0; i < _meterNames.Count; i++)
-            {
-                if (_meterNames[i] != source) continue;
-                _meterValues[i] += amount;
-                return;
-            }
-
-            _meterNames.Add(source);
-            _meterValues.Add(amount);
-        }
-
         void DrawMeter()
         {
+            // Throttled: the numbers move constantly but nobody reads them four times a frame.
             _meterTimer -= Time.unscaledDeltaTime;
             if (_meterTimer > 0f) return;
+
             _meterTimer = 0.25f;
-
-            if (_meterTotal <= 0f)
-            {
-                _meterText.text = "";
-                return;
-            }
-
-            _sb.Length = 0;
-            _sb.Append("DAMAGE  (total ").Append(Mathf.RoundToInt(_meterTotal)).Append(")\n");
-
-            // Selection sort over a handful of entries — cheaper than allocating a sorted list.
-            for (int rank = 0; rank < 6; rank++)
-            {
-                int best = -1;
-                float bestValue = 0f;
-
-                for (int i = 0; i < _meterValues.Count; i++)
-                {
-                    if (_meterValues[i] <= bestValue) continue;
-                    if (RankOf(i) < rank) continue;
-
-                    bestValue = _meterValues[i];
-                    best = i;
-                }
-
-                if (best < 0) break;
-
-                int pct = Mathf.RoundToInt(_meterValues[best] / _meterTotal * 100f);
-                _sb.Append(_meterNames[best]).Append("  ").Append(pct).Append("%\n");
-                _meterRank[best] = rank;
-            }
-
-            _meterText.text = _sb.ToString();
+            _meterText.text = _meter.BuildSummary(6);
         }
-
-        readonly Dictionary<int, int> _meterRank = new Dictionary<int, int>();
-
-        int RankOf(int index) => _meterRank.TryGetValue(index, out int r) ? r : int.MaxValue;
 
         void DrawBuffs()
         {
@@ -783,64 +673,6 @@ namespace Proto
                     Color.white, Vector2.zero, TextAnchor.MiddleCenter);
                 _floaters[i].text = "";
             }
-        }
-
-        // ---------- layout helpers ----------
-
-        static Vector2 CellAnchor(int x, int y) =>
-            new Vector2(Margin + x * (CellSize + CellGap), Margin + y * (CellSize + CellGap));
-
-        static float GridTop() => Margin + Grimoire.Height * (CellSize + CellGap);
-
-        static float RightX() => Margin + Grimoire.Width * (CellSize + CellGap) + 12;
-
-        static Vector2 BagAnchor(int x, int y) =>
-            new Vector2(RightX() + x * (BagCell + BagGap), BagY + y * (BagCell + BagGap));
-
-        static Rect SellRect() => new Rect(RightX(), SellY, SellW, SellH);
-
-        static Vector2Int ScreenToCell(Vector2 mouse)
-        {
-            float step = CellSize + CellGap;
-            int x = Mathf.FloorToInt((mouse.x - Margin) / step);
-            int y = Mathf.FloorToInt((mouse.y - Margin) / step);
-
-            if (x < 0 || x >= Grimoire.Width || y < 0 || y >= Grimoire.Height) return new Vector2Int(-1, -1);
-
-            float offX = (mouse.x - Margin) - x * step;
-            float offY = (mouse.y - Margin) - y * step;
-            if (offX > CellSize || offY > CellSize) return new Vector2Int(-1, -1);
-
-            return new Vector2Int(x, y);
-        }
-
-        static Vector2Int ScreenToBagCell(Vector2 mouse)
-        {
-            float step = BagCell + BagGap;
-            int x = Mathf.FloorToInt((mouse.x - RightX()) / step);
-            int y = Mathf.FloorToInt((mouse.y - BagY) / step);
-
-            if (x < 0 || x >= Backpack.Width || y < 0 || y >= Backpack.Height) return new Vector2Int(-1, -1);
-
-            float offX = (mouse.x - RightX()) - x * step;
-            float offY = (mouse.y - BagY) - y * step;
-            if (offX > BagCell || offY > BagCell) return new Vector2Int(-1, -1);
-
-            return new Vector2Int(x, y);
-        }
-
-        static Rect SpeedRect(int i)
-        {
-            float right = Screen.width - (Margin + (Speeds.Length - 1 - i) * (SpeedButtonW + 6));
-            float top = Screen.height - Margin;
-            return new Rect(right - SpeedButtonW, top - SpeedButtonH, SpeedButtonW, SpeedButtonH);
-        }
-
-        static Rect StartButtonRect()
-        {
-            float cx = Screen.width * 0.5f;
-            float cy = Screen.height * 0.5f + 120f;
-            return new Rect(cx - StartButtonW * 0.5f, cy - StartButtonH * 0.5f, StartButtonW, StartButtonH);
         }
 
         int ValueOf(PieceDefinition def) => _balance.SellValueOf(def);
@@ -887,17 +719,6 @@ namespace Proto
             PushFloater(at, def.DisplayName, def.Color);
         }
 
-        /// <summary>Drops scatter anywhere on screen, clear of the left column and the HUD strip.</summary>
-        static Vector2 RandomScatterPos()
-        {
-            float left = RightX() + 60f;
-            float right = Mathf.Max(left + 160f, Screen.width - 80f);
-            float bottom = 70f;
-            float top = Mathf.Max(bottom + 120f, Screen.height - 200f);
-
-            return new Vector2(Random.Range(left, right), Random.Range(bottom, top));
-        }
-
         void AddLoose(PieceDefinition def, Vector2? at = null)
         {
             if (_loose.Count >= LoosePoolSize)
@@ -918,17 +739,6 @@ namespace Proto
         void ScatterAll(List<PieceDefinition> defs, Vector2 near)
         {
             for (int i = 0; i < defs.Count; i++) AddLoose(defs[i], NearScatterPos(near, i));
-        }
-
-        static Vector2 NearScatterPos(Vector2 near, int index)
-        {
-            float angle = Random.Range(0f, Mathf.PI * 2f) + index * 1.1f;
-            float dist = Random.Range(70f, 120f);
-
-            var pos = near + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * dist;
-            pos.x = Mathf.Clamp(pos.x, 70f, Mathf.Max(90f, Screen.width - 70f));
-            pos.y = Mathf.Clamp(pos.y, 70f, Mathf.Max(90f, Screen.height - 190f));
-            return pos;
         }
 
         void RemoveLoose(int index)
@@ -1012,7 +822,7 @@ namespace Proto
             Vector2 mouse = ProtoInput.MousePosition;
             for (int i = 0; i < Speeds.Length; i++)
             {
-                if (SpeedRect(i).Contains(mouse))
+                if (SpeedRect(i, Speeds.Length).Contains(mouse))
                 {
                     SetSpeed(i);
                     return true;
@@ -1330,11 +1140,20 @@ namespace Proto
 
         void DrawEvoLines()
         {
+            var ghostDef = ResolveGhost(out var ghostOrigin);
+
+            // While a piece is in hand the line has to track the cursor, so a moved ghost forces an
+            // immediate rebuild instead of waiting out the idle throttle.
+            bool ghostChanged = ghostDef != _ghostDef || ghostOrigin != _ghostOrigin || _heldRot != _ghostRot;
+            _ghostDef = ghostDef;
+            _ghostOrigin = ghostOrigin;
+            _ghostRot = _heldRot;
+
             _previewTimer -= Time.unscaledDeltaTime;
-            if (_previewTimer <= 0f)
+            if (_previewTimer <= 0f || ghostChanged)
             {
                 _previewTimer = 0.25f;
-                _previews = Book.FindPendingGroups();
+                _previews = Book.FindPendingGroups(ghostDef, ghostOrigin, _heldRot);
             }
 
             for (int i = 0; i < EvoLinePool; i++)
@@ -1344,18 +1163,32 @@ namespace Proto
                 if (!used) continue;
 
                 var p = _previews[i];
-                var a = CellAnchor(p.From.x, p.From.y) + new Vector2(CellSize * 0.5f, CellSize * 0.5f);
-                var b = CellAnchor(p.To.x, p.To.y) + new Vector2(CellSize * 0.5f, CellSize * 0.5f);
 
-                bool horizontal = Mathf.Abs(b.x - a.x) >= Mathf.Abs(b.y - a.y);
-                float length = horizontal ? b.x - a.x : b.y - a.y;
+                // Groups only have to touch now, not line up, so a bar between two ends would lie
+                // about which cells are involved. Highlight the area they cover instead.
+                var min = CellAnchor(p.From.x, p.From.y);
+                var max = CellAnchor(p.To.x, p.To.y) + new Vector2(CellSize, CellSize);
 
-                _evoLines[i].rectTransform.anchoredPosition = (a + b) * 0.5f;
-                _evoLines[i].rectTransform.sizeDelta = horizontal
-                    ? new Vector2(length + 6f, 5f)
-                    : new Vector2(5f, length + 6f);
-                _evoLines[i].color = p.Complete ? LineComplete : LineIncomplete;
+                _evoLines[i].rectTransform.anchoredPosition = (min + max) * 0.5f;
+                _evoLines[i].rectTransform.sizeDelta = (max - min) + new Vector2(6f, 6f);
+                _evoLines[i].color = p.Complete ? AreaComplete : AreaIncomplete;
             }
+        }
+
+        /// <summary>
+        /// The grid cell the held piece would occupy right now, or null when nothing is held or the
+        /// cursor is off the grid. Only reports a spot the piece could legally take.
+        /// </summary>
+        PieceDefinition ResolveGhost(out Vector2Int origin)
+        {
+            origin = default;
+            if (_held == null || !Player.Alive || Enemies.WaveActive) return null;
+
+            var cell = ScreenToCell(ProtoInput.MousePosition);
+            if (cell.x < 0) return null;
+
+            origin = cell - AnchorOffset(_held, _heldRot);
+            return _held;
         }
 
         void Redraw()
@@ -1572,8 +1405,8 @@ namespace Proto
             }
 
             _tipText.text = ProtoInput.AltHeld
-                ? BuildRecipeCard(hovered)
-                : BuildTooltip(hovered, spell, origin);
+                ? _tooltips.BuildRecipeCard(hovered)
+                : _tooltips.Build(hovered, spell, origin);
 
             var m = ProtoInput.MousePosition;
             float x = Mathf.Min(m.x + 18f, Screen.width - 372f);
@@ -1603,139 +1436,6 @@ namespace Proto
             }
 
             return null;
-        }
-
-        static string KindName(CastKind kind)
-        {
-            switch (kind)
-            {
-                case CastKind.Projectile: return "proyektil";
-                case CastKind.Nova: return "ledakan melingkar";
-                case CastKind.Chain: return "sambaran beruntun";
-                case CastKind.Heal: return "penyembuh";
-                default: return "alas";
-            }
-        }
-
-        string BuildTooltip(PieceDefinition def, CompiledSpell spell, string origin)
-        {
-            _sb.Length = 0;
-            _sb.Append(def.DisplayName).Append("  ").Append(Shapes.StarText(def.Stars));
-            _sb.Append("   [").Append(origin).Append("]\n");
-
-            if (def.Layer == Layer.Rune)
-            {
-                int cells = Mathf.Max(1, def.Cells.Length);
-                int perCell = Mathf.RoundToInt(def.AuraValue / cells * 100f);
-
-                _sb.Append("RUNE - alas, ").Append(cells).Append(" petak, elemen ")
-                    .Append(def.Element).Append('\n');
-
-                switch (def.Aura)
-                {
-                    case AuraKind.DamagePct:
-                        _sb.Append("+").Append(Mathf.RoundToInt(def.AuraValue * 100f))
-                            .Append("% damage TOTAL  (").Append(perCell).Append("% per petak)\n");
-                        break;
-                    case AuraKind.CooldownPct:
-                        _sb.Append("-").Append(Mathf.RoundToInt(def.AuraValue * 100f))
-                            .Append("% cooldown TOTAL  (").Append(perCell).Append("% per petak)\n");
-                        break;
-                    case AuraKind.RadiusPct:
-                        _sb.Append("+").Append(Mathf.RoundToInt(def.AuraValue * 100f))
-                            .Append("% area TOTAL  (").Append(perCell).Append("% per petak)\n");
-                        break;
-                    default:
-                        _sb.Append("alas polos, nggak ngasih aura\n");
-                        break;
-                }
-
-                if (def.ElementMatchBonus > 0f)
-                {
-                    _sb.Append("skill ber-elemen ").Append(def.Element).Append(" di atasnya: +")
-                        .Append(Mathf.RoundToInt(def.ElementMatchBonus * 100f))
-                        .Append("% damage TOTAL\n");
-                }
-
-                if (def.Stats != null && def.Stats.Length > 0)
-                {
-                    _sb.Append("stat: ");
-                    for (int s = 0; s < def.Stats.Length; s++)
-                    {
-                        if (s > 0) _sb.Append(", ");
-                        _sb.Append(def.Stats[s].Type).Append(' ').Append(def.Stats[s].Value.ToString("0.##"));
-                    }
-
-                    _sb.Append('\n');
-                }
-            }
-            else if (def.Kind == CastKind.Passive)
-            {
-                _sb.Append("SEGEL pasif - ").Append(def.Cells.Length).Append(" petak, nggak nembak\n");
-                switch (def.Stat)
-                {
-                    case StatKind.MaxHp: _sb.Append("+").Append(def.StatValue.ToString("0")).Append(" HP maksimum\n"); break;
-                    case StatKind.MaxMana: _sb.Append("+").Append(def.StatValue.ToString("0")).Append(" mana maksimum\n"); break;
-                    case StatKind.ManaRegen: _sb.Append("+").Append(def.StatValue.ToString("0.0")).Append(" mana / detik\n"); break;
-                    case StatKind.HpRegen: _sb.Append("+").Append(def.StatValue.ToString("0.0")).Append(" HP / detik\n"); break;
-                    case StatKind.FireDamagePct: _sb.Append("+").Append(Mathf.RoundToInt(def.StatValue * 100f)).Append("% damage skill API\n"); break;
-                    case StatKind.IceDamagePct: _sb.Append("+").Append(Mathf.RoundToInt(def.StatValue * 100f)).Append("% damage skill ES\n"); break;
-                    case StatKind.LightningDamagePct: _sb.Append("+").Append(Mathf.RoundToInt(def.StatValue * 100f)).Append("% damage skill PETIR\n"); break;
-                }
-
-                _sb.Append(spell == null && origin == "KEPASANG" ? "aktif\n" : "harus berdiri di atas rune biar aktif\n");
-            }
-            else
-            {
-                float dmg = spell != null ? spell.Damage : def.BaseDamage;
-                float cd = spell != null ? spell.Cooldown : def.BaseCooldown;
-                float range = spell != null ? spell.Range : def.Range;
-                float radius = spell != null ? spell.Radius : def.Radius;
-
-                _sb.Append(KindName(def.Kind)).Append(" - ").Append(def.Cells.Length).Append(" petak\n");
-                _sb.Append(def.Kind == CastKind.Heal ? "heal " : "damage ").Append(dmg.ToString("0.0"));
-                _sb.Append("     cooldown ").Append(cd.ToString("0.00")).Append('s');
-                _sb.Append("     mana ").Append(Mathf.RoundToInt(def.ManaCost)).Append('\n');
-
-                if (range > 0f) _sb.Append("jangkauan ").Append(range.ToString("0.0"));
-                if (def.Kind == CastKind.Nova) _sb.Append("     radius ledak ").Append(radius.ToString("0.0"));
-                if (def.Hits > 1) _sb.Append("     target ").Append(def.Hits);
-                if (range > 0f || def.Hits > 1) _sb.Append('\n');
-
-                if (def.AppliedStatus != null)
-                {
-                    _sb.Append("nempel ").Append(def.AppliedStatus.DisplayName);
-                    if (def.AppliedPoints > 1) _sb.Append(" ").Append(def.AppliedPoints).Append(" poin");
-                    _sb.Append(' ').Append(def.StatusDuration.ToString("0.0")).Append("s\n");
-                }
-
-                if (spell != null)
-                {
-                    if (spell.DamageBonus > 0f || spell.CooldownBonus > 0f || spell.RadiusBonus > 0f)
-                    {
-                        _sb.Append("dari rune di bawah:");
-                        if (spell.DamageBonus > 0f)
-                            _sb.Append("  +").Append(Mathf.RoundToInt(spell.DamageBonus * 100f)).Append("% DMG");
-                        if (spell.CooldownBonus > 0f)
-                            _sb.Append("  -").Append(Mathf.RoundToInt(spell.CooldownBonus * 100f)).Append("% CD");
-                        if (spell.RadiusBonus > 0f)
-                            _sb.Append("  +").Append(Mathf.RoundToInt(spell.RadiusBonus * 100f)).Append("% AREA");
-                        _sb.Append('\n');
-                    }
-                    else
-                    {
-                        _sb.Append("rune di bawahnya nggak ngasih buff\n");
-                    }
-                }
-                else
-                {
-                    _sb.Append("(angka dasar - belum kepasang di atas rune)\n");
-                }
-            }
-
-            _sb.Append("harga jual ").Append(ValueOf(def)).Append(" koin\n");
-            _sb.Append(def.Blurb);
-            return _sb.ToString();
         }
 
         void OnSpellCast(RuneInstance inst)
@@ -1902,61 +1602,6 @@ namespace Proto
             return n;
         }
 
-        /// <summary>ALT + hover: every recipe this piece appears in, with a tick per owned part.</summary>
-        string BuildRecipeCard(PieceDefinition def)
-        {
-            _sb.Length = 0;
-            _sb.Append("RESEP yang pakai ").Append(def.DisplayName).Append('\n');
-
-            int found = 0;
-
-            for (int i = 0; i < _db.Recipes.Count; i++)
-            {
-                var r = _db.Recipes[i];
-
-                bool uses = false;
-                for (int k = 0; k < r.Ingredients.Length; k++)
-                {
-                    if (r.Ingredients[k] != def) continue;
-                    uses = true;
-                    break;
-                }
-
-                if (!uses) continue;
-
-                var result = r.Result;
-                if (result == null) continue;
-
-                found++;
-
-                // Tick each ingredient against what is owned, counting duplicates separately.
-                var seen = new Dictionary<PieceDefinition, int>();
-
-                for (int k = 0; k < r.Ingredients.Length; k++)
-                {
-                    var ing = r.Ingredients[k];
-                    if (ing == null) continue;
-
-                    seen.TryGetValue(ing, out int used);
-                    seen[ing] = used + 1;
-
-                    bool have = OwnedCount(ing) >= used + 1;
-
-                    if (k > 0) _sb.Append("  +  ");
-                    _sb.Append(have ? "[v] " : "[ ] ").Append(ing.DisplayName);
-                }
-
-                _sb.Append("\n        =  ").Append(result.DisplayName)
-                    .Append("  ").Append(Shapes.StarText(result.Stars)).Append('\n');
-            }
-
-            if (found == 0) _sb.Append("(belum ada resep yang pakai ini)\n");
-
-            _sb.Append("\ntaruh bahannya SEGARIS & bersebelahan di grimoire.\n");
-            _sb.Append("garis biru = belum lengkap, garis emas = jadi evo pas wave beres.");
-            return _sb.ToString();
-        }
-
         void DrawSellBox()
         {
             bool armed = _held != null && SellRect().Contains(ProtoInput.MousePosition);
@@ -2002,6 +1647,44 @@ namespace Proto
             }
         }
 
+        /// <summary>
+        /// Unscaled on purpose: at 5x speed the bars would otherwise animate too fast to read, and
+        /// during the build phase time is stopped entirely but the bars still need to settle.
+        /// </summary>
+        void AnimateBars(float dt)
+        {
+            float hpTarget = Player.MaxHp <= 0f ? 0f : Mathf.Clamp01(Player.Hp / Player.MaxHp);
+            float manaTarget = Player.MaxMana <= 0f ? 0f : Mathf.Clamp01(Player.Mana / Player.MaxMana);
+
+            if (hpTarget < _hpShown - 0.0005f) _hurtFlash = 1f;
+
+            _hpShown = Mathf.MoveTowards(_hpShown, hpTarget, dt * 3.2f);
+            _manaShown = Mathf.MoveTowards(_manaShown, manaTarget, dt * 2.4f);
+
+            // The chip only lags on the way down; healing should not leave a stale bar behind.
+            _hpChipShown = _hpChipShown < _hpShown
+                ? _hpShown
+                : Mathf.MoveTowards(_hpChipShown, _hpShown, dt * 0.5f);
+
+            _hpFill.fillAmount = _hpShown;
+            _hpChip.fillAmount = _hpChipShown;
+            _manaFill.fillAmount = _manaShown;
+
+            _hurtFlash = Mathf.Max(0f, _hurtFlash - dt * 3f);
+            _hpFill.color = Color.Lerp(HpFillColor, Color.white, _hurtFlash);
+
+            // Below a third, the bar breathes — readable without stealing attention from the board.
+            float pulse = hpTarget <= 0.33f && Player.Alive
+                ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)
+                : 0f;
+            _hpBg.color = Color.Lerp(new Color(0.16f, 0.07f, 0.08f, 0.9f),
+                new Color(0.55f, 0.12f, 0.14f, 0.95f), pulse);
+
+            // Mana reads brighter the moment it is topped up, so "ready to cast" is visible.
+            _manaFill.color = Color.Lerp(ManaFillColor, new Color(0.62f, 0.85f, 1f, 0.98f),
+                Mathf.InverseLerp(0.9f, 1f, _manaShown));
+        }
+
         void DrawHud()
         {
             _sb.Length = 0;
@@ -2012,11 +1695,11 @@ namespace Proto
             _sb.Append("    koin ").Append(_gold);
             _hudText.text = _sb.ToString();
 
-            _hpFill.fillAmount = Player.MaxHp <= 0f ? 0f : Mathf.Clamp01(Player.Hp / Player.MaxHp);
+            AnimateBars(Time.unscaledDeltaTime);
+
             _hpLabel.text = "HP  " + Mathf.CeilToInt(Player.Hp) + " / " + Mathf.RoundToInt(Player.MaxHp) +
                             (Player.HpRegen > 0f ? "   (+" + Player.HpRegen.ToString("0.0") + "/s)" : "");
 
-            _manaFill.fillAmount = Player.MaxMana <= 0f ? 0f : Mathf.Clamp01(Player.Mana / Player.MaxMana);
             _manaLabel.text = "MANA  " + Mathf.FloorToInt(Player.Mana) + " / " + Mathf.RoundToInt(Player.MaxMana) +
                               "   (+" + Player.ManaRegen.ToString("0.0") + "/s)";
 

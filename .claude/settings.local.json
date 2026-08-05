@@ -36,5 +36,9 @@
       "WebSearch",
       "WebFetch(domain:docs.unity3d.com)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "UnityMCP",
+    "context7"
+  ]
 }

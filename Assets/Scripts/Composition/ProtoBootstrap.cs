@@ -51,11 +51,22 @@ namespace Proto
             enemies.Init(playerGo.transform, caster, _balance, _database);
             caster.Init(enemies, _database, _balance);
 
+            var shake = cam.gameObject.AddComponent<CameraShake>();
+
+            // Burst radius drives the kick, so a screen-clearing reaction outweighs a small one.
+            enemies.OnReaction += (at, reaction) => shake.Add(0.16f + reaction.BurstRadius * 0.045f);
+
+            // Single-target casts stay quiet; only the ones that cover ground get a nudge.
+            caster.OnCast += inst => { if (IsHeavy(inst.Def.Kind)) shake.Add(0.07f); };
+
             var uiGo = new GameObject("GrimoireUI");
             uiGo.transform.SetParent(transform, false);
             var ui = uiGo.AddComponent<GrimoireUI>();
             ui.Init(caster, enemies, cam, _database, _balance);
         }
+
+        static bool IsHeavy(CastKind kind) =>
+            kind == CastKind.Nova || kind == CastKind.AreaAtTarget || kind == CastKind.Line;
 
         Camera BuildCamera()
         {

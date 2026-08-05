@@ -12,7 +12,7 @@ Baca ini **sebelum** menyentuh kode. Terakhir diperbarui: sesi 2026-08-05 (main 
 Pemain **tidak bergerak dan tidak menembak**. Yang dikendalikan cuma isi buku
 sihirnya. Musuh datang bergelombang; di antara gelombang waktu berhenti dan
 pemain menyusun grid: rune sebagai alas, skill dan segel di atasnya, bahan resep
-disusun segaris agar berevolusi. Tekan MULAI → grid terkunci, pemain menonton.
+didempetkan agar berevolusi. Tekan MULAI → grid terkunci, pemain menonton.
 
 Target: game jam, deadline 2 minggu, ± 4 jam playtime, roguelike + inkremental.
 
@@ -44,8 +44,8 @@ Keduanya butuh asset terisi di Inspector: `ContentDatabase.asset` dan
 `GameBalance.asset` (di `Assets/GameData/`). Scene menu butuh `ContentDatabase`
 saja, buat codex.
 
-**Isi konten saat ini:** 29 piece (rune + skill + segel), 14 resep, 6 status,
-4 reaksi, 6 buff.
+**Isi konten saat ini:** 29 piece (rune + skill + segel), 14 resep, 7 status
+(termasuk STUN), 9 reaksi, 6 buff.
 
 ---
 
@@ -65,14 +65,21 @@ Assets/Scripts/
 │   ├── SceneLook.cs         SO: matahari, ambient, kabut, warna permukaan
 │   ├── RenderColor.cs       konversi sRGB -> linear (baca jebakan #8)
 │   └── ContentDatabase.cs   satu-satunya pintu ke data + validasi
-├── Proto/                   runtime game (masih gaya prototipe)
-│   ├── ProtoBootstrap.cs    composition root sementara
+├── Model/                   C# biasa, state satu run
 │   ├── Grimoire.cs          Grimoire + Backpack + kompilasi + evolusi
+│   └── DiscoveryLog.cs      codex.json — satu-satunya data lintas run
+├── Systems/                 logika runtime
 │   ├── PlayerCaster.cs      cast, buff, crit, proyektil, zone, FX
 │   ├── EnemyManager.cs      swarm, ailment, reaksi, damage API
-│   ├── GrimoireUI.cs        SELURUH UI in-game (~2070 baris — utang teknis utama)
-│   ├── DiscoveryLog.cs      codex.json — satu-satunya data lintas run
+│   ├── DamageMeter.cs       akumulasi damage per sumber sepanjang run
 │   └── ProtoInput.cs        wrapper input (dua backend)
+├── View/                    presentasi
+│   ├── GrimoireUI.cs        UI in-game (~1760 baris — masih utang, lihat §12)
+│   ├── GrimoireLayout.cs    SEMUA ukuran piksel & rect, statik murni
+│   ├── TooltipBuilder.cs    teks hover + kartu resep
+│   └── CameraShake.cs       shake berbasis trauma
+├── Composition/
+│   └── ProtoBootstrap.cs    composition root (merakit seluruh scene game)
 ├── Menu/                    main menu — UGUI + TMP, komponen beneran
 │   ├── MainMenuController.cs  pindah halaman, muat scene, keluar
 │   ├── MenuTheme.cs         SO: SEMUA aset & warna yang bisa diganti
@@ -141,6 +148,16 @@ Melanggar ini akan merusak performa atau balance dengan cara yang sulit dilacak.
 11. **Barang yang masih tercecer saat wave dimulai otomatis terjual.**
 12. **Crit dilempar sekali per cast**, bukan per musuh — supaya AoE tidak jadi
     lotre.
+13. **Syarat evolusi = BERSENTUHAN, bukan segaris.** `Grimoire.FormsCluster`
+    memakai flood fill 4 arah. Aturan lama ("satu garis lurus") membuat piece
+    2×2/3×3/L mustahil jadi bahan — 6 dari 14 resep mati diam-diam. Jangan
+    dikembalikan tanpa mengganti bentuk semua bahan lebih dulu.
+14. **Segel WAJIB `Kind = CastKind.Passive`.** `Grimoire.Compile` menyaring
+    spell lewat `Kind`, bukan lewat damage. Segel dengan Kind lain akan ikut
+    di-cast — kelimanya pernah begitu, dengan cooldown 0.05 detik.
+15. **Stat piece hanya boleh di `Stats[]`.** Field `Stat`/`StatValue` warisan
+    prototipe sudah dikosongkan dan ber-`[HideInInspector]`, tapi `Compile`
+    masih menjumlahkan keduanya — mengisi yang lama bikin statnya dobel.
 
 ---
 
@@ -182,6 +199,7 @@ yang ditandai.
 | `Generate Buffs, Seret & Recipes` | 6 buff, status SERET, skill Pusaran, 7 resep |
 | `Build Main Menu` | bangun ulang `MainMenu.unity` + daftarkan dua scene ke Build Settings. Aman diulang, tapi **editan manual di scene itu hilang** |
 | `Build Scene Look` | bikin dua aset SceneLook + volume profile, setel HDR grading & MSAA di URP asset, dan pasang look ke `ProtoBootstrap`. **Create-only** — aset yang sudah kamu setel tidak pernah ditimpa |
+| `Generate Reactions & Stun` | status STUN + 5 reaksi baru (termasuk dua berbahan SERET) dan menambal sumber buff FOKUS/PERISAI. Idempoten |
 
 `Migrate Rune Auras` punya penjaga (`AuraValue >= 0.9f` dilewati), tapi tetap
 jangan dijalankan tanpa alasan.
@@ -252,8 +270,9 @@ Penting kalau agent berjalan tanpa konfirmasi izin.
 - **Jangan hardcode angka gameplay.** Semua ke `GameBalance` atau asset piece.
 - **Jangan optimasi performa dulu.** Musuh masih dibatasi 200 dan belum jadi
   bottleneck. Profiler dulu, baru ubah.
-- **Jangan refactor `GrimoireUI.cs` diam-diam** — desainnya masih bergerak,
-  merapikan sekarang berarti merapikan dua kali.
+- **Refactor `GrimoireUI.cs` sekarang DIMINTA** (larangan lama sudah dicabut oleh
+  pemilik project). Aturannya: satu blok per patch, compile + jalankan wave setiap
+  kali, jangan gabung dua ekstraksi dalam satu langkah. Lihat §12 untuk antrean.
 - **Jangan mengedit `MainMenu.unity` langsung.** Ubah `MenuTheme.asset` atau
   `MainMenuBuilder.cs`, lalu build ulang. Editan tangan di scene itu akan hilang.
 
@@ -264,14 +283,18 @@ Penting kalau agent berjalan tanpa konfirmasi izin.
 Grid dua lapis 7×7 · rune (bentuk, elemen, aura terbagi per petak, stat, rarity)
 · skill (pemicu cooldown & ambang ailment) · segel · tas 4×3 · barang tercecer ·
 kotak jual · toko sebagai event tiap 3 wave + reroll menanjak yang tidak pernah
-reset · resep 2–3 bahan + garis biru/emas + kunci · 6 ailment berbasis poin ·
+reset · resep 2–3 bahan + sorotan biru/emas + kunci · 6 ailment berbasis poin ·
 4 reaksi · 6 buff pemain yang dihadiahkan reaksi · SERET (tarikan) · mana &
 regen · Defense · crit · range · 3 bentuk AoE (AreaAtTarget, Line, Zone) ·
 damage meter · lingkaran cooldown + denyut · tooltip · ALT+hover resep ·
 kecepatan 1–5× · seluruh data di ScriptableObject ·
 **codex** (siluet `???`, persisten lintas run lewat `codex.json`) ·
 **main menu** (MULAI / CODEX / SETELAN / KELUAR, TMP + UGUI) ·
-**setelan** (layar, resolusi, vsync, batas FPS, 3 volume, reset codex).
+**setelan** (layar, resolusi, vsync, batas FPS, 3 volume, reset codex) ·
+**9 reaksi** menutup 9 dari 15 pasangan status, semua 6 buff punya sumber ·
+**STUN** (gerak ×0, damage diterima +15%) dari reaksi BEKU STATIS ·
+**camera shake** berbasis trauma, besarnya ikut radius ledakan reaksi ·
+**bar HP/mana beranimasi** — chip tertinggal, kilatan saat kena, denyut saat HP tipis.
 
 ## 10. Belum selesai — urutan yang disarankan
 
@@ -298,3 +321,32 @@ Detail rencana refactor ada di
 - Sebelum menulis file, **tanya dulu** (lihat `CLAUDE.md` project).
 - Setelah mengubah script: `refresh_unity` → `read_console` cek error →
   baru `manage_editor play`.
+
+---
+
+## 12. Antrean refactor `GrimoireUI.cs`
+
+Sudah dikeluarkan (semuanya compile + wave jalan setelah tiap langkah):
+
+| Ke mana | Isi | Baris |
+|---|---|---|
+| `View/GrimoireLayout.cs` | semua const piksel + rect/anchor statik | ~175 |
+| `View/TooltipBuilder.cs` | teks hover + kartu resep | ~240 |
+| `Systems/DamageMeter.cs` | akumulasi damage per sumber | ~85 |
+
+`GrimoireLayout` ditarik lewat `using static Proto.GrimoireLayout;` di
+`GrimoireUI`, jadi call site tidak berubah sama sekali.
+
+**Sisa antrean, urut dari yang paling gampang:**
+
+1. **Toko** — `_shop`, `_rerollCost`, `RollShop`, cabang beli di `HandlePanelClick`,
+   dan bagian toko di `DrawPanels` → `Systems/ShopSystem.cs` + panel view terpisah.
+2. **Barang tercecer** — `AddLoose`/`RemoveLoose`/`ScatterAll`/`SellLoose`/
+   `ScreenToLoose`/`RouteDrop`/`AutoPlace*` → `Model/LootPile.cs` + view.
+3. **Pabrik widget** — `MakeImage`/`MakeText`/`MakeCircleSprite` → `View/UiFactory.cs`.
+   Ini yang membuka jalan memecah panel-panel sisanya jadi kelas sendiri.
+4. **`GameRoot`** — `ProtoBootstrap` sekarang sudah jadi composition root beneran;
+   tinggal ganti nama file + kelas kalau mau lepas dari nama "Proto".
+
+Aturan yang dipakai sejauh ini dan sebaiknya diteruskan: **satu blok per patch**,
+`refresh_unity` → `read_console` → jalankan satu wave, baru lanjut blok berikutnya.

@@ -21,13 +21,29 @@ namespace Proto
         {
             if (Ingredients == null) return;
 
+            int cells = 0;
+
             for (int i = 0; i < Ingredients.Length; i++)
             {
-                if (Ingredients[i] == null) continue;
-                if (Ingredients[i].Layer != Layer.Rune) continue;
+                var ingredient = Ingredients[i];
+                if (ingredient == null) continue;
 
-                Debug.LogWarning($"[{name}] bahan '{Ingredients[i].name}' adalah RUNE. " +
-                                 "Resep cuma boleh dari skill/segel.", this);
+                cells += ingredient.Cells.Length;
+
+                if (ingredient.Layer == Layer.Rune)
+                {
+                    Debug.LogWarning($"[{name}] bahan '{ingredient.name}' adalah RUNE. " +
+                                     "Resep cuma boleh dari skill/segel.", this);
+                }
+
+            }
+
+            // Ingredients only need to touch each other, so the real ceiling is the whole board.
+            int board = Grimoire.Width * Grimoire.Height;
+            if (cells > board)
+            {
+                Debug.LogError($"[{name}] butuh {cells} petak, tapi papan cuma {board}. " +
+                               "Resep ini MUSTAHIL dievolusikan.", this);
             }
         }
     }

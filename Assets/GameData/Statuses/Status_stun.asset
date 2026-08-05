@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04ef41c85bb7e5f4aa078250b1e54db1, type: 3}
+  m_Name: Status_stun
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.StatusDefinition
+  Id: stun
+  DisplayName: STUN
+  Color: {r: 1, g: 0.95, b: 0.6, a: 1}
+  MaxPoints: 1
+  RefreshOnReapply: 1
+  TickInterval: 0
+  DamagePerTickPerPoint: 0
+  MoveSpeedMultiplier: 0
+  DamageTakenMultiplier: 1.15
+  PullStrength: 0
+  Blurb: Berhenti total. Sebentar saja, tapi cukup untuk menumpuk ailment lain.

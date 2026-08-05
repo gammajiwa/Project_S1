@@ -64,11 +64,17 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b70a8e805fc46194686e600a8788b8b8, type: 2}
   - {fileID: 11400000, guid: 889746592ae592b4f89696393bec1666, type: 2}
   - {fileID: 11400000, guid: 5f75104041d796e438061522b1f08f0d, type: 2}
+  - {fileID: 11400000, guid: be4b0463c8b73b94ab32e4fcfc238e7a, type: 2}
   _reactions:
   - {fileID: 11400000, guid: 4291dca7702dbc848a4a9827c125b78a, type: 2}
   - {fileID: 11400000, guid: 5ce2531fd1d0f7747a7cfad327deaee1, type: 2}
   - {fileID: 11400000, guid: a00ca3c199c137a47a5bdc524601d841, type: 2}
   - {fileID: 11400000, guid: 38bac42082efccc4585916b3af3e52d8, type: 2}
+  - {fileID: 11400000, guid: f961d9524b1cf94498fe33e811530bc9, type: 2}
+  - {fileID: 11400000, guid: a34406502b5c59c40a76da7092851be5, type: 2}
+  - {fileID: 11400000, guid: 2b075b71840171f46b7786e861931257, type: 2}
+  - {fileID: 11400000, guid: 26e81678a43337e42950bce0a894a9cf, type: 2}
+  - {fileID: 11400000, guid: e2c297030f59d7a449471321ca355bdc, type: 2}
   _buffs:
   - {fileID: 11400000, guid: eb8eb4fcece999a4781febe9533deec4, type: 2}
   - {fileID: 11400000, guid: f4b1c005f72535544a660838eed5c7e7, type: 2}

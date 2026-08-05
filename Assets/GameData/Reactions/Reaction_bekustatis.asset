@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee71b916e7c1575498d3067ab641efa7, type: 3}
+  m_Name: Reaction_bekustatis
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.ReactionDefinition
+  DisplayName: BEKU STATIS
+  A: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
+  B: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
+  MinPointsA: 1
+  MinPointsB: 1
+  ConsumeA: 1
+  ConsumeB: 1
+  BurstDamage: 30
+  BurstDamagePerPointA: 0
+  BurstRadius: 3
+  ApplyStatus: {fileID: 11400000, guid: be4b0463c8b73b94ab32e4fcfc238e7a, type: 2}
+  ApplyDuration: 2.5
+  ApplyPoints: 1
+  SpreadToNearby: 0
+  GrantBuff: {fileID: 11400000, guid: f4b1c005f72535544a660838eed5c7e7, type: 2}
+  FlashColor: {r: 0.75, g: 0.85, b: 1, a: 1}

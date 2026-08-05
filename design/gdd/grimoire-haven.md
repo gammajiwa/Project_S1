@@ -145,18 +145,26 @@ berjalan, tidak ada satu pun sistem yang membaca grid.
 
 ### 4.6 Evolusi
 
-Resep butuh **2–3 bahan**, dan syaratnya dua-duanya harus terpenuhi:
+Resep butuh **2–3 bahan**, dan syaratnya cuma satu: **semua bahan saling
+bersentuhan**, sehingga petaknya membentuk satu gumpalan yang nyambung
+(kiri/kanan/atas/bawah — diagonal tidak dihitung). Bentuk gumpalannya bebas.
 
-1. Bahan **bersebelahan**
-2. Semua petaknya membentuk **satu garis lurus tak terputus** (satu baris atau
-   satu kolom)
+> **Aturan lama dibatalkan.** Dulu syaratnya "satu garis lurus tak terputus".
+> Itu tidak bisa dipertahankan: piece 2×2, 3×3, dan L sudah melar ke dua baris
+> dengan sendirinya, jadi resep yang memakainya **tidak akan pernah** bisa
+> terpicu — enam dari empat belas resep mati total, tanpa pesan error apa pun.
+> Syarat bersentuhan juga yang membuat papan terasa seperti menyusun tas, bukan
+> menyusun antrean.
+
+Yang **tidak** berubah: bahan yang cuma berdekatan diagonal atau terpisah celah
+tetap tidak menyatu. Longgar bukan berarti bebas.
 
 Evolusi diselesaikan **di akhir wave**, bukan seketika — jadi menyusun bahan
 adalah taruhan: kamu mengorbankan kekuatan wave ini demi wave berikutnya.
 
 Umpan balik langsung di papan:
-- **Garis biru** — bahan sudah segaris tapi belum lengkap
-- **Garis emas** — lengkap, akan berevolusi saat wave beres
+- **Sorotan biru** — bahan sudah nyambung tapi belum lengkap
+- **Sorotan emas** — lengkap, akan berevolusi saat wave beres
 
 **Kunci (klik kanan)** membuat sebuah benda tidak pernah ikut kegabung. Wajib
 ada begitu pemain punya skill bintang tinggi yang tidak mau jadi bahan.
@@ -248,7 +256,7 @@ hp_hilang = max(damage × 0.1, damage − Defense × dt)
 | Tas penuh, drop masuk | Jatuh tercecer, bukan hilang |
 | Lantai penuh (24 benda) | Kelebihannya terjual otomatis, dengan notifikasi |
 | Evolusi tidak muat di bekas jejaknya | Batal, bahan dikembalikan utuh |
-| Benda terkunci jadi bahan resep | Tidak pernah ikut; garis resep juga tidak menghitungnya |
+| Benda terkunci jadi bahan resep | Tidak pernah ikut; sorotan resep juga tidak menghitungnya |
 | Wave dimulai sambil memegang benda | Benda dijatuhkan ke lantai, lalu terjual bersama sisanya |
 | Pemain mati | Run berakhir, SPACE untuk ulang |
 
@@ -297,16 +305,15 @@ toko event + reroll menanjak · resep 2–3 bahan + garis biru/emas + kunci ·
 lingkaran cooldown + denyut · tooltip · ALT+hover resep · kecepatan 1–5× ·
 seluruh data di ScriptableObject
 
-**Dirancang, belum dibuat:**
+SERET, buff pemain, damage meter, codex, crit, cooldown internal reaksi, dan
+sumber BLEED/POISON **semuanya sudah jadi** — daftar lama di bagian ini sempat
+salah dan hampir membuat codex dibuat dua kali.
+
+**Yang benar-benar masih bolong:**
 
 | Fitur | Kenapa penting |
 |---|---|
-| **SERET** (debuff penarik) | Tanpa ini semua reaksi cuma kena 1–2 musuh |
-| **Buff pemain** (BARA, ALIRAN, dll) | Rantai "reaksi → buff → skill lebih kuat" belum tersambung |
-| **Damage meter** | Tanpa ini kriteria 5 dan 6 tidak bisa dibuktikan |
-| **Codex** | Rasa koleksi dan penemuan |
-| **Crit** | `CritChance`/`CritDamage` sudah ada sebagai data, tapi belum dipakai di pipeline damage |
-| **Cooldown internal reaksi 0.25s** | Pencegah reaksi berkedip saat cooldown skill sangat pendek |
-| **Sumber BLEED & POISON** | Dua ailment ini sudah jadi, tapi belum ada skill yang menempelkannya |
-
-Empat yang paling atas adalah urutan pengerjaan yang saya sarankan.
+| **Reaksi berbahan SERET** | SERET menempel dan menarik, tapi belum ada satu pun reaksi yang memakainya — padahal SERET-lah yang mengubah reaksi tunggal jadi reaksi massal |
+| **11 dari 15 pasangan status belum punya reaksi** | Target MVP 8 reaksi, sekarang baru 4. Rantai "reaksi → buff" cuma nyambung di 4 titik |
+| **Sumber buff FOKUS & PERISAI** | Dua buff ini terdaftar tapi tidak bisa didapat dari mana pun |
+| **Varian musuh** | Sengaja ditunda oleh pemilik project |

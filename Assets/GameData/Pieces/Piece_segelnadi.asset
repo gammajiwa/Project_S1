@@ -18,7 +18,7 @@ MonoBehaviour:
   Layer: 1
   Shape: 1
   Color: {r: 0.55, g: 0.9, b: 0.6, a: 1}
-  Kind: 4
+  Kind: 7
   Element: 3
   BaseDamage: 0
   BaseCooldown: 0.05
@@ -26,10 +26,22 @@ MonoBehaviour:
   Range: 0
   Hits: 1
   ManaCost: 0
-  Status: 0
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  AppliedStatus: {fileID: 0}
   StatusDuration: 0
+  AppliedPoints: 1
+  LegacyStatus: 0
   Aura: 0
   AuraValue: 0
-  Stat: 4
-  StatValue: 1.2
+  ElementMatchBonus: 0
+  Stats:
+  - Type: 4
+    Value: 1.2
+  Stat: 0
+  StatValue: 0
   Blurb: 2 panjang. +1.2 HP per detik. Pasif - nggak nembak.
