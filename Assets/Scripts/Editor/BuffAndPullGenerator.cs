@@ -31,27 +31,27 @@ namespace Proto.EditorTools
             // ---------- 1. buff pemain ----------
             var buffs = new List<BuffDefinition>
             {
-                Buff("bara", "BARA", new Color(1f, 0.5f, 0.2f), 8f,
+                Buff("bara", "EMBER", new Color(1f, 0.5f, 0.2f), 8f,
                     "Damage semua skill +25% selama 8 detik.",
                     Mod(StatKind.DamagePct, 0.25f)),
 
-                Buff("aliran", "ALIRAN", new Color(0.6f, 0.85f, 1f), 6f,
+                Buff("aliran", "FLOW", new Color(0.6f, 0.85f, 1f), 6f,
                     "Cooldown berjalan 40% lebih cepat.",
                     Mod(StatKind.CooldownPct, 0.4f)),
 
-                Buff("sumur", "SUMUR", new Color(0.4f, 0.6f, 1f), 8f,
+                Buff("sumur", "WELLSPRING", new Color(0.4f, 0.6f, 1f), 8f,
                     "Regen mana +6 per detik.",
                     Mod(StatKind.ManaRegen, 6f)),
 
-                Buff("fokus", "FOKUS", new Color(0.7f, 1f, 0.8f), 7f,
+                Buff("fokus", "FOCUS", new Color(0.7f, 1f, 0.8f), 7f,
                     "Jangkauan dan radius +30%.",
                     Mod(StatKind.AreaPct, 0.3f), Mod(StatKind.RangePct, 0.3f)),
 
-                Buff("perisai", "PERISAI", new Color(0.85f, 0.85f, 0.5f), 10f,
+                Buff("perisai", "AEGIS", new Color(0.85f, 0.85f, 0.5f), 10f,
                     "Pertahanan +12 dan regen HP +2 per detik.",
                     Mod(StatKind.Defense, 12f), Mod(StatKind.HpRegen, 2f)),
 
-                Buff("naluri", "NALURI", new Color(1f, 0.75f, 0.85f), 6f,
+                Buff("naluri", "INSTINCT", new Color(1f, 0.75f, 0.85f), 6f,
                     "Peluang crit +25%, damage crit +50%.",
                     Mod(StatKind.CritChance, 0.25f), Mod(StatKind.CritDamage, 0.5f))
             };
@@ -65,7 +65,7 @@ namespace Proto.EditorTools
             }
 
             seret.Id = "seret";
-            seret.DisplayName = "SERET";
+            seret.DisplayName = "DRAG";
             seret.Color = new Color(0.75f, 0.55f, 1f);
             seret.MaxPoints = 1;
             seret.RefreshOnReapply = true;

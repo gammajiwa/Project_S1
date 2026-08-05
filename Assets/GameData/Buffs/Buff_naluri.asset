@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Buff_naluri
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BuffDefinition
   Id: naluri
-  DisplayName: NALURI
+  DisplayName: INSTINCT
   Color: {r: 1, g: 0.75, b: 0.85, a: 1}
   Duration: 6
   Mods:
@@ -21,4 +21,4 @@ MonoBehaviour:
     Value: 0.25
   - Type: 12
     Value: 0.5
-  Blurb: Peluang crit +25%, damage crit +50%.
+  Blurb: Crit chance +25%, crit damage +50%.

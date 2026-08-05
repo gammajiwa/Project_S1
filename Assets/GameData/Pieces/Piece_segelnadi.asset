@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_segelnadi
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelnadi
-  DisplayName: Segel Nadi
+  DisplayName: Pulse Sigil
   Stars: 1
   Layer: 1
   Shape: 1
@@ -41,7 +41,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 4
-    Value: 1.2
+    Value: 25
   Stat: 0
   StatValue: 0
-  Blurb: 2 panjang. +1.2 HP per detik. Pasif - nggak nembak.
+  Blurb: 2 long. +25 max mana. Passive - never fires.

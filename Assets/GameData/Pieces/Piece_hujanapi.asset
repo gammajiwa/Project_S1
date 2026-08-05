@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_hujanapi
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: hujanapi
-  DisplayName: Hujan Api
+  DisplayName: Fire Rain
   Stars: 1
   Layer: 1
   Shape: 3
@@ -42,4 +42,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 2x2. Jatuh di gerombolan paling padat, bukan di kamu. Nempel BURN.
+  Blurb: 2x2. Rains fire over a wide patch. Applies BURN.

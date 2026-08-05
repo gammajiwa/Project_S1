@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_segelvitalitas
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelvitalitas
-  DisplayName: Segel Vitalitas
+  DisplayName: Vitality Sigil
   Stars: 1
   Layer: 1
   Shape: 1
@@ -44,4 +44,4 @@ MonoBehaviour:
     Value: 30
   Stat: 0
   StatValue: 0
-  Blurb: 2 panjang. +30 HP maksimum. Pasif - nggak nembak.
+  Blurb: 2 long. +30 max HP. Passive - never fires.

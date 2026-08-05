@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Buff_bara
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BuffDefinition
   Id: bara
-  DisplayName: BARA
+  DisplayName: EMBER
   Color: {r: 1, g: 0.5, b: 0.2, a: 1}
   Duration: 8
   Mods:
   - Type: 7
     Value: 0.25
-  Blurb: Damage semua skill +25% selama 8 detik.
+  Blurb: All skill damage +25% for 8 seconds.

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_segelsumur
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelsumur
-  DisplayName: Segel Sumur
+  DisplayName: Wellspring Sigil
   Stars: 1
   Layer: 1
   Shape: 1
@@ -41,7 +41,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 2
-    Value: 25
+    Value: 2.5
   Stat: 0
   StatValue: 0
-  Blurb: 2 panjang. +25 mana maksimum. Pasif - nggak nembak.
+  Blurb: 2 long. +2.5 HP per second. Passive - never fires.

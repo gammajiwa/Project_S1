@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_tintamengalir
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: tintamengalir
-  DisplayName: Tinta Mengalir
+  DisplayName: Flowing Ink
   Stars: 1
   Layer: 1
   Shape: 5
@@ -44,4 +44,4 @@ MonoBehaviour:
     Value: 2.5
   Stat: 0
   StatValue: 0
-  Blurb: Bentuk L. +2.5 mana per detik. Pasif - nggak nembak.
+  Blurb: 2 long. +2.5 defence. Passive - never fires.

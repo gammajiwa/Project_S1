@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_prismabeku
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: prismabeku
-  DisplayName: Prisma Beku
+  DisplayName: Frost Prism
   Stars: 3
   Layer: 1
   Shape: 2
@@ -26,12 +26,20 @@ MonoBehaviour:
   Range: 9
   Hits: 5
   ManaCost: 24
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
   AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
   StatusDuration: 6
-  AppliedStacks: 1
+  AppliedPoints: 1
   LegacyStatus: 2
   Aura: 0
   AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: BINTANG 3. Nyambar 5 musuh sekaligus dan nempel CHILL lama.
+  Blurb: 3 long. Shattering ice burst. Applies CHILL.

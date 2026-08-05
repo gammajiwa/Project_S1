@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Buff_fokus
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BuffDefinition
   Id: fokus
-  DisplayName: FOKUS
+  DisplayName: FOCUS
   Color: {r: 0.7, g: 1, b: 0.8, a: 1}
   Duration: 7
   Mods:
@@ -21,4 +21,4 @@ MonoBehaviour:
     Value: 0.3
   - Type: 10
     Value: 0.3
-  Blurb: Jangkauan dan radius +30%.
+  Blurb: Range and area +30%.

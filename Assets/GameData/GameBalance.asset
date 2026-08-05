@@ -17,24 +17,24 @@ MonoBehaviour:
   BagWidth: 5
   BagHeight: 4
   BaseMaxHp: 100
-  BaseMaxMana: 60
-  BaseManaRegen: 5
-  BaseHpRegen: 0
+  BaseMaxMana: 100
+  BaseManaRegen: 16
+  BaseHpRegen: 2
   HealPerWaveClear: 20
   EnemiesBase: 5
-  EnemiesPerWave: 3
+  EnemiesPerWave: 2
   EnemyHpBase: 16
-  EnemyHpPerWave: 7
+  EnemyHpPerWave: 5
   EnemySpeedMin: 1.5
   EnemySpeedMax: 2.1
   EnemySpeedPerWave: 0.04
-  EnemyContactDps: 14
+  EnemyContactDps: 7
   SpawnIntervalBase: 0.6
   SpawnIntervalPerWave: 0.02
   SpawnIntervalMin: 0.2
   MaxAliveEnemies: 200
-  KillDropChance: 0.04
-  WaveClearDrops: 1
+  KillDropChance: 0.12
+  WaveClearDrops: 3
   RuneShareOfDrops: 0.25
   ShopEveryWaves: 3
   ShopSlots: 6

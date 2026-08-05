@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Buff_aliran
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BuffDefinition
   Id: aliran
-  DisplayName: ALIRAN
+  DisplayName: FLOW
   Color: {r: 0.6, g: 0.85, b: 1, a: 1}
   Duration: 6
   Mods:
   - Type: 8
     Value: 0.4
-  Blurb: Cooldown berjalan 40% lebih cepat.
+  Blurb: Cooldowns run 40% faster.

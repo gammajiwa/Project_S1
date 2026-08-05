@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_sabetanpetir
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: sabetanpetir
-  DisplayName: Sabetan Petir
+  DisplayName: Lightning Slash
   Stars: 1
   Layer: 1
   Shape: 2
@@ -42,4 +42,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 3 panjang. Menyapu garis lurus ke arah musuh terdekat, kena semua yang dilewati.
+  Blurb: 3 long. Sweeps a line of enemies. Applies SHOCK.

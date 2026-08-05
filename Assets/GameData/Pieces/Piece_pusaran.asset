@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_pusaran
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: pusaran
-  DisplayName: Pusaran
+  DisplayName: Vortex
   Stars: 1
   Layer: 1
   Shape: 1
@@ -42,5 +42,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 2 panjang. Damage kecil, tapi menyeret satu gerombolan jadi satu titik.
-    Pasangan wajib semua skill AoE.
+  Blurb: "3 long. Drags enemies together. Applies DRAG \u2014 the setup for mass
+    reactions."

@@ -15,10 +15,11 @@ MonoBehaviour:
   Id: poison
   DisplayName: POISON
   Color: {r: 0.55, g: 0.9, b: 0.35, a: 1}
-  MaxStacks: 5
+  MaxPoints: 5
   RefreshOnReapply: 1
   TickInterval: 0.6
-  DamagePerTickPerStack: 2
+  DamagePerTickPerPoint: 2
   MoveSpeedMultiplier: 0.85
   DamageTakenMultiplier: 1
-  Blurb: Damage berjalan, menumpuk, dan bisa meledak menular.
+  PullStrength: 0
+  Blurb: Slow damage over time that can burst and spread.

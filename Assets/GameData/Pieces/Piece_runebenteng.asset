@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_runebenteng
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: runebenteng
-  DisplayName: Rune Benteng
+  DisplayName: Bastion Rune
   Stars: 2
   Layer: 0
   Shape: 3
@@ -26,6 +26,8 @@ MonoBehaviour:
   Range: 0
   Hits: 1
   ManaCost: 0
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -36,6 +38,7 @@ MonoBehaviour:
   LegacyStatus: 0
   Aura: 0
   AuraValue: 0
+  ElementMatchBonus: 0
   Stats:
   - Type: 1
     Value: 60
@@ -43,5 +46,4 @@ MonoBehaviour:
     Value: 4
   Stat: 0
   StatValue: 0
-  Blurb: 2x2, bintang 2. +60 HP dan +4 pertahanan. Nggak ngasih buff ke skill di
-    atasnya.
+  Blurb: 2x2 base. +60 max HP and +4 defence.

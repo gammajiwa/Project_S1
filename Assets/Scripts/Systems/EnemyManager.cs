@@ -405,7 +405,10 @@ namespace Proto
             if (rx.ConsumeA) e.Slots[slotA].Def = -1;
             if (rx.ConsumeB) e.Slots[slotB].Def = -1;
 
-            float damage = rx.BurstDamage + rx.BurstDamagePerPointA * pointsA;
+            // Flat damage alone goes stale: enemy HP climbs every wave while a burst never does,
+            // so a share of max HP rides along to keep reactions relevant late.
+            float damage = rx.BurstDamage + rx.BurstDamagePerPointA * pointsA
+                           + e.MaxHp * rx.BurstPctOfMaxHp;
 
             e.ReactionLock = ReactionCooldown;
             OnReaction?.Invoke(at, rx);

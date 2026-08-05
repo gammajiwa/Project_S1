@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee71b916e7c1575498d3067ab641efa7, type: 3}
   m_Name: Reaction_pecah
   m_EditorClassIdentifier: Assembly-CSharp::Proto.ReactionDefinition
-  DisplayName: PECAH
+  DisplayName: SHATTER
   A: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
   B: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
   MinPointsA: 1
@@ -21,6 +21,7 @@ MonoBehaviour:
   ConsumeB: 1
   BurstDamage: 46
   BurstDamagePerPointA: 0
+  BurstPctOfMaxHp: 0.22
   BurstRadius: 3.2
   ApplyStatus: {fileID: 0}
   ApplyDuration: 4

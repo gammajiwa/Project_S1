@@ -15,10 +15,11 @@ MonoBehaviour:
   Id: burn
   DisplayName: BURN
   Color: {r: 1, g: 0.45, b: 0.15, a: 1}
-  MaxStacks: 3
+  MaxPoints: 3
   RefreshOnReapply: 1
   TickInterval: 0.5
-  DamagePerTickPerStack: 3.5
+  DamagePerTickPerPoint: 3.5
   MoveSpeedMultiplier: 1
   DamageTakenMultiplier: 1
-  Blurb: Damage berjalan. Menumpuk sampai 3.
+  PullStrength: 0
+  Blurb: Damage over time. Stacks up to 3.

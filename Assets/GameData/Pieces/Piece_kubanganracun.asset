@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_kubanganracun
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: kubanganracun
-  DisplayName: Kubangan Racun
+  DisplayName: Poison Pool
   Stars: 1
   Layer: 1
   Shape: 5
@@ -42,5 +42,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Bentuk L. Ninggalin kubangan racun 5 detik yang berdenyut terus. Sumber
-    POISON.
+  Blurb: L-shape. Leaves a lingering pool. Applies POISON.

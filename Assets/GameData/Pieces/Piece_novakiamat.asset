@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_novakiamat
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: novakiamat
-  DisplayName: Nova Kiamat
+  DisplayName: Doom Nova
   Stars: 4
   Layer: 1
   Shape: 2
@@ -26,12 +26,20 @@ MonoBehaviour:
   Range: 9
   Hits: 1
   ManaCost: 45
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
   AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
   StatusDuration: 8
-  AppliedStacks: 1
+  AppliedPoints: 1
   LegacyStatus: 1
   Aura: 0
   AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: BINTANG 4. Ledakan sebesar arena. Mahal, lambat, dan menghapus gelombang.
+  Blurb: 3 long. The heaviest blast in the book. Applies BURN.

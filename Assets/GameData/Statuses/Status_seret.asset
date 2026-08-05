@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Status_seret
   m_EditorClassIdentifier: Assembly-CSharp::Proto.StatusDefinition
   Id: seret
-  DisplayName: SERET
+  DisplayName: DRAG
   Color: {r: 0.75, g: 0.55, b: 1, a: 1}
   MaxPoints: 1
   RefreshOnReapply: 1
@@ -22,4 +22,4 @@ MonoBehaviour:
   MoveSpeedMultiplier: 0.8
   DamageTakenMultiplier: 1
   PullStrength: 3.5
-  Blurb: "Menarik musuh ke titik ledakan. Nggak ngasih damage \u2014 tugasnya mengumpulkan."
+  Blurb: Pulls enemies toward the blast point. Deals no damage - its job is gathering.

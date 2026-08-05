@@ -15,10 +15,11 @@ MonoBehaviour:
   Id: shock
   DisplayName: SHOCK
   Color: {r: 0.95, g: 0.92, b: 0.4, a: 1}
-  MaxStacks: 1
+  MaxPoints: 1
   RefreshOnReapply: 1
   TickInterval: 0.05
-  DamagePerTickPerStack: 0
+  DamagePerTickPerPoint: 0
   MoveSpeedMultiplier: 1
   DamageTakenMultiplier: 1.3
-  Blurb: Menerima damage +30%.
+  PullStrength: 0
+  Blurb: Takes 30% more damage.

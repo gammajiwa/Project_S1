@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_segelbara
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelbara
-  DisplayName: Segel Bara
+  DisplayName: Ember Sigil
   Stars: 1
   Layer: 1
   Shape: 2
@@ -41,7 +41,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 5
-    Value: 0.2
+    Value: 3
   Stat: 0
   StatValue: 0
-  Blurb: 3 panjang. Semua skill api +20% damage. Pasif - nggak nembak.
+  Blurb: 2 long. +3 mana per second. Passive - never fires.

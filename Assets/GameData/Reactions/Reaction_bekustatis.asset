@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee71b916e7c1575498d3067ab641efa7, type: 3}
   m_Name: Reaction_bekustatis
   m_EditorClassIdentifier: Assembly-CSharp::Proto.ReactionDefinition
-  DisplayName: BEKU STATIS
+  DisplayName: STATIC FREEZE
   A: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
   B: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
   MinPointsA: 1
@@ -21,6 +21,7 @@ MonoBehaviour:
   ConsumeB: 1
   BurstDamage: 30
   BurstDamagePerPointA: 0
+  BurstPctOfMaxHp: 0.18
   BurstRadius: 3
   ApplyStatus: {fileID: 11400000, guid: be4b0463c8b73b94ab32e4fcfc238e7a, type: 2}
   ApplyDuration: 2.5

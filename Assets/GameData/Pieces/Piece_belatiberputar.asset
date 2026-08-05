@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_belatiberputar
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: belatiberputar
-  DisplayName: Belati Berputar
+  DisplayName: Whirling Blade
   Stars: 1
   Layer: 1
   Shape: 1
@@ -42,4 +42,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 2 panjang. Berputar di sekelilingmu. Sumber BLEED, dan penjaga jarak dekat.
+  Blurb: 2 long. Fast spinning strike. Applies BLEED.

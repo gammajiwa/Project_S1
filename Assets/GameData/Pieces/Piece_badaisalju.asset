@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_badaisalju
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: badaisalju
-  DisplayName: Badai Salju
+  DisplayName: Snowstorm
   Stars: 2
   Layer: 1
   Shape: 2
@@ -42,4 +42,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Kubangan es lebar yang bikin semua di dalamnya melambat terus-menerus.
+  Blurb: 3 long. Wide freezing storm. Applies CHILL.

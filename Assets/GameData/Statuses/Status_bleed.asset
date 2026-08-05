@@ -15,10 +15,11 @@ MonoBehaviour:
   Id: bleed
   DisplayName: BLEED
   Color: {r: 0.85, g: 0.2, b: 0.25, a: 1}
-  MaxStacks: 5
+  MaxPoints: 5
   RefreshOnReapply: 1
   TickInterval: 0.4
-  DamagePerTickPerStack: 2.2
+  DamagePerTickPerPoint: 2.2
   MoveSpeedMultiplier: 1
   DamageTakenMultiplier: 1
-  Blurb: Damage berjalan yang menumpuk sampai 5.
+  PullStrength: 0
+  Blurb: Fast damage over time. Stacks up to 5.

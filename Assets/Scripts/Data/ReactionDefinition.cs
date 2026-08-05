@@ -30,6 +30,11 @@ namespace Proto
         [Tooltip("Tambahan damage per POIN A. Bikin menumpuk poin terasa berharga.")]
         public float BurstDamagePerPointA;
 
+        [Range(0f, 1f)]
+        [Tooltip("Bagian dari HP MAKSIMUM musuh yang ikut jadi damage. Tanpa ini reaksi jadi " +
+                 "hiasan di wave tinggi: ledakan tetap segitu sementara HP musuh terus naik.")]
+        public float BurstPctOfMaxHp;
+
         public float BurstRadius = 3f;
 
         [Header("Efek lanjutan")]

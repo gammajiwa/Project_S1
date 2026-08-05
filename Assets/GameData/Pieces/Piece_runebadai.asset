@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_runebadai
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: runebadai
-  DisplayName: Rune Badai
+  DisplayName: Storm Rune
   Stars: 3
   Layer: 0
   Shape: 4
@@ -26,6 +26,8 @@ MonoBehaviour:
   Range: 0
   Hits: 1
   ManaCost: 0
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -46,5 +48,4 @@ MonoBehaviour:
     Value: 0.08
   Stat: 0
   StatValue: 0
-  Blurb: 3x3, bintang 3. Damage petir +25%, tiap ailment nempel +1 poin, cooldown
-    semua -8%.
+  Blurb: 3x3 base. Huge damage aura, spread across nine cells.

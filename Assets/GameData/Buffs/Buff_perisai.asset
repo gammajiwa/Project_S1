@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Buff_perisai
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BuffDefinition
   Id: perisai
-  DisplayName: PERISAI
+  DisplayName: AEGIS
   Color: {r: 0.85, g: 0.85, b: 0.5, a: 1}
   Duration: 10
   Mods:
@@ -21,4 +21,4 @@ MonoBehaviour:
     Value: 12
   - Type: 2
     Value: 2
-  Blurb: Pertahanan +12 dan regen HP +2 per detik.
+  Blurb: Defence +12 and HP regen +2 per second.

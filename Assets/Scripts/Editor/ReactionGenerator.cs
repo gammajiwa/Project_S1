@@ -55,7 +55,7 @@ namespace Proto.EditorTools
             stun.MoveSpeedMultiplier = 0f;
             stun.DamageTakenMultiplier = 1.15f;
             stun.PullStrength = 0f;
-            stun.Blurb = "Berhenti total. Sebentar saja, tapi cukup untuk menumpuk ailment lain.";
+            stun.Blurb = "Frozen in place. Brief, but long enough to stack other ailments on.";
             EditorUtility.SetDirty(stun);
 
             var buffs = new List<BuffDefinition>(db.Buffs);
@@ -67,27 +67,27 @@ namespace Proto.EditorTools
 
             // Order is priority: one application fires at most one reaction, first match wins.
             // SERET pairs go first — gathering the crowd is what makes every other reaction matter.
-            Upsert(reactions, "badaiapi", "BADAI API", seret, burn,
+            Upsert(reactions, "badaiapi", "FIRESTORM", seret, burn,
                 consumeA: true, consumeB: false, burst: 26f, perPointA: 0f, radius: 4.2f,
                 apply: burn, applyPoints: 2, spread: true, grant: null,
                 flash: new Color(1f, 0.55f, 0.2f));
 
-            Upsert(reactions, "pusaranbeku", "PUSARAN BEKU", seret, chill,
+            Upsert(reactions, "pusaranbeku", "FROZEN VORTEX", seret, chill,
                 consumeA: true, consumeB: false, burst: 22f, perPointA: 0f, radius: 4.2f,
                 apply: chill, applyPoints: 1, spread: true, grant: fokus,
                 flash: new Color(0.6f, 0.9f, 1f));
 
-            Upsert(reactions, "bekustatis", "BEKU STATIS", chill, shock,
+            Upsert(reactions, "bekustatis", "STATIC FREEZE", chill, shock,
                 consumeA: true, consumeB: true, burst: 30f, perPointA: 0f, radius: 3f,
                 apply: stun, applyPoints: 1, spread: false, grant: aliran,
                 flash: new Color(0.75f, 0.85f, 1f));
 
-            Upsert(reactions, "bakarluka", "BAKAR LUKA", bleed, burn,
+            Upsert(reactions, "bakarluka", "SEARING WOUND", bleed, burn,
                 consumeA: true, consumeB: false, burst: 14f, perPointA: 9f, radius: 2.6f,
                 apply: null, applyPoints: 1, spread: false, grant: perisai,
                 flash: new Color(1f, 0.4f, 0.35f));
 
-            Upsert(reactions, "nanah", "NANAH", bleed, poison,
+            Upsert(reactions, "nanah", "FESTER", bleed, poison,
                 consumeA: true, consumeB: true, burst: 18f, perPointA: 7f, radius: 2.8f,
                 apply: null, applyPoints: 1, spread: false, grant: null,
                 flash: new Color(0.7f, 0.9f, 0.4f));

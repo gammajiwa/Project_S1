@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: Buff_sumur
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BuffDefinition
   Id: sumur
-  DisplayName: SUMUR
+  DisplayName: WELLSPRING
   Color: {r: 0.4, g: 0.6, b: 1, a: 1}
   Duration: 8
   Mods:
   - Type: 5
     Value: 6
-  Blurb: Regen mana +6 per detik.
+  Blurb: Mana regen +6 per second.

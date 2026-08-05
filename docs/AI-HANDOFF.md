@@ -199,7 +199,8 @@ yang ditandai.
 | `Generate Buffs, Seret & Recipes` | 6 buff, status SERET, skill Pusaran, 7 resep |
 | `Build Main Menu` | bangun ulang `MainMenu.unity` + daftarkan dua scene ke Build Settings. Aman diulang, tapi **editan manual di scene itu hilang** |
 | `Build Scene Look` | bikin dua aset SceneLook + volume profile, setel HDR grading & MSAA di URP asset, dan pasang look ke `ProtoBootstrap`. **Create-only** — aset yang sudah kamu setel tidak pernah ditimpa |
-| `Generate Reactions & Stun` | status STUN + 5 reaksi baru (termasuk dua berbahan SERET) dan menambal sumber buff FOKUS/PERISAI. Idempoten |
+| `Generate Reactions & Stun` | status STUN + 5 reaksi baru (termasuk dua berbahan DRAG) dan menambal sumber buff FOCUS/AEGIS. Idempoten |
+| `English Naming + Balance Pass` | semua nama konten ke Inggris, skala damage reaksi per HP musuh, dan 6 resep untuk piece yatim. Idempoten (cocokkan lewat Id, bukan nama) |
 
 `Migrate Rune Auras` punya penjaga (`AuraValue >= 0.9f` dilewati), tapi tetap
 jangan dijalankan tanpa alasan.
@@ -254,6 +255,14 @@ Ini semua sudah pernah terjadi di sesi sebelumnya. Jangan mengulangi.
 15. **Dua jalur screenshot MCP tidak sepakat soal kecerahan.** Jalur camera-render
     dan jalur game-view memberi hasil terang yang berbeda untuk scene yang sama.
     Jangan pernah menyetel warna hanya dari screenshot — buka Game view.
+16. **Bahasa konten = INGGRIS.** Belum ada layer lokalisasi, jadi Inggris adalah
+    default, bukan terjemahan. Generator lama sempat menulis nama Indonesia dan
+    membatalkan pass Inggris tiap dijalankan ulang — sekarang semuanya sudah
+    seragam. Kalau bikin generator baru, tulis nama dalam Inggris.
+    (Teks UI in-game masih Indonesia — itu utang terpisah, lihat §12.)
+17. **Damage sentuh musuh MENUMPUK per musuh.** `EnemyContactDps` dikenakan tiap
+    musuh yang menempel, jadi 5 musuh = 5x. Menaikkan angka ini sedikit saja
+    langsung membunuh pemain di wave awal.
 
 ---
 
@@ -350,3 +359,11 @@ Sudah dikeluarkan (semuanya compile + wave jalan setelah tiap langkah):
 
 Aturan yang dipakai sejauh ini dan sebaiknya diteruskan: **satu blok per patch**,
 `refresh_unity` → `read_console` → jalankan satu wave, baru lanjut blok berikutnya.
+
+### Utang bahasa yang tersisa
+
+Nama konten (piece, status, reaksi, buff) **sudah Inggris semua**. Yang **belum**:
+teks UI in-game di `View/GrimoireUI.cs` (`MULAI WAVE`, `JUAL`, `TAS`, banner,
+tooltip header) dan `Menu/` (`MULAI`, `SETELAN`, `KELUAR`, label setelan).
+Itu ratusan literal yang tersebar — sebaiknya dikerjakan sekalian saat
+`GrimoireUI` dipecah, bukan sebagai sapuan terpisah.

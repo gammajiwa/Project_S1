@@ -15,10 +15,11 @@ MonoBehaviour:
   Id: chill
   DisplayName: CHILL
   Color: {r: 0.45, g: 0.8, b: 1, a: 1}
-  MaxStacks: 1
+  MaxPoints: 1
   RefreshOnReapply: 1
   TickInterval: 0.05
-  DamagePerTickPerStack: 0
+  DamagePerTickPerPoint: 0
   MoveSpeedMultiplier: 0.45
   DamageTakenMultiplier: 1
-  Blurb: Memperlambat 55%.
+  PullStrength: 0
+  Blurb: Slows movement by 55%.

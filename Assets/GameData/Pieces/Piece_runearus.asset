@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_runearus
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: runearus
-  DisplayName: Rune Arus
+  DisplayName: Current Rune
   Stars: 2
   Layer: 0
   Shape: 2
@@ -26,6 +26,8 @@ MonoBehaviour:
   Range: 0
   Hits: 1
   ManaCost: 0
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -44,5 +46,4 @@ MonoBehaviour:
     Value: 20
   Stat: 0
   StatValue: 0
-  Blurb: 3 panjang, bintang 2. Cooldown skill di atasnya -12%, plus mana skill -15%
-    dan +20 mana.
+  Blurb: 3 long base. Cuts cooldowns and eases mana cost.
