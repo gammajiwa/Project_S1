@@ -10,26 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
-  m_Name: Piece_fireball
+  m_Name: Piece_segelbenteng
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
-  Id: fireball
-  DisplayName: Fireball
-  Stars: 1
+  Id: segelbenteng
+  DisplayName: Bulwark Sigil
+  Stars: 3
   Layer: 1
-  Shape: 0
-  Color: {r: 1, g: 1, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: 72b6b37412480fe4fbf2ccf6bea384b4, type: 3}
-  Kind: 0
-  Element: 0
-  BaseDamage: 28
-  BaseCooldown: 1.1
-  Radius: 0.7
-  Range: 7
+  Shape: 11
+  Color: {r: 0.6, g: 0.8, b: 0.95, a: 1}
+  Icon: {fileID: 21300000, guid: 05224d857820c864493b87b2f720ca6b, type: 3}
+  Kind: 7
+  Element: 3
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 1
+  ManaCost: 0
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
@@ -38,10 +38,10 @@ MonoBehaviour:
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
-  StatusDuration: 4
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 1
-  LegacyStatus: 1
+  LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
   PushForce: 12
@@ -53,7 +53,11 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 1
+    Value: 120
+  - Type: 3
+    Value: 8
   Stat: 0
   StatValue: 0
-  Blurb: "Fast single bolt. One cell \u2014 it fits wherever nothing else will."
+  Blurb: +120 HP maksimum dan pengurangan damage yang tebal.
