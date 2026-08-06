@@ -84,6 +84,22 @@ namespace Proto
 
         [Tooltip("Menumpuk PER musuh yang menempel. Lima musuh = lima kali angka ini.")]
         public float EnemyContactDps = 14f;
+
+        [Tooltip("Tambahan damage sentuh per wave. Tanpa ini musuh wave 40 menyakiti persis " +
+                 "sama seperti wave 1, sementara HP dan damage pemain sudah naik berkali lipat — " +
+                 "jadi satu-satunya yang tumbuh adalah kebosanan.")]
+        public float EnemyContactDpsPerWave = 1.7f;
+
+        [Tooltip("Pengali damage tembakan musuh per wave. Sama alasannya dengan yang di atas.")]
+        public float EnemyDamageGrowth = 1.055f;
+
+        /// <summary>Damage sentuh per detik, per musuh, di wave ini.</summary>
+        public float ContactDpsFor(int wave) =>
+            EnemyContactDps + Mathf.Max(0, wave) * EnemyContactDpsPerWave;
+
+        /// <summary>Pengali damage untuk apa pun yang ditembakkan musuh di wave ini.</summary>
+        public float EnemyDamageScale(int wave) =>
+            Mathf.Pow(Mathf.Max(1f, EnemyDamageGrowth), Mathf.Max(0, wave));
         [Header("Isi wave")]
         // Jumlah, bukan jam. Wave berbasis waktu membuat pemain menatap hitung mundur alih-alih
         // menatap lapangan, dan "sisa berapa" adalah satu-satunya angka yang benar-benar bisa

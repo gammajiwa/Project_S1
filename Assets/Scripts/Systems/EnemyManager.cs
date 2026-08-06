@@ -12,6 +12,9 @@ namespace Proto
     {
         public const int StatusSlots = 4;
 
+        /// <summary>Di bawah ketinggian ini, ruas boss dianggap terbenam: tak terlihat, tak terlukai.</summary>
+        public const float BuriedDepth = -0.6f;
+
         /// <summary>Jeda minimum antar reaksi di satu musuh, biar tidak berkedip.</summary>
         public const float ReactionCooldown = 0.25f;
 
@@ -444,10 +447,43 @@ namespace Proto
         int _bossHeadTint;
         int _bossBodyTint;
 
-        /// <summary>Ular yang sedang hidup, atau null. Satu saja — dua boss bukan boss.</summary>
-        public BossSnake Boss { get; private set; }
+        /// <summary>
+        /// Ular yang sedang hidup. Jamak, karena wave tinggi memunculkan lebih dari satu.
+        ///
+        /// Bertambahnya jumlah, bukan bertambahnya HP, yang membuat boss tetap terasa boss di
+        /// wave 40: satu ular ber-HP sepuluh kali lipat cuma jadi tembok yang lebih lama dipukul,
+        /// sementara tiga ular yang mengitari dari tiga arah adalah masalah yang benar-benar baru.
+        /// </summary>
+        readonly List<BossSnake> _bosses = new List<BossSnake>();
 
-        public bool BossActive => Boss != null && Boss.Alive;
+        public IReadOnlyList<BossSnake> Bosses => _bosses;
+
+        /// <summary>Ular pertama yang masih hidup, untuk UI. Null kalau tidak ada.</summary>
+        public BossSnake Boss
+        {
+            get
+            {
+                for (int i = 0; i < _bosses.Count; i++)
+                {
+                    if (_bosses[i].Alive && !_bosses[i].Def.Minion) return _bosses[i];
+                }
+
+                return null;
+            }
+        }
+
+        public bool BossActive
+        {
+            get
+            {
+                for (int i = 0; i < _bosses.Count; i++)
+                {
+                    if (_bosses[i].Alive && !_bosses[i].Def.Minion) return true;
+                }
+
+                return false;
+            }
+        }
 
         public void StartWave(int wave)
         {
@@ -475,6 +511,8 @@ namespace Proto
             }
 
             if (_balance.BossEveryWaves > 0 && wave % _balance.BossEveryWaves == 0) SpawnBoss(wave);
+
+            SpawnMinions(wave);
 
             OnWaveStarted?.Invoke(wave);
         }
@@ -529,41 +567,107 @@ namespace Proto
 
         public System.Action<Vector3> OnBossDied;
 
-        void SpawnBoss(int wave)
+        /// <summary>
+        /// Berapa ular yang datang di wave ini. Bertambah satu tiap empat kali kemunculan boss,
+        /// jadi wave 5 dapat satu dan wave 40 dapat dua — naik pelan, karena tiap ular tambahan
+        /// menggandakan tekanannya, bukan menambahnya.
+        /// </summary>
+        int BossCountFor(int wave)
         {
-            var def = _db.Boss;
-            if (def == null) return;
+            int every = Mathf.Max(1, _balance.BossEveryWaves);
+            return Mathf.Clamp(1 + wave / (every * 4), 1, 4);
+        }
 
-            Boss = new BossSnake();
+        /// <summary>Boss sungguhan: satu jenis acak dari yang bukan anak buah.</summary>
+        BossDefinition RollBossKind()
+        {
+            var kinds = _db.BossKinds;
+            BossDefinition picked = null;
+            int seen = 0;
 
-            // Muncul di luar layar, arah acak, sama seperti musuh biasa — tapi lebih jauh, supaya
-            // seluruh badannya sempat terurai sebelum terlihat.
+            for (int i = 0; i < kinds.Count; i++)
+            {
+                if (kinds[i] == null || kinds[i].Minion) continue;
+
+                // Reservoir sampling: satu lintasan, tanpa daftar sementara.
+                seen++;
+                if (Random.Range(0, seen) == 0) picked = kinds[i];
+            }
+
+            return picked;
+        }
+
+        /// <summary>
+        /// Anak buah: kelabang kecil yang ikut wave biasa. Memakai seluruh sistem boss apa adanya,
+        /// jadi mereka menyelam dan menyembur persis seperti yang besar — cuma lebih kecil, lebih
+        /// rapuh, dan tidak diumumkan.
+        /// </summary>
+        void SpawnMinions(int wave)
+        {
+            var kinds = _db.BossKinds;
+
+            for (int k = 0; k < kinds.Count; k++)
+            {
+                var def = kinds[k];
+                if (def == null || !def.Minion || wave < def.MinionFromWave) continue;
+
+                int count = def.MinionCount + Mathf.Max(0, wave - def.MinionFromWave) / 6;
+                count = Mathf.Clamp(count, 1, 8);
+
+                for (int i = 0; i < count; i++) Hatch(def, wave);
+            }
+        }
+
+        void Hatch(BossDefinition def, int wave)
+        {
+            var snake = new BossSnake();
+
             Vector3 at = SpawnPoint(1f);
             at.y = 0.9f;
 
-            Boss.Begin(def, at, _balance.EnemyHpFor(wave) * def.HpMultiplier);
-            SyncBossSegments();
+            snake.Begin(def, at, _balance.EnemyHpFor(wave) * def.HpMultiplier);
+            snake.OnSpit += (from, dir) => SpitShot(snake, from, dir, wave);
 
-            OnBossSpawned?.Invoke(Boss);
+            _bosses.Add(snake);
+            SyncBossSegments(snake);
+
+            if (!def.Minion) OnBossSpawned?.Invoke(snake);
+        }
+
+        void SpawnBoss(int wave)
+        {
+            var def = RollBossKind();
+            if (def == null) return;
+
+            int count = BossCountFor(wave);
+
+            for (int i = 0; i < count; i++)
+            {
+                Hatch(def, wave);
+            }
         }
 
         void TickBoss(float dt)
         {
-            if (Boss == null) return;
-
-            if (!Boss.Alive)
+            for (int i = _bosses.Count - 1; i >= 0; i--)
             {
-                RetireBoss();
-                return;
+                var snake = _bosses[i];
+
+                if (!snake.Alive)
+                {
+                    RetireBoss(snake);
+                    _bosses.RemoveAt(i);
+                    continue;
+                }
+
+                snake.Tick(dt, _player.position, damage =>
+                {
+                    _caster.TakeHit(damage);
+                    if (snake.Def.Curse != null) _caster.ApplyDebuff(snake.Def.Curse);
+                });
+
+                SyncBossSegments(snake);
             }
-
-            Boss.Tick(dt, _player.position, damage =>
-            {
-                _caster.TakeHit(damage);
-                if (Boss.Def.Curse != null) _caster.ApplyDebuff(Boss.Def.Curse);
-            });
-
-            SyncBossSegments();
         }
 
         /// <summary>
@@ -572,10 +676,10 @@ namespace Proto
         /// Panjangnya diturunkan dari HP, jadi memendeknya badan BUKAN efek terpisah yang perlu
         /// diurus — ia jatuh sendiri dari satu perhitungan, dan mustahil melenceng dari HP aslinya.
         /// </summary>
-        void SyncBossSegments()
+        void SyncBossSegments(BossSnake boss)
         {
-            var segments = Boss.Segments;
-            int wanted = Boss.WantedSegments();
+            var segments = boss.Segments;
+            int wanted = boss.WantedSegments();
 
             while (segments.Count > wanted)
             {
@@ -604,10 +708,10 @@ namespace Proto
                 for (int i = 0; i < StatusSlots; i++) fresh.Slots[i].Def = -1;
 
                 fresh.Kind = null;
-                fresh.Boss = Boss;
+                fresh.Boss = boss;
                 fresh.Alive = true;
                 fresh.Hp = 1f;
-                fresh.MaxHp = Boss.MaxHp;
+                fresh.MaxHp = boss.MaxHp;
                 fresh.Speed = 0f;
                 fresh.Flank = 0f;
                 fresh.LiftTimer = 0f;
@@ -618,21 +722,21 @@ namespace Proto
                 segments.Add(fresh);
             }
 
-            var def = Boss.Def;
+            var def = boss.Def;
 
             for (int i = 0; i < segments.Count; i++)
             {
                 var e = segments[i];
 
                 e.BossIndex = i;
-                e.Pos = Boss.SegmentPoint(i);
+                e.Pos = boss.SegmentPoint(i);
                 e.GroundY = e.Pos.y;
 
                 // Meruncing ke belakang, jadi kepala dan ekor bisa dibedakan dari siluetnya saja.
                 float t = segments.Count <= 1 ? 0f : i / (float)(segments.Count - 1);
                 e.Scale = i == 0 ? def.HeadScale : Mathf.Lerp(def.HeadScale * 0.72f, def.TailScale, t);
 
-                Vector3 ahead = i == 0 ? Boss.HeadPos : Boss.SegmentPoint(i - 1);
+                Vector3 ahead = i == 0 ? boss.HeadPos : boss.SegmentPoint(i - 1);
                 Vector3 forward = ahead - e.Pos;
                 if (forward.sqrMagnitude > 0.0001f) e.Yaw = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
 
@@ -640,9 +744,9 @@ namespace Proto
             }
         }
 
-        void RetireBoss()
+        void RetireBoss(BossSnake boss)
         {
-            var segments = Boss.Segments;
+            var segments = boss.Segments;
 
             for (int i = 0; i < segments.Count; i++)
             {
@@ -651,9 +755,8 @@ namespace Proto
                 OnKill?.Invoke(segments[i].Pos);
             }
 
-            OnBossDied?.Invoke(Boss.HeadPos);
-            Boss.End();
-            Boss = null;
+            OnBossDied?.Invoke(boss.HeadPos);
+            boss.End();
         }
 
         /// <summary>
@@ -662,11 +765,8 @@ namespace Proto
         /// </summary>
         public void ClearField()
         {
-            if (Boss != null)
-            {
-                Boss.End();
-                Boss = null;
-            }
+            for (int i = 0; i < _bosses.Count; i++) _bosses[i].End();
+            _bosses.Clear();
 
             for (int i = 0; i < _pool.Count; i++)
             {
@@ -1041,7 +1141,7 @@ namespace Proto
 
                 if (sqr < 0.85f)
                 {
-                    _caster.TakeDamage(_balance.EnemyContactDps * dt);
+                    _caster.TakeDamage(_balance.ContactDpsFor(Wave) * dt);
 
                     // Refreshed on every frame of contact, so a curse lasts as long as you are in
                     // the crowd plus its duration. Getting out is the counter-play; resistance and
@@ -1137,6 +1237,10 @@ namespace Proto
             public float Life;
             public float Damage;
             public int Tint;
+
+            /// <summary>Kutukan yang ditempel ke pemain saat kena. Null untuk peluru biasa.</summary>
+            public BuffDefinition Curse;
+
             public bool Active;
         }
 
@@ -1169,11 +1273,47 @@ namespace Proto
 
             shot.Pos = from.Pos;
             shot.Velocity = aim.normalized * speed;
-            shot.Damage = from.Kind.AttackDamage;
+            shot.Damage = from.Kind.AttackDamage * _balance.EnemyDamageScale(Wave);
             shot.Tint = _shotTint.TryGetValue(from.Kind, out int tint) ? tint : 0;
+            shot.Curse = null;
 
             // Just past its own range, so a shot the player outran expires instead of chasing.
             shot.Life = from.Kind.PreferredRange * 1.5f / speed;
+            shot.Active = true;
+        }
+
+        /// <summary>
+        /// Semburan racun boss. Memakai kolam peluru yang sama dengan penembak biasa: pelurunya
+        /// sudah punya tabrakan, penggambaran instanced dan umur sendiri, jadi menulis jalur baru
+        /// cuma akan menduplikasi tiga hal yang sudah benar.
+        /// </summary>
+        void SpitShot(BossSnake boss, Vector3 from, Vector3 dir, int wave)
+        {
+            var def = boss.Def;
+
+            Shot shot = null;
+            for (int i = 0; i < _shots.Count; i++)
+            {
+                if (_shots[i].Active) continue;
+                shot = _shots[i];
+                break;
+            }
+
+            if (shot == null)
+            {
+                if (_shots.Count >= MaxShots) return;
+                shot = new Shot();
+                _shots.Add(shot);
+            }
+
+            float speed = Mathf.Max(1f, def.SpitSpeed);
+
+            shot.Pos = from;
+            shot.Velocity = dir * speed;
+            shot.Damage = def.SpitDamage * _balance.EnemyDamageScale(wave);
+            shot.Tint = 0;
+            shot.Curse = def.SpitCurse;
+            shot.Life = 2.4f;
             shot.Active = true;
         }
 
@@ -1205,6 +1345,11 @@ namespace Proto
                 // A burst, not a per-frame trickle: TakeDamage subtracts defence scaled by delta
                 // time, which is right for contact and nearly nothing against a single hit.
                 _caster.TakeHit(shot.Damage);
+
+                // Racun kelabang menempel ke PEMAIN lewat kutukan, bukan lewat ailment musuh —
+                // ailment tinggal di musuh, dan pemain punya jalur debuff-nya sendiri.
+                if (shot.Curse != null) _caster.ApplyDebuff(shot.Curse);
+
                 shot.Active = false;
             }
         }
@@ -1223,6 +1368,11 @@ namespace Proto
             {
                 var e = _pool[i];
                 if (!e.Alive) continue;
+
+                // Ruas boss yang sedang menyelam tidak digambar. Menggambarnya di bawah lantai
+                // saja tidak cukup: lantai tidak menutupi apa pun dari kamera yang menunduk, dan
+                // yang terlihat adalah kelabang yang berenang di dalam tanah kaca.
+                if (e.Boss != null && e.Pos.y < BuriedDepth) continue;
 
                 _renderer.Add(e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale);
             }
@@ -1473,6 +1623,11 @@ namespace Proto
             int points = 1, bool allowReaction = true, string sourceName = null, Vector3? origin = null)
         {
             if (e == null || !e.Alive) return;
+
+            // Yang sedang di bawah tanah kebal. Dicek di sini, bukan di tiap pemanggil, karena
+            // SEMUA jalur damage -- area, rantai, peluru, DoT, detonator -- bermuara di fungsi ini.
+            // Satu tempat berarti tidak ada skill yang bisa lupa.
+            if (e.Boss != null && e.Pos.y < BuriedDepth) return;
 
             float dealt = damage * DamageTakenMultiplier(e);
 

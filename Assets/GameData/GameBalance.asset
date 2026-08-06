@@ -21,8 +21,8 @@ MonoBehaviour:
   BaseManaRegen: 13
   BaseHpRegen: 2
   HealPerWaveClear: 20
-  BaseMoveSpeed: 3.2
-  DangerRadius: 6
+  BaseMoveSpeed: 2.8
+  DangerRadius: 3.5
   TurnRate: 6
   ArenaHalfX: 40
   ArenaHalfZ: 30
@@ -34,8 +34,8 @@ MonoBehaviour:
   WaveRampEnd: 1.6
   EnemyHpBase: 18
   EnemyHpPerWave: 4
-  EnemySpeedMin: 1.35
-  EnemySpeedMax: 1.6
+  EnemySpeedMin: 2
+  EnemySpeedMax: 2.4
   EnemySpeedPerWave: 0.025
   EnemyContactDps: 10
   EnemiesBase: 12
@@ -43,12 +43,11 @@ MonoBehaviour:
   EnemyCountGrowth: 1.05
   SurgeCountMultiplier: 1.25
   ClosingSpeedMultiplier: 1
-  ClosingTimeout: 25
   SpawnBoundsX: 24
   SpawnBoundsZ: 15.5
   WaveOpenerCount: 9
   WaveOpenerDistance: 0.85
-  BossEveryWaves: 10
+  BossEveryWaves: 5
   BiomeEveryWaves: 5
   CameraDeadZone: 0.22
   EnemySeparation: 1.3
