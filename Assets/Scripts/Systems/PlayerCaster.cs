@@ -301,6 +301,9 @@ namespace Proto
         /// <summary>Saklar curang. Null di build normal, dan setiap pembacaan lewat propertinya.</summary>
         public DebugConfig Cheats;
 
+        /// <summary>Khusus ruang uji: buku tetap menembak walau tidak ada wave yang berjalan.</summary>
+        public bool CastWithoutWave;
+
         float BuffDamageMul => (Cheats != null ? Cheats.DamageScale : 1f) *
                                Mathf.Max(0.05f, 1f + _buffStats[(int)StatKind.DamagePct]
                                                   + _debuffStats[(int)StatKind.DamagePct]
@@ -457,7 +460,10 @@ namespace Proto
             }
 
             // Spells only fire while a wave is running â€” between waves the book goes quiet.
-            if (Alive && _enemies != null && _enemies.WaveActive) TickSpells(dt);
+            //
+            // Ruang uji tidak punya wave sama sekali, dan menyalakan wave palsu di sana berarti
+            // gerombolan sungguhan ikut berdatangan menimpa boneka yang sedang diamati.
+            if (Alive && _enemies != null && (_enemies.WaveActive || CastWithoutWave)) TickSpells(dt);
 
             TickBuffs(dt);
             TickProjectiles(dt);
@@ -1258,6 +1264,9 @@ namespace Proto
             Drain(amount * (1f - reduction));
         }
 
+        /// <summary>Raised saat damage benar-benar menembus. Tidak menyala untuk yang tertahan perisai.</summary>
+        public System.Action OnHurt;
+
         void Drain(float amount)
         {
             if (Cheats != null && Cheats.CheatInvulnerable) return;
@@ -1274,6 +1283,8 @@ namespace Proto
             }
 
             Hp -= amount;
+            OnHurt?.Invoke();
+
             if (Hp > 0f) return;
 
             Hp = 0f;

@@ -18,6 +18,9 @@ namespace Proto
         [Tooltip("Dipakai bareng scene menu, supaya dua-duanya tidak pernah beda cahaya.")]
         [SerializeField] SceneLook _look;
 
+        [Tooltip("Wajah arena, dipakai bergantian tiap beberapa wave. Kosong = lantai polos.")]
+        [SerializeField] BiomeDefinition[] _biomes;
+
         [Header("Debug")]
         [Tooltip("Saklar curang buat rekaman & tes. Boleh dikosongkan — dan aset ini pun tidak " +
                  "berefek apa pun sampai gerbang 'Enabled' di dalamnya dinyalakan.")]
@@ -42,8 +45,8 @@ namespace Proto
 
             var cam = BuildCamera();
             BuildVolume();
-            BuildLight();
-            BuildGround();
+            var sun = BuildLight();
+            var ground = BuildGround();
 
             var playerGo = BuildPlayer();
 
@@ -78,11 +81,49 @@ namespace Proto
             // pemain akan menetaskan musuh di dalam layar, di sisi yang barusan ditinggalkan.
             enemies.SetSpawnAnchor(_rig);
 
+            // Lantai TIDAK ikut kamera. Arenanya berbatas lagi, dan tepi lantai itulah yang
+            // membuat dindingnya terlihat — tanpa itu pemain menabrak batas tak kasat mata dan
+            // yang terbaca cuma kontrol yang macet.
+            if (_biomes != null && _biomes.Length > 0)
+            {
+                var dresser = new GameObject("Biome").AddComponent<BiomeDresser>();
+                dresser.transform.SetParent(transform, false);
+                dresser.Init(_balance, _biomes, sun, cam, ground, _look, _rig);
+
+                enemies.OnWaveStarted += dresser.OnWaveStarted;
+            }
+
+            var audio = new GameObject("Audio").AddComponent<AudioDirector>();
+            audio.transform.SetParent(transform, false);
+            audio.Init(GameSettings.Load().SfxVolume);
+
             // Burst radius drives the kick, so a screen-clearing reaction outweighs a small one.
-            enemies.OnReaction += (at, reaction) => shake.Add(0.16f + reaction.BurstRadius * 0.045f);
+            enemies.OnReaction += (at, reaction) =>
+            {
+                shake.Add(0.16f + reaction.BurstRadius * 0.045f);
+                audio.Play(AudioDirector.Sound.Reaction);
+            };
 
             // Single-target casts stay quiet; only the ones that cover ground get a nudge.
-            caster.OnCast += inst => { if (IsHeavy(inst.Def.Kind)) shake.Add(0.07f); };
+            caster.OnCast += inst =>
+            {
+                bool heavy = IsHeavy(inst.Def.Kind);
+                if (heavy) shake.Add(0.07f);
+
+                // Skill besar dan skill kecil tidak boleh berbunyi sama. Nada yang lebih rendah
+                // untuk yang berat adalah cara termurah membuat papan yang penuh tetap terbaca
+                // lewat telinga saja.
+                audio.Play(heavy ? AudioDirector.Sound.Blast : AudioDirector.Sound.Cast,
+                    heavy ? 0.85f : 0.5f, heavy ? 0.9f : 1.15f);
+            };
+
+            enemies.OnKill += _ => audio.Play(AudioDirector.Sound.Death, 0.35f);
+            enemies.OnWaveStarted += _ => audio.Play(AudioDirector.Sound.WaveStart, 0.8f);
+
+            // Satu-satunya suara yang tidak pernah diredam dan tidak pernah dijeda: kedatangan
+            // boss harus terdengar bahkan di tengah tiga ratus musuh yang meledak.
+            enemies.OnBossSpawned += _ => audio.Play(AudioDirector.Sound.BossRoar, 1f);
+            enemies.OnBossDied += _ => audio.Play(AudioDirector.Sound.BossRoar, 1f, 0.6f);
 
             // Enemies used to just wink out of existence. A pop on death is what makes clearing a
             // pack read as an event instead of a disappearance.
@@ -91,14 +132,20 @@ namespace Proto
             // Charge generation lives on the kill, so "collect them by fighting" is literal.
             enemies.OnKill += caster.OnEnemyKilled;
 
-            // The end-of-wave sweep pops too, so the board clearing reads as an event rather than
-            // as everything quietly vanishing.
-            enemies.OnSweep += caster.DeathBurst;
-
             var uiGo = new GameObject("GrimoireUI");
             uiGo.transform.SetParent(transform, false);
             var ui = uiGo.AddComponent<GrimoireUI>();
             ui.Init(caster, enemies, cam, _database, _balance);
+
+            // Diumumkan lewat banner yang sama dengan reaksi, bukan lewat widget baru: pemain
+            // sudah tahu harus melihat ke mana saat sesuatu penting terjadi.
+            enemies.OnBossSpawned += boss =>
+                ui.Announce(boss.Def.DisplayName.ToUpperInvariant(), new Color(1f, 0.35f, 0.3f));
+
+            enemies.OnBossDied += at =>
+                ui.Announce("SLAIN", new Color(1f, 0.85f, 0.4f), at);
+
+            caster.OnHurt += () => audio.Play(AudioDirector.Sound.Hit, 0.6f, 0.8f);
         }
 
         Transform _rig;
@@ -144,23 +191,26 @@ namespace Proto
             volume.sharedProfile = _look.PostProcess;
         }
 
-        void BuildLight()
+        Light BuildLight()
         {
             var go = new GameObject("Sun");
             go.transform.SetParent(transform, false);
-            _look.ApplySun(go.AddComponent<Light>());
+
+            var sun = go.AddComponent<Light>();
+            _look.ApplySun(sun);
+            return sun;
         }
 
-        void BuildGround()
+        Renderer BuildGround()
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Plane);
             go.name = "Ground";
             go.transform.SetParent(transform, false);
 
-            // Diukur dari arena, bukan angka tetap. Plane bawaan Unity 10 unit, jadi skalanya
-            // seperlimanya. Marginnya untuk musuh yang lahir di luar arena — tanpa itu mereka
-            // berjalan masuk sambil melayang di atas kekosongan.
-            float margin = 12f;
+            // Diukur dari arena. Plane bawaan Unity 10 unit, jadi skalanya seperlimanya.
+            // Marginnya untuk musuh yang lahir di luar arena — tanpa itu mereka berjalan masuk
+            // sambil melayang di atas kekosongan.
+            float margin = 14f;
             go.transform.localScale = new Vector3(
                 (_balance.ArenaHalfX + margin) * 0.2f, 1f, (_balance.ArenaHalfZ + margin) * 0.2f);
 
@@ -173,6 +223,7 @@ namespace Proto
             // The floor is what the long shadows fall on — that is most of the look.
             r.receiveShadows = true;
             r.shadowCastingMode = ShadowCastingMode.Off;
+            return r;
         }
 
         GameObject BuildPlayer()

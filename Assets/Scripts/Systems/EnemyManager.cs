@@ -90,6 +90,15 @@ namespace Proto
             /// <summary>Sisa dorongan dari ledakan, meluruh sendiri. Bukan fisika, cuma inersia.</summary>
             public Vector3 Knock;
 
+            /// <summary>
+            /// Ular yang memiliki ruas ini, kalau ada. Terisi = damage masuk ke kolam HP boss,
+            /// ruasnya tidak pernah mati sendiri, dan gerakannya disetir boss bukan oleh AI swarm.
+            /// </summary>
+            public BossSnake Boss;
+
+            /// <summary>Urutan ruas dari kepala. 0 = kepala.</summary>
+            public int BossIndex;
+
             public readonly StatusSlot[] Slots = NewSlots();
 
             static StatusSlot[] NewSlots()
@@ -126,7 +135,6 @@ namespace Proto
         public System.Action<Vector3> OnKill;
 
         /// <summary>Raised for each enemy removed by the end-of-wave sweep. Pays no reward.</summary>
-        public System.Action<Vector3> OnSweep;
 
         /// <summary>Raised with (position, reaction) so the UI can flash and shout its name.</summary>
         public System.Action<Vector3, ReactionDefinition> OnReaction;
@@ -166,7 +174,6 @@ namespace Proto
         Vector3 _lastPlayerPos;
         float _spawnRate;
         float _spawnBudget;
-        float _closingElapsed;
         int[] _statusCounts = new int[0];
 
         // ---------- spatial hash ----------
@@ -186,14 +193,48 @@ namespace Proto
         const float HashCell = 2f;
         const float HashExtent = HashSide * HashCell * 0.5f;
 
-        readonly int[] _cellHead = new int[HashSide * HashSide];
+        readonly int[] _cellHead = NewHeads();
         readonly int[] _cellCount = new int[HashSide * HashSide];
         int[] _nextInCell = new int[0];
 
-        int CellIndex(Vector3 p)
+        /// <summary>
+        /// Sel kosong ditandai -1, dan itu harus benar SEJAK LAHIR, bukan sejak
+        /// <see cref="RebuildHash"/> pertama.
+        ///
+        /// Array int di C# lahir berisi nol, dan nol adalah indeks musuh yang sah. Jadi hash yang
+        /// belum pernah dibangun mengaku setiap selnya berpenghuni musuh nomor 0, lalu rantainya
+        /// dibaca lewat <c>_nextInCell</c> yang panjangnya masih nol — IndexOutOfRange tiap frame,
+        /// di dalam Update, jadi seluruh gerakan swarm mati diam-diam tanpa satu pun musuh hilang.
+        ///
+        /// Selama ini tidak pernah meletus cuma karena wave selalu dimulai dari UI, beberapa frame
+        /// setelah Update pertama. Begitu ada yang memanggil StartWave lebih awal, ia meletus.
+        /// </summary>
+        static int[] NewHeads()
         {
-            int cx = Mathf.Clamp((int)((p.x + HashExtent) / HashCell), 0, HashSide - 1);
-            int cz = Mathf.Clamp((int)((p.z + HashExtent) / HashCell), 0, HashSide - 1);
+            var heads = new int[HashSide * HashSide];
+            for (int i = 0; i < heads.Length; i++) heads[i] = -1;
+            return heads;
+        }
+
+        /// <summary>
+        /// Titik acuan hash, mengikuti pemain dan dikancing ke kelipatan sel.
+        ///
+        /// Hash-nya cuma seluas 128x128 unit, dan dulu ia terpaku di titik nol dunia. Selama arena
+        /// masih berbatas itu tidak masalah. Begitu lapangannya tak terbatas, pemain yang berjalan
+        /// ke x=300 membuat SELURUH swarm terjepit ke sel tepi: gaya pisah berhenti bekerja,
+        /// BestCluster menunjuk ke tempat yang salah, dan tidak ada satu pun error yang muncul.
+        ///
+        /// Dikancing ke kelipatan sel, bukan mengikuti pemain mulus, supaya isi sel tidak bergeser
+        /// setengah sel tiap frame dan tetangga tidak berkedip masuk-keluar.
+        /// </summary>
+        Vector3 _hashOrigin;
+
+        int CellIndex(Vector3 p) => CellIndex(p.x, p.z);
+
+        int CellIndex(float x, float z)
+        {
+            int cx = Mathf.Clamp((int)((x - _hashOrigin.x + HashExtent) / HashCell), 0, HashSide - 1);
+            int cz = Mathf.Clamp((int)((z - _hashOrigin.z + HashExtent) / HashCell), 0, HashSide - 1);
             return cz * HashSide + cx;
         }
 
@@ -204,6 +245,15 @@ namespace Proto
         /// </summary>
         void RebuildHash()
         {
+            // Dipindahkan ke sekitar pemain SEBELUM apa pun dimasukkan, jadi tiap frame hash-nya
+            // memang meliputi tempat yang sedang dimainkan.
+            if (_player != null)
+            {
+                _hashOrigin = new Vector3(
+                    Mathf.Round(_player.position.x / HashCell) * HashCell, 0f,
+                    Mathf.Round(_player.position.z / HashCell) * HashCell);
+            }
+
             if (_nextInCell.Length < _pool.Count)
             {
                 System.Array.Resize(ref _nextInCell, Mathf.Max(64, _pool.Count * 2));
@@ -240,8 +290,8 @@ namespace Proto
         /// </summary>
         Vector3 Separation(Enemy self, Vector3 pos, float radius)
         {
-            int cx = Mathf.Clamp((int)((pos.x + HashExtent) / HashCell), 0, HashSide - 1);
-            int cz = Mathf.Clamp((int)((pos.z + HashExtent) / HashCell), 0, HashSide - 1);
+            int cx = Mathf.Clamp((int)((pos.x - _hashOrigin.x + HashExtent) / HashCell), 0, HashSide - 1);
+            int cz = Mathf.Clamp((int)((pos.z - _hashOrigin.z + HashExtent) / HashCell), 0, HashSide - 1);
 
             int x0 = Mathf.Max(0, cx - 1), x1 = Mathf.Min(HashSide - 1, cx + 1);
             int z0 = Mathf.Max(0, cz - 1), z1 = Mathf.Min(HashSide - 1, cz + 1);
@@ -379,8 +429,25 @@ namespace Proto
                 palette.Add(kind.Tint);
             }
 
+            // Dua slot terakhir milik boss: kepala dan badan. Kepala dibedakan warnanya karena
+            // ITU satu-satunya bagian yang menggigit — pemain harus bisa menemukannya dalam
+            // sekejap di antara dua puluh ruas yang bentuknya sama persis.
+            _bossHeadTint = palette.Count;
+            palette.Add(_db.Boss != null ? _db.Boss.HeadColor : new Color(0.85f, 0.25f, 0.35f));
+
+            _bossBodyTint = palette.Count;
+            palette.Add(_db.Boss != null ? _db.Boss.BodyColor : new Color(0.45f, 0.18f, 0.3f));
+
             return palette.ToArray();
         }
+
+        int _bossHeadTint;
+        int _bossBodyTint;
+
+        /// <summary>Ular yang sedang hidup, atau null. Satu saja — dua boss bukan boss.</summary>
+        public BossSnake Boss { get; private set; }
+
+        public bool BossActive => Boss != null && Boss.Alive;
 
         public void StartWave(int wave)
         {
@@ -396,7 +463,6 @@ namespace Proto
 
             _spawnRate = _balance.SpawnRateFor(wave);
             _spawnBudget = 0f;
-            _closingElapsed = 0f;
 
             WaveActive = true;
 
@@ -407,6 +473,10 @@ namespace Proto
             {
                 if (SpawnOne(_balance.WaveOpenerDistance)) PendingSpawns--;
             }
+
+            if (_balance.BossEveryWaves > 0 && wave % _balance.BossEveryWaves == 0) SpawnBoss(wave);
+
+            OnWaveStarted?.Invoke(wave);
         }
 
         void Update()
@@ -418,33 +488,236 @@ namespace Proto
 
             if (WaveActive && !Closing && PendingSpawns <= 0) Closing = true;
 
+            // Dijalankan SEBELUM TickEnemies supaya posisi ruas yang dipakai untuk damage dan
+            // pengecekan jarak adalah posisi frame ini, bukan sisa frame kemarin.
+            TickBoss(dt);
+
             TickSpawning(dt);
             TickEnemies(dt);
 
             if (!WaveActive || !Closing) return;
 
-            if (AliveCount == 0)
+            // Wave tidak boleh dinyatakan beres selama ularnya masih hidup. Tanpa penjaga ini,
+            // menghabiskan gerombolan biasa akan menutup wave sementara boss masih berkeliling —
+            // dan papan terbuka kembali di tengah pertarungan yang belum selesai.
+            if (AliveCount == 0 && !BossActive)
             {
                 FinishWave();
                 return;
             }
 
-            // Safety valve only. A loadout with no damage at all — Heal skills and nothing else —
-            // can never clear the field, and without this the wave hangs forever with no way out.
-            _closingElapsed += dt;
-            if (_closingElapsed < _balance.ClosingTimeout) return;
+            // Wave berakhir HANYA kalau lapangannya benar-benar bersih. Tidak ada jam.
+            //
+            // Dulu di sini ada katup pengaman: setelah `ClosingTimeout` detik, sisa musuh dihapus
+            // dan wave dinyatakan beres. Alasannya nyata — build tanpa damage sama sekali tidak
+            // akan pernah bisa membersihkan lapangan — tapi harganya jauh lebih mahal dari
+            // masalah yang dipecahkannya: pemain yang sedang menang tiba-tiba kehilangan sisa
+            // musuh yang sudah susah payah dikejar, dan kemenangan itu berhenti terasa miliknya.
+            //
+            // Build tanpa damage sekarang memang menggantung, dan itu jawaban yang benar: buku
+            // yang tidak bisa membunuh apa pun adalah build yang kalah, bukan keadaan yang perlu
+            // diselamatkan diam-diam oleh jam.
+        }
+
+        // ---------- boss ----------
+
+        /// <summary>Raised dengan nomor wave, tepat saat wave itu dibuka.</summary>
+        public System.Action<int> OnWaveStarted;
+
+        /// <summary>Raised sekali saat ular muncul, dan sekali saat mati.</summary>
+        public System.Action<BossSnake> OnBossSpawned;
+
+        public System.Action<Vector3> OnBossDied;
+
+        void SpawnBoss(int wave)
+        {
+            var def = _db.Boss;
+            if (def == null) return;
+
+            Boss = new BossSnake();
+
+            // Muncul di luar layar, arah acak, sama seperti musuh biasa — tapi lebih jauh, supaya
+            // seluruh badannya sempat terurai sebelum terlihat.
+            Vector3 at = SpawnPoint(1f);
+            at.y = 0.9f;
+
+            Boss.Begin(def, at, _balance.EnemyHpFor(wave) * def.HpMultiplier);
+            SyncBossSegments();
+
+            OnBossSpawned?.Invoke(Boss);
+        }
+
+        void TickBoss(float dt)
+        {
+            if (Boss == null) return;
+
+            if (!Boss.Alive)
+            {
+                RetireBoss();
+                return;
+            }
+
+            Boss.Tick(dt, _player.position, damage =>
+            {
+                _caster.TakeHit(damage);
+                if (Boss.Def.Curse != null) _caster.ApplyDebuff(Boss.Def.Curse);
+            });
+
+            SyncBossSegments();
+        }
+
+        /// <summary>
+        /// Menyamakan jumlah dan posisi ruas dengan keadaan ular sekarang.
+        ///
+        /// Panjangnya diturunkan dari HP, jadi memendeknya badan BUKAN efek terpisah yang perlu
+        /// diurus — ia jatuh sendiri dari satu perhitungan, dan mustahil melenceng dari HP aslinya.
+        /// </summary>
+        void SyncBossSegments()
+        {
+            var segments = Boss.Segments;
+            int wanted = Boss.WantedSegments();
+
+            while (segments.Count > wanted)
+            {
+                int last = segments.Count - 1;
+                var gone = segments[last];
+
+                gone.Alive = false;
+                gone.Boss = null;
+                segments.RemoveAt(last);
+
+                // Ruas yang lepas tetap memercik. Badan yang menyusut diam-diam tidak terbaca
+                // sebagai kemajuan; percikannya yang memberi tahu pemain bahwa ia sedang menang.
+                OnKill?.Invoke(gone.Pos);
+            }
+
+            while (segments.Count < wanted)
+            {
+                var fresh = GetFree();
+                if (fresh == null) break;
+
+                if (_nextInCell.Length < _pool.Count)
+                {
+                    System.Array.Resize(ref _nextInCell, Mathf.Max(64, _pool.Count * 2));
+                }
+
+                for (int i = 0; i < StatusSlots; i++) fresh.Slots[i].Def = -1;
+
+                fresh.Kind = null;
+                fresh.Boss = Boss;
+                fresh.Alive = true;
+                fresh.Hp = 1f;
+                fresh.MaxHp = Boss.MaxHp;
+                fresh.Speed = 0f;
+                fresh.Flank = 0f;
+                fresh.LiftTimer = 0f;
+                fresh.Knock = Vector3.zero;
+                fresh.ReactionLock = 0f;
+                fresh.Phase = segments.Count * 0.4f;
+
+                segments.Add(fresh);
+            }
+
+            var def = Boss.Def;
+
+            for (int i = 0; i < segments.Count; i++)
+            {
+                var e = segments[i];
+
+                e.BossIndex = i;
+                e.Pos = Boss.SegmentPoint(i);
+                e.GroundY = e.Pos.y;
+
+                // Meruncing ke belakang, jadi kepala dan ekor bisa dibedakan dari siluetnya saja.
+                float t = segments.Count <= 1 ? 0f : i / (float)(segments.Count - 1);
+                e.Scale = i == 0 ? def.HeadScale : Mathf.Lerp(def.HeadScale * 0.72f, def.TailScale, t);
+
+                Vector3 ahead = i == 0 ? Boss.HeadPos : Boss.SegmentPoint(i - 1);
+                Vector3 forward = ahead - e.Pos;
+                if (forward.sqrMagnitude > 0.0001f) e.Yaw = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+
+                Paint(e);
+            }
+        }
+
+        void RetireBoss()
+        {
+            var segments = Boss.Segments;
+
+            for (int i = 0; i < segments.Count; i++)
+            {
+                segments[i].Alive = false;
+                segments[i].Boss = null;
+                OnKill?.Invoke(segments[i].Pos);
+            }
+
+            OnBossDied?.Invoke(Boss.HeadPos);
+            Boss.End();
+            Boss = null;
+        }
+
+        /// <summary>
+        /// Mengosongkan lapangan tanpa menghitungnya sebagai kill. Buat ruang uji: menyusun ulang
+        /// boneka tidak boleh mengotori Kills atau memicu drop.
+        /// </summary>
+        public void ClearField()
+        {
+            if (Boss != null)
+            {
+                Boss.End();
+                Boss = null;
+            }
 
             for (int i = 0; i < _pool.Count; i++)
             {
                 var e = _pool[i];
-                if (!e.Alive) continue;
-
                 e.Alive = false;
-                OnSweep?.Invoke(e.Pos);
+                e.Boss = null;
+                e.LiftTimer = 0f;
+                e.Knock = Vector3.zero;
             }
 
             AliveCount = 0;
-            FinishWave();
+            RebuildHash();
+        }
+
+        /// <summary>
+        /// Boneka latihan: berdiri diam di satu titik dan praktis tidak bisa mati.
+        ///
+        /// <c>Hp</c> sengaja jauh di atas <c>MaxHp</c>, dan itu bukan kelalaian. Besar-kecilnya
+        /// angka damage di layar diukur dari porsi HP musuh, jadi boneka ber-HP sejuta akan membuat
+        /// setiap pukulan tampil sebagai angka mungil yang tidak terbaca. Memisahkan keduanya
+        /// memberi boneka yang tahan lama DAN angka yang tetap sebesar musuh sungguhan.
+        /// </summary>
+        public void SpawnDummy(Vector3 at, float hp)
+        {
+            var e = GetFree();
+            if (e == null) return;
+
+            if (_nextInCell.Length < _pool.Count)
+            {
+                System.Array.Resize(ref _nextInCell, Mathf.Max(64, _pool.Count * 2));
+            }
+
+            e.Kind = null;
+            e.Pos = at;
+            e.GroundY = at.y;
+            e.MaxHp = 500f;
+            e.Hp = Mathf.Max(1f, hp);
+            e.Speed = 0f;
+            e.Scale = 1f;
+            e.Flank = 0f;
+            e.AttackTimer = 0f;
+            e.LiftTimer = 0f;
+            e.Knock = Vector3.zero;
+            e.ReactionLock = 0f;
+            e.Phase = Random.Range(0f, Mathf.PI * 2f);
+            e.Yaw = 0f;
+
+            for (int i = 0; i < StatusSlots; i++) e.Slots[i].Def = -1;
+
+            e.Alive = true;
+            Paint(e);
         }
 
         void FinishWave()
@@ -508,10 +781,24 @@ namespace Proto
                 if (kind.Shoots) e.AttackTimer = Random.Range(0f, kind.AttackInterval);
             }
 
+            // Kolom paralel hash harus tumbuh bersama pool, di sini dan bukan cuma di RebuildHash.
+            // Musuh bisa lahir sebelum rebuild pertama, dan yang membaca rantai itu tidak punya
+            // cara tahu bahwa larik indeksnya masih lebih pendek dari pool.
+            if (_nextInCell.Length < _pool.Count)
+            {
+                System.Array.Resize(ref _nextInCell, Mathf.Max(64, _pool.Count * 2));
+            }
+
             e.Hp = e.MaxHp;
             e.GroundY = e.Pos.y;
             e.LiftTimer = 0f;
             e.Knock = Vector3.zero;
+
+            // Slot pool dipakai ulang. Tanpa dibersihkan, musuh biasa yang kebetulan mendapat
+            // slot bekas ruas boss akan mewarisi kepemilikannya: damage-nya mengalir ke kolam HP
+            // ular yang sudah mati, dan musuh itu sendiri tidak pernah bisa dibunuh.
+            e.Boss = null;
+            e.BossIndex = 0;
 
             for (int i = 0; i < StatusSlots; i++) e.Slots[i].Def = -1;
 
@@ -649,7 +936,12 @@ namespace Proto
                         {
                             e.Slots[s].TickTimer = def.TickInterval;
                             float dot = def.DamagePerTickPerPoint * e.Slots[s].Points;
-                            e.Hp -= dot;
+
+                            // Sama seperti damage langsung: DoT di ruas boss masuk ke kolam
+                            // bersama. Kalau tidak, membakar boss malah memutus badannya.
+                            if (e.Boss != null) e.Boss.TakeDamage(dot);
+                            else e.Hp -= dot;
+
                             OnDamage?.Invoke(def.DisplayName, dot);
                             OnEnemyDamaged?.Invoke(e.Pos, dot, e.MaxHp);
                         }
@@ -680,6 +972,12 @@ namespace Proto
                 }
 
                 if (repaint) Paint(e);
+
+                // Ruas boss disetir BossSnake, bukan AI swarm. Dilewati SETELAH ailment sempat
+                // berdenyut — kalau dilewati lebih awal, membakar boss tidak melakukan apa pun —
+                // tapi SEBELUM gaya pisah, jalur serong, lontaran dan damage sentuh, yang
+                // semuanya akan langsung mencabik bentuk ularnya.
+                if (e.Boss != null) continue;
 
                 // Dorongan diproses lebih dulu dan berlaku untuk semua, termasuk yang terangkat.
                 // Kalau tidak, musuh yang dilontarkan sambil diangkat akan menggantung di tempat
@@ -1141,6 +1439,15 @@ namespace Proto
 
             if (strongestIndex < 0)
             {
+                // Ruas boss punya warnanya sendiri, dan kepala beda dari badan: kepala itu
+                // satu-satunya bagian yang menggigit, jadi harus bisa ditemukan sekejap di antara
+                // dua puluh ruas yang siluetnya sama persis.
+                if (e.Boss != null)
+                {
+                    e.Tint = e.BossIndex == 0 ? _bossHeadTint : _bossBodyTint;
+                    return;
+                }
+
                 // No ailment: fall back to whatever kind of enemy it is.
                 e.Tint = e.Kind != null && _archetypeTint.TryGetValue(e.Kind, out int kindTint)
                     ? kindTint
@@ -1168,7 +1475,6 @@ namespace Proto
             if (e == null || !e.Alive) return;
 
             float dealt = damage * DamageTakenMultiplier(e);
-            e.Hp -= dealt;
 
             if (dealt > 0f)
             {
@@ -1179,6 +1485,16 @@ namespace Proto
             if (status != null) ApplyStatus(e, status, duration, points, allowReaction, origin);
             else Paint(e);
 
+            // Ruas boss tidak punya HP sendiri: apa pun yang mengenainya masuk ke satu kolam, dan
+            // ruasnya baru hilang lewat badan yang memendek. Mengurangi HP ruas di sini berarti
+            // ular bisa terputus di tengah, dan ekornya melayang lepas dari kepalanya.
+            if (e.Boss != null)
+            {
+                e.Boss.TakeDamage(dealt);
+                return;
+            }
+
+            e.Hp -= dealt;
             if (e.Hp <= 0f) Kill(e);
         }
 
@@ -1275,8 +1591,8 @@ namespace Proto
             int block = Mathf.Clamp(Mathf.CeilToInt(clusterRadius / HashCell), 1, 4);
 
             int reach = Mathf.Clamp(Mathf.CeilToInt(maxDistance / HashCell), 1, HashSide);
-            int originX = Mathf.Clamp((int)((from.x + HashExtent) / HashCell), 0, HashSide - 1);
-            int originZ = Mathf.Clamp((int)((from.z + HashExtent) / HashCell), 0, HashSide - 1);
+            int originX = Mathf.Clamp((int)((from.x - _hashOrigin.x + HashExtent) / HashCell), 0, HashSide - 1);
+            int originZ = Mathf.Clamp((int)((from.z - _hashOrigin.z + HashExtent) / HashCell), 0, HashSide - 1);
 
             int minX = Mathf.Max(0, originX - reach), maxX = Mathf.Min(HashSide - 1, originX + reach);
             int minZ = Mathf.Max(0, originZ - reach), maxZ = Mathf.Min(HashSide - 1, originZ + reach);

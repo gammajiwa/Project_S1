@@ -17,8 +17,8 @@ MonoBehaviour:
   Stars: 1
   Layer: 1
   Shape: 0
-  Color: {r: 1, g: 0.42, b: 0.15, a: 1}
-  Icon: {fileID: 21300000, guid: 72b6b37412480fe4fbf2ccf6bea384b4, type: 3}
+  Color: {r: 1, g: 1, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: d180da183a755d94eb9800a4224a2293, type: 3}
   Kind: 0
   Element: 0
   BaseDamage: 28

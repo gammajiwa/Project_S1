@@ -254,3 +254,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 70ef89cda000f484e9539c5968a1f3a5, type: 2}
   _heroes:
   - {fileID: 11400000, guid: 0d10ecc59e6b67a4d8814f0e27c6c5be, type: 2}
+  _boss: {fileID: 11400000, guid: 8a44db2e49d5c7c40b41e59e0bce6124, type: 2}

@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4b459bb5e7caa24fa53630e8acbee5e, type: 3}
   m_Name: DebugConfig
   m_EditorClassIdentifier: Assembly-CSharp::Proto.DebugConfig
-  Enabled: 1
-  Invulnerable: 1
-  InfiniteMana: 1
+  Enabled: 0
+  Invulnerable: 0
+  InfiniteMana: 0
   NoCooldowns: 0
-  DamageMultiplier: 3
+  DamageMultiplier: 1
   EnemyHpMultiplier: 1
-  StartAtWave: 25
-  EnemyCountMultiplier: 1.5
+  StartAtWave: 0
+  EnemyCountMultiplier: 1
   FreezeSpawns: 0
   ForceLoadout: {fileID: 0}
   HideUI: 0

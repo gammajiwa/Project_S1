@@ -230,6 +230,7 @@ namespace Proto
             BuildSpellPanel();
             BuildSpeedControl();
             BuildHud();
+            BuildBossBar();
             BuildMeter();
             BuildFloaters();
 
@@ -668,6 +669,58 @@ namespace Proto
             MakeText("SpeedHint", new Vector2(-Margin, -Margin - SpeedButtonH - 4), new Vector2(300, 20), 12,
                 new Color(0.6f, 0.6f, 0.68f), new Vector2(1f, 1f), TextAnchor.UpperRight).text =
                 "kecepatan  (tombol 1/2/3/4)";
+        }
+
+        Image _bossBg;
+        Image _bossFill;
+        Text _bossLabel;
+
+        /// <summary>
+        /// Bar HP boss, di ATAS layar dan lebar penuh.
+        ///
+        /// Panjang badan ularnya memang sudah menceritakan sisa HP-nya, dan itu bacaan yang bagus —
+        /// tapi ia satu-satunya, dan cuma terbaca kalau seluruh ularnya kebetulan sedang di layar.
+        /// Di tengah gerombolan tiga ratus musuh, itu hampir tidak pernah terjadi.
+        /// </summary>
+        void BuildBossBar()
+        {
+            _bossBg = MakeImage("BossBg", new Vector2(-320f, -14f), new Vector2(640f, 22f),
+                new Color(0.1f, 0.03f, 0.05f, 0.92f), new Vector2(0.5f, 1f));
+
+            _bossFill = MakeImage("BossFill", new Vector2(-320f, -14f), new Vector2(640f, 22f),
+                new Color(0.85f, 0.2f, 0.24f, 0.95f), new Vector2(0.5f, 1f));
+            _bossFill.type = Image.Type.Filled;
+            _bossFill.fillMethod = Image.FillMethod.Horizontal;
+            _bossFill.fillOrigin = 0;
+
+            _bossLabel = MakeText("BossLabel", new Vector2(-320f, -15f), new Vector2(640f, 22f), 14,
+                Color.white, new Vector2(0.5f, 1f), TextAnchor.UpperCenter);
+
+            SetBossBar(false);
+        }
+
+        void SetBossBar(bool on)
+        {
+            _bossBg.enabled = on;
+            _bossFill.enabled = on;
+            _bossLabel.enabled = on;
+        }
+
+        void DrawBossBar()
+        {
+            var boss = Enemies.Boss;
+
+            if (boss == null || !boss.Alive)
+            {
+                if (_bossBg.enabled) SetBossBar(false);
+                return;
+            }
+
+            if (!_bossBg.enabled) SetBossBar(true);
+
+            _bossFill.fillAmount = boss.HpFraction;
+            _bossLabel.text = boss.Def.DisplayName + "   " +
+                              Mathf.CeilToInt(boss.HpFraction * 100f) + "%";
         }
 
         void BuildHud()
@@ -1586,6 +1639,7 @@ namespace Proto
             DrawSellBox();
             DrawSpells();
             DrawHud();
+            DrawBossBar();
             DrawMeter();
             DrawBuffs();
             UpdateTooltip();
@@ -2191,6 +2245,15 @@ namespace Proto
                               "   (+" + Player.ManaRegen.ToString("0.0") + "/s)";
 
             // Ailment tally moved to its own icon strip under the mana bar — see DrawBuffs.
+        }
+
+        /// <summary>
+        /// Pengumuman sekali lewat, memakai floater yang sama dengan reaksi. Widget baru untuk tiap
+        /// kabar penting hanya menambah satu lagi tempat yang harus dipelajari pemain.
+        /// </summary>
+        public void Announce(string message, Color color, Vector3? at = null)
+        {
+            PushFloater(at ?? Player.transform.position + Vector3.up * 3f, message, color);
         }
 
         void PushFloater(Vector3 world, string message, Color color)
