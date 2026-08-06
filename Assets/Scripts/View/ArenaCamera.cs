@@ -14,6 +14,10 @@ namespace Proto
     /// localPosition kamera dan mengingat titik asalnya saat Awake. Kalau keduanya menulis
     /// transform yang sama, guncangan akan menarik kamera balik ke titik asal tiap frame dan
     /// membatalkan seluruh pengikutan ini tanpa error apa pun.
+    ///
+    /// Rig dikunci di dalam kotak arena supaya tepi lapangan tidak pernah bocor ke layar. Hutan
+    /// di luar arena tetap dibangkitkan dan terlihat — itu yang membuat dindingnya terbaca sebagai
+    /// "tanah lapang berbatas pohon", bukan sebagai kekosongan yang tiba-tiba berhenti.
     /// </summary>
     public class ArenaCamera : MonoBehaviour
     {
@@ -23,7 +27,7 @@ namespace Proto
         float _deadX;
         float _deadZ;
 
-        /// <summary>Sejauh mana rig boleh menggeser sebelum tanah kosong di luar arena terlihat.</summary>
+        /// <summary>Sejauh mana rig boleh menggeser sebelum tanah di luar arena terlihat.</summary>
         float _limitX;
         float _limitZ;
 
@@ -34,9 +38,9 @@ namespace Proto
         [SerializeField] float _smooth = 0.35f;
 
         /// <summary>
-        /// Batasnya dihitung dari yang benar-benar TERLIHAT, bukan dari angka yang diketik: ukuran
-        /// ortografis, rasio layar dan sudut kemiringan semuanya ikut menentukan seberapa jauh
-        /// tanah tertangkap, dan menebaknya berarti tepi arena bisa bocor di rasio layar tertentu.
+        /// Zona matinya dihitung dari yang benar-benar TERLIHAT, bukan dari angka yang diketik:
+        /// ukuran ortografis, rasio layar dan sudut kemiringan semuanya ikut menentukan seberapa
+        /// jauh tanah tertangkap.
         /// </summary>
         public void Init(Transform target, Camera cam, GameBalance balance)
         {
@@ -49,32 +53,45 @@ namespace Proto
             float pitch = Mathf.Max(15f, cam.transform.eulerAngles.x);
             float halfDepth = halfHeight / Mathf.Sin(pitch * Mathf.Deg2Rad);
 
+            float fraction = Mathf.Clamp(balance.CameraDeadZone, 0.05f, 0.8f);
+            _deadX = halfWidth * fraction;
+            _deadZ = halfDepth * fraction;
+
             _limitX = Mathf.Max(0f, balance.ArenaHalfX - halfWidth);
             _limitZ = Mathf.Max(0f, balance.ArenaHalfZ - halfDepth);
-
-            // Zona mati sekitar separuh layar. Cukup lebar supaya menghindar sehari-hari tidak
-            // menggoyang kamera, cukup sempit supaya pemain tidak pernah kejepit di tepi.
-            _deadX = halfWidth * 0.5f;
-            _deadZ = halfDepth * 0.5f;
         }
+
+        /// <summary>
+        /// Titik yang dituju kamera, disimpan TERPISAH dari posisi kamera itu sendiri.
+        ///
+        /// Ini bukan kerapian, ini perbaikan bug. Dulu sasarannya dihitung dari
+        /// <c>transform.position</c>, sementara transform itu sendiri sedang diperhalus MENUJU
+        /// sasaran tersebut. Jadi tiap frame sasarannya dihitung ulang dari titik yang selalu
+        /// tertinggal — umpan balik yang tidak pernah mengendap, dan kameranya merayap pelan tanpa
+        /// henti bahkan saat pemain berdiri sama sekali diam.
+        /// </summary>
+        Vector3 _focus;
+
+        void Awake() => _focus = transform.position;
 
         void LateUpdate()
         {
             if (_target == null) return;
 
-            Vector3 focus = transform.position;
             Vector3 p = _target.position;
 
             // Hanya selisih DI LUAR zona mati yang dikejar. Menggeser sebanyak selisih penuh akan
             // memusatkan pemain lagi, dan zona matinya jadi tidak ada artinya.
-            focus.x += Overshoot(p.x - focus.x, _deadX);
-            focus.z += Overshoot(p.z - focus.z, _deadZ);
+            _focus.x += Overshoot(p.x - _focus.x, _deadX);
+            _focus.z += Overshoot(p.z - _focus.z, _deadZ);
 
-            focus.x = Mathf.Clamp(focus.x, -_limitX, _limitX);
-            focus.z = Mathf.Clamp(focus.z, -_limitZ, _limitZ);
-            focus.y = transform.position.y;
+            // Dijepit SETELAH digeser, dan pada _focus bukan pada posisi kamera — menjepit posisi
+            // sementara sasarannya bebas berarti kamera terus mendorong ke dinding tanpa henti.
+            _focus.x = Mathf.Clamp(_focus.x, -_limitX, _limitX);
+            _focus.z = Mathf.Clamp(_focus.z, -_limitZ, _limitZ);
+            _focus.y = transform.position.y;
 
-            transform.position = Vector3.SmoothDamp(transform.position, focus, ref _velocity, _smooth);
+            transform.position = Vector3.SmoothDamp(transform.position, _focus, ref _velocity, _smooth);
         }
 
         static float Overshoot(float delta, float dead)

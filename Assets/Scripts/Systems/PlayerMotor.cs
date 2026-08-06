@@ -57,11 +57,16 @@ namespace Proto
         }
 
         /// <summary>
-        /// Menahan pemain di dalam elips arena. Terjepit di tepi oleh kerumunan adalah cara kalah
-        /// yang sah, bukan kecelakaan — jadi batas ini memang boleh terasa.
+        /// Menahan pemain di dalam elips arena.
         ///
-        /// Dulu alasannya "kamera tidak pernah bergerak". Sekarang <see cref="ArenaCamera"/> ikut
-        /// sampai batas tepi arena, jadi batas ini murni aturan main, bukan lagi penambal kamera.
+        /// Sempat dicopot waktu lapangannya dibuat tak berujung, dan itu keliru. Seluruh perilaku
+        /// motor ini adalah MENJAUH dari tekanan kerumunan — tanpa dinding, menjauh selalu
+        /// berhasil. Pemain berjalan lurus selamanya, gerombolan mengekor tanpa pernah menyusul,
+        /// dan tidak ada satu pun alasan untuk melawan. Wave tidak pernah selesai karena tidak
+        /// ada yang mati.
+        ///
+        /// Jadi dinding ini bukan pembatas teknis, dia bagian dari permainannya: terjepit di tepi
+        /// adalah cara kalah yang sah, dan justru itu yang membuat kerumunan jadi ancaman.
         /// </summary>
         Vector3 Clamp(Vector3 pos)
         {

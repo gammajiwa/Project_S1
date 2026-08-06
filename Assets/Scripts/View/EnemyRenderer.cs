@@ -39,7 +39,7 @@ namespace Proto
         readonly Vector3[] _stagePos;
         readonly float[] _stageYaw;
         readonly float[] _stagePhase;
-        readonly float[] _stageScale;
+        readonly Vector3[] _stageScale;
         readonly int[] _stageTint;
 
         readonly Matrix4x4[] _instances;
@@ -82,14 +82,18 @@ namespace Proto
 
                     // Set explicitly: an unset bounds can cull the whole batch away, and the swarm
                     // ranges far wider than the arena because it spawns outside it.
-                    worldBounds = new Bounds(Vector3.zero, Vector3.one * 400f)
+                    //
+                    // Sengaja BESAR SEKALI, bukan sekadar cukup. Lapangannya tak berujung, jadi
+                    // kotak sebesar arena akan membuat seluruh batch hilang dari layar begitu
+                    // pemain berjalan cukup jauh dari titik nol — dan hilangnya total, tanpa error.
+                    worldBounds = new Bounds(Vector3.zero, Vector3.one * 100000f)
                 };
             }
 
             _stagePos = new Vector3[capacity];
             _stageYaw = new float[capacity];
             _stagePhase = new float[capacity];
-            _stageScale = new float[capacity];
+            _stageScale = new Vector3[capacity];
             _stageTint = new int[capacity];
 
             _instances = new Matrix4x4[capacity];
@@ -111,13 +115,23 @@ namespace Proto
 
         public void Add(Vector3 position, float yaw, float phase, int tint, float scale)
         {
+            Add(position, yaw, phase, tint, Vector3.one * (scale <= 0f ? 1f : scale));
+        }
+
+        /// <summary>
+        /// Varian skala TIDAK seragam. Perlu ada sendiri karena bentuk yang bukan makhluk hidup
+        /// tidak pernah proporsional: batang pohon itu tinggi-kurus dan tajuk itu lebar-pipih, dan
+        /// keduanya mustahil dari satu angka skala.
+        /// </summary>
+        public void Add(Vector3 position, float yaw, float phase, int tint, Vector3 scale)
+        {
             if (_pending >= _stagePos.Length) return;
             if (tint < 0 || tint >= _materials.Length) tint = 0;
 
             _stagePos[_pending] = position;
             _stageYaw[_pending] = yaw;
             _stagePhase[_pending] = phase;
-            _stageScale[_pending] = scale <= 0f ? 1f : scale;
+            _stageScale[_pending] = scale;
             _stageTint[_pending] = tint;
             _pending++;
         }
@@ -172,14 +186,14 @@ namespace Proto
         /// baked animation replaces the body of this method and the shader; nothing that calls it
         /// has to change.
         /// </summary>
-        static Matrix4x4 Compose(Vector3 position, float yaw, float phase, float scale, float time,
+        static Matrix4x4 Compose(Vector3 position, float yaw, float phase, Vector3 scale, float time,
             float bodyScale, bool animate)
         {
-            float body = bodyScale * scale;
+            Vector3 body = scale * bodyScale;
 
             if (!animate)
             {
-                return Matrix4x4.TRS(position, Quaternion.identity, Vector3.one * body);
+                return Matrix4x4.TRS(position, Quaternion.Euler(0f, yaw, 0f), body);
             }
 
             float wobble = Mathf.Sin(time * 7f + phase);
@@ -189,10 +203,10 @@ namespace Proto
             float squash = 1f / stretch;
 
             // Bigger bodies sit higher, or a scaled-up enemy sinks halfway into the floor.
-            position.y += wobble * 0.06f + (scale - 1f) * bodyScale;
+            position.y += wobble * 0.06f + (scale.y - 1f) * bodyScale;
 
             return Matrix4x4.TRS(position, Quaternion.Euler(0f, yaw, 0f),
-                new Vector3(body * squash, body * stretch, body * squash));
+                new Vector3(body.x * squash, body.y * stretch, body.z * squash));
         }
     }
 }
