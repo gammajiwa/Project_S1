@@ -6,7 +6,8 @@ Baca ini **sebelum** menyentuh kode. Terakhir diperbarui: sesi 2026-08-06
 **§13**; tes build ★5 penuh + bug anggaran mana — **§14**;
 kamera/DebugConfig/Playground — **§15**; boss ular + biome — **§16**;
 hutan/audio/bar boss — **§17**;
-lapangan tak berujung — **§18**; konten 100 piece).
+lapangan tak berujung — **§18**;
+tampilan hutan / segel stat / boss kelabang — **§19**; konten 107 piece).
 
 ---
 
@@ -1132,3 +1133,138 @@ Terukur: pemain dilempar ke (500; 400) → ditarik balik ke (27,4; 21,9), di dal
 rig berhenti tepat di batas (20,4; 18,1). Wave 4 dengan loadout default: 49 kill, wave
 **beres karena lapangan bersih** di t=59,5 (bukan disapu jam), HP pemain utuh 100,
 1 661 props di 11 draw call, 59 fps.
+
+---
+
+## 19. Tampilan hutan, segel stat, kecepatan musuh, dan boss kelabang
+
+Ditambahkan 2026-08-06, sesudah §18.
+
+### 19.1 Tampilan: dua kali salah sebelum benar
+
+Target: **Cult of the Lamb / Hades — gelap tapi bersinar**. Dua percobaan meleset dari
+dua arah berlawanan, dan sebabnya sama: salah membaca DI MANA kegelapannya berada.
+
+| Percobaan | Hasil | Kenapa salah |
+|---|---|---|
+| 1 | terang merata, hijau kuning | menerangi lapangannya, jadi tidak ada yang bisa bersinar |
+| 2 | gelap merata | melapangkan gelap ke mana-mana, jadi tidak ada yang bisa dibaca |
+| **3** | **lapangan terang, bingkai gelap** | benar |
+
+Di referensinya lantainya justru **pucat**; yang gelap adalah **tepi layar dan
+kejauhan**. Dan yang mengerjakan pembingkaian itu **KABUT**, bukan warna tanah.
+
+Geometrinya yang menentukan angkanya: kamera duduk 18,5 unit di atas dan menunduk 68°,
+jadi lantai di BAWAH layar berjarak ~19 unit sementara yang di ATAS layar ~27–36.
+**Kabut 21→44** karena itu hanya menyentuh bagian atas layar.
+
+### 19.2 Tiga bug tampilan
+
+1. **`RenderSettings.ambientLight` diabaikan di mode Trilight.** `SceneLook` menyalakan
+   Trilight; `BiomeDresser` mengisi `ambientLight` — warna ambient datar. Seluruh
+   pengaturan ambient biome tidak pernah berpengaruh, tanpa peringatan apa pun.
+   Sekarang mengisi `ambientSkyColor` / `EquatorColor` / `GroundColor`.
+
+2. **Semua props dan musuh mengkilap seperti plastik.** Material instanced dibuat lewat
+   kode dan tidak pernah lewat `SceneLook.ApplySurface`, jadi mereka memakai smoothness
+   bawaan **URP/Lit 0,5** — padahal asetnya minta 0,05. Sekarang `_Smoothness`,
+   `_Metallic`, dan `_SPECULARHIGHLIGHTS_OFF` disetel eksplisit di `PropBatch` dan
+   `EnemyRenderer`.
+
+3. **Bidang satu warna tidak akan pernah terbaca sebagai rumput**, seberapa pun tepat
+   warnanya — yang hilang variasi rapatnya, bukan warnanya. `BiomeDresser.GrassTexture()`
+   membangkitkan tekstur dari tiga skala derau (bercak, helai, bintik) sebagai PENGALI
+   di sekitar 1, jadi mengganti warna biome tidak menuntut membangkitkan ulang tekstur.
+
+### 19.3 Awan & berkas cahaya (`View/Atmosphere.cs`)
+
+Dua bidang mengikuti kamera dengan tekstur derau yang digulung. Yang membuatnya bekerja
+bukan teksturnya, tapi **UV-nya dikunci ke koordinat DUNIA** — bidangnya ikut kamera,
+polanya tidak. Tanpa itu awannya menempel di layar dan terbaca sebagai lensa kotor.
+
+Deraunya **bisa diubin** (empat sampel dari sudut berseberangan). Perlin bawaan Unity
+tidak berulang, dan tekstur yang tidak berulang memperlihatkan jahitan lurus melintasi
+lapangan.
+
+**Memakai `Sprites/Default`, bukan URP/Unlit.** URP/Unlit lahir opaque, dan menyalakan
+transparansinya lewat kode menuntut `_Surface`, `_Blend`, `_SrcBlend`, `_DstBlend`,
+`_ZWrite`, render queue DAN kata kunci shader semuanya benar bersamaan — satu meleset
+dan materialnya tetap opaque tanpa keluhan. Itu yang terjadi di percobaan pertama.
+
+Tidak memakai volumetrik dengan sengaja: di kamera ortografis menunduk, berkas cahaya
+sebetulnya hanya terlihat sebagai **pola terang di lantai**, dan pola di lantai harganya
+satu bidang, bukan satu render pass.
+
+`View/ArenaLights.cs` menambah beberapa lampu titik lembut yang mengembara pelan
+(Perlin, bukan sinus — sinus berulang persis dan mata menangkap polanya).
+
+### 19.4 Musuh tidak pernah bisa menyentuh pemain
+
+**Aritmetika, bukan opini:** pemain berlari **3,2** dan kabur otomatis. Grunt **1,6**,
+Cursed **1,36**, dan Stalker baru muncul di **wave 5**. Wave 1–4 karena itu mustahil
+menyentuh pemain — bukan karena build-nya bagus.
+
+Bukti sebenarnya sudah ada di log sesi sebelumnya dan terlewat: "wave 4 selesai, HP
+pemain utuh 100".
+
+Diperbaiki tiga sisi sekaligus, karena satu saja tidak cukup:
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| Kecepatan musuh | 1,35–1,6 | **2,0–2,4** |
+| Kecepatan pemain | 3,2 | **2,8** |
+| `DangerRadius` | 6 | **3,5** |
+
+Stalker (×1,55) kini **3,7 — lebih cepat dari pemain**. Itu satu-satunya musuh yang
+benar-benar tidak bisa dilepas, dan itulah gunanya arketipe itu ada.
+
+Ditambah: **damage musuh menskala per wave** (`ContactDpsFor`, `EnemyDamageScale`).
+Sebelumnya musuh wave 40 menyakiti persis sama seperti wave 1, sementara HP dan damage
+pemain sudah naik berkali lipat.
+
+### 19.5 Segel stat (`Editor/SigilPass.cs`)
+
+Dua celah nyata. **Tidak ada satu pun segel yang menaikkan damage** — hanya rune, dan
+rune tinggal di lapisan bawah, jadi "aku mau memukul lebih keras" bukan keputusan yang
+bisa diambil di lapisan skill sama sekali. Dan **segel berhenti di bintang dua**
+sementara skill sampai bintang lima.
+
+Empat sumbu, masing-masing sampai ★3: SERANG, NYAWA, MANA, TAHAN.
+
+### 19.6 Boss: jamak, kelabang, dan anak buah
+
+`EnemyManager.Boss` (tunggal) → `_bosses` (daftar). Wave 20 memunculkan 2 ekor, wave 40
+tiga. **Bertambahnya jumlah, bukan HP** — satu ular ber-HP sepuluh kali lipat cuma jadi
+tembok yang lebih lama dipukul; tiga ular dari tiga arah adalah masalah yang baru.
+
+`ContentDatabase.Boss` (tunggal) → `BossKinds` (daftar).
+
+**Kelabang penyelam** hampir tidak menambah kode. Badannya sudah menapaki jejak
+kepalanya, dan **jejak itu menyimpan ketinggian** — jadi begitu kepalanya melengkung
+naik lalu menukik, seluruh badan mengikuti busur itu sendiri, satu per satu. Tidak ada
+satu baris pun animasi badan.
+
+Ritmenya **lumba-lumba**, dan itu koreksi dari percobaan pertama yang bertahan 2,8 detik
+di permukaan — itu bukan melompat, itu berjalan-jalan. Sekarang: **3 lompatan beruntun**
+(busur 1,1 detik, tinggi 5,5) dengan celup dangkal 0,4 detik di antaranya, lalu
+menghilang 5,5 detik sedalam 6 unit.
+
+Terukur, profil ketinggian sepanjang badan:
+`2.8 5.0 2.9 | -0.3 -0.6 | 2.8 5.0 2.7 | -0.4 | -6.0` — **dua gundukan terlihat
+bersamaan dengan ekor masih terkubur**. Siluet cacing pasir, jatuh sendiri dari
+geometrinya.
+
+**Terbenam = kebal dan tak terlihat**, dicek di **satu tempat** (`Damage()` dan
+`LateUpdate`), karena semua jalur damage bermuara di sana — jadi tidak ada skill yang
+bisa lupa.
+
+**Coilspawn** adalah kelabang yang sama dengan angka jauh lebih kecil dan flag `Minion`:
+ikut wave biasa dari wave 6, tidak mengumumkan diri, tidak menampilkan bar HP boss.
+Seluruh sistemnya dipakai ulang apa adanya.
+
+### 19.7 Jebakan pengukuran yang terulang
+
+`execute_code` menahan main thread Unity. Membaca `Time.smoothDeltaTime` di dalam
+rentetan panggilan berturut-turut menghasilkan angka yang **jauh lebih buruk dari
+kenyataan** — satu sesi sempat melaporkan "20 fps" dan "171 ms di lapangan kosong",
+yang mustahil. Ukur fps di panggilan yang **tidak melakukan apa pun selain membacanya**.

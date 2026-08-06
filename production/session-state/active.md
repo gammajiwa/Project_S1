@@ -2,7 +2,7 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Lapangan tak berujung (petak), hutan, audio, bar boss
+Feature: Tampilan hutan, segel stat, kecepatan musuh, boss kelabang
 Task: Terpasang & terverifikasi programatik — belum pernah dinilai main tangan
 <!-- /STATUS -->
 
@@ -656,6 +656,62 @@ Hutan sekarang membingkai dinding — rimbun di luar arena, lapang di dalam.
 Terukur: pemain dilempar ke (500; 400) → ditarik balik ke (27,4; 21,9); rig berhenti tepat
 di batas. Wave 4 loadout default: 49 kill, beres di t=59,5 karena lapangan bersih, HP utuh,
 1 661 props / 11 draw call / 59 fps.
+
+## Tampilan, segel stat, kecepatan musuh, boss kelabang (2026-08-06, lanjutan)
+
+Detail lengkap: **[docs/AI-HANDOFF.md §19](../../docs/AI-HANDOFF.md)**.
+
+### Tampilan — dua kali salah sebelum benar
+
+Target Cult of the Lamb: **lapangan terang, bingkai gelap**. Percobaan 1 terang merata,
+percobaan 2 gelap merata; dua-duanya salah membaca DI MANA gelapnya berada. Yang
+mengerjakan pembingkaian adalah **kabut** (21→44, dihitung dari geometri kamera), bukan
+warna tanah.
+
+**Tiga bug tampilan ketemu:**
+1. `RenderSettings.ambientLight` **diabaikan** di mode Trilight — seluruh pengaturan
+   ambient biome tidak pernah berpengaruh.
+2. Props & musuh **mengkilap seperti plastik**: material instanced tidak pernah lewat
+   `ApplySurface`, jadi memakai smoothness bawaan URP 0,5.
+3. Bidang satu warna **tidak akan pernah** terbaca sebagai rumput — yang hilang variasi
+   rapatnya. Tekstur rumput sekarang dibangkitkan dari tiga skala derau.
+
+Ditambah `View/Atmosphere.cs` (bayangan awan + berkas cahaya, UV dikunci ke koordinat
+dunia) dan `View/ArenaLights.cs` (lampu titik lembut yang mengembara).
+
+### Musuh tidak pernah bisa menyentuh pemain — aritmetika
+
+Pemain **3,2** dan kabur otomatis; Grunt **1,6**; Stalker baru wave 5. Wave 1–4 mustahil
+menyentuh pemain. Buktinya sudah ada di log sesi sebelumnya dan terlewat.
+
+Diperbaiki tiga sisi: musuh **2,0–2,4**, pemain **2,8**, `DangerRadius` **3,5**.
+Stalker kini **3,7 — lebih cepat dari pemain**. Damage musuh juga **menskala per wave**.
+
+### Segel stat
+
+Tidak ada satu pun segel yang menaikkan damage (hanya rune), dan segel berhenti di ★2.
+Sekarang empat sumbu sampai ★3: SERANG / NYAWA / MANA / TAHAN. **107 piece, 111 resep.**
+
+### Boss jamak + kelabang + anak buah
+
+`Boss` tunggal → daftar. Wave 20 = 2 ekor, wave 40 = 3. Bertambahnya JUMLAH, bukan HP.
+
+**Kelabang penyelam** nyaris tanpa kode baru: jejak kepala menyimpan ketinggian, jadi
+badannya mengikuti busur sendiri. Ritmenya lumba-lumba — 3 lompatan beruntun (busur 1,1
+dtk) lalu menghilang 5,5 dtk. Terukur profil badan
+`2.8 5.0 2.9 | -0.3 | 2.8 5.0 2.7 | -6.0` — dua gundukan bersamaan, ekor terkubur.
+
+Terbenam = **kebal & tak terlihat**, dicek di satu tempat supaya tidak ada skill yang lupa.
+
+**Coilspawn** = kelabang yang sama, angka jauh lebih kecil, flag `Minion` — ikut wave
+biasa dari wave 6, tanpa pengumuman dan tanpa bar HP.
+
+### Jebakan pengukuran yang terulang
+
+`execute_code` menahan main thread Unity. Membaca `Time.smoothDeltaTime` di dalam
+rentetan panggilan menghasilkan angka jauh lebih buruk dari kenyataan — sempat
+melaporkan "20 fps" dan "171 ms di lapangan kosong", yang mustahil. Ukur fps di
+panggilan yang tidak melakukan apa pun selain membacanya.
 
 ## Berikutnya (belum dikerjakan)
 
