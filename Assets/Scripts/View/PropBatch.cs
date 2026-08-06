@@ -46,6 +46,16 @@ namespace Proto
                 material.SetColor("_BaseColor", palette[i]);
                 material.SetColor("_Color", palette[i]);
 
+                // Matte, dan ini WAJIB disetel eksplisit. URP/Lit lahir dengan smoothness 0,5,
+                // jadi tiap material yang dibuat lewat kode tanpa menyentuhnya akan mengkilap
+                // seperti plastik — dan sorotan spekular di atas ribuan rumpun rumput adalah
+                // hal pertama yang menghancurkan kesan bergaya ilustrasi.
+                material.SetFloat("_Smoothness", 0f);
+                material.SetFloat("_Glossiness", 0f);
+                material.SetFloat("_Metallic", 0f);
+                material.SetFloat("_SpecularHighlights", 0f);
+                material.EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+
                 _params[i] = new RenderParams(material)
                 {
                     // Bayangan MATI. Tiap rumpun rumput yang melempar bayangan berarti satu lagi

@@ -91,6 +91,20 @@ namespace Proto
                 dresser.Init(_balance, _biomes, sun, cam, ground, _look, _rig);
 
                 enemies.OnWaveStarted += dresser.OnWaveStarted;
+
+                // Bayangan awan dan berkas cahaya. Dipasang di bawah rig supaya ikut kamera, tapi
+                // polanya dikunci ke koordinat dunia — kalau tidak, awannya menempel di layar.
+                var sky = new GameObject("Atmosphere").AddComponent<Atmosphere>();
+                sky.transform.SetParent(transform, false);
+
+                // Rentangnya diambil dari yang benar-benar terlihat, bukan dari arena: bidangnya
+                // ikut kamera, jadi yang perlu tertutup cuma seluas layar plus sedikit margin.
+                float span = cam.orthographicSize * cam.aspect * 2.6f;
+                sky.Init(_rig, _biomes[0], _biomes[0].SunYaw, span);
+
+                var lamps = new GameObject("ArenaLights").AddComponent<ArenaLights>();
+                lamps.transform.SetParent(transform, false);
+                lamps.Init(_balance, _biomes[0]);
             }
 
             var audio = new GameObject("Audio").AddComponent<AudioDirector>();

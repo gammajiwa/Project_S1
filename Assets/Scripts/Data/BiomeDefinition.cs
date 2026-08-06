@@ -33,7 +33,34 @@ namespace Proto
 
         [Range(0f, 3f)] public float SunIntensity = 1.25f;
 
-        public Color AmbientColor = new Color(0.19f, 0.24f, 0.2f);
+        // Ambient dipecah jadi tiga arah, bukan satu warna datar.
+        //
+        // SceneLook menyalakan mode Trilight, dan di mode itu RenderSettings.ambientLight — satu
+        // warna datar — DIABAIKAN sepenuhnya. Selama ini biome mengisi field itu, jadi seluruh
+        // pengaturan ambient-nya tidak pernah berpengaruh sama sekali, tanpa satu pun peringatan.
+        //
+        // Tiga arah juga yang membuat tampilan bergaya ilustrasi bisa terjadi: cahaya langit yang
+        // kuat dari atas mengangkat bagian yang tidak kena matahari, sehingga bayangan jadi
+        // berwarna alih-alih hitam.
+        [Tooltip("Cahaya dari atas. Ini yang paling menentukan terang-gelapnya keseluruhan.")]
+        public Color AmbientSky = new Color(0.55f, 0.68f, 0.72f);
+
+        [Tooltip("Cahaya dari samping, setinggi mata.")]
+        public Color AmbientEquator = new Color(0.55f, 0.6f, 0.45f);
+
+        [Tooltip("Pantulan dari tanah. Warnanya sebaiknya dekat dengan warna tanahnya.")]
+        public Color AmbientGround = new Color(0.35f, 0.42f, 0.25f);
+
+        [Header("Kabut")]
+        [Tooltip("Kabut jarak jauh. Di gaya ilustrasi ini gunanya bukan menyembunyikan, tapi " +
+                 "memberi kedalaman: yang jauh memudar ke warna langit.")]
+        public bool FogEnabled = true;
+
+        public Color FogColor = new Color(0.72f, 0.78f, 0.62f);
+
+        public float FogStart = 45f;
+
+        public float FogEnd = 140f;
 
         // =========================================================================
         //  pohon
@@ -94,6 +121,49 @@ namespace Proto
             new Color(0.2f, 0.3f, 0.16f),
             new Color(0.22f, 0.21f, 0.18f)
         };
+
+        // =========================================================================
+        //  awan & berkas cahaya
+        // =========================================================================
+
+        [Header("Bayangan awan")]
+        [Tooltip("Warna DAN kepekatannya. Alpha yang menentukan seberapa gelap bayangannya.")]
+        public Color CloudColor = new Color(0.05f, 0.06f, 0.12f, 0.55f);
+
+        [Tooltip("Lebar satu gumpalan awan dalam unit dunia.")]
+        public float CloudSize = 42f;
+
+        [Tooltip("Seberapa banyak langit tertutup. 0,3 = cerah berawan, 0,8 = mendung.")]
+        [Range(0.05f, 0.95f)] public float CloudCoverage = 0.55f;
+
+        [Tooltip("Kecepatan hanyut. Pelan sekali — awan yang bergerak cepat terbaca sebagai " +
+                 "tekstur yang bergeser, bukan sebagai cuaca.")]
+        public float CloudSpeed = 0.012f;
+
+        [Header("Berkas cahaya")]
+        [Tooltip("Warna berkasnya. Ditambahkan, bukan ditimpa, jadi warnanya langsung jadi cahaya.")]
+        public Color RayColor = new Color(1f, 0.82f, 0.45f, 0.32f);
+
+        [Tooltip("Jarak antar berkas dalam unit dunia.")]
+        public float RaySize = 30f;
+
+        [Range(0.05f, 0.95f)] public float RayCoverage = 0.4f;
+
+        [Header("Lampu arena")]
+        [Tooltip("Lampu titik lembut yang mengembara di lapangan. Matahari menyinari semuanya " +
+                 "sama rata; lampu inilah yang membuat lantai punya daerah terang dan daerah " +
+                 "teduh. 0 = tidak ada.")]
+        [Range(0, 8)] public int LampCount = 5;
+
+        public Color LampColor = new Color(1f, 0.82f, 0.55f);
+
+        [Range(0f, 12f)] public float LampIntensity = 3.2f;
+
+        [Tooltip("Jari-jari jangkauan. Lebar dan lembut, bukan sempit dan tajam.")]
+        public float LampRange = 26f;
+
+        [Tooltip("Tinggi lampu. Rendah = kolam cahaya kecil dan pekat; tinggi = luas dan lembut.")]
+        public float LampHeight = 7f;
 
         [Header("Tata letak")]
         [Tooltip("Radius kosong di tengah arena. Pemain memulai di sana; props yang menimpa titik " +

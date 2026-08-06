@@ -108,7 +108,7 @@ namespace Proto
 
             _current = biome;
 
-            if (_ground != null) _ground.sharedMaterial = _look.CreateSurface(biome.GroundColor);
+            if (_ground != null) DressGround(biome);
             if (_camera != null) _camera.backgroundColor = RenderColor.Of(biome.HorizonColor);
 
             if (_sun != null)
@@ -118,7 +118,18 @@ namespace Proto
                 _sun.transform.rotation = Quaternion.Euler(biome.SunPitch, biome.SunYaw, 0f);
             }
 
-            RenderSettings.ambientLight = RenderColor.Of(biome.AmbientColor);
+            // Trilight, bukan ambientLight datar. SceneLook menyalakan mode ini, dan mengisi
+            // ambientLight di mode Trilight tidak melakukan apa pun sama sekali.
+            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
+            RenderSettings.ambientSkyColor = biome.AmbientSky;
+            RenderSettings.ambientEquatorColor = biome.AmbientEquator;
+            RenderSettings.ambientGroundColor = biome.AmbientGround;
+
+            RenderSettings.fog = biome.FogEnabled;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = RenderColor.Of(biome.FogColor);
+            RenderSettings.fogStartDistance = biome.FogStart;
+            RenderSettings.fogEndDistance = biome.FogEnd;
 
             float referenceArea = Mathf.Max(1f, (_balance.ArenaHalfX * 2f) * (_balance.ArenaHalfZ * 2f));
             float chunkArea = ChunkSize * ChunkSize;
@@ -139,6 +150,90 @@ namespace Proto
 
             _chunks.Clear();
             _centre = new Vector2Int(int.MinValue, int.MinValue);
+        }
+
+        /// <summary>
+        /// Memberi lantai tekstur rumput yang dibangkitkan.
+        ///
+        /// Bidang satu warna tidak akan pernah terbaca sebagai rumput, seberapa pun tepat
+        /// warnanya — yang hilang bukan warnanya, tapi variasi rapatnya. Mata membaca rumput dari
+        /// bintik-bintik kecil yang tak beraturan, bukan dari hijau.
+        ///
+        /// Dua skala digabung dengan sengaja: bercak besar memberi lapangan bentuk yang bisa
+        /// dipakai sebagai penanda tempat, bintik halus mengisi ruang di antaranya. Satu skala
+        /// saja terbaca sebagai kain, bukan tanah.
+        /// </summary>
+        void DressGround(BiomeDefinition biome)
+        {
+            var material = _look.CreateSurface(biome.GroundColor);
+            material.SetTexture(BaseMap, GrassTexture(biome));
+
+            // Satu ubin kira-kira 6 unit dunia. Lebih besar dan bintiknya jadi bercak; lebih kecil
+            // dan polanya berubah jadi desis yang berkedip saat kamera bergerak.
+            float span = _ground.transform.localScale.x * 10f;
+            material.SetTextureScale(BaseMap, Vector2.one * Mathf.Max(1f, span / 6f));
+
+            _ground.sharedMaterial = material;
+        }
+
+        static readonly int BaseMap = Shader.PropertyToID("_BaseMap");
+
+        static Texture2D GrassTexture(BiomeDefinition biome)
+        {
+            const int size = 256;
+
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, true)
+            {
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear,
+                anisoLevel = 4
+            };
+
+            var pixels = new Color32[size * size];
+
+            // Dibangun sebagai PENGALI di sekitar 1, bukan sebagai warna. Warna aslinya tetap
+            // datang dari GroundColor lewat _BaseColor, jadi mengganti warna biome tidak menuntut
+            // membangkitkan ulang teksturnya.
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float u = x / (float)size;
+                    float v = y / (float)size;
+
+                    float patches = Tile(u, v, 3f, 3f);
+                    float blades = Tile(u, v, 26f, 26f);
+                    float speckle = Tile(u, v, 64f, 64f);
+
+                    float value = 0.78f + patches * 0.3f + (blades - 0.5f) * 0.34f
+                                  + (speckle - 0.5f) * 0.16f;
+
+                    value = Mathf.Clamp01(value);
+
+                    // Hijau digeser sedikit lebih kuat dari merah dan biru, jadi bagian yang lebih
+                    // terang condong ke hijau muda alih-alih sekadar lebih putih.
+                    byte r = (byte)(Mathf.Clamp01(value * 0.92f) * 255f);
+                    byte g = (byte)(Mathf.Clamp01(value * 1.05f) * 255f);
+                    byte b = (byte)(Mathf.Clamp01(value * 0.85f) * 255f);
+
+                    pixels[y * size + x] = new Color32(r, g, b, 255);
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply();
+            return texture;
+        }
+
+        /// <summary>Perlin yang bisa diubin. Tanpa ini jahitannya terlihat sebagai garis lurus.</summary>
+        static float Tile(float u, float v, float fx, float fy)
+        {
+            float a = Mathf.PerlinNoise(u * fx, v * fy);
+            float b = Mathf.PerlinNoise((u - 1f) * fx, v * fy);
+            float c = Mathf.PerlinNoise(u * fx, (v - 1f) * fy);
+            float d = Mathf.PerlinNoise((u - 1f) * fx, (v - 1f) * fy);
+
+            return Mathf.Lerp(Mathf.Lerp(a, b, u), Mathf.Lerp(c, d, u), v);
         }
 
         // =====================================================================================

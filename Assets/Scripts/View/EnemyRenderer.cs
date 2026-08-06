@@ -73,6 +73,14 @@ namespace Proto
                 _materials[i].SetColor("_BaseColor", palette[i]);
                 _materials[i].SetColor("_Color", palette[i]);
 
+                // Matte, disetel eksplisit. URP/Lit lahir dengan smoothness 0,5 — material yang
+                // dibuat lewat kode tanpa menyentuhnya akan mengkilap seperti plastik basah.
+                _materials[i].SetFloat("_Smoothness", 0f);
+                _materials[i].SetFloat("_Glossiness", 0f);
+                _materials[i].SetFloat("_Metallic", 0f);
+                _materials[i].SetFloat("_SpecularHighlights", 0f);
+                _materials[i].EnableKeyword("_SPECULARHIGHLIGHTS_OFF");
+
                 _params[i] = new RenderParams(_materials[i])
                 {
                     // Enemies are the one thing on screen there are hundreds of; shadows for them
