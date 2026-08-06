@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Proto.unity
     guid: 1229e462a57bdfa499a859f48684ea9b
+  - enabled: 0
+    path: Assets/Scenes/Playground.unity
+    guid: 81a36226e35359d40b4fb7f9fb8d28c6
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

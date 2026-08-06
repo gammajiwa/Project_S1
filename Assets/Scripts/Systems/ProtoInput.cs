@@ -98,6 +98,58 @@ namespace Proto
             }
         }
 
+        /// <summary>Naik/turun satu baris di sebuah daftar. -1, 0, atau 1.</summary>
+        public static int ListStepDown
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                if (kb == null) return 0;
+                if (kb.upArrowKey.wasPressedThisFrame) return -1;
+                if (kb.downArrowKey.wasPressedThisFrame) return 1;
+                return 0;
+#else
+                if (Input.GetKeyDown(KeyCode.UpArrow)) return -1;
+                if (Input.GetKeyDown(KeyCode.DownArrow)) return 1;
+                return 0;
+#endif
+            }
+        }
+
+        /// <summary>Melebarkan atau merapatkan sesuatu. -1, 0, atau 1.</summary>
+        public static int SpreadStepDown
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                if (kb == null) return 0;
+                if (kb.equalsKey.wasPressedThisFrame || kb.numpadPlusKey.wasPressedThisFrame) return 1;
+                if (kb.minusKey.wasPressedThisFrame || kb.numpadMinusKey.wasPressedThisFrame) return -1;
+                return 0;
+#else
+                if (Input.GetKeyDown(KeyCode.Equals) || Input.GetKeyDown(KeyCode.KeypadPlus)) return 1;
+                if (Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus)) return -1;
+                return 0;
+#endif
+            }
+        }
+
+        /// <summary>Ditahan untuk memperlambat waktu di ruang uji.</summary>
+        public static bool SlowMotionHeld
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                return kb != null && (kb.leftShiftKey.isPressed || kb.rightShiftKey.isPressed);
+#else
+                return Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+#endif
+            }
+        }
+
         /// <summary>Returns the time-scale slot 0..3 requested this frame, or -1.</summary>
         public static int SpeedSlotDown
         {
