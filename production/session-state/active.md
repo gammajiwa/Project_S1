@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Varian musuh (terbang + penembak), kutukan, wave berbasis jendela spawn
-Task: Terpasang & terverifikasi programatik — 2 permintaan UI belum dikerjakan
+Feature: Skill non-serangan (kabur/perisai/kontrol), kamera dead-zone, drop jadi benda nyata
+Task: Terpasang & terverifikasi programatik — belum pernah dinilai main tangan
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -269,6 +269,53 @@ menyisakan dua petak tunggal yang cuma bisa diisi piece 1-petak, Z menyisakan du
 coakan. Dipasang di band ★4, jadi tier itu sekarang: `Ess / Fork / Zed / Aitch /
 Hook`.
 
+## Putaran feedback #6 — kombo antar skill (arah PoE)
+
+**81 piece, 82 resep.** Tiga sumbu kombo baru, semuanya berbasis aset:
+
+**1. Penanda + peledak (`CastKind.Detonate`).** Satu skill menghabiskan seluruh
+cast-nya mengoles ailment murah; skill lain menagih semuanya sekaligus, sebesar
+POIN yang menumpuk di tiap musuh, lalu mencabut ailment-nya.
+
+| Piece | Peran |
+|---|---|
+| Plague Brand ★1 | damage 2 (!), POISON 3 poin, radius 5,5 — **sia-sia sendirian, itu disengaja** |
+| Sunder ★2 | meledakkan semua ber-POISON, 26/poin |
+| Rupture ★3 | meledakkan semua ber-BLEED, 52/poin |
+| Reckoning ★4 | meledakkan semua ber-BURN, 95/poin |
+
+Peledak **menahan cooldown DAN mana kalau tidak ada yang bertanda** — peledak yang
+menembak ke lapangan kosong tidak akan pernah siap saat lapangannya akhirnya
+bertanda, dan itu seluruh isi kombonya.
+
+**2. Charge ala PoE (`BuffDefinition.MaxStacks` + `GrantOnKill` + `ConsumesCharge`).**
+Kumpulkan sambil membunuh, belanjakan sekaligus.
+
+- **FRENZY** (maks 6): −6% cooldown, +6% damage **per tumpukan**
+- **POWER** (maks 5): +7% crit, +12% damage crit per tumpukan
+- Generatornya **segel** — makan petak, tidak menghasilkan apa pun sendiri
+- **Frenzy Release ★3** menghabiskan semua tumpukan: **+55% damage per tumpukan**,
+  dan **tidak menembak sama sekali** kalau belum ada yang dikumpulkan
+
+`Grimoire.KillGrants` dikompilasi sekali saat grid berubah — handler kill jalan
+ratusan kali per detik di wave tinggi dan tidak boleh menyusuri papan.
+
+**3. Peluru memantul (`Bounces`).** "Nembak segala arah" terlalu biasa; memantul
+membuatnya membaca lapangan — tembakan ke petak kosong mati, tembakan ke gerombolan
+menggergaji. Whirling Blade 3 pantulan, Absolute Zero 4, Spark Bolt 2, Glacial
+Spike 3. Musuh yang baru disambar dikecualikan supaya sepasang musuh tidak
+memantul-mantulkan satu peluru di tempat.
+
+**4. Reaksi yang membayar lebih dari damage.** `CleansesOneDebuff` (mencabut kutukan
+dengan sisa TERPANJANG — yang pendek toh mau habis sendiri) dan `RefundMana`.
+SHATTER & STATIC FREEZE mencabut kutukan; TOXIC BURST/BLOOD SURGE/FIRESTORM
+mengembalikan mana. Build ailment jadi **jawaban** atas kutukan musuh, bukan cabang
+terpisah yang harus dibayar sendiri.
+
+Diuji di wave 10: FRENZY menumpuk penuh **6/6** dari kill, Sunder 51% damage total,
+Frenzy Release 45%, Plague Brand **1%** — persis bentuk yang dimau: penanda hampir
+tidak melukai, peledaknya yang menagih.
+
 ## BERIKUTNYA
 
 1. **Main dan nilai rasanya** — masih belum pernah dinilai tangan manusia
@@ -292,3 +339,107 @@ Hook`.
 | Spitter terlalu jauh/dekat | `PreferredRange` di `Assets/GameData/Enemies/Enemy_spitter.asset` |
 | campuran jenis musuh | `Weight` / `WeightPerWave` / `FromWave` di tiap aset arketipe |
 | papan kesempitan | `Grimoire.Width/Height` (const, hardcode 7) |
+
+---
+
+## Potongan kerja: skill non-serangan, kamera, drop nyata (2026-08-06, lanjutan)
+
+Detail teknis lengkap ada di **[docs/AI-HANDOFF.md §13](../../docs/AI-HANDOFF.md)**.
+Ringkasnya:
+
+### Selesai & terverifikasi
+
+- **9 `CastKind` baru** — `Orbit`, `Blink`, `Ward`, `Surge`, `Restore`,
+  `SunStrike`, `RollingBall`, `Vortex`, `ForcePush`. Ditambahkan **di belakang**
+  enum (menyisipkan di tengah akan menggeser tiap skill di bawahnya jadi kind
+  yang salah, tanpa error).
+  Implementasi: `Systems/PlayerCasterSignature.cs` (`partial class PlayerCaster`).
+- **19 piece + 16 resep + 4 buff** lewat `Editor/SignaturePass.cs`.
+  Konten sekarang **100 piece, 101 resep**, semua punya ikon.
+- **Musuh bisa diangkat & dilontarkan** — `EnemyManager.Push()` (gaya negatif =
+  seretan) dan `EnemyManager.Lift()`. Yang terangkat **benar-benar lumpuh**.
+  Terukur: 14 musuh melayang di 2,60 unit, HP pemain tidak turun sama sekali.
+- **Solver keseimbangan** — damage & mana dipecahkan dari throughput target per
+  bintang, bukan diketik tangan. Sebaran dalam tier turun dari **×6 → ×1,5–2,4**;
+  tangga antar tier jadi **×2,5–3,1** konsisten (sebelumnya ★3→★4 cuma ×1,5).
+- **Bug nyata ketemu & diperbaiki:** biaya mana lahir dari `mana/detik × cooldown`,
+  dan itu meledak di cooldown panjang — Maelstrom keluar di **180 sementara mana
+  dasar cuma 120**, jadi ia tidak akan pernah bisa dinyalakan seumur hidup run.
+  Gagalnya senyap: piece-nya terlihat sehat di papan dan tidak pernah menembak.
+  Sekarang biaya dibatasi 75% mana dasar.
+- **Drop jadi benda nyata** (`View/DropPickups.cs`) — dilempar dari posisi pemain,
+  memantul, magnetnya menjemput dalam 7 unit, dan ada batas 6 detik yang
+  menyerahkannya begitu saja supaya drop tidak pernah hilang.
+- **Pemain tidak lagi ditarik balik ke tengah** saat lapangan sepi
+  (`PlayerMotor`). Ini keluhan "kalo end gak harus balik ke tengah".
+
+### Kamera dead-zone — diputuskan & diterapkan
+
+`View/ArenaCamera.cs` dipasang di GameObject **"Camera Rig"** yang terpisah dari
+`CameraShake`. Itu wajib: `CameraShake` menulis `localPosition` kamera dan
+mengingat titik asalnya di `Awake`, jadi kalau keduanya menulis transform yang
+sama, guncangan menarik kamera balik tiap frame dan pengikutan mati tanpa error.
+
+Saat pertama dipasang jarak geraknya **nol** — arena 16×9 sementara layar
+menutupi 19,6×11,9. User memilih membesarkan arena:
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| `ArenaHalfX / Z` | 16 / 9 | **22 / 17** |
+| `SpawnBoundsX / Z` | 21 / 13 | **24 / 19** |
+| `WaveOpenerCount / Distance` | 6 / 0,6 | **9 / 0,5** |
+| Sisa gerak kamera | 0,0 / 0,0 | **2,4 / 5,1** |
+
+Terukur setelah perubahan: rig bergeser sampai batas `(2,44 / 5,14)` lalu
+berhenti; rombongan pembuka 9 musuh di jarak 9,6–12,9 (±7,6 detik untuk tiba);
+pengepungan tetap **8/8 sektor**, terpadat 22%; 60 fps.
+
+Kamera **tidak** kembali ke tengah setelah pemain masuk lagi ke zona mati — itu
+memang cara kerja dead zone.
+
+### Catatan urutan editor tool
+
+`ComboPass` dan `SignaturePass` menulis damage mentah; `BalanceTunePass`
+menghitungnya ulang. **Solver selalu dijalankan terakhir.**
+
+### Jebakan baru yang memakan waktu di sesi ini
+
+`System.Threading.Thread.Sleep` di dalam `execute_code` **membekukan main thread
+Unity** — tidak ada frame yang jalan selama sampling, jadi semua pencacah selalu
+nol dan kelihatan seperti fitur yang tidak berfungsi. Sampling harus lewat
+panggilan `execute_code` terpisah, bukan loop dengan sleep.
+
+---
+
+## Tes build ★5 penuh (2026-08-06, lanjutan)
+
+Detail lengkap: **[docs/AI-HANDOFF.md §14](../../docs/AI-HANDOFF.md)**.
+
+Papan cuma muat **4 dari 6** skill ★5 (49 petak vs footprint 8–9) — rarity yang
+memakan ruang papan bekerja sesuai desain.
+
+**Bug ketemu:** anggaran mana di `BalanceTunePass` dihitung **per skill**, bukan
+per papan. Empat skill ★5 butuh **96,2 mana/dtk** melawan regen **10** — build
+terbaik di game menembak di **10% laju nominalnya** dan mati di wave 20, padahal
+damage-nya cukup untuk menyapu.
+
+Diisolasi dengan menjalankan wave 20 dua kali dan **hanya mengubah regen mana**:
+mana normal → mati detik ~20 dengan 145 kills; mana tak terbatas → HP stabil 91
+dengan 499 kills.
+
+**Perbaikan (pilihan user: longgar, target ~70%):**
+`TargetManaPerSecond` dibagi konstanta baru `SkillsOnAFullBoard = 5`, dan
+`BaseManaRegen` 10 → **13**. Build ★5 yang sama sekarang butuh 20,9 mana/dtk
+melawan 13 → **62% laju nominal**; mana masih turun sampai 8–10 saat ramai.
+
+**Kurva endgame setelah perbaikan** (mana apa adanya, tidak dicurangi):
+
+| Wave | HP musuh | Hasil |
+|---|---|---|
+| 20 | 299 | HP pemain **100 utuh**, 413 kills |
+| 35 | 1 002 | HP 100, musuh ditahan 36–73 |
+| 45 | 2 046 | **mati** di ~7 detik, 1 288 kills |
+
+Dindingnya jatuh persis di tempat yang bisa dibaca dari angka: Solar Flare polos
+1 528, jadi wave 45 adalah wave pertama yang **tidak bisa di-one-shot tanpa crit**.
+60 fps di semua tes, termasuk 177 musuh hidup.

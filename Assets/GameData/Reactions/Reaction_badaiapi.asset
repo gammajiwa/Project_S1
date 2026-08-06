@@ -28,4 +28,6 @@ MonoBehaviour:
   ApplyPoints: 2
   SpreadToNearby: 1
   GrantBuff: {fileID: 0}
+  CleansesOneDebuff: 0
+  RefundMana: 10
   FlashColor: {r: 1, g: 0.55, b: 0.2, a: 1}

@@ -74,6 +74,22 @@ namespace Proto
             /// <summary>Reaksi tidak boleh meletus lagi sebelum ini nol. Mencegah kedip.</summary>
             public float ReactionLock;
 
+            /// <summary>
+            /// Ketinggian tempat musuh ini SEHARUSNYA berada. Disimpan terpisah karena Pos.y
+            /// dipakai bergantian untuk melayang bawaan dan untuk terangkat sementara — tanpa
+            /// nilai asli ini, sekali diangkat dia tidak pernah tahu harus turun ke mana.
+            /// </summary>
+            public float GroundY;
+
+            /// <summary>
+            /// Sisa detik musuh ini terangkat: tidak bisa jalan, tidak bisa menembak, tidak bisa
+            /// menyentuh siapa pun. Ini alasan skill kontrol layak berdiri di sebelah skill damage.
+            /// </summary>
+            public float LiftTimer;
+
+            /// <summary>Sisa dorongan dari ledakan, meluruh sendiri. Bukan fisika, cuma inersia.</summary>
+            public Vector3 Knock;
+
             public readonly StatusSlot[] Slots = NewSlots();
 
             static StatusSlot[] NewSlots()
@@ -144,6 +160,9 @@ namespace Proto
         EnemyRenderer _shotRenderer;
         readonly Dictionary<EnemyArchetype, int> _shotTint = new Dictionary<EnemyArchetype, int>();
         readonly Dictionary<EnemyArchetype, int> _archetypeTint = new Dictionary<EnemyArchetype, int>();
+        /// <summary>Saklar curang. Null di build normal, dan setiap pembacaan lewat propertinya.</summary>
+        public DebugConfig Cheats;
+
         Vector3 _lastPlayerPos;
         float _spawnRate;
         float _spawnBudget;
@@ -370,7 +389,8 @@ namespace Proto
             // A wave is a COUNT. A clock made the player watch a countdown instead of the field,
             // and "how many are left" is the only number they can actually act on. The rate below
             // still exists, but it only decides how fast that count arrives.
-            WaveTotal = _balance.EnemyCountFor(wave);
+            WaveTotal = Mathf.Max(1, Mathf.RoundToInt(
+                _balance.EnemyCountFor(wave) * (Cheats != null ? Cheats.EnemyCountScale : 1f)));
             PendingSpawns = WaveTotal;
             Closing = false;
 
@@ -437,6 +457,7 @@ namespace Proto
         void TickSpawning(float dt)
         {
             if (!WaveActive || Closing) return;
+            if (Cheats != null && Cheats.CheatFreezeSpawns) return;
 
             // Each wave climbs toward its own crescendo instead of running flat from the first
             // second, so the last stretch is the hardest part rather than the emptiest.
@@ -470,7 +491,7 @@ namespace Proto
             e.Kind = kind;
 
             e.Pos = SpawnPoint(distanceScale);
-            e.MaxHp = _balance.EnemyHpFor(Wave);
+            e.MaxHp = _balance.EnemyHpFor(Wave) * (Cheats != null ? Cheats.EnemyHpScale : 1f);
             e.Speed = Random.Range(_balance.EnemySpeedMin, _balance.EnemySpeedMax) +
                       Wave * _balance.EnemySpeedPerWave;
             e.Scale = 1f;
@@ -488,6 +509,9 @@ namespace Proto
             }
 
             e.Hp = e.MaxHp;
+            e.GroundY = e.Pos.y;
+            e.LiftTimer = 0f;
+            e.Knock = Vector3.zero;
 
             for (int i = 0; i < StatusSlots; i++) e.Slots[i].Def = -1;
 
@@ -503,6 +527,18 @@ namespace Proto
         }
 
         /// <summary>
+        /// Titik acuan kotak spawn. Defaultnya pemain; begitu kamera bisa bergerak, ini harus
+        /// diarahkan ke rig kamera.
+        ///
+        /// Bedanya bukan kosmetik. Kamera punya zona mati, jadi pemain boleh menyimpang jauh dari
+        /// pusat layar sebelum kamera ikut — dan kotak yang mengikuti PEMAIN akan menaruh musuh di
+        /// sisi yang sudah dijauhi pemain persis di dalam layar. Musuh menetas di depan mata.
+        /// </summary>
+        Transform _spawnAnchor;
+
+        public void SetSpawnAnchor(Transform anchor) => _spawnAnchor = anchor;
+
+        /// <summary>
         /// Walks a ray out from the caster in a random direction until it leaves the spawn box, and
         /// drops the enemy there.
         ///
@@ -510,10 +546,16 @@ namespace Proto
         /// rectangle, not a circle. On a ring, enemies arriving from the sides appear right at the
         /// screen edge in full view while enemies from above and below are still far off screen.
         /// Exiting through a box means every direction is off screen by the same margin.
+        ///
+        /// Kotaknya berpusat di ANCHOR, bukan di titik nol dunia. Dulu batasnya koordinat dunia
+        /// absolut, yang diam-diam mengikat ukuran arena ke jarak tempuh musuh: memperbesar arena
+        /// berarti musuh berjalan lebih lama, jadi arena tidak pernah bisa dibesarkan tanpa
+        /// merusak tempo. Dilepas dari titik nol, keduanya jadi tidak saling menyandera.
         /// </summary>
         Vector3 SpawnPoint(float distanceScale = 1f)
         {
             Vector3 from = _player.position;
+            Vector3 centre = _spawnAnchor != null ? _spawnAnchor.position : from;
 
             float angle = Random.Range(0f, Mathf.PI * 2f);
             float dx = Mathf.Cos(angle);
@@ -522,13 +564,17 @@ namespace Proto
             float hx = _balance.SpawnBoundsX;
             float hz = _balance.SpawnBoundsZ;
 
+            // Diukur relatif terhadap pusat kotak, lalu sinarnya tetap berangkat dari pemain.
+            float sx = from.x - centre.x;
+            float sz = from.z - centre.z;
+
             float tx = Mathf.Abs(dx) < 0.0001f
                 ? float.MaxValue
-                : ((dx > 0f ? hx : -hx) - from.x) / dx;
+                : ((dx > 0f ? hx : -hx) - sx) / dx;
 
             float tz = Mathf.Abs(dz) < 0.0001f
                 ? float.MaxValue
-                : ((dz > 0f ? hz : -hz) - from.z) / dz;
+                : ((dz > 0f ? hz : -hz) - sz) / dz;
 
             // Never behind us, and always at least a little way out even when the caster is already
             // pressed against the boundary.
@@ -634,6 +680,37 @@ namespace Proto
                 }
 
                 if (repaint) Paint(e);
+
+                // Dorongan diproses lebih dulu dan berlaku untuk semua, termasuk yang terangkat.
+                // Kalau tidak, musuh yang dilontarkan sambil diangkat akan menggantung di tempat
+                // dan lontarannya tidak pernah terbaca.
+                if (e.Knock.sqrMagnitude > 0.0004f)
+                {
+                    e.Pos += e.Knock * dt;
+
+                    // Peluruhan eksponensial: keras di awal, berhenti mulus. Pengurangan linier
+                    // membuat semua lontaran mendarat dengan rem mendadak yang sama.
+                    e.Knock *= Mathf.Exp(-6f * dt);
+                }
+                else
+                {
+                    e.Knock = Vector3.zero;
+                }
+
+                // Terangkat = benar-benar keluar dari pertandingan sementara. Tidak melangkah,
+                // tidak menembak, tidak menyentuh. Itu seluruh alasan skill kontrol ada.
+                if (e.LiftTimer > 0f)
+                {
+                    e.LiftTimer -= dt;
+
+                    // Naik cepat, turun pelan, jadi jatuhnya terbaca sebagai dijatuhkan bukan hilang.
+                    float height = Mathf.Min(2.6f, e.LiftTimer * 4f);
+                    e.Pos.y = e.GroundY + height;
+                    e.Yaw += 420f * dt;
+
+                    if (e.LiftTimer <= 0f) e.Pos.y = e.GroundY;
+                    continue;
+                }
 
                 Vector3 pos = e.Pos;
                 Vector3 delta = target - pos;
@@ -1122,6 +1199,61 @@ namespace Proto
         }
 
         /// <summary>
+        /// Melontarkan semua musuh di dalam radius MENJAUH dari titik pusat. Tidak melukai —
+        /// yang dibeli pemain di sini adalah ruang, bukan kill.
+        /// </summary>
+        public void Push(Vector3 center, float radius, float force)
+        {
+            float sqrRadius = radius * radius;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                Vector3 d = e.Pos - center;
+                d.y = 0f;
+
+                float sqr = d.sqrMagnitude;
+                if (sqr > sqrRadius) continue;
+
+                // Yang berdiri persis di pusat tidak punya arah menjauh. Dilempar acak, bukan
+                // dibiarkan diam — kalau tidak, justru musuh yang paling menempel yang selamat
+                // dari skill yang seluruh gunanya melepaskan diri dari mereka.
+                Vector3 away = sqr < 0.01f
+                    ? new Vector3(Random.value - 0.5f, 0f, Random.value - 0.5f).normalized
+                    : d / Mathf.Sqrt(sqr);
+
+                // Yang dekat terlempar paling keras. Gelombangnya jadi terbaca sebagai berasal
+                // dari satu titik, bukan sebagai kotak yang semuanya bergeser bersamaan.
+                float falloff = 1f - Mathf.Sqrt(sqr) / radius;
+                e.Knock += away * (force * Mathf.Max(0.25f, falloff));
+            }
+        }
+
+        /// <summary>
+        /// Mengangkat semua musuh di dalam radius. Selama terangkat mereka sepenuhnya lumpuh.
+        /// Durasi di-REFRESH, bukan ditumpuk, supaya dua puting beliung yang tumpang tindih tidak
+        /// mengunci lapangan selamanya.
+        /// </summary>
+        public void Lift(Vector3 center, float radius, float duration)
+        {
+            float sqrRadius = radius * radius;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                Vector3 d = e.Pos - center;
+                d.y = 0f;
+                if (d.sqrMagnitude > sqrRadius) continue;
+
+                e.LiftTimer = Mathf.Max(e.LiftTimer, duration);
+            }
+        }
+
+        /// <summary>
         /// Where to drop an area skill: the thickest part of the crowd within reach.
         ///
         /// It scores GRID CELLS, not enemies. The old version asked every enemy in range how many
@@ -1274,16 +1406,16 @@ namespace Proto
         /// than spreading it thin.
         /// </summary>
         public int DetonateStatus(int statusIndex, float damagePerPoint, float splashRadius,
-            string sourceName, System.Action<Vector3, int> onBlast)
+            int maxBlasts, string sourceName, System.Action<Vector3, int> onBlast)
         {
-            if (statusIndex < 0) return 0;
+            if (statusIndex < 0 || maxBlasts <= 0) return 0;
 
             int blasts = 0;
 
             // Snapshot first: detonating damages, damage can kill, and killing mutates the pool.
             int count = _pool.Count;
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < count && blasts < maxBlasts; i++)
             {
                 var e = _pool[i];
                 if (!e.Alive) continue;

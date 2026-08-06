@@ -7,7 +7,7 @@ namespace Proto
     /// The stationary caster. Reads the compiled loadout only â€” it never looks at the grid.
     /// Owns the tiny FX pools so the prototype stays in one place.
     /// </summary>
-    public class PlayerCaster : MonoBehaviour
+    public partial class PlayerCaster : MonoBehaviour
     {
         class Projectile
         {
@@ -233,23 +233,82 @@ namespace Proto
                 var def = slots[i].Def;
                 if (def == null || def.Mods == null) continue;
 
+                // Every charge counts. A three-stack Frenzy is three times the buff, which is what
+                // makes spending time collecting them worth anything.
+                int stacks = Mathf.Max(1, slots[i].Stacks);
+
                 for (int m = 0; m < def.Mods.Length; m++)
                 {
                     var mod = def.Mods[m];
                     if (mod.Type == StatKind.None || mod.Type == StatKind.Count) continue;
-                    into[(int)mod.Type] += mod.Value;
+                    into[(int)mod.Type] += mod.Value * stacks;
                 }
             }
+        }
+
+        /// <summary>Charges held of a given buff, zero when it is not up.</summary>
+        public int StacksOf(BuffDefinition def)
+        {
+            if (def == null) return 0;
+
+            for (int i = 0; i < BuffSlots; i++)
+            {
+                if (_buffs[i].Def == def) return Mathf.Max(1, _buffs[i].Stacks);
+            }
+
+            return 0;
+        }
+
+        /// <summary>Spends every charge of a buff and reports how many were taken.</summary>
+        public int SpendCharges(BuffDefinition def)
+        {
+            if (def == null) return 0;
+
+            for (int i = 0; i < BuffSlots; i++)
+            {
+                if (_buffs[i].Def != def) continue;
+
+                int held = Mathf.Max(1, _buffs[i].Stacks);
+                _buffs[i].Def = null;
+                _buffs[i].Stacks = 0;
+                Recompute();
+                return held;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// A kill happened. Pieces on the board that generate charges do it here.
+        ///
+        /// Wired from the composition root rather than reached for, and cheap enough to run on
+        /// every death: the grant list is compiled once when the grid changes, and a charge that is
+        /// already at maximum costs one comparison.
+        /// </summary>
+        public void OnEnemyKilled(Vector3 at)
+        {
+            var grants = Book.KillGrants;
+            for (int i = 0; i < grants.Count; i++) ApplyBuff(grants[i]);
         }
 
         // Buff berubah saat wave berjalan, jadi ini dipakai SAAT CAST — bukan saat kompilasi grid.
         //
         // Batas atasnya 2, bukan 1. Dulu 1, dan itu berarti nilai NEGATIF tidak berpengaruh sama
         // sekali: sebuah debuff "cast jadi lambat" akan tampil di HUD, lalu tidak melakukan apa pun.
-        float BuffDamageMul => Mathf.Max(0.05f, 1f + _buffStats[(int)StatKind.DamagePct]
-                                                  + _debuffStats[(int)StatKind.DamagePct]);
-        float BuffCooldownMul => Mathf.Clamp(1f - _buffStats[(int)StatKind.CooldownPct]
-                                                - _debuffStats[(int)StatKind.CooldownPct], 0.25f, 2f);
+        /// <summary>Set for the duration of one cast when that cast just ate a pile of charges.</summary>
+        float _chargeBonus;
+
+        /// <summary>Saklar curang. Null di build normal, dan setiap pembacaan lewat propertinya.</summary>
+        public DebugConfig Cheats;
+
+        float BuffDamageMul => (Cheats != null ? Cheats.DamageScale : 1f) *
+                               Mathf.Max(0.05f, 1f + _buffStats[(int)StatKind.DamagePct]
+                                                  + _debuffStats[(int)StatKind.DamagePct]
+                                                  + _chargeBonus);
+        float BuffCooldownMul => Cheats != null && Cheats.CheatNoCooldowns
+            ? 0.01f
+            : Mathf.Clamp(1f - _buffStats[(int)StatKind.CooldownPct]
+                             - _debuffStats[(int)StatKind.CooldownPct], 0.25f, 2f);
         float BuffAreaMul => Mathf.Max(0.2f, 1f + _buffStats[(int)StatKind.AreaPct]
                                                 + _debuffStats[(int)StatKind.AreaPct]);
         float BuffRangeMul => Mathf.Max(0.2f, 1f + _buffStats[(int)StatKind.RangePct]
@@ -390,7 +449,10 @@ namespace Proto
 
             if (Alive)
             {
-                Mana = Mathf.Min(MaxMana, Mana + ManaRegen * dt);
+                Mana = Cheats != null && Cheats.CheatInfiniteMana
+                    ? MaxMana
+                    : Mathf.Min(MaxMana, Mana + ManaRegen * dt);
+
                 if (HpRegen > 0f) Hp = Mathf.Min(MaxHp, Hp + HpRegen * dt);
             }
 
@@ -401,6 +463,7 @@ namespace Proto
             TickProjectiles(dt);
             TickDescents(dt);
             TickZones(dt);
+            TickSignature(dt);
             TickFlashes(dt);
             _bolts.Tick(dt);
         }
@@ -429,8 +492,21 @@ namespace Proto
                 float cost = s.Source.Def.ManaCost * Book.ManaCostMultiplier * BuffManaCostMul;
                 if (Mana < cost) continue;
 
+                // Charge spenders wait for something to spend. Firing at zero charges would make
+                // collecting them pointless — the whole loop is "hold it until it is worth it".
+                var eats = s.Source.Def.ConsumesCharge;
+                if (eats != null && StacksOf(eats) <= 0) continue;
+
+                _chargeBonus = eats == null ? 0f : SpendCharges(eats) * s.Source.Def.DamagePerCharge;
+
                 // No valid target: stay ready and idle. The cooldown must not keep spinning.
-                if (!Cast(s)) continue;
+                if (!Cast(s))
+                {
+                    _chargeBonus = 0f;
+                    continue;
+                }
+
+                _chargeBonus = 0f;
 
                 Mana -= cost;
                 s.Source.CdTimer = s.Cooldown * BuffCooldownMul;
@@ -622,6 +698,16 @@ namespace Proto
                     LaunchDescent(cluster.Pos, spell, def, 0f, 0f);
                     return true;
                 }
+
+                case CastKind.Orbit: return CastOrbit(spell, def);
+                case CastKind.Blink: return CastBlink(spell, def);
+                case CastKind.Ward: return CastWard(spell, def);
+                case CastKind.Surge: return CastSurge(def);
+                case CastKind.Restore: return CastRestore(spell, def);
+                case CastKind.SunStrike: return CastSunStrike(spell, def);
+                case CastKind.RollingBall: return CastRollingBall(spell, def);
+                case CastKind.Vortex: return CastVortex(spell, def);
+                case CastKind.ForcePush: return CastForcePush(spell, def);
             }
 
             return false;
@@ -717,7 +803,8 @@ namespace Proto
             float perPoint = spell.Damage * BuffDamageMul * RollCrit();
             float radius = spell.Radius * BuffAreaMul;
 
-            int blasts = _enemies.DetonateStatus(statusIndex, perPoint, radius, def.DisplayName,
+            int blasts = _enemies.DetonateStatus(statusIndex, perPoint, radius,
+                def.MaxDetonations, def.DisplayName,
                 (at, points) =>
                 {
                     // Bigger stack, bigger bang — the flash has to say so.
@@ -1173,6 +1260,19 @@ namespace Proto
 
         void Drain(float amount)
         {
+            if (Cheats != null && Cheats.CheatInvulnerable) return;
+
+            // Perisai dimakan lebih dulu, dan sisa yang tembus tetap diteruskan ke HP dalam pukulan
+            // yang sama. Kalau perisai menelan seluruh pukulan hanya karena dia sempat aktif, satu
+            // Ward tipis bisa memblokir hantaman terbesar di layar secara gratis.
+            if (Shield > 0f)
+            {
+                float absorbed = Mathf.Min(Shield, amount);
+                Shield -= absorbed;
+                amount -= absorbed;
+                if (amount <= 0f) return;
+            }
+
             Hp -= amount;
             if (Hp > 0f) return;
 

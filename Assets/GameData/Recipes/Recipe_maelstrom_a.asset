@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82976f149c28c5b488e14268b4584f06, type: 3}
+  m_Name: Recipe_maelstrom_a
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.RecipeDefinition
+  Ingredients:
+  - {fileID: 11400000, guid: d0e39c1766674b34dbc23db62aff94d0, type: 2}
+  - {fileID: 11400000, guid: 66eb1c1ea35c9fe4ab0934f05daeb78d, type: 2}
+  Result: {fileID: 11400000, guid: 0e0063e2857fbc648bb0679dc57c1cb8, type: 2}

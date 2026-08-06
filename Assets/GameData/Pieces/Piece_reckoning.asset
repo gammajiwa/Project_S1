@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_reckoning
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: reckoning
+  DisplayName: Reckoning
+  Stars: 4
+  Layer: 1
+  Shape: 16
+  Color: {r: 1, g: 0.5, b: 0.25, a: 1}
+  Icon: {fileID: 21300000, guid: f40a2f076f9668e44a286e30cab33e32, type: 3}
+  Kind: 11
+  Element: 3
+  BaseDamage: 32
+  BaseCooldown: 4.4
+  Radius: 6
+  Range: 0
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 13
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  Trigger: 0
+  TriggerStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 22
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. Setiap musuh yang terbakar meledak sebesar tumpukan BURN-nya. Semakin
+    dalam kamu membakar, semakin besar tagihannya.

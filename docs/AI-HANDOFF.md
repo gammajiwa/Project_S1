@@ -2,7 +2,8 @@
 
 Dokumen ini ditulis supaya agent lain bisa lanjut kerja tanpa harus menebak.
 Baca ini **sebelum** menyentuh kode. Terakhir diperbarui: sesi 2026-08-06
-(auto-move, rendering instanced, wave berbasis jam, konten 70 piece).
+(skill non-serangan, kamera dead-zone, drop jadi benda nyata, solver keseimbangan —
+**§13**; tes build ★5 penuh + bug anggaran mana — **§14**; konten 100 piece).
 
 ---
 
@@ -51,9 +52,9 @@ Keduanya butuh asset terisi di Inspector: `ContentDatabase.asset` dan
 `GameBalance.asset` (di `Assets/GameData/`). Scene menu butuh `ContentDatabase`
 saja, buat codex.
 
-**Isi konten saat ini:** **74 piece**, **75 resep**, 7 status, 9 reaksi, 6 buff,
-**4 kutukan**, **4 arketipe musuh**, **91 ikon placeholder**
-(74 piece + 7 status + 10 buff/kutukan).
+**Isi konten saat ini:** **100 piece**, **101 resep**, 7 status, 9 reaksi,
+**10 buff**, **4 kutukan**, **4 arketipe musuh**, ikon placeholder lengkap
+(0 piece tanpa ikon).
 
 Piramida rarity — ini disengaja, bukan kebetulan. Cuma piece ★1 yang pernah
 nge-drop dan cuma ★1–★2 yang masuk toko, jadi alas yang lebar itulah yang bikin
@@ -383,8 +384,8 @@ Ini semua sudah pernah terjadi. Jangan mengulangi.
 
 ## 9. Sudah selesai
 
-Grid dua lapis 7×7 · tas 5×4 · rune/skill/segel dengan bentuk terikat rarity ·
-70 piece, 71 resep, piramida ★1–★5 · 7 ailment berbasis poin · 9 reaksi · 6 buff ·
+Grid dua lapis 7×7 · tas 4×4 · rune/skill/segel dengan bentuk terikat rarity ·
+**100 piece, 101 resep**, piramida ★1–★5 · 7 ailment berbasis poin · 9 reaksi · 10 buff ·
 mana & regen · Defense · crit · 3 bentuk AoE · damage meter · tooltip · codex ·
 main menu · setelan · camera shake · bar HP/mana beranimasi ·
 **gerak otomatis pemain** (arena elips, `MoveSpeed` sebagai stat) ·
@@ -395,13 +396,17 @@ main menu · setelan · camera shake · bar HP/mana beranimasi ·
 **proyektil**: jatuh dari langit, petir melompat, sinar garis, ledakan mati musuh ·
 **garis evolusi** yang menghubungkan bahan · **kartu resep berikon** ·
 **kabel resep dari kursor** begitu piece diangkat · **tiga strip ikon**
-(buff / kutukan / ailment) dengan angka dan hover · 91 ikon placeholder.
+(buff / kutukan / ailment) dengan angka dan hover · 100 ikon placeholder ·
+**9 CastKind non-serangan/berciri khas** (lihat §13) · **damage & mana dipecahkan
+solver**, bukan diketik tangan (`BalanceTunePass`) · **barang jatuhan jadi benda
+nyata** yang dilempar dekat pemain lalu tersedot masuk · **kamera dead-zone**
+(terpasang, tapi jarak geraknya 0 — lihat §13).
 
 ## 10. Belum selesai — urutan yang disarankan
 
 | # | Item | Kenapa |
 |---|---|---|
-| 1 | **Main dan nilai rasanya** | semua verifikasi sesi ini programatik. Kurva wave, tekanan grid, lompatan bintang, rasa auto-move — belum pernah dinilai tangan manusia |
+| 1 | **Main dan nilai rasanya** | semua verifikasi sesi ini programatik. Kurva wave, tekanan grid, lompatan bintang, rasa auto-move, **arena baru 22×17** — belum pernah dinilai tangan manusia |
 | 2 | **Boss** | `SpawnOne()` tetap satu-satunya tempat stat per musuh diisi, dan `EnemyArchetype` sudah jadi tempat menaruhnya — boss = satu aset lagi dengan angka besar |
 | 3 | **Animasi baked (VAT)** | jahitannya sudah ada: `Yaw`, `Phase`, dan `EnemyRenderer.Compose()`. Yang belum: shader VAT + tool bake-nya |
 | 4 | **Optimasi FX `PlayerCaster`** | Projectile/Flash/Descent/Zone masih GameObject primitif satu-satu. Ini hambatan berikutnya begitu VFX masuk |
@@ -457,3 +462,192 @@ Aturan yang dipakai sejauh ini: **satu blok per patch**, stop → `refresh_unity
 Nama konten (piece, status, reaksi, buff) **sudah Inggris semua**. Yang **belum**:
 teks UI in-game di `View/GrimoireUI.cs` (`MULAI WAVE`, `JUAL`, `TAS`, banner,
 tooltip) dan `Menu/`. Sebaiknya dikerjakan sekalian saat `GrimoireUI` dipecah.
+
+---
+
+## 13. Skill non-serangan, kamera, dan solver keseimbangan
+
+Ditambahkan 2026-08-06. Tiga hal terpisah, ditulis di sini karena saling menyentuh.
+
+### 13.1 Sembilan `CastKind` baru
+
+Ditambahkan **di belakang** enum `CastKind`, tidak pernah disisipkan di tengah —
+nilai enum tersimpan sebagai angka di aset, jadi menyisipkan satu entri akan
+menggeser tiap skill di bawahnya jadi kind yang salah, tanpa error dan tanpa jejak.
+
+| Kind | Isi | Angka `BaseDamage` artinya |
+|---|---|---|
+| `Orbit` | pecahan mengambang di atas kepala, meluncur sendiri saat ada yang mendekat | damage per pecahan |
+| `Blink` | lompat menjauh dari kerumunan; **menolak menyala kalau lapangan lengang** | — |
+| `Ward` | perisai yang **menyerap** damage sampai jatahnya habis | jumlah serapan |
+| `Surge` | menempelkan `GrantOnCast` ke pemain (haste / quickcast / dsb.) | — |
+| `Restore` | isi mana; 0 = penuh, >0 = jumlah tetap | jumlah mana |
+| `SunStrike` | menandai tanah, menghantam setelah `TelegraphDelay` | damage |
+| `RollingBall` | bola menggelinding, melindas satu musuh **sekali per bola** | damage |
+| `Vortex` | menyeret + **mengangkat** + menggerus tiap 0,25 detik | damage per denyut |
+| `ForcePush` | melontarkan semua menjauh | damage (kecil) |
+
+Implementasinya di **`Systems/PlayerCasterSignature.cs`** — `partial class PlayerCaster`.
+`PlayerCaster.cs` sekarang `public partial class`.
+
+**Field `PieceDefinition` baru:** `GrantOnCast`, `TelegraphDelay`, `PushForce`,
+`LiftDuration`, `TravelSpeed`.
+
+**Field `EnemyManager.Enemy` baru:** `GroundY` (tinggi asli, dipisah karena `Pos.y`
+dipakai bergantian untuk melayang bawaan dan terangkat sementara), `LiftTimer`,
+`Knock`. Dua API baru: `EnemyManager.Push(center, radius, force)` — **gaya negatif
+= seretan**, dipakai `Vortex` — dan `EnemyManager.Lift(center, radius, duration)`.
+
+Musuh terangkat **benar-benar lumpuh**: tidak melangkah, tidak menembak, tidak
+menyentuh. Diverifikasi: 14 musuh melayang di 2,60 unit, HP pemain tidak turun.
+
+Konten dibuat `Editor/SignaturePass.cs` → menu **Tools/Grimoire/Generate Signature
+Skills**. 19 piece + 16 resep + 4 buff. **Jalankan `Rebalance by Throughput`
+setelah ini**, karena `SignaturePass` sengaja menulis damage 1 untuk skill
+penyerang dan membiarkan solver yang mengisinya.
+
+### 13.2 Solver keseimbangan (`Editor/BalanceTunePass.cs`)
+
+Damage tidak lagi diketik tangan. Arahnya dibalik: **pilih throughput yang layak
+untuk satu tier, bagi dengan berapa musuh yang disentuh arketipe itu, biarkan
+angka damage-nya jatuh sendiri.**
+
+Target: `22 / 68 / 190 / 520 / 1350` dps per bintang.
+
+Hasil terukur (tiap kolom = dps dari `damage × sasaran / cooldown`):
+
+| ★ | n | terendah | median | tertinggi | naik |
+|---|---|---|---|---|---|
+| 1 | 21 | 12 | 22 | 26 | — |
+| 2 | 15 | 55 | 68 | 82 | ×3,1 |
+| 3 | 13 | 95 | 188 | 226 | ×2,8 |
+| 4 | 7 | 266 | 523 | 525 | ×2,8 |
+| 5 | 6 | 662 | 1333 | 1619 | ×2,5 |
+
+Sebelum solver: sebaran dalam tier sampai **×6**, dan ★3→★4 cuma **×1,5**.
+Yang di bawah median tiap tier adalah skill kontrol (`Vortex` ×0,5,
+`ForcePush` ×0,55) — potongan yang **disengaja**, karena mereka menjual waktu dan
+ruang, bukan kill.
+
+**Urutan menjalankan editor tool penting:** `ComboPass` dan `SignaturePass` menulis
+damage mentah, `BalanceTunePass` menghitungnya ulang. Selalu solver **terakhir**.
+
+### 13.3 Kamera dead-zone (`View/ArenaCamera.cs`)
+
+Kamera sekarang anak dari **"Camera Rig"**; `ArenaCamera` di rig, `CameraShake`
+tetap di kamera. **Ini wajib**: `CameraShake` menulis `localPosition` kamera dan
+mengingat titik asalnya di `Awake`, jadi kalau keduanya menulis transform yang
+sama, guncangan menarik kamera balik tiap frame dan pengikutan mati tanpa error.
+
+Batas geraknya dihitung dari yang **benar-benar terlihat** — ukuran ortografis,
+rasio layar dan sudut kemiringan semuanya ikut menentukan seberapa jauh tanah
+tertangkap, dan menebaknya berarti tepi arena bisa bocor di rasio layar tertentu.
+
+Saat pertama dipasang hasilnya **nol**: arena 16×9 sementara layar menutupi
+19,6×11,9, jadi kamera tidak pernah punya alasan bergerak. Diperbaiki dengan
+membesarkan arena (keputusan user):
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| `ArenaHalfX / Z` | 16 / 9 | **22 / 17** |
+| `SpawnBoundsX / Z` | 21 / 13 | **24 / 19** |
+| `WaveOpenerCount / Distance` | 6 / 0,6 | **9 / 0,5** |
+| Sisa gerak kamera | 0,0 / 0,0 | **2,4 / 5,1** |
+
+`SpawnBounds` sengaja cuma **2 unit di luar arena**. Kamera paling jauh bisa
+geser 2,4/5,1, jadi tepi layar terjauh persis = tepi arena — dua unit sudah cukup
+supaya musuh tidak pernah menetas di dalam layar, tanpa melebih-lebihkan jarak
+jalan mereka. Arena yang membesar sudah menambah waktu tempuh; itu sebabnya
+rombongan pembuka dinaikkan ke 9 dan dimulai lebih dekat.
+
+Terukur setelah perubahan: rombongan pembuka 9 musuh di jarak 9,6–12,9 (±7,6
+detik untuk tiba), pengepungan tetap **8/8 sektor** dengan sektor terpadat 22%,
+60 fps. Rig terbukti bergeser sampai batas `(2,44 / 5,14)` lalu berhenti.
+
+**Catatan perilaku:** kamera **tidak** kembali ke tengah setelah pemain masuk lagi
+ke zona mati. Itu memang cara kerja dead zone, bukan bug.
+
+Yang **sudah** diperbaiki dari keluhan yang sama: `PlayerMotor` tidak lagi
+menyeret pemain balik ke tengah saat lapangan sepi. Dulu tiap kali pemain
+berhasil lepas ke satu sisi, ia ditarik balik tanpa diminta.
+
+### 13.4 Barang jatuhan jadi benda nyata (`View/DropPickups.cs`)
+
+Drop tidak lagi langsung masuk kantong. Dilempar dari **posisi pemain** (bukan
+posisi musuh mati — itu bisa di seberang peta dan tidak pernah terbaca sebagai
+hadiah), memantul sekali, lalu magnetnya **menjemput** dalam radius 7 unit.
+
+Pemain berjalan otomatis dan tidak bisa disuruh memungut, jadi ada batas waktu
+6 detik yang menyerahkan barangnya begitu saja di mana pun ia berada. Kehilangan
+drop karena pemain kebetulan lari ke arah lain adalah hukuman untuk sesuatu yang
+bukan keputusan pemain.
+
+Dimiliki `GrimoireUI` (`_pickups`), callback-nya `AddLoose`.
+
+---
+
+## 14. Tes build ★5 penuh — dan bug mana yang ditemukannya
+
+Dijalankan 2026-08-06. Ini contoh kenapa aturan "ukur, jangan tebak" ada.
+
+### 14.1 Papan cuma muat 4 dari 6 skill ★5
+
+Lapisan skill 7×7 = 49 petak; footprint ★5 = 8–9 petak. Empat sudah penuh, dan
+14 petak sisanya terlalu terpecah untuk menerima bentuk `Chunk` 8 petak.
+**Rarity yang memakan ruang papan itu bekerja** — bukan kebetulan.
+
+Build uji: 4 × `runebadai` + 6 × `runeasah` di lapisan rune, lalu Cataclysm,
+Stormbreaker, Solar Flare, Absolute Zero di atasnya.
+
+| Skill | Damage dasar | Setelah rune | Cooldown efektif |
+|---|---|---|---|
+| Solar Flare | 650 | **1 528** (crit ×2,8 → **4 277**) | 4,8 dtk |
+| Stormbreaker | 175 | 665 | 2,9 dtk |
+| Cataclysm | 150 | 353 | 3,7 dtk |
+| Absolute Zero | 76 | 167 | 1,8 dtk |
+
+### 14.2 Bug: anggaran mana dihitung per-skill, bukan per-papan
+
+`TargetManaPerSecond` di `BalanceTunePass` adalah angka **per skill** (★5 =
+18/dtk). Modelnya tidak pernah menanyakan *berapa skill yang dipasang sekaligus*.
+
+Empat skill ★5 = 72/dtk, dikali 1,34 dari rune cooldown = **96,2 mana/dtk**,
+melawan regen **10/dtk**. Build terbaik di game ini menembak di **10% laju
+nominalnya** — dan seluruh tangga damage di §13.2 jadi tidak ada artinya di
+endgame, karena skill-nya kuat tapi tidak pernah dapat giliran nyala.
+
+**Diisolasi**: wave 20 yang sama dijalankan dua kali, **hanya regen mana yang
+diubah**, damage dan cooldown dibiarkan apa adanya.
+
+| | Mana normal | Mana tak terbatas |
+|---|---|---|
+| Hasil | **mati di detik ~20** | hidup terus |
+| HP | 100 → 80 → 45 → 0 | stabil 91 |
+| Kills | 145 | 499 |
+| Musuh | 43 → 69, terus naik | ditahan 17–40 |
+
+### 14.3 Perbaikan
+
+`TargetManaPerSecond` sekarang dibaca sebagai anggaran **seluruh papan**, dibagi
+konstanta `SkillsOnAFullBoard = 5`. Plus `BaseManaRegen` 10 → **13**.
+
+Hasil pada build ★5 yang sama: butuh **20,9 mana/dtk** melawan regen 13 →
+**62% laju nominal**. Mana tetap terasa (turun sampai 8–10 saat ramai), tapi tidak
+lagi mematikan build.
+
+### 14.4 Kurva endgame setelah perbaikan (semua mana APA ADANYA)
+
+| Wave | HP musuh | Hasil |
+|---|---|---|
+| 20 | 299 | **HP pemain 100 utuh**, tidak pernah kena; 413 kills |
+| 35 | 1 002 | HP 100, musuh ditahan 36–73; ~20 kill/detik |
+| 45 | 2 046 | **MATI** di ~7 detik, 1 288 kills |
+
+Dindingnya jatuh persis di tempat yang bisa dibaca dari angka: Solar Flare polos
+1 528, jadi **wave 45 (HP 2 046) adalah wave pertama yang tidak bisa di-one-shot
+tanpa crit**. Begitu one-shot putus, gerombolan menumpuk dan pemain kalah.
+
+60 fps di semua tes, termasuk 177 musuh hidup di wave 45.
+
+**Jangan hilangkan sifat ini tanpa sengaja.** Kalau `EnemyHpGrowth` atau damage
+★5 diubah, dinding endgame bergeser bersamanya.

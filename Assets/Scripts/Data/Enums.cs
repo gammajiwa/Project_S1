@@ -46,7 +46,62 @@ namespace Proto
         /// Ini separuh kedua dari kombo dua skill: satu skill menghabiskan seluruh cast-nya
         /// mengoles ailment murah ke mana-mana, dan yang ini menagihnya sekaligus.
         /// </summary>
-        Detonate
+        Detonate,
+
+        // --- Ditambahkan DI BELAKANG, tidak pernah disisipkan di tengah. Nilai enum tersimpan
+        // sebagai ANGKA di aset; menyisipkan satu entri saja akan menggeser tiap skill di
+        // bawahnya menjadi kind yang salah, tanpa error dan tanpa jejak. ---
+
+        /// <summary>
+        /// Memunculkan beberapa pecahan yang MENGAMBANG di atas kepala pemain dan menunggu.
+        /// Tidak ada yang terjadi sampai ada musuh mendekat; saat itu barulah satu pecahan
+        /// meluncur. Kalau tidak ada yang datang, muatannya tetap tersimpan.
+        ///
+        /// Nilainya bukan di damage-nya, tapi di WAKTUNYA: dayanya sudah dibayar sebelum
+        /// gerombolan tiba, bukan saat pemain sudah kewalahan.
+        /// </summary>
+        Orbit,
+
+        /// <summary>
+        /// Melompat menjauh dari titik terpadat. Murni kabur — tidak melukai apa pun.
+        ///
+        /// Menolak menyala saat lapangan lengang, jadi cooldown-nya masih utuh justru waktu
+        /// pemain benar-benar terkepung.
+        /// </summary>
+        Blink,
+
+        /// <summary>Perisai yang MENYERAP damage sampai jatahnya habis, bukan menyembuhkan.</summary>
+        Ward,
+
+        /// <summary>
+        /// Menempelkan buff ke pemain sendiri. Satu kind untuk semua penguat — haste, cast
+        /// lebih cepat, amuk — karena bedanya cuma isi <c>GrantOnCast</c>, bukan kodenya.
+        /// </summary>
+        Surge,
+
+        /// <summary>Mengisi ulang mana seketika. Menahan diri saat mana masih penuh.</summary>
+        Restore,
+
+        /// <summary>
+        /// Menandai tanah dulu, baru menghantam setelah jeda. Telegraf-nya bukan hiasan:
+        /// itu yang bikin skill ini punya ritme sendiri di tengah layar yang semuanya instan.
+        /// </summary>
+        SunStrike,
+
+        /// <summary>
+        /// Bola yang MENGGELINDING menembus gerombolan dan melukai semua yang dilewati.
+        /// Beda dari Line: dia butuh waktu untuk sampai, dan gerombolan sempat bergerak.
+        /// </summary>
+        RollingBall,
+
+        /// <summary>
+        /// Puting beliung: menyeret musuh ke pusatnya, MENGANGKAT mereka sampai tidak bisa
+        /// jalan maupun menembak, sambil terus menggerus. Kontrol kerumunan, bukan damage.
+        /// </summary>
+        Vortex,
+
+        /// <summary>Gelombang yang MELONTARKAN semua musuh menjauh. Membuka ruang, bukan membunuh.</summary>
+        ForcePush
     }
 
     /// <summary>

@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_tornado
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: tornado
+  DisplayName: Tornado
+  Stars: 4
+  Layer: 1
+  Shape: 14
+  Color: {r: 0.62, g: 0.88, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 87754848880a3624ea7bcd0751648e18, type: 3}
+  Kind: 19
+  Element: 2
+  BaseDamage: 16
+  BaseCooldown: 8
+  Radius: 4.2
+  Range: 14
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 24
+  ZoneDuration: 5
+  ZoneTickInterval: 0.5
+  ZoneDrift: 2.3
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 13
+  LiftDuration: 1.8
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: Puting beliung. Menyeret lebih kuat, mengangkat lebih lama, dan mengembara
+    sendiri melintasi lapangan.

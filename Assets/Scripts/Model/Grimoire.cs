@@ -247,6 +247,13 @@ namespace Proto
 
         public float Stat(StatKind kind) => Stats[(int)kind];
 
+        /// <summary>
+        /// Buffs handed out on every kill by whatever is currently placed. Compiled once when the
+        /// grid changes so the kill handler — which fires hundreds of times a second at high waves
+        /// — never has to walk the board.
+        /// </summary>
+        public readonly List<BuffDefinition> KillGrants = new List<BuffDefinition>();
+
         public float BonusMaxHp => Stats[(int)StatKind.MaxHp];
         public float BonusMaxMana => Stats[(int)StatKind.MaxMana];
         public float BonusManaRegen => Stats[(int)StatKind.ManaRegen];
@@ -977,11 +984,14 @@ namespace Proto
         void Compile()
         {
             Spells.Clear();
+            KillGrants.Clear();
             System.Array.Clear(Stats, 0, Stats.Length);
 
             // Any placed piece may hand out stats: runes, sigils, even skills.
             foreach (var piece in Placed)
             {
+                if (piece.Def.GrantOnKill != null) KillGrants.Add(piece.Def.GrantOnKill);
+
                 if (piece.Def.Stat != StatKind.None && piece.Def.Stat != StatKind.Count)
                 {
                     Stats[(int)piece.Def.Stat] += piece.Def.StatValue;

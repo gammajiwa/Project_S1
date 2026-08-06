@@ -21,13 +21,15 @@ MonoBehaviour:
   Icon: {fileID: 21300000, guid: 69e3edbd94663684eb94c9dde94a0e99, type: 3}
   Kind: 1
   Element: 3
-  BaseDamage: 80
+  BaseDamage: 40
   BaseCooldown: 3.4
   Radius: 6.5
   Range: 6.5
   Hits: 1
   Forks: 1
-  ManaCost: 36
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 8
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
@@ -35,10 +37,19 @@ MonoBehaviour:
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
+  MaxDetonations: 8
   AppliedStatus: {fileID: 11400000, guid: b70a8e805fc46194686e600a8788b8b8, type: 2}
   StatusDuration: 5
   AppliedPoints: 3
   LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0

@@ -39,14 +39,14 @@ namespace Proto
 
             Vector3 want = _enemies.CrowdPressure(pos, _balance.DangerRadius);
 
-            // Nothing nearby: ease back toward the middle rather than parking in a corner, which is
-            // also what resets position between waves without a special case for it.
-            if (want.sqrMagnitude < 0.0001f)
-            {
-                Vector3 home = -pos;
-                home.y = 0f;
-                want = home.sqrMagnitude > 1f ? home.normalized * 0.45f : Vector3.zero;
-            }
+            // Tidak ada yang dekat: berhenti di tempat.
+            //
+            // Sebelumnya ia menyeret diri kembali ke tengah tiap kali lapangan sepi. Itu dibuat
+            // untuk mengembalikan posisi antar-wave tanpa kasus khusus, dan efek sampingnya jauh
+            // lebih besar dari gunanya: tiap kali pemain berhasil melepaskan diri ke satu sisi,
+            // ia langsung ditarik balik ke tengah tanpa diminta — jadi lari ke sudut tidak pernah
+            // benar-benar berarti, dan tempat berdiri berhenti jadi keputusan pemain.
+            if (want.sqrMagnitude < 0.0001f) want = Vector3.zero;
 
             _heading = Vector3.MoveTowards(_heading, want, _balance.TurnRate * dt);
 
@@ -57,9 +57,11 @@ namespace Proto
         }
 
         /// <summary>
-        /// Keeps the caster inside the arena ellipse. The camera never moves, so leaving it would
-        /// mean walking off screen — and being pinned against the edge by a crowd is a real way to
-        /// lose, not an accident.
+        /// Menahan pemain di dalam elips arena. Terjepit di tepi oleh kerumunan adalah cara kalah
+        /// yang sah, bukan kecelakaan — jadi batas ini memang boleh terasa.
+        ///
+        /// Dulu alasannya "kamera tidak pernah bergerak". Sekarang <see cref="ArenaCamera"/> ikut
+        /// sampai batas tepi arena, jadi batas ini murni aturan main, bukan lagi penambal kamera.
         /// </summary>
         Vector3 Clamp(Vector3 pos)
         {

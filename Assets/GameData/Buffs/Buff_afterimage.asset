@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76e03c19cad74c5458c13f19a269962d, type: 3}
+  m_Name: Buff_afterimage
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BuffDefinition
+  Id: afterimage
+  DisplayName: Afterimage
+  Color: {r: 0.75, g: 0.5, b: 1, a: 1}
+  Icon: {fileID: 0}
+  Duration: 4
+  MaxStacks: 1
+  Mods:
+  - Type: 7
+    Value: 0.4
+  - Type: 17
+    Value: 0.8
+  IsDebuff: 0
+  ResistShortensDuration: 1
+  Blurb: Bayangan yang tertinggal ikut memukul. Damage naik sesaat setelah berkedip.

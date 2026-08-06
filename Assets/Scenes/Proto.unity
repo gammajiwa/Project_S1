@@ -151,6 +151,7 @@ MonoBehaviour:
   _database: {fileID: 11400000, guid: 8708f361bba8963448777fbd31d0841e, type: 2}
   _balance: {fileID: 11400000, guid: 204b8609925fbdf4cb6815d958fd17d6, type: 2}
   _look: {fileID: 11400000, guid: f84d1dadffc81bb4c9b7fc7b93d1d2fa, type: 2}
+  _cheats: {fileID: 11400000, guid: e38904ef8c695ea46b7f3a938296f413, type: 2}
 --- !u!4 &982952184
 Transform:
   m_ObjectHideFlags: 0

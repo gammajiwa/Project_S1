@@ -211,6 +211,11 @@ namespace Proto
 
             BuildCanvas();
 
+            // Hidup di dunia, bukan di kanvas, jadi ia berdiri sendiri di luar hierarki UI.
+            var pickupGo = new GameObject("DropPickups");
+            _pickups = pickupGo.AddComponent<DropPickups>();
+            _pickups.Init(player.transform, piece => AddLoose(piece));
+
             // Built first on purpose: on this canvas creation order is draw order, so the damage
             // numbers pass UNDER the grimoire and the panels instead of covering them.
             _popups = new DamagePopups(_canvas.transform, _font, cam);
@@ -239,12 +244,34 @@ namespace Proto
             Player.OnCast += OnSpellCast;
             Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
 
-            ApplyLoadout(_db.DefaultHero);
+            var cheats = Player.Cheats;
+            ApplyLoadout(cheats != null && cheats.LoadoutOverride != null
+                ? cheats.LoadoutOverride
+                : _db.DefaultHero);
 
             for (int i = 0; i < Book.Placed.Count; i++) Discover(Book.Placed[i].Def);
 
             SetSpeed(0);
             Redraw();
+
+            ApplyCheats(cheats);
+        }
+
+        /// <summary>
+        /// Saklar curang yang menyentuh UI dan alur wave. Sengaja dipanggil paling akhir: dia
+        /// memulai wave, dan itu tidak boleh terjadi sebelum papan tersusun.
+        /// </summary>
+        void ApplyCheats(DebugConfig cheats)
+        {
+            if (cheats == null || !cheats.Enabled) return;
+
+            if (cheats.CheatHideUI) _canvas.enabled = false;
+
+            if (cheats.OpeningTimeScale != 1f) Time.timeScale = cheats.OpeningTimeScale;
+
+            // Melompat ke wave mana pun. Papan sudah terisi di atas, jadi buku sihirnya sudah
+            // punya isi saat gerombolan pertama tiba.
+            if (cheats.OpeningWave > 0) Enemies.StartWave(cheats.OpeningWave);
         }
 
         /// <summary>
@@ -790,8 +817,14 @@ namespace Proto
                 var def = slots[i].Def;
                 if (def == null) continue;
 
-                strip.Push(def.Icon, def.Color, slots[i].Remaining.ToString("0.0"),
-                    def.DisplayName + "  -  " + slots[i].Remaining.ToString("0.0") + "s\n" +
+                // A charge's number is how many you are holding — that is the thing you are
+                // watching. A plain buff's number is how long you have left.
+                int stacks = Mathf.Max(1, slots[i].Stacks);
+                string label = def.IsCharge ? stacks + "x" : slots[i].Remaining.ToString("0.0");
+
+                strip.Push(def.Icon, def.Color, label,
+                    def.DisplayName + (def.IsCharge ? "  -  " + stacks + "/" + def.MaxStacks + " charge" : "")
+                    + "  -  " + slots[i].Remaining.ToString("0.0") + "s\n" +
                     _tooltips.DescribeMods(def));
             }
 
@@ -863,6 +896,8 @@ namespace Proto
         /// </summary>
         readonly List<PieceDefinition> _pendingDrops = new List<PieceDefinition>();
 
+        DropPickups _pickups;
+
         /// <summary>Value of drops rolled past the per-wave cap. Paid out as coins instead.</summary>
         int _pendingGold;
 
@@ -875,7 +910,10 @@ namespace Proto
             }
 
             int count = _pendingDrops.Count;
-            for (int i = 0; i < count; i++) AddLoose(_pendingDrops[i]);
+
+            // Dilempar ke lapangan, bukan dimasukkan langsung. Piece yang tiba-tiba ada di kantong
+            // sudah benar secara mekanik dan sama sekali tidak terbaca sebagai hadiah.
+            for (int i = 0; i < count; i++) _pickups.Toss(_pendingDrops[i]);
             _pendingDrops.Clear();
 
             _gold += _pendingGold;

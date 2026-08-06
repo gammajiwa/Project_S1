@@ -83,6 +83,12 @@ namespace Proto
         [Tooltip("Poin pemicunya dihabiskan setelah meletus.")]
         public bool ConsumeTriggerPoints = true;
 
+        [Min(1)]
+        [Tooltip("Khusus Detonate: berapa musuh maksimum yang diledakkan sekali cast. Tanpa batas " +
+                 "ini sebuah peledak menskala dengan JUMLAH MUSUH tanpa plafon, dan skill bintang 2 " +
+                 "melewati bintang 5 begitu gerombolannya besar.")]
+        public int MaxDetonations = 8;
+
         [Header("Status yang ditempel")]
         public StatusDefinition AppliedStatus;
 
@@ -97,6 +103,38 @@ namespace Proto
         [UnityEngine.Serialization.FormerlySerializedAs("Status")]
         [Tooltip("Peninggalan prototipe. Dipakai sekali untuk migrasi ke AppliedStatus.")]
         public StatusType LegacyStatus = StatusType.None;
+
+        [Header("Utility (Orbit / Blink / Ward / Surge / SunStrike / RollingBall / Vortex / Push)")]
+        [Tooltip("Buff yang ditempel ke PEMAIN saat skill ini menyala. Ini yang membedakan " +
+                 "Haste dari Fortify dari Amuk — bukan kodenya, cuma aset buff-nya.")]
+        public BuffDefinition GrantOnCast;
+
+        [Tooltip("Detik antara telegraf muncul dan pukulannya mendarat. Khusus SunStrike. " +
+                 "Nol berarti tidak ada aba-aba sama sekali, dan skill itu kehilangan seluruh " +
+                 "ciri khasnya.")]
+        public float TelegraphDelay = 0.9f;
+
+        [Tooltip("Kekuatan lontaran ForcePush, atau kekuatan seretan Vortex. Unit per detik.")]
+        public float PushForce = 12f;
+
+        [Tooltip("Berapa lama musuh TERANGKAT dan tidak berdaya. Khusus Vortex.")]
+        public float LiftDuration = 1.6f;
+
+        [Tooltip("Kecepatan jelajah: bola RollingBall, atau pecahan Orbit saat meluncur.")]
+        public float TravelSpeed = 9f;
+
+        [Header("Charge")]
+        [Tooltip("Buff yang didapat pemain TIAP MUSUH MATI selama piece ini terpasang. Isi dengan " +
+                 "buff ber-MaxStacks di atas 1 dan kamu punya charge ala PoE: kumpulkan sambil " +
+                 "membunuh, lalu belanjakan.")]
+        public BuffDefinition GrantOnKill;
+
+        [Tooltip("Skill ini MENGHABISKAN semua tumpukan buff ini saat cast, dan memukul lebih keras " +
+                 "per tumpukan. Kosong = tidak memakai charge.")]
+        public BuffDefinition ConsumesCharge;
+
+        [Tooltip("Tambahan damage per tumpukan yang dihabiskan. 0.35 = +35% per charge.")]
+        public float DamagePerCharge = 0.35f;
 
         [Header("Aura (khusus rune)")]
         public AuraKind Aura = AuraKind.None;

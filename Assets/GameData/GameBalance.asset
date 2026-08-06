@@ -18,14 +18,14 @@ MonoBehaviour:
   BagHeight: 4
   BaseMaxHp: 100
   BaseMaxMana: 120
-  BaseManaRegen: 10
+  BaseManaRegen: 13
   BaseHpRegen: 2
   HealPerWaveClear: 20
   BaseMoveSpeed: 3.2
   DangerRadius: 6
   TurnRate: 6
-  ArenaHalfX: 16
-  ArenaHalfZ: 9
+  ArenaHalfX: 40
+  ArenaHalfZ: 30
   SpawnRateBase: 0.5
   SpawnRatePerWave: 0.22
   SpawnRateGrowth: 1.03
@@ -44,10 +44,10 @@ MonoBehaviour:
   SurgeCountMultiplier: 1.25
   ClosingSpeedMultiplier: 1
   ClosingTimeout: 25
-  SpawnBoundsX: 21
-  SpawnBoundsZ: 13
-  WaveOpenerCount: 6
-  WaveOpenerDistance: 0.6
+  SpawnBoundsX: 24
+  SpawnBoundsZ: 15.5
+  WaveOpenerCount: 9
+  WaveOpenerDistance: 0.85
   EnemySeparation: 1.3
   SeparationWeight: 3
   InterceptLead: 1.1

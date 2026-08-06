@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_plaguebrand
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: plaguebrand
+  DisplayName: Plague Brand
+  Stars: 1
+  Layer: 1
+  Shape: 1
+  Color: {r: 0.55, g: 0.85, b: 0.35, a: 1}
+  Icon: {fileID: 21300000, guid: 7d5886a44d6bbab479529740d34e5341, type: 3}
+  Kind: 4
+  Element: 3
+  BaseDamage: 5
+  BaseCooldown: 2.4
+  Radius: 5.5
+  Range: 11
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 2
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 889746592ae592b4f89696393bec1666, type: 2}
+  StatusDuration: 6
+  AppliedPoints: 3
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: 'Nyaris tidak melukai. Ia MENANDAI: POISON 3 poin ke gerombolan lebar. Nilainya
+    baru muncul kalau ada yang menagih tanda itu.'
