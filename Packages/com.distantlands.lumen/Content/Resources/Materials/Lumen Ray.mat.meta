@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e349799befeba9948a28f3e1a260fa29
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Contents/Materials/Default Ray.mat
+  uploadId: 678378

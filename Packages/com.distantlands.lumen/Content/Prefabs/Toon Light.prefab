@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &2209757427618465996
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7322494896893968579}
+  - component: {fileID: 3822890270615642295}
+  m_Layer: 0
+  m_Name: Toon Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7322494896893968579
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2209757427618465996}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -18.18, y: 1.87, z: -20.817108}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3822890270615642295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2209757427618465996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9eaaad3794bdd884c9e1a8ec65dc7070, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  updateFrequency: 1
+  scale: 1
+  brightness: 1
+  color: {r: 1, g: 1, b: 1, a: 1}
+  displayLayersInHierarchy: 0
+  localSunDirection: {x: 0, y: 0, z: 0}
+  autoAssignSun: 1
+  useLumenSunScript: 1
+  profile: {fileID: 11400000, guid: 221f65f1676f53f42a101aa9657ed4f7, type: 2}
+  fadingTime: 1
+  initializationBehavior: 0
+  deinitializationBehavior: 0

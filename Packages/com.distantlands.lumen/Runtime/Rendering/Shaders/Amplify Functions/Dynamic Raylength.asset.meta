@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: fb9e2eef6b92c374db03bb4b77651691
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Contents/Shaders/Amplify Functions/Dynamic
+    Raylength.asset
+  uploadId: 678378

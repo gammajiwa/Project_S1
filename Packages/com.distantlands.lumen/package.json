@@ -1,0 +1,58 @@
+{
+  "name": "com.distantlands.lumen",
+  "displayName": "Lumen: Stylized Light FX 2",
+  "version": "2.1.2",
+  "author": {
+    "name": "Distant Lands",
+    "email": "contact@distantlands.space",
+    "discord": "https://discord.gg/eZXxGCp9ww",
+    "url": "https://distantlands.space"
+  },
+  "hideInEditor": false,
+  "unity": "6000.1",
+  "description": "Bring your scenes to life with glowing flares, sweeping god rays, and dynamic lighting that feels real, looks magical, and runs fast. Lumen 2 is a complete stylized lighting toolkit built for performance, beauty, and ease of use, designed for artists and developers who want the look of volumetrics without the overhead.\n\nInspired by lighting tricks seen in games like Genshin Impact, Overland, Amnesia: The Dark Descent, and Alto's Adventure, Lumen 2 gives you access to powerful mesh-based lighting systems that capture the mood and direction of volumetric lighting with a fraction of the cost. Whether you're developing a cozy platformer, a mysterious horror title, or a colorful RPG, Lumen makes your lighting stand out from the competition.",
+  "keywords": [
+    "Lumen 2",
+    "Lumen",
+    "Light",
+    "Volumetric",
+    "Light FX",
+    "Distant Lands",
+    "Stylized",
+    "Concert",
+    "Theater",
+    "Flare",
+    "Mobile",
+    "VR"
+  ],
+  "samples": [
+    {
+      "displayName": "Demo Assets",
+      "description": "Contains all demo assets used by the other samples. REQUIRED FOR DEMO SCENES",
+      "path": "Samples~/Demo Assets"
+    },
+    {
+      "displayName": "Concert Sample",
+      "description": "Example of Lumen used in a concert hall for dramatic dynamic lighting.",
+      "path": "Samples~/Concert Lighting"
+    },
+    {
+      "displayName": "Fake Light Samples",
+      "description": "Sample scenes to showcase the new Fake Light layer",
+      "path": "Samples~/Fake Light Samples"
+    },
+    {
+      "displayName": "Dynamic Ray Samples",
+      "description": "Sample scenes to showcase the Dynamic Ray layer.",
+      "path": "Samples~/Dynamic Ray Samples"
+    },
+    {
+      "displayName": "Candle",
+      "description": "Small demo scene showcasing a Lumen assisted candle.",
+      "path": "Samples~/Candle Example"
+    }
+  ],
+  "documentationUrl": "https://distant-lands.gitbook.io/lumen-stylized-light-fx/",
+  "changelogUrl": "https://distant-lands.gitbook.io/lumen-stylized-light-fx/changelog",
+  "unityRelease": "1f1"
+}

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: d6445ae304f46cb4d910aee2bbb5d8f7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Contents/Shaders/Amplify Functions/Angle
+    Based Fade.asset
+  uploadId: 678378

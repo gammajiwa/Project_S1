@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 67994b4563d89664388b97418ab61f56
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Contents/Shaders/Amplify Functions/Camera
+    Distance Fade.asset
+  uploadId: 678378

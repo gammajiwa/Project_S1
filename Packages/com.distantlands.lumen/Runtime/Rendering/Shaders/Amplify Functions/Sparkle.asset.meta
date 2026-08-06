@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3d759a1ef52e2aa46885b998c2044701
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Contents/Shaders/Amplify Functions/Sparkle.asset
+  uploadId: 678378

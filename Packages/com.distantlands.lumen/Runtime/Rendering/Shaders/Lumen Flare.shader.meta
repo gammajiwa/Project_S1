@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 94116423065fb974d8f3747d2e076a75
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Contents/Shaders/Lumen Flare.shader
+  uploadId: 678378

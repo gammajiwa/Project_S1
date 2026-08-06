@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f36ab81917cab774f9aadaf2681065ed
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Scenes/Demo Assets/Materials/Clumped Sticks.mat
+  uploadId: 678378

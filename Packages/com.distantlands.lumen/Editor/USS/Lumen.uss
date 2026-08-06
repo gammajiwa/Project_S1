@@ -1,0 +1,284 @@
+.banner {
+    background-image: resource('Lumen Banner');
+    height: 80px;
+    margin-bottom: 5px;
+    margin-right: -6px;
+    margin-left: -15px;
+    -unity-background-scale-mode: scale-and-crop;
+    border-bottom-color: rgb(0, 0, 0);
+    border-bottom-width: 1px;
+}
+
+.verticalBreak {
+    margin-bottom: 15px;
+}
+
+.sectionLabel {
+    -unity-font-style: bold;
+    font-size: 12px;
+    margin-bottom: 3px;
+    margin-top: 8px;
+}
+
+.effectSelector {
+    margin-top: 5px;
+    margin-right: 0;
+    margin-left: -10px;
+    margin-bottom: 5px;
+    background-color: rgba(0, 0, 0, 0.09);
+    padding-top: 7px;
+    padding-right: 7px;
+    padding-bottom: 7px;
+    padding-left: 6px;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+    border-bottom-left-radius: 15px;
+    flex-direction: row;
+    align-items: center;
+    border-bottom-color: rgba(0, 0, 0, 0.42);
+    border-bottom-width: 1px;
+}
+
+.effectSelector ObjectField {
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+.effectSelector .icon {
+    width: 32px;
+    height: 32px;
+    background-image: resource('Flare');
+    flex-shrink:0;
+}
+
+.layerFoldout {
+    background-color: rgba(0, 0, 0, 0.18);
+    margin-right: -5px;
+    margin-left: -15px;
+    height: 24px;
+    justify-content: flex-start;
+    flex-direction: row;
+    border-bottom-color: rgb(0, 0, 0);
+    border-bottom-width: 1px;
+    margin-top: 1px;
+    padding-right: 5px;
+}
+
+.layerFoldout #icon {
+    width: 14px;
+    height: 14px;
+    margin-top: 4px;
+    margin-right: 3px;
+    margin-bottom: 3px;
+    margin-left: 18px;
+}
+
+.layerFoldout #context {
+    background-image: resource('d__Menu');
+}
+
+.layerFoldout #handles {
+    background-image: resource('d_AvatarPivot');
+}
+
+.layerFoldout #help {
+    background-image: resource('d__Help');
+}
+
+.layerFoldout #warning {
+    background-image: resource('Warning');
+}
+
+.layerFoldout .toolbarBtn {
+    width: 22px;
+    height: 22px;
+    margin-top: 1px;
+    margin-bottom: 1px;
+    -unity-background-scale-mode: scale-to-fit;
+    margin-right: 1px;
+    margin-left: 1px;
+    -unity-background-image-tint-color: rgb(201, 201, 201);
+    padding-right: 2px;
+    padding-left: 2px;
+    background-size: 15px 15px;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+}
+
+.layerFoldout #split {
+    flex-grow: 1;
+}
+
+.layerFoldout Label {
+    -unity-font-style: bold;
+    align-self: center;
+}
+
+.layerFoldout:hover {
+    background-color: rgba(29, 107, 152, 0.2);
+}
+
+.layerFoldout .toolbarBtn:hover {
+    background-color: rgba(123, 188, 226, 0.2);
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.layerFoldout.staticRay #icon {
+    background-image: resource('Static Light Ray');
+}
+
+.layerFoldout.dynamicRay #icon {
+    background-image: resource('Dynamic Light Ray');
+}
+
+.layerFoldout.flare #icon {
+    background-image: resource('Flare');
+}
+
+.layerFoldout.light #icon {
+    background-image: resource('Lumen Light');
+}
+
+.layerFoldout.effectStack #icon {
+    background-image: resource('Flare');
+}
+
+.layerFoldout.dynamicShadowCast #icon {
+    background-image: resource('Dynamic Shadow Cast');
+}
+
+.layerFoldout.staticShadowCast #icon {
+    background-image: resource('Static Shadow Cast');
+}
+
+.layerFoldout.shadow #icon {
+    background-image: resource('Lumen Shadow');
+}
+
+.description {
+    flex-direction: column;
+    flex-grow: 0;
+    flex-wrap: wrap;
+    white-space: normal;
+}
+
+.check-row {
+    flex-direction: row;
+    -unity-text-align: middle-left;
+    background-color: rgba(0, 0, 0, 0.31);
+    padding-top: 4px;
+    padding-right: 4px;
+    padding-bottom: 4px;
+    padding-left: 4px;
+    margin-top: 2px;
+    margin-right: 2px;
+    margin-bottom: 2px;
+    margin-left: 2px;
+    border-left-color: rgba(255, 255, 255, 0.53);
+    border-right-color: rgba(255, 255, 255, 0.53);
+    border-top-color: rgba(255, 255, 255, 0.53);
+    border-bottom-color: rgba(255, 255, 255, 0.53);
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.check-row .icon {
+    width: 12px;
+    height: 12px;
+    margin-top: 5px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    margin-left: 5px;
+}
+
+.check-row.failed .icon {
+    background-image: resource('TestFailed');
+}
+
+.check-row.passed .icon {
+    background-image: resource('TestPassed');
+}
+
+.checksContainer {
+    flex-grow: 1;
+}
+
+.externalLinks {
+    flex-direction: row;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    justify-content: center;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 4px;
+    padding-left: 0;
+}
+
+.externalLinks Button {
+    height: 32px;
+    margin-top: 0;
+    margin-right: 4px;
+    margin-bottom: 0;
+    margin-left: 4px;
+    padding-top: 4px;
+    padding-right: 4px;
+    padding-bottom: 4px;
+    padding-left: 4px;
+    flex-grow: 0;
+    width: 32px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-right-radius: 16px;
+    border-bottom-left-radius: 16px;
+    transition-duration: 0.2s;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-left-color: rgb(255, 255, 255);
+    border-right-color: rgb(255, 255, 255);
+    border-top-color: rgb(255, 255, 255);
+    border-bottom-color: rgb(255, 255, 255);
+    background-size: 70% 70%;
+}
+
+.externalLinks Button:hover {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    background-size: 80% 80%;
+}
+
+.documentation {
+    background-image: resource('Documentation');
+}
+
+.discord {
+    background-image: resource('Discord');
+}
+
+.email {
+    background-image: resource('Email');
+}
+
+.website {
+    background-image: resource('Website');
+}
+
+.github {
+    background-image: resource('Github');
+}

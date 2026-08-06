@@ -1,0 +1,285 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 925c0fe853d3ef544b8e08f02ee62efb, type: 3}
+  m_Name: Lumen Settings
+  m_EditorClassIdentifier: 
+  lumenMeshes:
+  - displayName: Dynamic Shaft 1
+    mesh: {fileID: -2448480164793150367, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Dynamic Shaft 1 Hollow
+    mesh: {fileID: 4641362927170041659, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Dynamic Shaft 2
+    mesh: {fileID: 7712879432429813930, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Dynamic Shaft 2 Hollow
+    mesh: {fileID: -5729386975825829946, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Dynamic Shaft 3
+    mesh: {fileID: 2644149337525600909, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Dynamic Shaft 3 Hollow
+    mesh: {fileID: 2768290301085232338, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Dynamic Shaft 4
+    mesh: {fileID: -3812920254412948198, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Dynamic Shaft 1 Gradient
+    mesh: {fileID: 1613004053657130676, guid: bfa3f559d144c2b4488ad3a236dc196c, type: 3}
+    linkedEffectType: 1
+  - displayName: Halo Flare/Flare 1
+    mesh: {fileID: 5030282945146773258, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Band/Band 1
+    mesh: {fileID: -6968103492667634874, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Band/Band 2
+    mesh: {fileID: 1983825859688465756, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Band/Band 3
+    mesh: {fileID: 1366672762597346397, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Band/Band 4
+    mesh: {fileID: 3841328526285593824, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Halo/Halo 1
+    mesh: {fileID: 6224197433256981941, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Halo/Halo 2
+    mesh: {fileID: -1180036777250885781, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Halo/Halo 3
+    mesh: {fileID: 35472034237815853, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Halo/Halo 4
+    mesh: {fileID: 7498273517274154476, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Halo/Halo 5
+    mesh: {fileID: -5946599687673790085, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Halo/Halo 6
+    mesh: {fileID: -467100104631758434, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Halo/Halo 7
+    mesh: {fileID: 5877733746639156159, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Ring/Ring 1
+    mesh: {fileID: -5749795571815166640, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Ring/Ring 2
+    mesh: {fileID: -3538473461938347071, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Ring/Ring 3
+    mesh: {fileID: -5804581608090849297, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Ring/Ring 4
+    mesh: {fileID: -2749798609165869885, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Ring/Ring 5
+    mesh: {fileID: 8105640628540836955, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Light Ring/Ring 6
+    mesh: {fileID: 4542413906379916265, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Oblong Flare/Flare 1
+    mesh: {fileID: 3335973687485622159, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Oblong Flare/Flare 2
+    mesh: {fileID: 3732608225648956160, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Oblong Flare/Flare 3
+    mesh: {fileID: -3382719191767739214, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Oblong Flare/Flare 4
+    mesh: {fileID: 7896950203031800118, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Oblong Flare/Flare 5
+    mesh: {fileID: 2013700937850380389, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Stylized Flare/Flare 1
+    mesh: {fileID: -106235120122177479, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Stylized Flare/Flare 2
+    mesh: {fileID: 639763913054581620, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Stylized Flare/Flare 3
+    mesh: {fileID: 992228143056141897, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Stylized Flare/Flare 4
+    mesh: {fileID: -2224817035019622720, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Stylized Flare/Flare 5
+    mesh: {fileID: 8724082414181089516, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Stylized Flare/Flare 6
+    mesh: {fileID: -6249044446370279624, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: Stylized Flare/Flare 7
+    mesh: {fileID: 1895941576122138186, guid: 25ba8905b24abc04aaf4ccf8249664f6, type: 3}
+    linkedEffectType: 2
+  - displayName: 2D Laser/Ray 1
+    mesh: {fileID: 156019658415536600, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Laser/Ray 2
+    mesh: {fileID: -7713786475934825078, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Laser/Ray 3
+    mesh: {fileID: 1618993168695461136, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Laser/Ray 4
+    mesh: {fileID: -4984110159254072798, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Ray/Ray 1
+    mesh: {fileID: -8401801258340766032, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Ray/Ray 2
+    mesh: {fileID: -6033901007670546078, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Ray/Ray 3
+    mesh: {fileID: 6368562251345239281, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Ray/Ray 4
+    mesh: {fileID: -9052531269248402880, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Ray/Ray 5
+    mesh: {fileID: 4882145290994462521, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Ray/Ray 6
+    mesh: {fileID: -1041976293919064016, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Spotlight Ray/Ray 1
+    mesh: {fileID: 1497425105060027436, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Spotlight Ray/Ray 2
+    mesh: {fileID: 3921242021250664073, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Spotlight Ray/Ray 3
+    mesh: {fileID: 5741820231696919798, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: 2D Spotlight Ray/Ray 4
+    mesh: {fileID: -3179862919778173717, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 1
+    mesh: {fileID: -377213715782546948, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 2
+    mesh: {fileID: 4553429567421290100, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 3
+    mesh: {fileID: -2908662031891249516, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 4
+    mesh: {fileID: -296624901869274894, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 5
+    mesh: {fileID: 3967055729284288211, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 6
+    mesh: {fileID: 1079928419797698990, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 7
+    mesh: {fileID: -8378647140756912697, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Cylindrical Scatter/Ray 8
+    mesh: {fileID: -5028630529614272825, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 1
+    mesh: {fileID: -9121985658953460886, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 2
+    mesh: {fileID: -5434281053190626599, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 3
+    mesh: {fileID: 831825243108536225, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 4
+    mesh: {fileID: -5636711518183503151, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 5
+    mesh: {fileID: 3607219166038189989, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 6
+    mesh: {fileID: -794433319223189015, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 7
+    mesh: {fileID: 4031672301519829924, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Prism Scatter/Ray 8
+    mesh: {fileID: 7331210550613901142, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Rayleigh Scatter/Ray 1
+    mesh: {fileID: 5091141215620992925, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Rayleigh Scatter/Ray 2
+    mesh: {fileID: -6690330677482993247, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Rayleigh Scatter/Ray 3
+    mesh: {fileID: -5887843061038548411, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Rayleigh Scatter/Ray 4
+    mesh: {fileID: 7320800778047859660, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Rayleigh Scatter/Ray 5
+    mesh: {fileID: -7639679894473942753, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Rayleigh Scatter/Ray 6
+    mesh: {fileID: 3507447696275053326, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Rayleigh Scatter/Ray 7
+    mesh: {fileID: -8273072255068563643, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Ray/Ray 1
+    mesh: {fileID: -1051706901388616100, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Ray/Ray 2
+    mesh: {fileID: -1125696874591185629, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Ray/Ray 3
+    mesh: {fileID: 4214632896538964631, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Ray/Ray 4
+    mesh: {fileID: 2221721428882409084, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Ray/Ray 5
+    mesh: {fileID: 3292881068561332333, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 1
+    mesh: {fileID: 6617749122374599513, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 2
+    mesh: {fileID: -1944778827526492118, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 3
+    mesh: {fileID: -3447809779306978690, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 4
+    mesh: {fileID: -5333247486173697300, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 5
+    mesh: {fileID: -4803593361253983724, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 6
+    mesh: {fileID: 8404921541567912903, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 7
+    mesh: {fileID: -5690207966907506211, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Spotlight Scatter/Ray 8
+    mesh: {fileID: -6220953036111020805, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Solid Scatter/Scatter 1
+    mesh: {fileID: 1355555416313098821, guid: fdde8a8445f027e4cbe24edc5c65f9d5, type: 3}
+    linkedEffectType: 0
+  - displayName: Light
+    mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+    linkedEffectType: 3

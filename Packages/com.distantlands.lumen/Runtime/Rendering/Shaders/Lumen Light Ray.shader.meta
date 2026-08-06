@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 0f3df6e889cfb40438bdf6eac3a69150
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 220976
+  packageName: 'Lumen: Stylized Light FX'
+  packageVersion: 1.1
+  assetPath: Assets/Distant Lands/Lumen/Contents/Shaders/Lumen Light Ray.shader
+  uploadId: 678378
