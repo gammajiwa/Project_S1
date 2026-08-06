@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Ion Storm
   Stars: 3
   Layer: 1
-  Shape: 11
+  Shape: 9
   Color: {r: 0.9408, g: 0.89640003, b: 0.482, a: 1}
   Icon: {fileID: 21300000, guid: 453211df4c3933241af3ed6195ae5379, type: 3}
   Kind: 6
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 5
   Range: 11
   Hits: 1
+  Forks: 1
   ManaCost: 38
   ZoneDuration: 6
   ZoneTickInterval: 0.45
+  ZoneDrift: 2.6
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -43,4 +45,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Charged ground that keeps firing long after you cast it.
+  Blurb: EVOLVED. Petak bermuatan yang berjalan pelan sendiri, terus menembak lama
+    setelah kamu melemparkannya.

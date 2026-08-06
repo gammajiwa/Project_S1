@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Spark Bolt
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 0
   Color: {r: 0.92, g: 0.86, b: 0.3, a: 1}
   Icon: {fileID: 21300000, guid: 143a29c90dfdb194780110579e3eec03, type: 3}
   Kind: 0
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 0.7
   Range: 8
   Hits: 1
+  Forks: 1
   ManaCost: 6
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

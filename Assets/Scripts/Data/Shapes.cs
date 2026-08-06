@@ -31,7 +31,13 @@ namespace Proto
         Slab,
         Hook,
         Ring,
-        Chunk
+        Chunk,
+
+        // --- bentuk yang sengaja menyulitkan: berlubang di tengah, bukan cuma besar ---
+        Zed,
+        Aitch,
+        Ess,
+        Fork
     }
 
     /// <summary>Pure geometry helpers. No game data lives here.</summary>
@@ -140,6 +146,51 @@ namespace Proto
             new Vector2Int(0, 2), new Vector2Int(1, 2)
         };
 
+        // 7 cells — a Z. Two full bars joined by one diagonal cell, so both notches have to be
+        // fed by something else or wasted.
+        //   X X X
+        //   . . X
+        //   X X X
+        static readonly Vector2Int[] ZedCells =
+        {
+            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(2, 2),
+                                                        new Vector2Int(2, 1),
+            new Vector2Int(0, 0), new Vector2Int(1, 0), new Vector2Int(2, 0)
+        };
+
+        // 7 cells — an H. Both side notches are single dead cells that only a 1-cell piece can use.
+        //   X . X
+        //   X X X
+        //   X . X
+        static readonly Vector2Int[] AitchCells =
+        {
+            new Vector2Int(0, 2),                       new Vector2Int(2, 2),
+            new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1),
+            new Vector2Int(0, 0),                       new Vector2Int(2, 0)
+        };
+
+        // 6 cells — an S. Bar, side, bar, offset the other way.
+        //   X X X
+        //   X . .
+        //   X X .
+        static readonly Vector2Int[] EssCells =
+        {
+            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(2, 2),
+            new Vector2Int(0, 1),
+            new Vector2Int(0, 0), new Vector2Int(1, 0)
+        };
+
+        // 6 cells — a trident. Three prongs off one spine; the two gaps are single cells.
+        //   X . X
+        //   X X X
+        //   . . X
+        static readonly Vector2Int[] ForkCells =
+        {
+            new Vector2Int(0, 2),                       new Vector2Int(2, 2),
+            new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1),
+                                                        new Vector2Int(2, 0)
+        };
+
         public static Vector2Int[] Of(ShapeKind kind)
         {
             switch (kind)
@@ -159,6 +210,10 @@ namespace Proto
                 case ShapeKind.Hook: return HookCells;
                 case ShapeKind.Ring: return RingCells;
                 case ShapeKind.Chunk: return ChunkCells;
+                case ShapeKind.Zed: return ZedCells;
+                case ShapeKind.Aitch: return AitchCells;
+                case ShapeKind.Ess: return EssCells;
+                case ShapeKind.Fork: return ForkCells;
                 default: return DotCells;
             }
         }
@@ -184,6 +239,10 @@ namespace Proto
                 case ShapeKind.Hook: return "HURUF C";
                 case ShapeKind.Ring: return "CINCIN";
                 case ShapeKind.Chunk: return "BONGKAH";
+                case ShapeKind.Zed: return "HURUF Z";
+                case ShapeKind.Aitch: return "HURUF H";
+                case ShapeKind.Ess: return "HURUF S";
+                case ShapeKind.Fork: return "TRISULA";
                 default: return kind.ToString();
             }
         }

@@ -41,7 +41,21 @@ namespace Proto
         public float BaseCooldown = 1f;
         public float Radius;
         public float Range;
+        [Tooltip("Chain: berapa lompatan per cabang. Radial: berapa arah semburan.")]
         public int Hits = 1;
+
+        [Min(1)]
+        [Tooltip("Khusus Chain: berapa cabang petir yang berangkat SEKALIGUS. Tiap cabang " +
+                 "melompat sendiri-sendiri dan tidak pernah menyambar musuh yang sama.")]
+        public int Forks = 1;
+
+        [Tooltip("Khusus Projectile/Radial: berapa kali peluru ini MEMANTUL ke musuh berikutnya " +
+                 "setelah kena. 0 = mati saat menyentuh.")]
+        public int Bounces;
+
+        [Tooltip("Jarak cari sasaran pantulan berikutnya.")]
+        public float BounceRange = 6f;
+
         public float ManaCost;
 
         [Header("Zone (khusus Kind = Zone)")]
@@ -50,6 +64,10 @@ namespace Proto
 
         [Tooltip("Jeda antar denyut damage di dalam kubangan.")]
         public float ZoneTickInterval = 0.5f;
+
+        [Tooltip("Unit per detik kubangan ini MENGEMBARA. 0 = diam di tempat. Kubangan yang " +
+                 "bergerak memaksa pemain membaca lapangan tiap saat, bukan sekali di awal.")]
+        public float ZoneDrift;
 
         [Header("Pemicu")]
         [Tooltip("Cooldown = nembak sendiri. StatusThreshold = nunggu poin ailment di musuh cukup.")]

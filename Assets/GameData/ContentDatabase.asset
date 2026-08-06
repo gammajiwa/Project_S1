@@ -163,6 +163,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3109cdc1cecd5ac47b29c320305dd0d1, type: 2}
   - {fileID: 11400000, guid: 82d2b2542f9c1714a98e52c7ee3a4952, type: 2}
   - {fileID: 11400000, guid: 568ebd057c3afe74fba4f8fc0fcae33b, type: 2}
+  - {fileID: 11400000, guid: b63e6ca15ddc23d418143ae1890f06ef, type: 2}
   _statuses:
   - {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
   - {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
@@ -198,3 +199,5 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5f80801121e617b4cac5dfc0df464bab, type: 2}
   - {fileID: 11400000, guid: 1de9ec8ce3f7fff42b8cd2adbd810789, type: 2}
   - {fileID: 11400000, guid: 70ef89cda000f484e9539c5968a1f3a5, type: 2}
+  _heroes:
+  - {fileID: 11400000, guid: 0d10ecc59e6b67a4d8814f0e27c6c5be, type: 2}

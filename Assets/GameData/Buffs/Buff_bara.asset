@@ -15,8 +15,11 @@ MonoBehaviour:
   Id: bara
   DisplayName: EMBER
   Color: {r: 1, g: 0.5, b: 0.2, a: 1}
+  Icon: {fileID: 21300000, guid: 82d6914e825d74041ae27b1fb4983465, type: 3}
   Duration: 8
   Mods:
   - Type: 7
     Value: 0.25
+  IsDebuff: 0
+  ResistShortensDuration: 1
   Blurb: All skill damage +25% for 8 seconds.

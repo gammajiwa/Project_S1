@@ -102,9 +102,11 @@ namespace Proto.EditorTools
             Stats(siphon, Mod(StatKind.ManaRegen, 3f), Mod(StatKind.ManaCostPct, 0.12f));
             Add(pieces, siphon);
 
-            var whetstone = Rune("runeasah", "Whetstone Rune", 2, ShapeKind.Line3, Element.Arcane,
+            // Two cells: the compact 2-star base a run opens with. Small enough to tuck anywhere,
+            // strong enough that the space is worth it.
+            var whetstone = Rune("runeasah", "Whetstone Rune", 2, ShapeKind.Line2, Element.Arcane,
                 AuraKind.DamagePct, 0.5f, 0f,
-                "3 long base. The only base that sharpens critical hits.");
+                "2 long base. The only base that sharpens critical hits.");
             Stats(whetstone, Mod(StatKind.CritChance, 0.12f), Mod(StatKind.CritDamage, 0.3f));
             Add(pieces, whetstone);
 
@@ -415,6 +417,11 @@ namespace Proto.EditorTools
             R(recipes, db, "voidlance_b", "voidlance", "riftchain", "riftchain");
             R(recipes, db, "gravitywell_a", "gravitywell", "pusaran", "belatiberputar");
             R(recipes, db, "gravitywell_b", "gravitywell", "pusaran", "kubanganracun");
+
+            // The opening upgrade. Both ingredients are one-cell skills, which is what lets a hero
+            // start holding two DIFFERENT skills that can still merge — every other pair of 1-cell
+            // skills had no path between them, so the only mergeable opening was two of the same.
+            R(recipes, db, "steamburst_open", "steamburst", "fireball", "frostshard");
 
             // --- 3 star skills ---
             R(recipes, db, "firestormcore_a", "firestormcore", "infernowave", "ashfall");

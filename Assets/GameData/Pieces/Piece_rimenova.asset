@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Rime Nova
   Stars: 3
   Layer: 1
-  Shape: 10
+  Shape: 9
   Color: {r: 0.593, g: 0.8372, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: dbbe231692d722a4a9f007410d5d27d4, type: 3}
   Kind: 1
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 7
   Range: 7
   Hits: 1
+  Forks: 1
   ManaCost: 34
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

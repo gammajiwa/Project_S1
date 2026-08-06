@@ -72,31 +72,44 @@ namespace Proto
         /// <summary>Pengali laju di titik <paramref name="t"/> (0..1) sepanjang wave.</summary>
         public float RampAt(float t) => Mathf.Lerp(WaveRampStart, WaveRampEnd, Mathf.Clamp01(t));
 
-        /// <summary>Perkiraan total musuh satu wave. Cuma buat tooling — runtime tidak memakainya.</summary>
-        public int ExpectedEnemiesFor(int wave) =>
-            Mathf.RoundToInt(SpawnRateFor(wave) * SpawnWindowFor(wave)
-                             * (WaveRampStart + WaveRampEnd) * 0.5f);
+        /// <summary>Perkiraan berapa detik satu wave berjalan, di laju rata-ratanya.</summary>
+        public float ExpectedWaveSeconds(int wave)
+        {
+            float rate = SpawnRateFor(wave) * (WaveRampStart + WaveRampEnd) * 0.5f;
+            return rate <= 0f ? 0f : EnemyCountFor(wave) / rate;
+        }
         public float EnemySpeedMin = 1.5f;
         public float EnemySpeedMax = 2.1f;
         public float EnemySpeedPerWave = 0.04f;
 
         [Tooltip("Menumpuk PER musuh yang menempel. Lima musuh = lima kali angka ini.")]
         public float EnemyContactDps = 14f;
-        [Header("Jendela spawn")]
-        [Tooltip("Berapa lama musuh terus berdatangan. Setelah ini spawn BERHENTI dan wave selesai " +
-                 "begitu sisanya habis — jadi wave tetap 'bunuh semua', tapi tanpa ekor mati.")]
-        public float SpawnWindowBase = 30f;
+        [Header("Isi wave")]
+        // Jumlah, bukan jam. Wave berbasis waktu membuat pemain menatap hitung mundur alih-alih
+        // menatap lapangan, dan "sisa berapa" adalah satu-satunya angka yang benar-benar bisa
+        // ditindaklanjuti. Lajunya tetap ada, tapi cuma mengatur kecepatan datangnya.
+        public int EnemiesBase = 12;
 
-        public float SpawnWindowPerWave = 2.5f;
-        public float SpawnWindowMax = 80f;
+        public int EnemiesPerWave = 6;
 
-        public float SpawnWindowFor(int wave) =>
-            Mathf.Min(SpawnWindowMax, SpawnWindowBase + wave * SpawnWindowPerWave);
+        [Min(1f)] public float EnemyCountGrowth = 1.05f;
+
+        public float SurgeCountMultiplier = 1.25f;
+
+        /// <summary>Berapa musuh yang datang di wave ini. Habis ini, wave menutup.</summary>
+        public int EnemyCountFor(int wave)
+        {
+            float count = (EnemiesBase + wave * EnemiesPerWave) * Mathf.Pow(EnemyCountGrowth, wave);
+            if (IsSurgeWave(wave)) count *= SurgeCountMultiplier;
+            return Mathf.Max(1, Mathf.RoundToInt(count));
+        }
 
         [Header("Penutupan wave")]
-        [Tooltip("Pengali kecepatan musuh setelah spawn berhenti. Inilah yang membunuh ekor mati: " +
-                 "yang tersisa MENYERBU alih-alih dikejar satu per satu.")]
-        public float ClosingSpeedMultiplier = 1.9f;
+        [Tooltip("Pengali kecepatan musuh setelah spawn berhenti. Dibiarkan 1: sprint di akhir " +
+                 "wave terbaca sebagai musuh yang tiba-tiba ngebut, dan itu mengganggu. Ekor mati " +
+                 "sudah ditangani dua hal lain — spawn yang lebih dekat, dan berhentinya gerakan " +
+                 "memutar begitu wave menutup.")]
+        public float ClosingSpeedMultiplier = 1f;
 
         [Tooltip("Jaring pengaman. Build tanpa damage sama sekali (misal cuma Heal) tidak akan " +
                  "pernah menghabiskan sisanya — tanpa batas ini wave-nya menggantung selamanya.")]
@@ -106,9 +119,18 @@ namespace Proto
         [Tooltip("Setengah-lebar KOTAK tempat musuh boleh muncul. Musuh dimunculkan di titik keluar " +
                  "kotak ini, bukan di lingkaran — area yang terlihat itu kotak lebar, jadi lingkaran " +
                  "selalu memunculkan sebagian musuh tepat di tepi layar.")]
-        public float SpawnBoundsX = 24f;
+        public float SpawnBoundsX = 21f;
 
-        public float SpawnBoundsZ = 15f;
+        public float SpawnBoundsZ = 13f;
+
+        [Tooltip("Musuh yang langsung ditaruh saat wave dimulai, lebih dekat dari biasanya. Tanpa " +
+                 "ini setiap wave dibuka dengan belasan detik lapangan kosong: laju spawn memang " +
+                 "sengaja pelan di awal, DAN yang pertama muncul masih harus berjalan masuk.")]
+        public int WaveOpenerCount = 6;
+
+        [Range(0.2f, 1f)]
+        [Tooltip("Jarak pembuka, sebagai porsi jarak spawn normal.")]
+        public float WaveOpenerDistance = 0.6f;
 
         // Knob "musuh terkutuk" sudah dipindah ke aset EnemyArchetype — kapan muncul, seberapa
         // sering, sebesar apa, dan kutukan mana, semuanya milik arketipe sekarang. Dua mekanisme

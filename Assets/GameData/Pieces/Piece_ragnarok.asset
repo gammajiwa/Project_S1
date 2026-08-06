@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Ragnarok
   Stars: 4
   Layer: 1
-  Shape: 13
+  Shape: 19
   Color: {r: 0.9695, g: 0.634, b: 0.4754, a: 1}
   Icon: {fileID: 21300000, guid: 83c3ec64eba292b49ab05dc10713e650, type: 3}
   Kind: 5
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 2.4
   Range: 14
   Hits: 1
+  Forks: 1
   ManaCost: 56
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

@@ -125,6 +125,22 @@ namespace Proto
             }
         }
 
+        /// <summary>Every stat a buff or curse changes, one per line. Used by the HUD strips.</summary>
+        public string DescribeMods(BuffDefinition def)
+        {
+            if (def == null || def.Mods == null || def.Mods.Length == 0) return def?.Blurb ?? "";
+
+            _sb.Length = 0;
+            for (int i = 0; i < def.Mods.Length; i++)
+            {
+                if (_sb.Length > 0) _sb.Append('\n');
+                _sb.Append(Describe(def.Mods[i]));
+            }
+
+            if (!string.IsNullOrEmpty(def.Blurb)) _sb.Append('\n').Append(def.Blurb);
+            return _sb.ToString();
+        }
+
         static string Pct(float value) => Mathf.RoundToInt(Mathf.Abs(value) * 100f).ToString();
 
         /// <summary>Debuff mods are negative, so the sign has to be read rather than assumed.</summary>
@@ -147,7 +163,21 @@ namespace Proto
 
             if (range > 0f) _sb.Append("jangkauan ").Append(range.ToString("0.0"));
             if (def.Kind == CastKind.Nova) _sb.Append("     radius ledak ").Append(radius.ToString("0.0"));
-            if (def.Hits > 1) _sb.Append("     target ").Append(def.Hits);
+            if (def.Hits > 1)
+            {
+                _sb.Append(def.Kind == CastKind.Radial ? "     arah " : "     lompatan ")
+                    .Append(def.Hits);
+            }
+
+            if (def.Forks > 1) _sb.Append("     cabang ").Append(def.Forks);
+            if (def.Bounces > 0) _sb.Append("     MEMANTUL ").Append(def.Bounces).Append('x');
+            if (def.ZoneDrift > 0f) _sb.Append("     MENGEMBARA");
+
+            if (def.Kind == CastKind.Detonate && def.TriggerStatus != null)
+            {
+                _sb.Append("\nmeledakkan semua musuh ber-").Append(def.TriggerStatus.DisplayName)
+                    .Append(", damage x POIN yang menumpuk");
+            }
             if (range > 0f || def.Hits > 1) _sb.Append('\n');
 
             if (def.AppliedStatus != null)
@@ -194,6 +224,8 @@ namespace Proto
                 case CastKind.Zone: return "kubangan";
                 case CastKind.Passive: return "segel pasif";
                 case CastKind.Cleanse: return "pembersih kutukan";
+                case CastKind.Radial: return "semburan segala arah";
+                case CastKind.Detonate: return "peledak ailment";
                 default: return "alas";
             }
         }

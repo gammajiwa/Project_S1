@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Whetstone Rune
   Stars: 2
   Layer: 0
-  Shape: 2
+  Shape: 1
   Color: {r: 0.7042, g: 0.49539998, b: 0.9565, a: 1}
   Icon: {fileID: 21300000, guid: fc5e07b159411f3438890fcc2e586a7d, type: 3}
   Kind: 8
@@ -47,4 +47,4 @@ MonoBehaviour:
     Value: 0.3
   Stat: 0
   StatValue: 0
-  Blurb: 3 long base. The only base that sharpens critical hits.
+  Blurb: 2 long base. The only base that sharpens critical hits.

@@ -20,6 +20,7 @@ namespace Proto
         [SerializeField] List<BuffDefinition> _debuffs = new List<BuffDefinition>();
 
         [SerializeField] List<EnemyArchetype> _archetypes = new List<EnemyArchetype>();
+        [SerializeField] List<HeroLoadout> _heroes = new List<HeroLoadout>();
 
         readonly Dictionary<string, PieceDefinition> _byId = new Dictionary<string, PieceDefinition>();
         readonly List<PieceDefinition> _runes = new List<PieceDefinition>();
@@ -35,6 +36,10 @@ namespace Proto
         public IReadOnlyList<BuffDefinition> Debuffs => _debuffs;
 
         public IReadOnlyList<EnemyArchetype> Archetypes => _archetypes;
+        public IReadOnlyList<HeroLoadout> Heroes => _heroes;
+
+        /// <summary>The hero a run starts as. Null only when none have been authored.</summary>
+        public HeroLoadout DefaultHero => _heroes.Count > 0 ? _heroes[0] : null;
 
         /// <summary>One curse for an enemy to carry, or null when none are authored yet.</summary>
         public BuffDefinition RandomDebuff()
@@ -184,6 +189,12 @@ namespace Proto
         public void EditorSetArchetypes(List<EnemyArchetype> archetypes)
         {
             _archetypes = archetypes;
+            _indexed = false;
+        }
+
+        public void EditorSetHeroes(List<HeroLoadout> heroes)
+        {
+            _heroes = heroes;
             _indexed = false;
         }
 #endif

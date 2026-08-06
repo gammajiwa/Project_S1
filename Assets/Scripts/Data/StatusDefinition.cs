@@ -14,6 +14,10 @@ namespace Proto
         public string DisplayName;
         public Color Color = Color.white;
 
+        [Tooltip("Placeholder digenerate lewat Tools/Grimoire/Generate Placeholder Icons. " +
+                 "Timpa PNG-nya di Assets/GameData/Icons untuk mengganti art.")]
+        public Sprite Icon;
+
         [Header("Stack")]
         [Min(1)]
         [UnityEngine.Serialization.FormerlySerializedAs("MaxStacks")]

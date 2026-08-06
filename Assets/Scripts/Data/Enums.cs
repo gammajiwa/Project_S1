@@ -30,7 +30,23 @@ namespace Proto
         AuraOnly,
 
         /// <summary>Membuang semua debuff yang sedang menempel. Tidak menembak apa pun.</summary>
-        Cleanse
+        Cleanse,
+
+        /// <summary>
+        /// Menyemburkan peluru ke SEGALA ARAH sekaligus. Satu-satunya cast yang tidak membidik
+        /// siapa pun — dia cuma menunggu ada yang masuk jangkauan lalu menyemprot. Arah awalnya
+        /// diacak tiap tembakan supaya polanya tidak pernah persis sama.
+        /// </summary>
+        Radial,
+
+        /// <summary>
+        /// Meledakkan SEMUA musuh yang sedang membawa <c>TriggerStatus</c>, sebesar poin yang
+        /// menumpuk di masing-masing, lalu mencabut statusnya.
+        ///
+        /// Ini separuh kedua dari kombo dua skill: satu skill menghabiskan seluruh cast-nya
+        /// mengoles ailment murah ke mana-mana, dan yang ini menagihnya sekaligus.
+        /// </summary>
+        Detonate
     }
 
     /// <summary>

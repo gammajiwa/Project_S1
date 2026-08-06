@@ -15,6 +15,7 @@ MonoBehaviour:
   Id: kutuklemah
   DisplayName: WEAKENED
   Color: {r: 0.75, g: 0.35, b: 0.45, a: 1}
+  Icon: {fileID: 21300000, guid: 856f425e14743464ea40f69e02ffebc1, type: 3}
   Duration: 5
   Mods:
   - Type: 7

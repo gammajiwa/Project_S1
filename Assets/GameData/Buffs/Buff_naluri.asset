@@ -15,10 +15,13 @@ MonoBehaviour:
   Id: naluri
   DisplayName: INSTINCT
   Color: {r: 1, g: 0.75, b: 0.85, a: 1}
+  Icon: {fileID: 21300000, guid: 3cd777e69368a554d9bed85a6afacd35, type: 3}
   Duration: 6
   Mods:
   - Type: 11
     Value: 0.25
   - Type: 12
     Value: 0.5
+  IsDebuff: 0
+  ResistShortensDuration: 1
   Blurb: Crit chance +25%, crit damage +50%.

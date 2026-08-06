@@ -51,6 +51,14 @@ namespace Proto
         [Tooltip("Buff yang didapat pemain saat reaksi ini terjadi. Boleh kosong.")]
         public BuffDefinition GrantBuff;
 
+        [Tooltip("Reaksi ini juga MENCABUT satu kutukan dari pemain. Membuat build ailment jadi " +
+                 "jawaban atas kutukan musuh, bukan cabang terpisah yang harus dibayar sendiri.")]
+        public bool CleansesOneDebuff;
+
+        [Tooltip("Mana yang dikembalikan ke pemain. Reaksi yang membayar sumber daya membuat " +
+                 "build kombo bisa menopang cast yang seharusnya tidak terjangkau.")]
+        public float RefundMana;
+
         public Color FlashColor = Color.white;
 
         public bool IsValid => A != null && B != null && A != B && (ConsumeA || ConsumeB);

@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Tempest
   Stars: 3
   Layer: 1
-  Shape: 9
+  Shape: 10
   Color: {r: 0.9408, g: 0.89640003, b: 0.482, a: 1}
   Icon: {fileID: 21300000, guid: 9e0f7f2b22b145744881c9d4ab1a7b88, type: 3}
   Kind: 4
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 6.2
   Range: 12
   Hits: 1
+  Forks: 1
   ManaCost: 35
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

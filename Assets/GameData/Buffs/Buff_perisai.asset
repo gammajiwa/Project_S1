@@ -15,10 +15,13 @@ MonoBehaviour:
   Id: perisai
   DisplayName: AEGIS
   Color: {r: 0.85, g: 0.85, b: 0.5, a: 1}
+  Icon: {fileID: 21300000, guid: 8dd1c44934bb8cf4ba04ef1ebee51dfc, type: 3}
   Duration: 10
   Mods:
   - Type: 3
     Value: 12
   - Type: 2
     Value: 2
+  IsDebuff: 0
+  ResistShortensDuration: 1
   Blurb: Defence +12 and HP regen +2 per second.

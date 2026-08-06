@@ -50,6 +50,14 @@ namespace Proto
         public Vector2[] Members;
 
         public bool Complete;
+
+        /// <summary>
+        /// True when this group only holds together because the piece on the cursor is counted as
+        /// if it were already seated. Such a group is a proposal, not a promise — nothing evolves
+        /// until the piece is actually put down, so the UI must not paint it as settled.
+        /// </summary>
+        public bool NeedsHeldPiece;
+
         public string ResultName;
     }
 
@@ -59,10 +67,7 @@ namespace Proto
     /// </summary>
     public class Backpack
     {
-        // 5x4, which is what GameBalance.BagWidth/BagHeight and the HUD layout always assumed —
-        // the column reserves exactly this much room above the sell box. At 4x3 a 3x3 skill filled
-        // three quarters of the bag, and now that the top tier IS 3x3 that had to give.
-        public const int Width = 5;
+        public const int Width = 4;
         public const int Height = 4;
 
         public readonly List<RuneInstance> Placed = new List<RuneInstance>();
@@ -154,6 +159,63 @@ namespace Proto
             {
                 foreach (var c in r.Cells()) _occupancy[c] = r;
             }
+        }
+
+        // ---------- evolution ----------
+        //
+        // The bag evolves too. It was pure storage, which made it a dead end: spare copies piled up
+        // there with no way to become anything, and the only place a recipe could ever resolve was
+        // the board — where every ingredient also has to stand on a rune and compete for the same
+        // cells the casting build needs. Merging in the bag is how you cook parts without giving up
+        // firing positions.
+
+        public List<string> ResolveEvolutions(ContentDatabase db) =>
+            RecipeResolver.Resolve(db, Placed, Rebuild, Place, CouldSeat);
+
+        public List<EvoPreview> FindPendingGroups(ContentDatabase db) =>
+            RecipeResolver.Preview(db, Placed, CouldSeat);
+
+        /// <summary>
+        /// No runes here, so the only question is whether the footprint lands inside the bag on
+        /// cells that are either empty or about to be freed by this very recipe.
+        /// </summary>
+        bool CouldSeat(PieceDefinition result, List<RuneInstance> group)
+        {
+            if (result == null || result.Layer != Layer.Skill) return false;
+
+            var freed = new HashSet<Vector2Int>();
+            for (int i = 0; i < group.Count; i++)
+            {
+                foreach (var c in group[i].Cells()) freed.Add(c);
+            }
+
+            for (int rot = 0; rot < 4; rot++)
+            {
+                var shape = Shapes.Rotate(result.Cells, rot);
+
+                for (int y = 0; y < Height; y++)
+                {
+                    for (int x = 0; x < Width; x++)
+                    {
+                        var origin = new Vector2Int(x, y);
+                        bool ok = true;
+
+                        for (int i = 0; i < shape.Length; i++)
+                        {
+                            var c = origin + shape[i];
+                            if (!InBounds(c) || (_occupancy.ContainsKey(c) && !freed.Contains(c)))
+                            {
+                                ok = false;
+                                break;
+                            }
+                        }
+
+                        if (ok) return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 
@@ -289,6 +351,85 @@ namespace Proto
             return displaced;
         }
 
+        /// <summary>A skill that travels with the rune it is standing on.</summary>
+        public struct Rider
+        {
+            public PieceDefinition Def;
+
+            /// <summary>Its origin relative to the rune's origin, so it can be re-seated.</summary>
+            public Vector2Int Offset;
+
+            public int Rot;
+        }
+
+        /// <summary>
+        /// Skills standing ENTIRELY on this rune, lifted off with it.
+        ///
+        /// Entirely is the whole rule. A skill bridging two runes belongs to neither, so carrying it
+        /// with one of them would silently tear it off the other — those are released to the floor
+        /// instead, which is what already happened to every skill when a base moved.
+        ///
+        /// Removes the riders from the board; the caller owns them from here.
+        /// </summary>
+        public List<Rider> LiftRiders(RuneInstance rune)
+        {
+            var riders = new List<Rider>();
+            if (rune == null || rune.Def.Layer != Layer.Rune) return riders;
+
+            var floor = new HashSet<Vector2Int>();
+            foreach (var c in rune.Cells()) floor.Add(c);
+
+            var travelling = new List<RuneInstance>();
+
+            for (int i = 0; i < Placed.Count; i++)
+            {
+                var skill = Placed[i];
+                if (skill.Def.Layer != Layer.Skill) continue;
+
+                bool wholly = true;
+                foreach (var c in skill.Cells())
+                {
+                    if (floor.Contains(c)) continue;
+                    wholly = false;
+                    break;
+                }
+
+                if (!wholly) continue;
+
+                travelling.Add(skill);
+                riders.Add(new Rider
+                {
+                    Def = skill.Def,
+                    Offset = skill.Origin - rune.Origin,
+                    Rot = skill.Rot
+                });
+            }
+
+            for (int i = 0; i < travelling.Count; i++) Placed.Remove(travelling[i]);
+            if (travelling.Count > 0) Rebuild();
+
+            return riders;
+        }
+
+        /// <summary>Puts riders back down around a rune that has just been seated.</summary>
+        /// <returns>Riders that would not fit, for the caller to scatter.</returns>
+        public List<PieceDefinition> SeatRiders(List<Rider> riders, Vector2Int runeOrigin)
+        {
+            var homeless = new List<PieceDefinition>();
+            if (riders == null) return homeless;
+
+            for (int i = 0; i < riders.Count; i++)
+            {
+                var rider = riders[i];
+                if (Place(rider.Def, runeOrigin + rider.Offset, rider.Rot) == null)
+                {
+                    homeless.Add(rider.Def);
+                }
+            }
+
+            return homeless;
+        }
+
         public List<PieceDefinition> Remove(RuneInstance inst)
         {
             var orphans = new List<PieceDefinition>();
@@ -360,6 +501,129 @@ namespace Proto
         public List<EvoPreview> FindPendingGroups() => FindPendingGroups(null, default, 0);
 
         /// <summary>
+        /// Centres of every piece on the board that shares a recipe with the one being carried.
+        ///
+        /// This answers the question at the moment it is actually asked. The evolution connectors
+        /// only appear once the cursor is over a legal cell, which is one move too late: by then
+        /// you have already picked the spot. Lifting a piece off the floor should be enough to see
+        /// what it wants to stand next to.
+        ///
+        /// No "would this complete it" flag comes back on purpose. These are possibilities, and the
+        /// UI paints possibilities blue — gold is reserved for a group that is actually going to
+        /// evolve, which nothing being held can be.
+        /// </summary>
+        public List<Vector2> FindPartners(PieceDefinition held)
+        {
+            var centers = new List<Vector2>();
+            if (held == null || held.Layer != Layer.Skill) return centers;
+
+            var seen = new HashSet<RuneInstance>();
+
+            for (int r = 0; r < _db.Recipes.Count; r++)
+            {
+                var recipe = _db.Recipes[r];
+                if (recipe == null || recipe.Result == null || !UsesPiece(recipe, held)) continue;
+
+                for (int i = 0; i < Placed.Count; i++)
+                {
+                    var piece = Placed[i];
+                    if (piece.Def.Layer != Layer.Skill || piece.Locked) continue;
+                    if (!UsesPiece(recipe, piece.Def)) continue;
+                    if (!seen.Add(piece)) continue;
+
+                    centers.Add(CenterOf(piece));
+                }
+            }
+
+            return centers;
+        }
+
+        /// <summary>
+        /// Would the result actually fit once this group is consumed?
+        ///
+        /// Gold promises an evolution, and without this it was promising one it could not keep: the
+        /// preview only ever asked "are the ingredients here and touching". If the board is full,
+        /// <see cref="SeatEvolved"/> finds nowhere to put the result, the merge is rolled back, and
+        /// the player watches a gold group survive the wave untouched with no explanation.
+        ///
+        /// Pure — it reasons about the cells the group would free rather than removing anything.
+        /// </summary>
+        bool CouldSeat(PieceDefinition result, List<RuneInstance> group)
+        {
+            if (result == null) return false;
+
+            var freed = new HashSet<Vector2Int>();
+            for (int i = 0; i < group.Count; i++)
+            {
+                foreach (var c in group[i].Cells()) freed.Add(c);
+            }
+
+            for (int rot = 0; rot < 4; rot++)
+            {
+                var shape = Shapes.Rotate(result.Cells, rot);
+
+                for (int y = 0; y < Height; y++)
+                {
+                    for (int x = 0; x < Width; x++)
+                    {
+                        if (Fits(result, shape, new Vector2Int(x, y), freed)) return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        bool Fits(PieceDefinition result, Vector2Int[] shape, Vector2Int origin,
+            HashSet<Vector2Int> freed)
+        {
+            for (int i = 0; i < shape.Length; i++)
+            {
+                var c = origin + shape[i];
+                if (!InBounds(c)) return false;
+
+                if (result.Layer == Layer.Rune)
+                {
+                    if (_base.ContainsKey(c) && !freed.Contains(c)) return false;
+                    continue;
+                }
+
+                // A skill still needs a rune under every cell, and the only skills it may overlap
+                // are the ones this very recipe is about to eat.
+                if (!_base.ContainsKey(c)) return false;
+                if (_skill.ContainsKey(c) && !freed.Contains(c)) return false;
+            }
+
+            return true;
+        }
+
+        static bool UsesPiece(RecipeDefinition recipe, PieceDefinition def)
+        {
+            if (recipe.Ingredients == null) return false;
+
+            for (int i = 0; i < recipe.Ingredients.Length; i++)
+            {
+                if (recipe.Ingredients[i] == def) return true;
+            }
+
+            return false;
+        }
+
+        static Vector2 CenterOf(RuneInstance inst)
+        {
+            Vector2 sum = Vector2.zero;
+            int cells = 0;
+
+            foreach (var c in inst.Cells())
+            {
+                sum += new Vector2(c.x, c.y);
+                cells++;
+            }
+
+            return cells == 0 ? sum : sum / cells;
+        }
+
+        /// <summary>
         /// Same, but the piece the player is currently dragging counts as if it were already seated
         /// at <paramref name="heldOrigin"/>. Without it the line only appears after the drop, which
         /// is one move too late to help you aim.
@@ -394,7 +658,8 @@ namespace Proto
                     group.Clear();
                     if (!FindClusterGroup(recipe, candidates, group, 0, recipe.Ingredients.Length, true, ghost)) continue;
 
-                    previews.Add(MakePreview(group, true, recipe.Result.DisplayName));
+                    previews.Add(MakePreview(group, CouldSeat(recipe.Result, group),
+                        recipe.Result.DisplayName, ghost));
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
                     break;
                 }
@@ -413,7 +678,9 @@ namespace Proto
 
                 if (FindClusterGroup(recipe, candidates, group, 0, recipe.Ingredients.Length, true, null))
                 {
-                    previews.Add(MakePreview(group, true, result.DisplayName));
+                    // Complete on the board is not the same as able to evolve — the result still
+                    // has to land somewhere. Gold only when both are true.
+                    previews.Add(MakePreview(group, CouldSeat(result, group), result.DisplayName, ghost));
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
                     continue;
                 }
@@ -423,7 +690,7 @@ namespace Proto
                     group.Clear();
                     if (!FindClusterGroup(recipe, candidates, group, 0, size, false, null)) continue;
 
-                    previews.Add(MakePreview(group, false, result.DisplayName));
+                    previews.Add(MakePreview(group, false, result.DisplayName, ghost));
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
                     break;
                 }
@@ -489,7 +756,8 @@ namespace Proto
             return true;
         }
 
-        static EvoPreview MakePreview(List<RuneInstance> group, bool complete, string resultName)
+        static EvoPreview MakePreview(List<RuneInstance> group, bool complete, string resultName,
+            RuneInstance ghost)
         {
             var members = new Vector2[group.Count];
 
@@ -507,7 +775,13 @@ namespace Proto
                 members[i] = cells == 0 ? sum : sum / cells;
             }
 
-            return new EvoPreview { Members = members, Complete = complete, ResultName = resultName };
+            return new EvoPreview
+            {
+                Members = members,
+                Complete = complete,
+                NeedsHeldPiece = ghost != null && group.Contains(ghost),
+                ResultName = resultName
+            };
         }
 
         /// <summary>Finds a matching, unlocked, in-line group for one recipe and merges it.</summary>

@@ -92,10 +92,10 @@ namespace Proto
         public int Wave { get; private set; }
         public bool WaveActive { get; private set; }
 
-        /// <summary>Seconds of spawning left. When it hits zero the wave enters its closing phase.</summary>
-        public float SpawnTimeLeft { get; private set; }
+        /// <summary>Enemies still to arrive. At zero the wave enters its closing phase.</summary>
+        public int PendingSpawns { get; private set; }
 
-        public float SpawnWindow { get; private set; }
+        public int WaveTotal { get; private set; }
 
         /// <summary>
         /// Spawning is over and the wave is waiting for the field to clear.
@@ -367,11 +367,11 @@ namespace Proto
         {
             Wave = wave;
 
-            // The clock governs SPAWNING, not the wave. The wave still ends by clearing the field —
-            // deleting the survivors read as the game confiscating your kills, and it did, because
-            // the rest of the game is shaped like a round you are meant to finish.
-            SpawnWindow = Mathf.Max(1f, _balance.SpawnWindowFor(wave));
-            SpawnTimeLeft = SpawnWindow;
+            // A wave is a COUNT. A clock made the player watch a countdown instead of the field,
+            // and "how many are left" is the only number they can actually act on. The rate below
+            // still exists, but it only decides how fast that count arrives.
+            WaveTotal = _balance.EnemyCountFor(wave);
+            PendingSpawns = WaveTotal;
             Closing = false;
 
             _spawnRate = _balance.SpawnRateFor(wave);
@@ -379,6 +379,14 @@ namespace Proto
             _closingElapsed = 0f;
 
             WaveActive = true;
+
+            // A handful already on their way in, so the wave starts as an event rather than as a
+            // quiet stretch of empty floor while the first walkers cross the map.
+            int opener = Mathf.Min(_balance.WaveOpenerCount, PendingSpawns);
+            for (int i = 0; i < opener; i++)
+            {
+                if (SpawnOne(_balance.WaveOpenerDistance)) PendingSpawns--;
+            }
         }
 
         void Update()
@@ -388,15 +396,7 @@ namespace Proto
             float dt = Time.deltaTime;
             if (WaveActive) Elapsed += dt;
 
-            if (WaveActive && !Closing)
-            {
-                SpawnTimeLeft -= dt;
-                if (SpawnTimeLeft <= 0f)
-                {
-                    SpawnTimeLeft = 0f;
-                    Closing = true;
-                }
-            }
+            if (WaveActive && !Closing && PendingSpawns <= 0) Closing = true;
 
             TickSpawning(dt);
             TickEnemies(dt);
@@ -440,17 +440,19 @@ namespace Proto
 
             // Each wave climbs toward its own crescendo instead of running flat from the first
             // second, so the last stretch is the hardest part rather than the emptiest.
-            float progress = SpawnWindow <= 0f ? 1f : 1f - SpawnTimeLeft / SpawnWindow;
+            float progress = WaveTotal <= 0 ? 1f : 1f - (float)PendingSpawns / WaveTotal;
             _spawnBudget += _spawnRate * _balance.RampAt(progress) * dt;
 
             // Banked spawns are capped: a long spell pinned at the alive cap must not save up a
             // tidal wave that lands all at once the moment a slot frees.
             if (_spawnBudget > 20f) _spawnBudget = 20f;
 
-            while (_spawnBudget >= 1f)
+            while (_spawnBudget >= 1f && PendingSpawns > 0)
             {
                 if (!SpawnOne()) break;
+
                 _spawnBudget -= 1f;
+                PendingSpawns--;
             }
         }
 
@@ -459,7 +461,7 @@ namespace Proto
         /// different kind of enemy — a boss, say — is a different fill of this one method.
         /// </summary>
         /// <returns>False when the alive cap is full and nothing could be spawned.</returns>
-        bool SpawnOne()
+        bool SpawnOne(float distanceScale = 1f)
         {
             var e = GetFree();
             if (e == null) return false;
@@ -467,7 +469,7 @@ namespace Proto
             var kind = _db.RollArchetype(Wave);
             e.Kind = kind;
 
-            e.Pos = SpawnPoint();
+            e.Pos = SpawnPoint(distanceScale);
             e.MaxHp = _balance.EnemyHpFor(Wave);
             e.Speed = Random.Range(_balance.EnemySpeedMin, _balance.EnemySpeedMax) +
                       Wave * _balance.EnemySpeedPerWave;
@@ -509,7 +511,7 @@ namespace Proto
         /// screen edge in full view while enemies from above and below are still far off screen.
         /// Exiting through a box means every direction is off screen by the same margin.
         /// </summary>
-        Vector3 SpawnPoint()
+        Vector3 SpawnPoint(float distanceScale = 1f)
         {
             Vector3 from = _player.position;
 
@@ -530,7 +532,7 @@ namespace Proto
 
             // Never behind us, and always at least a little way out even when the caster is already
             // pressed against the boundary.
-            float t = Mathf.Max(4f, Mathf.Min(tx, tz));
+            float t = Mathf.Max(4f, Mathf.Min(tx, tz)) * Mathf.Clamp(distanceScale, 0.2f, 1f);
 
             return new Vector3(from.x + dx * t, 0.55f, from.z + dz * t);
         }
@@ -1238,6 +1240,74 @@ namespace Proto
             return push.sqrMagnitude > 1f ? push.normalized : push;
         }
 
+        /// <summary>Nearest living enemy that is not <paramref name="skip"/>. For ricochets.</summary>
+        public Enemy NearestExcluding(Vector3 from, float maxDistance, Enemy skip)
+        {
+            Enemy best = null;
+            float bestSqr = maxDistance * maxDistance;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive || e == skip) continue;
+
+                Vector3 d = e.Pos - from;
+                d.y = 0f;
+
+                float sqr = d.sqrMagnitude;
+                if (sqr >= bestSqr) continue;
+
+                bestSqr = sqr;
+                best = e;
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Blows up every enemy carrying <paramref name="statusIndex"/>, harder the more points it
+        /// has stacked, then strips the status off.
+        ///
+        /// This is the payoff half of a two-skill combo: one skill spends its whole cast smearing
+        /// a cheap ailment around, and this turns all of it into damage at once. It deliberately
+        /// scales on POINTS rather than on enemy count, so stacking an ailment deep is worth more
+        /// than spreading it thin.
+        /// </summary>
+        public int DetonateStatus(int statusIndex, float damagePerPoint, float splashRadius,
+            string sourceName, System.Action<Vector3, int> onBlast)
+        {
+            if (statusIndex < 0) return 0;
+
+            int blasts = 0;
+
+            // Snapshot first: detonating damages, damage can kill, and killing mutates the pool.
+            int count = _pool.Count;
+
+            for (int i = 0; i < count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                int slot = SlotOf(e, statusIndex);
+                if (slot < 0) continue;
+
+                int points = e.Slots[slot].Points;
+                if (points <= 0) continue;
+
+                // Consumed by the blast — a mark cannot be cashed in twice.
+                e.Slots[slot].Def = -1;
+                Paint(e);
+
+                Vector3 at = e.Pos;
+                blasts++;
+                onBlast?.Invoke(at, points);
+
+                DamageArea(at, splashRadius, damagePerPoint * points, null, 0f, 1, false, sourceName);
+            }
+
+            return blasts;
+        }
+
         public Enemy Nearest(Vector3 from, float maxDistance)
         {
             Enemy best = null;
@@ -1270,10 +1340,17 @@ namespace Proto
         /// swarm was packed, and there was nothing to draw a bolt between.
         /// </summary>
         /// <returns>How many links were made. Positions are in <paramref name="buffer"/> order.</returns>
-        public int ChainFrom(Vector3 from, float firstRange, float jumpRange, Enemy[] buffer, int maxHits)
+        /// <param name="alreadyTaken">
+        /// Entries at the front of <paramref name="buffer"/> that are already spoken for. Forked
+        /// lightning passes the running total here, so a second branch cannot re-hit what the first
+        /// one already struck — which is what makes the branches visibly spread apart instead of
+        /// all crawling down the same line of enemies.
+        /// </param>
+        public int ChainFrom(Vector3 from, float firstRange, float jumpRange, Enemy[] buffer,
+            int maxHits, int alreadyTaken = 0)
         {
-            int found = 0;
-            int limit = Mathf.Min(maxHits, buffer.Length);
+            int found = alreadyTaken;
+            int limit = Mathf.Min(alreadyTaken + maxHits, buffer.Length);
 
             Vector3 at = from;
             float reach = firstRange;

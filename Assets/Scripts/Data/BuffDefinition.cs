@@ -13,8 +13,20 @@ namespace Proto
         public string DisplayName;
         public Color Color = Color.white;
 
-        [Tooltip("Detik. Kena lagi saat masih aktif -> durasi di-refresh, efek TIDAK ditumpuk.")]
+        [Tooltip("Placeholder digenerate lewat Tools/Grimoire/Generate Placeholder Icons. " +
+                 "Timpa PNG-nya di Assets/GameData/Icons untuk mengganti art.")]
+        public Sprite Icon;
+
+        [Tooltip("Detik. Kena lagi saat masih aktif -> durasi di-refresh.")]
         public float Duration = 6f;
+
+        [Min(1)]
+        [Tooltip("Berapa tumpukan yang bisa menumpuk. 1 = buff biasa (kena lagi cuma memperpanjang). " +
+                 "Di atas 1 = CHARGE: tiap tumpukan mengalikan efeknya, dan skill tertentu bisa " +
+                 "menghabiskannya sekaligus untuk satu pukulan besar.")]
+        public int MaxStacks = 1;
+
+        public bool IsCharge => MaxStacks > 1;
 
         [Tooltip("Stat yang dinaikkan selama buff aktif. Persen ditulis desimal: 0.25 = 25%. " +
                  "Untuk debuff, tulis NEGATIF.")]

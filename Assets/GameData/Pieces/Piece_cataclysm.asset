@@ -23,12 +23,14 @@ MonoBehaviour:
   Element: 0
   BaseDamage: 340
   BaseCooldown: 5.5
-  Radius: 11
+  Radius: 12
   Range: 12
   Hits: 1
+  Forks: 1
   ManaCost: 82
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -43,4 +45,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. The sky opens. Nothing inside the crater survives. Applies BURN.
+  Blurb: EVOLVED. Langit terbuka. Tidak ada yang selamat dua kali di dalam kawah.

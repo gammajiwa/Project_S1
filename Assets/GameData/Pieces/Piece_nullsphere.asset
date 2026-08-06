@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Null Sphere
   Stars: 3
   Layer: 1
-  Shape: 10
+  Shape: 11
   Color: {r: 0.74840003, g: 0.5708, b: 0.963, a: 1}
   Icon: {fileID: 21300000, guid: 69e3edbd94663684eb94c9dde94a0e99, type: 3}
   Kind: 1
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 6.5
   Range: 6.5
   Hits: 1
+  Forks: 1
   ManaCost: 36
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

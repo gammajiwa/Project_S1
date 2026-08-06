@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Fireball
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 0
   Color: {r: 1, g: 0.42, b: 0.15, a: 1}
   Icon: {fileID: 21300000, guid: 72b6b37412480fe4fbf2ccf6bea384b4, type: 3}
   Kind: 0
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 0.7
   Range: 7
   Hits: 1
+  Forks: 1
   ManaCost: 6
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -43,4 +45,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Fast single bolt. The one skill you can always afford to run.
+  Blurb: "Fast single bolt. One cell \u2014 it fits wherever nothing else will."

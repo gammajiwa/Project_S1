@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Plague Bloom
   Stars: 3
   Layer: 1
-  Shape: 11
+  Shape: 9
   Color: {r: 0.74840003, g: 0.5708, b: 0.963, a: 1}
   Icon: {fileID: 21300000, guid: f3a5337b2854b434a85e72f912acae68, type: 3}
   Kind: 6
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 4.8
   Range: 11
   Hits: 1
+  Forks: 1
   ManaCost: 36
   ZoneDuration: 6
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Gravity Well
   Stars: 2
   Layer: 1
-  Shape: 3
+  Shape: 7
   Color: {r: 0.7042, g: 0.49539998, b: 0.9565, a: 1}
   Icon: {fileID: 21300000, guid: c2372d58e5d2b2047a5ab0f7b5308e08, type: 3}
   Kind: 4
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 4.5
   Range: 11
   Hits: 1
+  Forks: 1
   ManaCost: 21
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

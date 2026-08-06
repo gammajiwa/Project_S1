@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 6
   Range: 12
   Hits: 1
+  Forks: 1
   ManaCost: 74
-  ZoneDuration: 6
+  ZoneDuration: 7
   ZoneTickInterval: 0.4
+  ZoneDrift: 3.4
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -43,4 +45,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Drags the swarm into itself and grinds. Applies DRAG.
+  Blurb: "EVOLVED. Lubang yang MENGEMBARA \u2014 dia menyeret gerombolan ke dalam
+    dirinya sambil berjalan sendiri melintasi lapangan."

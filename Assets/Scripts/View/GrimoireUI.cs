@@ -62,7 +62,9 @@ namespace Proto
 
         // One group needs a connector per pair of ingredients, not a single box, so the pool has to
         // cover (members - 1) segments for every group on the board at once.
-        const int EvoLinePool = 24;
+        // Bigger now that the pool also carries the "what can this combine with" cables, which fan
+        // out from the cursor to every partner on the board at once.
+        const int EvoLinePool = 40;
 
         const float EvoLineThin = 5f;
         const float EvoLineThick = 8f;
@@ -82,10 +84,15 @@ namespace Proto
 
         Image[] _evoLines;
         List<EvoPreview> _previews = new List<EvoPreview>();
+        List<EvoPreview> _bagPreviews = new List<EvoPreview>();
         float _previewTimer;
 
         /// <summary>Scratch buffer for ordering one group's ingredients. A recipe takes at most 3.</summary>
         readonly Vector2[] _evoWalk = new Vector2[4];
+
+        List<Vector2> _partners = new List<Vector2>();
+        PieceDefinition _partnerFor;
+        float _partnerTimer;
 
         // Last previewed drag position, so the lines can be recomputed the moment the cursor moves
         // instead of waiting out the idle throttle.
@@ -115,6 +122,16 @@ namespace Proto
 
         PieceDefinition _held;
         int _heldRot;
+
+        /// <summary>
+        /// Skills lifted along with the rune currently in hand.
+        ///
+        /// Dropped the moment the rune is rotated: their offsets are expressed in the rune's
+        /// un-rotated frame, and quietly re-deriving them through a rotation is the kind of thing
+        /// that looks right until a 3-cell base is turned twice.
+        /// </summary>
+        List<Grimoire.Rider> _riders = new List<Grimoire.Rider>();
+
         int _gold;
 
         // Swallows any stray click/keypress carried in from entering play mode.
@@ -136,8 +153,9 @@ namespace Proto
         Text _meterText;
         float _meterTimer;
 
-        Text _buffText;
-        Text _debuffText;
+        StatusStrip _buffStrip;
+        StatusStrip _debuffStrip;
+        StatusStrip _ailmentStrip;
 
         Text _hudText;
         Image _hpBg;
@@ -159,7 +177,6 @@ namespace Proto
         static readonly Color ManaFillColor = new Color(0.35f, 0.6f, 1f, 0.95f);
         Image _tipBg;
         Text _tipText;
-        Text _statusText;
         Text _heldText;
         Text _bannerText;
         Text _gridTitle;
@@ -222,18 +239,50 @@ namespace Proto
             Player.OnCast += OnSpellCast;
             Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
 
-            // Opening loadout sits in the middle of the grid, not the corner.
-            var mid = new Vector2Int(Grimoire.Width / 2 - 1, Grimoire.Height / 2 - 1);
-            Book.Place(_db.ById("emberrune"), mid, 0);
-            Book.Place(_db.ById("fireball"), mid, 0);
-            // Two pieces already scattered so the pick-up flow is obvious from the first second.
-            AddLoose(_db.ById("frostnova"));
-            AddLoose(_db.ById("chronorune"));
+            ApplyLoadout(_db.DefaultHero);
 
             for (int i = 0; i < Book.Placed.Count; i++) Discover(Book.Placed[i].Def);
 
             SetSpeed(0);
             Redraw();
+        }
+
+        /// <summary>
+        /// Seats a hero's opening board. Runes go down first — a skill cannot stand on nothing.
+        ///
+        /// Positions come from the asset rather than from auto-placement, because where the two
+        /// opening skills sit IS the first decision of a run: left apart they keep firing as two,
+        /// pushed together they merge into one 2-star at the end of the wave. Auto-placement would
+        /// have dropped them side by side and made that choice for the player.
+        /// </summary>
+        void ApplyLoadout(HeroLoadout hero)
+        {
+            if (hero == null)
+            {
+                Debug.LogError("[GrimoireUI] Tidak ada HeroLoadout di ContentDatabase — " +
+                               "jalankan Tools/Grimoire/Generate Heroes.", this);
+                return;
+            }
+
+            for (int pass = 0; pass < 2; pass++)
+            {
+                bool wantRunes = pass == 0;
+
+                for (int i = 0; i < hero.Placed.Length; i++)
+                {
+                    var seat = hero.Placed[i];
+                    if (seat.Piece == null || seat.Piece.IsRune != wantRunes) continue;
+
+                    if (Book.Place(seat.Piece, seat.Origin, seat.Rot) == null)
+                    {
+                        Debug.LogWarning($"[GrimoireUI] '{hero.Id}': {seat.Piece.Id} tidak muat di " +
+                                         $"{seat.Origin}, dilempar ke lantai.", this);
+                        AddLoose(seat.Piece);
+                    }
+                }
+            }
+
+            for (int i = 0; i < hero.Loose.Length; i++) AddLoose(hero.Loose[i]);
         }
 
         void OnDestroy()
@@ -335,11 +384,12 @@ namespace Proto
                 new Color(0.85f, 0.82f, 0.95f), Vector2.zero, TextAnchor.LowerLeft);
             _gridTitle.text = "GRIMOIRE";
 
-            _heldText = MakeText("HeldInfo", new Vector2(Margin, -100),
+            // Below the three icon strips, which now own the band straight under the mana bar.
+            _heldText = MakeText("HeldInfo", new Vector2(Margin, StripAilmentY - 34f),
                 new Vector2(880, 22), 13, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
                 TextAnchor.UpperLeft);
 
-            _evolveText = MakeText("EvolveInfo", new Vector2(Margin, -122),
+            _evolveText = MakeText("EvolveInfo", new Vector2(Margin, StripAilmentY - 56f),
                 new Vector2(880, 22), 14, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
                 TextAnchor.UpperLeft);
             _evolveText.text = "";
@@ -565,7 +615,8 @@ namespace Proto
 
             MakeText("SpellTitle", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 6),
                 new Vector2(400, 22), 15, new Color(0.85f, 0.82f, 0.95f),
-                new Vector2(1f, 0f), TextAnchor.LowerRight).text = "SPELL AKTIF  -  urut damage terbesar";
+                new Vector2(1f, 0f), TextAnchor.LowerRight).text =
+                "SPELL AKTIF  -  urut damage yang sudah dihasilkan";
         }
 
         void BuildSpeedControl()
@@ -635,9 +686,6 @@ namespace Proto
             _tipText.rectTransform.pivot = new Vector2(0f, 1f);
             _tipText.enabled = false;
 
-            _statusText = MakeText("Status", new Vector2(0, -Margin), new Vector2(700, 40), 17,
-                Color.white, new Vector2(0.5f, 1f), TextAnchor.UpperCenter);
-
             _bannerText = MakeText("Banner", new Vector2(0, 210), new Vector2(900, 100), 28,
                 Color.white, new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
             _bannerText.text = "";
@@ -652,19 +700,26 @@ namespace Proto
 
         void BuildMeter()
         {
-            _meterText = MakeText("Meter", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 34),
-                new Vector2(400, 150), 13, new Color(0.85f, 0.85f, 0.9f),
+            // A single line now, tucked under the panel title — the whole meter block it replaced
+            // was a second copy of information the rows already carry.
+            _meterText = MakeText("Meter", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 26),
+                new Vector2(SpellPanelW + 120, 20), 12, new Color(0.72f, 0.76f, 0.85f),
                 new Vector2(1f, 0f), TextAnchor.LowerRight);
 
-            _buffText = MakeText("Buffs", new Vector2(Margin, -160), new Vector2(700, 24), 15,
-                new Color(1f, 0.92f, 0.55f), new Vector2(0f, 1f), TextAnchor.UpperLeft);
-            _buffText.text = "";
+            _buffStrip = new StatusStrip(_canvas.transform, _font, 6, StripIcon,
+                new Color(1f, 0.92f, 0.55f));
 
-            _debuffText = MakeText("Debuffs", new Vector2(Margin, -182), new Vector2(700, 24), 15,
-                new Color(1f, 0.45f, 0.45f), new Vector2(0f, 1f), TextAnchor.UpperLeft);
-            _debuffText.text = "";
+            _debuffStrip = new StatusStrip(_canvas.transform, _font, 4, StripIcon,
+                new Color(1f, 0.5f, 0.5f));
+
+            _ailmentStrip = new StatusStrip(_canvas.transform, _font, 8, StripIcon,
+                new Color(0.85f, 0.88f, 0.95f));
         }
 
+        /// <summary>
+        /// One line above the spell panel: the run total, plus whatever damage did NOT come from a
+        /// placed skill — reactions and ailments, which have no row of their own.
+        /// </summary>
         void DrawMeter()
         {
             // Throttled: the numbers move constantly but nobody reads them four times a frame.
@@ -672,33 +727,80 @@ namespace Proto
             if (_meterTimer > 0f) return;
 
             _meterTimer = 0.25f;
-            _meterText.text = _meter.BuildSummary(6);
+
+            if (_meter.Total <= 0f)
+            {
+                _meterText.text = "";
+                return;
+            }
+
+            _sb.Length = 0;
+            _sb.Append("total ").Append(Mathf.RoundToInt(_meter.Total));
+
+            string others = _meter.BuildOtherSources(IsPlacedSkill, 4);
+            if (others.Length > 0) _sb.Append("      ").Append(others);
+
+            _meterText.text = _sb.ToString();
         }
 
+        /// <summary>True when this damage source already has its own row in the spell panel.</summary>
+        bool IsPlacedSkill(string source)
+        {
+            var spells = Book.Spells;
+            for (int i = 0; i < spells.Count; i++)
+            {
+                if (spells[i].Source.Def.DisplayName == source) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Three icon strips stacked under the mana bar: what is helping you, what is hurting you,
+        /// and what is currently burning through the swarm.
+        /// </summary>
         void DrawBuffs()
         {
-            _buffText.text = Line(Player.Buffs, "BUFF:  ");
+            PushSlots(_buffStrip, Player.Buffs, StripBuffY);
+            PushSlots(_debuffStrip, Player.Debuffs, StripDebuffY);
 
-            // Its own line, in red. A curse buried in the same yellow strip as your rewards is a
-            // curse the player never notices, and the whole point is to make them react to it.
-            _debuffText.text = Line(Player.Debuffs, "KUTUKAN:  ");
+            _ailmentStrip.Begin(new Vector2(Margin, StripAilmentY));
+
+            var counts = Enemies.StatusCounts;
+            for (int i = 0; i < _db.Statuses.Count && i < counts.Length; i++)
+            {
+                var status = _db.Statuses[i];
+
+                // Only what is actually on the field. A permanent row of zeroes is noise.
+                if (status == null || counts[i] <= 0) continue;
+
+                _ailmentStrip.Push(status.Icon, status.Color, counts[i].ToString(),
+                    status.DisplayName + "  -  " + counts[i] + " musuh terkena\n" + status.Blurb);
+            }
+
+            _ailmentStrip.Apply();
         }
 
-        string Line(PlayerCaster.BuffSlot[] slots, string label)
+        void PushSlots(StatusStrip strip, PlayerCaster.BuffSlot[] slots, float y)
         {
-            _sb.Length = 0;
+            strip.Begin(new Vector2(Margin, y));
 
             for (int i = 0; i < slots.Length; i++)
             {
-                if (slots[i].Def == null) continue;
+                var def = slots[i].Def;
+                if (def == null) continue;
 
-                if (_sb.Length > 0) _sb.Append("   ");
-                _sb.Append(slots[i].Def.DisplayName)
-                    .Append(' ').Append(slots[i].Remaining.ToString("0.0")).Append('s');
+                strip.Push(def.Icon, def.Color, slots[i].Remaining.ToString("0.0"),
+                    def.DisplayName + "  -  " + slots[i].Remaining.ToString("0.0") + "s\n" +
+                    _tooltips.DescribeMods(def));
             }
 
-            return _sb.Length > 0 ? label + _sb : "";
+            strip.Apply();
         }
+
+        /// <summary>Description of whichever strip icon the cursor is over, or null.</summary>
+        string StripTooltip(Vector2 mouse) =>
+            _buffStrip.TooltipAt(mouse) ?? _debuffStrip.TooltipAt(mouse) ?? _ailmentStrip.TooltipAt(mouse);
 
         void BuildFloaters()
         {
@@ -996,20 +1098,36 @@ namespace Proto
 
             Vector2 mouse = ProtoInput.MousePosition;
 
-            if (ProtoInput.RightClickDown || ProtoInput.RotateDown)
+            // R rotates, right-click locks. They used to share right-click, which meant the same
+            // button did two unrelated things depending on whether your hand was full.
+            if (ProtoInput.RotateDown)
             {
                 if (_held != null)
                 {
+                    DropRiders();
                     _heldRot++;
-                    return;
                 }
 
-                // Right-click on a placed piece toggles its evolution lock.
+                return;
+            }
+
+            if (ProtoInput.RightClickDown)
+            {
+                // A locked piece is never eaten by an evolution, and no connector is ever drawn to
+                // it — that is how you protect a piece you actually want to keep.
                 var lockCell = ScreenToCell(mouse);
                 if (lockCell.x >= 0)
                 {
                     var target = Book.SkillAt(lockCell) ?? Book.BaseAt(lockCell);
                     if (target != null) target.Locked = !target.Locked;
+                    return;
+                }
+
+                var lockBag = ScreenToBagCell(mouse);
+                if (lockBag.x >= 0)
+                {
+                    var stored = _bag.At(lockBag);
+                    if (stored != null) stored.Locked = !stored.Locked;
                 }
 
                 return;
@@ -1038,14 +1156,22 @@ namespace Proto
                 {
                     var bagOrigin = bagTarget - AnchorOffset(_held, _heldRot);
 
+                    // The bag has no bases, so a rune cannot go in and its passengers have nowhere
+                    // to ride to. They come off here rather than vanishing with the base.
                     if (_bag.Place(_held, bagOrigin, _heldRot) != null)
                     {
+                        DropRiders();
                         _held = null;
                     }
                     else if (_bag.CanReplaceAt(_held, bagOrigin, _heldRot))
                     {
                         ScatterAll(_bag.ClearFootprint(_held, bagOrigin, _heldRot), mouse);
-                        if (_bag.Place(_held, bagOrigin, _heldRot) != null) _held = null;
+
+                        if (_bag.Place(_held, bagOrigin, _heldRot) != null)
+                        {
+                            DropRiders();
+                            _held = null;
+                        }
                     }
 
                     return;
@@ -1058,19 +1184,26 @@ namespace Proto
 
                     if (Book.Place(_held, gridOrigin, _heldRot) != null)
                     {
+                        LandRiders(gridOrigin, mouse);
                         _held = null;
                     }
                     else if (Book.CanReplaceAt(_held, gridOrigin, _heldRot))
                     {
                         // Occupied â€” kick the old piece out and take its spot.
                         ScatterAll(Book.ClearFootprint(_held, gridOrigin, _heldRot), mouse);
-                        if (Book.Place(_held, gridOrigin, _heldRot) != null) _held = null;
+
+                        if (Book.Place(_held, gridOrigin, _heldRot) != null)
+                        {
+                            LandRiders(gridOrigin, mouse);
+                            _held = null;
+                        }
                     }
 
                     return;
                 }
 
                 // Clicked empty space â€” drop it right there.
+                DropRiders();
                 AddLoose(_held, mouse);
                 _held = null;
                 return;
@@ -1109,6 +1242,9 @@ namespace Proto
             _held = inst.Def;
             _heldRot = inst.Rot;
 
+            // Lifting a base takes whatever is standing on it. Anything bridging two bases belongs
+            // to neither, so Remove sends those to the floor as it always did.
+            _riders = Book.LiftRiders(inst);
             ScatterAll(Book.Remove(inst), mouse);
         }
 
@@ -1162,11 +1298,30 @@ namespace Proto
             return true;
         }
 
+        /// <summary>Re-seats the skills that travelled with a base. Whatever no longer fits falls.</summary>
+        void LandRiders(Vector2Int runeOrigin, Vector2 near)
+        {
+            if (_riders.Count == 0) return;
+
+            ScatterAll(Book.SeatRiders(_riders, runeOrigin), near);
+            _riders.Clear();
+        }
+
+        /// <summary>Lets go of the passengers without moving the base. They land where you stand.</summary>
+        void DropRiders()
+        {
+            if (_riders.Count == 0) return;
+
+            for (int i = 0; i < _riders.Count; i++) AddLoose(_riders[i].Def);
+            _riders.Clear();
+        }
+
         /// <summary>Puts the held piece down on the floor â€” nothing is ever lost silently.</summary>
         void StashHeld()
         {
             if (_held == null) return;
 
+            DropRiders();
             AddLoose(_held);
             _held = null;
         }
@@ -1174,6 +1329,10 @@ namespace Proto
         void SellHeld()
         {
             if (_held == null) return;
+
+            // Only the base is sold. Selling a rune must not quietly sell whatever was standing
+            // on it — those go back on the floor.
+            DropRiders();
 
             int value = ValueOf(_held);
             _gold += value;
@@ -1203,6 +1362,9 @@ namespace Proto
             ReleaseDrops();
 
             var evolutions = Book.ResolveEvolutions();
+
+            // The bag cooks too. Spare copies used to pile up in there with nowhere to go.
+            evolutions.AddRange(_bag.ResolveEvolutions(_db));
             for (int i = 0; i < Book.Placed.Count; i++) Discover(Book.Placed[i].Def);
             if (evolutions.Count == 0) return;
 
@@ -1235,24 +1397,71 @@ namespace Proto
             {
                 _previewTimer = 0.25f;
                 _previews = Book.FindPendingGroups(ghostDef, ghostOrigin, _heldRot);
+                _bagPreviews = _bag.FindPendingGroups(_db);
             }
 
             int cursor = 0;
-            for (int g = 0; g < _previews.Count; g++) cursor = DrawEvoGroup(_previews[g], cursor);
+            for (int g = 0; g < _previews.Count; g++) cursor = DrawEvoGroup(_previews[g], cursor, GridPoint);
+
+            // The bag evolves as well, so it needs the same connectors — in bag coordinates.
+            for (int g = 0; g < _bagPreviews.Count; g++)
+                cursor = DrawEvoGroup(_bagPreviews[g], cursor, BagPoint);
+
+            cursor = DrawPartnerLines(cursor);
+
             for (int i = cursor; i < EvoLinePool; i++) _evoLines[i].enabled = false;
+        }
+
+        /// <summary>
+        /// While a piece is in hand, blue cables run from the cursor to everything on the board it
+        /// could combine with.
+        ///
+        /// Always blue. These are possibilities, and gold means one thing only in this UI: that
+        /// group is going to evolve when the wave ends. Nothing still in your hand can make that
+        /// promise, so nothing still in your hand is allowed to be gold.
+        ///
+        /// Drawn from the CURSOR rather than a grid cell, so the answer is there the instant the
+        /// piece leaves the floor instead of only once it already hovers a legal square.
+        /// </summary>
+        int DrawPartnerLines(int cursor)
+        {
+            if (_held == null || !Player.Alive || Enemies.WaveActive) return cursor;
+
+            _partnerTimer -= Time.unscaledDeltaTime;
+            if (_partnerTimer <= 0f || _partnerFor != _held)
+            {
+                _partnerTimer = 0.25f;
+                _partnerFor = _held;
+                _partners = Book.FindPartners(_held);
+            }
+
+            var from = ProtoInput.MousePosition;
+
+            for (int i = 0; i < _partners.Count && cursor < EvoLinePool; i++)
+            {
+                DrawEvoLink(_evoLines[cursor++], from, GridPoint(_partners[i]),
+                    LinkIncomplete, EvoLineThin);
+            }
+
+            return cursor;
         }
 
         /// <summary>
         /// Wires one recipe group together. The ingredients are visited nearest-first so the chain
         /// hugs the pieces instead of criss-crossing the board when a group has three parts.
         /// </summary>
-        int DrawEvoGroup(EvoPreview preview, int cursor)
+        int DrawEvoGroup(EvoPreview preview, int cursor, System.Func<Vector2, Vector2> toPixels)
         {
             var members = preview.Members;
             if (members == null || members.Length < 2) return cursor;
 
-            var color = preview.Complete ? LinkComplete : LinkIncomplete;
-            float thickness = preview.Complete ? EvoLineThick : EvoLineThin;
+            // Gold is a promise that this group WILL evolve when the wave ends. A group that only
+            // adds up because the piece on the cursor is counted in has promised nothing — the
+            // player can still drop it somewhere else, so it stays blue until it is actually down.
+            bool settled = preview.Complete && !preview.NeedsHeldPiece;
+
+            var color = settled ? LinkComplete : LinkIncomplete;
+            float thickness = settled ? EvoLineThick : EvoLineThin;
 
             // Walk order: start at the first ingredient, then always hop to the closest one left.
             System.Array.Copy(members, _evoWalk, members.Length);
@@ -1277,16 +1486,16 @@ namespace Proto
                 _evoWalk[nearest] = swap;
 
                 if (cursor >= EvoLinePool) break;
-                DrawEvoLink(_evoLines[cursor++], _evoWalk[i - 1], _evoWalk[i], color, thickness);
+                DrawEvoLink(_evoLines[cursor++], toPixels(_evoWalk[i - 1]), toPixels(_evoWalk[i]),
+                    color, thickness);
             }
 
             return cursor;
         }
 
-        static void DrawEvoLink(Image line, Vector2 fromCell, Vector2 toCell, Color color, float thickness)
+        /// <summary>Both ends in canvas pixels — the caller decides what space it is working in.</summary>
+        static void DrawEvoLink(Image line, Vector2 a, Vector2 b, Color color, float thickness)
         {
-            var a = GridPoint(fromCell);
-            var b = GridPoint(toCell);
             var delta = b - a;
 
             line.enabled = true;
@@ -1303,6 +1512,14 @@ namespace Proto
             float step = CellSize + CellGap;
             return new Vector2(Margin + cell.x * step + CellSize * 0.5f,
                                Margin + cell.y * step + CellSize * 0.5f);
+        }
+
+        /// <summary>Same, for the backpack — different origin and a smaller cell.</summary>
+        static Vector2 BagPoint(Vector2 cell)
+        {
+            float step = BagCell + BagGap;
+            return new Vector2(RightX() + cell.x * step + BagCell * 0.5f,
+                               BagY + cell.y * step + BagCell * 0.5f);
         }
 
         /// <summary>
@@ -1477,6 +1694,17 @@ namespace Proto
             CompiledSpell spell = null;
             string origin = "";
 
+            // Strip icons win: they sit in the HUD corner, well away from the board, so a hit there
+            // is unambiguous — and their whole reason to exist is answering "what is this".
+            string strip = StripTooltip(ProtoInput.MousePosition);
+            if (strip != null)
+            {
+                _recipes.Hide();
+                ShowCard(strip);
+                Player.HideRange();
+                return;
+            }
+
             if (_held != null)
             {
                 // Carrying something â€” the card would just sit in the way.
@@ -1548,18 +1776,22 @@ namespace Proto
             }
 
             _recipes.Hide();
-            _tipText.text = _tooltips.Build(hovered, spell, origin);
+            ShowCard(_tooltips.Build(hovered, spell, origin));
+            ShowHoverRange(hovered, spell);
+        }
 
+        /// <summary>Puts the hover card next to the cursor, clamped so it never leaves the screen.</summary>
+        void ShowCard(string body)
+        {
             var m = ProtoInput.MousePosition;
             float x = Mathf.Min(m.x + 18f, Screen.width - 372f);
             float y = Mathf.Max(m.y - 12f, 160f);
 
+            _tipText.text = body;
             _tipBg.rectTransform.anchoredPosition = new Vector2(x, y);
             _tipText.rectTransform.anchoredPosition = new Vector2(x + 10f, y - 8f);
             _tipBg.enabled = true;
             _tipText.enabled = true;
-
-            ShowHoverRange(hovered, spell);
         }
 
         void ShowHoverRange(PieceDefinition hovered, CompiledSpell spell)
@@ -1790,9 +2022,26 @@ namespace Proto
             return count;
         }
 
-        /// <summary>Bigger hit wins; equal hits are broken by whichever lands more often.</summary>
-        static bool Heavier(CompiledSpell a, CompiledSpell b)
+        /// <summary>
+        /// Ranked by damage actually DEALT this run, not by the number on the card.
+        ///
+        /// The printed damage is a guess about a skill; the meter is what it did. A slow nuke and a
+        /// fast bolt can share a damage figure and contribute wildly differently, and once the two
+        /// panels merged there was no reason to keep ranking by the weaker signal.
+        ///
+        /// Falls back to per-cast damage until a skill has landed anything, so a freshly placed
+        /// piece still sorts sensibly instead of dropping to the bottom.
+        /// </summary>
+        bool Heavier(CompiledSpell a, CompiledSpell b)
         {
+            float dealtA = _meter.DealtBy(a.Source.Def.DisplayName);
+            float dealtB = _meter.DealtBy(b.Source.Def.DisplayName);
+
+            if (dealtA > 0f || dealtB > 0f)
+            {
+                if (!Mathf.Approximately(dealtA, dealtB)) return dealtA > dealtB;
+            }
+
             if (!Mathf.Approximately(a.Damage, b.Damage)) return a.Damage > b.Damage;
             return a.Cooldown < b.Cooldown;
         }
@@ -1818,6 +2067,11 @@ namespace Proto
 
                 _sb.Length = 0;
                 _sb.Append(i + 1).Append(". ").Append(s.Source.Def.DisplayName);
+
+                // Share of the run's damage, folded in from what used to be a separate meter panel.
+                int share = _meter.ShareOf(s.Source.Def.DisplayName);
+                if (share > 0) _sb.Append("  ").Append(share).Append('%');
+
                 _sb.Append("   ").Append(s.Damage.ToString("0.0")).Append(" dmg");
                 _sb.Append("   ").Append((s.Cooldown <= 0f ? 0f : s.Damage / s.Cooldown).ToString("0.0"))
                     .Append(" dps");
@@ -1878,13 +2132,11 @@ namespace Proto
             _sb.Length = 0;
             _sb.Append("WAVE ").Append(Enemies.Wave);
 
-            // Two different questions, so two different readouts: while enemies are still arriving
-            // the clock is what matters, and once they stop it is the head count.
             if (Enemies.WaveActive)
             {
                 _sb.Append(Enemies.Closing
                     ? "    HABISKAN SISANYA"
-                    : "    datang " + Mathf.CeilToInt(Enemies.SpawnTimeLeft) + "s");
+                    : "    sisa " + (Enemies.PendingSpawns + Enemies.AliveCount) + "/" + Enemies.WaveTotal);
             }
 
             _sb.Append("    musuh ").Append(Enemies.AliveCount);
@@ -1900,19 +2152,7 @@ namespace Proto
             _manaLabel.text = "MANA  " + Mathf.FloorToInt(Player.Mana) + " / " + Mathf.RoundToInt(Player.MaxMana) +
                               "   (+" + Player.ManaRegen.ToString("0.0") + "/s)";
 
-            _sb.Length = 0;
-            _sb.Append("<ailment di musuh>");
-
-            var counts = Enemies.StatusCounts;
-            for (int i = 0; i < _db.Statuses.Count && i < counts.Length; i++)
-            {
-                var status = _db.Statuses[i];
-                if (status == null) continue;
-
-                _sb.Append("   ").Append(status.DisplayName).Append(' ').Append(counts[i]);
-            }
-
-            _statusText.text = _sb.ToString();
+            // Ailment tally moved to its own icon strip under the mana bar — see DrawBuffs.
         }
 
         void PushFloater(Vector3 world, string message, Color color)

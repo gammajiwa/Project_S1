@@ -16,19 +16,21 @@ MonoBehaviour:
   DisplayName: Stormbreaker
   Stars: 5
   Layer: 1
-  Shape: 14
+  Shape: 4
   Color: {r: 0.9616, g: 0.9328, b: 0.664, a: 1}
   Icon: {fileID: 21300000, guid: cd8ae88c9b4c43342a10010ddefae447, type: 3}
   Kind: 2
   Element: 2
-  BaseDamage: 200
-  BaseCooldown: 4
+  BaseDamage: 150
+  BaseCooldown: 4.2
   Radius: 12
-  Range: 12
-  Hits: 12
+  Range: 13
+  Hits: 4
+  Forks: 8
   ManaCost: 78
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -43,4 +45,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Twelve leaps of raw storm. Nothing in a pack is safe from it.
+  Blurb: EVOLVED. Delapan cabang petir berangkat sekaligus, tiap cabang melompat
+    empat kali, dan tidak ada dua cabang yang menyambar musuh yang sama.

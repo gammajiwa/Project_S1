@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Void Lance
   Stars: 2
   Layer: 1
-  Shape: 8
+  Shape: 3
   Color: {r: 0.7042, g: 0.49539998, b: 0.9565, a: 1}
   Icon: {fileID: 21300000, guid: 0182ed3fbe504cd4888dcfcc539ce719, type: 3}
   Kind: 5
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 1.4
   Range: 11
   Hits: 1
+  Forks: 1
   ManaCost: 20
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

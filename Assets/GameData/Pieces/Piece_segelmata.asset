@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Keen Sigil
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 0
   Color: {r: 0.82, g: 0.78, b: 0.62, a: 1}
   Icon: {fileID: 21300000, guid: 50685c421d1524448ab478f74d64ee6d, type: 3}
   Kind: 7
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 0
   Range: 0
   Hits: 1
+  Forks: 1
   ManaCost: 0
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

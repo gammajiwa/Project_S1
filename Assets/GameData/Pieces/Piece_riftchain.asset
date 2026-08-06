@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Rift Chain
   Stars: 1
   Layer: 1
-  Shape: 2
+  Shape: 1
   Color: {r: 0.66, g: 0.42, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 1ba92f92cdd36c243a9f8b3f42eb80ec, type: 3}
   Kind: 2
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 8
   Range: 8
   Hits: 3
+  Forks: 1
   ManaCost: 12
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

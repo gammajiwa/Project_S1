@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Frostbite Field
   Stars: 2
   Layer: 1
-  Shape: 3
+  Shape: 8
   Color: {r: 0.5215, g: 0.80859995, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 14ae74c9a7dab0f488deed80a608ac19, type: 3}
   Kind: 6
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 4.2
   Range: 10
   Hits: 1
+  Forks: 1
   ManaCost: 23
   ZoneDuration: 5
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

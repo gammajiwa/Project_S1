@@ -22,6 +22,15 @@ namespace Proto
             /// <summary>Carried so the damage meter can name the skill that fired it.</summary>
             public string SourceName;
 
+            /// <summary>Ricochets left before it dies on contact.</summary>
+            public int Bounces;
+
+            public float BounceRange;
+            public Color Tint;
+
+            /// <summary>Who it just hit, so it cannot immediately bounce back into them.</summary>
+            public EnemyManager.Enemy LastHit;
+
             public bool Active;
         }
 
@@ -61,6 +70,9 @@ namespace Proto
         {
             public BuffDefinition Def;
             public float Remaining;
+
+            /// <summary>How many charges are held. Always 1 for a plain buff.</summary>
+            public int Stacks;
         }
 
         /// <summary>
@@ -132,8 +144,38 @@ namespace Proto
 
             if (chosen < 0) chosen = weakest;
 
+            // Landing on itself adds a charge; landing on anything else starts from one.
+            slots[chosen].Stacks = slots[chosen].Def == def
+                ? Mathf.Min(def.MaxStacks, slots[chosen].Stacks + 1)
+                : 1;
+
             slots[chosen].Def = def;
-            slots[chosen].Remaining = duration;   // refresh, tidak menumpuk
+            slots[chosen].Remaining = duration;   // refresh
+        }
+
+        /// <summary>
+        /// Strips the curse with the LONGEST left on it. Longest rather than shortest on purpose:
+        /// the short ones are about to fall off anyway, so taking those would make the reward
+        /// technically real and practically nothing.
+        /// </summary>
+        public bool ClearOldestDebuff()
+        {
+            int worst = -1;
+            float longest = 0f;
+
+            for (int i = 0; i < DebuffSlots; i++)
+            {
+                if (_debuffs[i].Def == null || _debuffs[i].Remaining <= longest) continue;
+
+                longest = _debuffs[i].Remaining;
+                worst = i;
+            }
+
+            if (worst < 0) return false;
+
+            _debuffs[worst].Def = null;
+            Recompute();
+            return true;
         }
 
         /// <summary>Drops every curse. The whole point of <see cref="CastKind.Cleanse"/>.</summary>
@@ -246,7 +288,9 @@ namespace Proto
 
         // Twelve, not four. The old buffer was shorter than the longest chain skill in the book
         // (Frost Prism hits five), so two of its links were silently thrown away every cast.
-        readonly EnemyManager.Enemy[] _chainBuffer = new EnemyManager.Enemy[12];
+        // Sized for the worst forked cast in the book: branches share one buffer so no two of them
+        // can strike the same enemy, which means it has to hold forks x hits at once.
+        readonly EnemyManager.Enemy[] _chainBuffer = new EnemyManager.Enemy[64];
 
         BoltPool _bolts;
         LineRenderer _rangeRing;
@@ -334,6 +378,10 @@ namespace Proto
 
             // Inilah rantai intinya: reaksi -> buff -> skill berikutnya lebih kuat.
             if (rx.GrantBuff != null) ApplyBuff(rx.GrantBuff);
+
+            // Reactions that answer the enemy's curses, and reactions that pay for themselves.
+            if (rx.CleansesOneDebuff) ClearOldestDebuff();
+            if (rx.RefundMana > 0f) Mana = Mathf.Min(MaxMana, Mana + rx.RefundMana);
         }
 
         void Update()
@@ -505,6 +553,12 @@ namespace Proto
                 case CastKind.Chain:
                     return CastChain(spell, def, transform.position, spell.Damage * BuffDamageMul * RollCrit());
 
+                case CastKind.Radial:
+                    return CastRadial(spell, def);
+
+                case CastKind.Detonate:
+                    return CastDetonate(spell, def);
+
                 case CastKind.Heal:
                 {
                     if (Hp >= MaxHp) return false;
@@ -583,29 +637,94 @@ namespace Proto
         /// </summary>
         bool CastChain(CompiledSpell spell, PieceDefinition def, Vector3 origin, float damage)
         {
-            int count = _enemies.ChainFrom(origin, spell.Range, _balance.ChainJumpRange,
-                _chainBuffer, def.Hits);
-
-            if (count == 0) return false;
-
-            Vector3 from = origin;
             int points = AilmentPoints(def);
+            int forks = Mathf.Max(1, def.Forks);
+            int taken = 0;
 
-            for (int i = 0; i < count; i++)
+            for (int fork = 0; fork < forks; fork++)
             {
-                var target = _chainBuffer[i];
-                Vector3 to = target.Pos;
+                // Every branch leaves the caster, but none may touch anyone an earlier branch
+                // already struck — that exclusion is what makes them visibly fan outward instead
+                // of all crawling down the same line of enemies.
+                int end = _enemies.ChainFrom(origin, spell.Range, _balance.ChainJumpRange,
+                    _chainBuffer, def.Hits, taken);
 
-                _bolts.Arc(from, to, def.Color);
-                SpawnFlash(to, 1.6f, 0.15f, def.Color);
+                if (end == taken) break;
 
-                _enemies.Damage(target, damage, def.AppliedStatus, def.StatusDuration,
-                    points, true, def.DisplayName, from);
+                Vector3 from = origin;
 
-                from = to;
+                for (int i = taken; i < end; i++)
+                {
+                    var target = _chainBuffer[i];
+                    Vector3 to = target.Pos;
+
+                    _bolts.Arc(from, to, def.Color);
+                    SpawnFlash(to, 1.6f, 0.15f, def.Color);
+
+                    _enemies.Damage(target, damage, def.AppliedStatus, def.StatusDuration,
+                        points, true, def.DisplayName, from);
+
+                    from = to;
+                }
+
+                taken = end;
             }
 
+            return taken > 0;
+        }
+
+        /// <summary>
+        /// Sprays projectiles outward in a ring. The only cast that aims at nobody — it waits for
+        /// something to come within reach and then covers every direction at once, so where you are
+        /// standing matters more than what is nearest.
+        /// </summary>
+        bool CastRadial(CompiledSpell spell, PieceDefinition def)
+        {
+            // Still refuses to fire into an empty field: untargeted is not the same as wasteful.
+            if (_enemies.Nearest(transform.position, spell.Range) == null) return false;
+
+            int arms = Mathf.Max(2, def.Hits);
+            float damage = spell.Damage * BuffDamageMul * RollCrit();
+
+            // Rolled per cast, so two shots never lay down the same pattern.
+            float spin = Random.Range(0f, Mathf.PI * 2f);
+
+            for (int i = 0; i < arms; i++)
+            {
+                float angle = spin + i * (Mathf.PI * 2f / arms);
+                FireProjectile(new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)),
+                    damage, def, def.Color);
+            }
+
+            SpawnFlash(transform.position, 2.4f, 0.2f, def.Color);
             return true;
+        }
+
+        /// <summary>
+        /// Cashes in an ailment: everything carrying it detonates for what it has stacked.
+        ///
+        /// Holds its cooldown and its mana when nothing is marked, the same way Heal refuses at
+        /// full health — a detonator that fires into an unmarked field is never up when the field
+        /// finally IS marked, and that is the entire combo.
+        /// </summary>
+        bool CastDetonate(CompiledSpell spell, PieceDefinition def)
+        {
+            if (def.TriggerStatus == null || _db == null) return false;
+
+            int statusIndex = _db.IndexOfStatus(def.TriggerStatus);
+            if (statusIndex < 0) return false;
+
+            float perPoint = spell.Damage * BuffDamageMul * RollCrit();
+            float radius = spell.Radius * BuffAreaMul;
+
+            int blasts = _enemies.DetonateStatus(statusIndex, perPoint, radius, def.DisplayName,
+                (at, points) =>
+                {
+                    // Bigger stack, bigger bang — the flash has to say so.
+                    SpawnFlash(at, radius * (1f + points * 0.12f), 0.28f, def.Color);
+                });
+
+            return blasts > 0;
         }
 
         // ---------- sky-falling casts ----------
@@ -780,6 +899,10 @@ namespace Proto
             p.StatusDuration = source.StatusDuration;
             p.Points = source.AppliedPoints + Book.BonusAilmentPoints;
             p.SourceName = source.DisplayName;
+            p.Bounces = source.Bounces;
+            p.BounceRange = source.BounceRange;
+            p.Tint = color;
+            p.LastHit = null;
             p.Active = true;
         }
 
@@ -801,13 +924,36 @@ namespace Proto
 
                 p.T.position += p.Dir * (speed * dt);
 
-                var hit = _enemies.Nearest(p.T.position, 0.75f);
-                if (hit != null)
+                var hit = _enemies.NearestExcluding(p.T.position, 0.75f, p.LastHit);
+                if (hit == null) continue;
+
+                _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points, true, p.SourceName);
+                SpawnFlash(p.T.position, 1.4f, 0.15f, Color.white);
+
+                if (p.Bounces <= 0)
                 {
-                    _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points, true, p.SourceName);
-                    SpawnFlash(p.T.position, 1.4f, 0.15f, Color.white);
                     Retire(p);
+                    continue;
                 }
+
+                // Ricochet. Excluding the enemy it just struck is what stops a pair of them
+                // batting one projectile back and forth on the spot.
+                var next = _enemies.NearestExcluding(p.T.position, p.BounceRange, hit);
+                if (next == null)
+                {
+                    Retire(p);
+                    continue;
+                }
+
+                Vector3 toNext = next.Pos - p.T.position;
+                toNext.y = 0f;
+
+                _bolts.Arc(p.T.position, next.Pos, p.Tint, 0.1f, 0.12f);
+
+                p.Dir = toNext.normalized;
+                p.LastHit = hit;
+                p.Bounces--;
+                p.Life = Mathf.Max(p.Life, 0.9f);
             }
         }
 
@@ -886,6 +1032,13 @@ namespace Proto
             public float StatusDuration;
             public int Points;
             public string SourceName;
+
+            /// <summary>Units per second it wanders. Zero keeps it planted.</summary>
+            public float Drift;
+
+            /// <summary>Current heading, turned a little every frame so the path curves.</summary>
+            public float Heading;
+
             public bool Active;
         }
 
@@ -930,6 +1083,8 @@ namespace Proto
             z.StatusDuration = def.StatusDuration;
             z.Points = AilmentPoints(def);
             z.SourceName = def.DisplayName;
+            z.Drift = def.ZoneDrift;
+            z.Heading = Random.Range(0f, Mathf.PI * 2f);
             z.Active = true;
 
             z.T.position = z.Pos;
@@ -950,6 +1105,18 @@ namespace Proto
                     z.Active = false;
                     z.T.gameObject.SetActive(false);
                     continue;
+                }
+
+                // A wandering pool has to be re-read every few seconds instead of understood once.
+                // The heading turns rather than being re-rolled, so it curves like weather rather
+                // than twitching like noise.
+                if (z.Drift > 0f)
+                {
+                    z.Heading += Random.Range(-1.6f, 1.6f) * dt;
+
+                    z.Pos.x += Mathf.Cos(z.Heading) * z.Drift * dt;
+                    z.Pos.z += Mathf.Sin(z.Heading) * z.Drift * dt;
+                    z.T.position = z.Pos;
                 }
 
                 z.TickTimer -= dt;

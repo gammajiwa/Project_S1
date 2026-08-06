@@ -15,6 +15,7 @@ MonoBehaviour:
   Id: stun
   DisplayName: STUN
   Color: {r: 1, g: 0.95, b: 0.6, a: 1}
+  Icon: {fileID: 21300000, guid: e1b4e46fe7e98ef44853067a5a9d908b, type: 3}
   MaxPoints: 1
   RefreshOnReapply: 1
   TickInterval: 0

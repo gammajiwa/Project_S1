@@ -2466,3 +2466,247 @@ production/session-logs/session-log.md
 production/session-state/active.md
 ---
 
+## Archived Session State: 20260806_130304
+# Session State
+
+<!-- STATUS -->
+Epic: Grimoire Haven — arah bullet-haven
+Feature: Varian musuh (terbang + penembak), kutukan, wave berbasis jendela spawn
+Task: Terpasang & terverifikasi programatik — 2 permintaan UI belum dikerjakan
+<!-- /STATUS -->
+
+## Baca ini dulu
+
+**[docs/AI-HANDOFF.md](../../docs/AI-HANDOFF.md)** — peta file, 24 invarian,
+23 jebakan, daftar "jangan lakukan", dan urutan menjalankan editor tool dari nol.
+Ditulis ulang 2026-08-06; versi sebelumnya sudah salah, bukan sekadar kurang.
+
+> **Catatan alur kerja:** pemilik project memakai dua AI bergantian. Semua progres
+> harus mendarat di dua file ini (`AI-HANDOFF.md` + `active.md`) supaya sesi
+> berikutnya — siapa pun yang menjalankannya — bisa nyambung tanpa membaca ulang
+> seluruh codebase. Update di akhir tiap potongan kerja, bukan di akhir sesi.
+
+## Kondisi sekarang
+
+74 piece · 75 resep · 7 status · 9 reaksi · 6 buff · **4 kutukan** ·
+**4 arketipe musuh** · 74 ikon placeholder.
+
+Wave 15 diuji: **500 musuh hidup, 5 draw call, 59 fps.**
+
+## Yang beres di sesi ini
+
+**Rasa & tampilan** — angka damage melayang yang menggabung hit berdekatan;
+skill AoE/Zone jatuh dari langit; rantai petir melompat musuh ke musuh; sinar
+garis LineRenderer; musuh meledak saat mati; panel skill urut damage; garis
+evolusi menghubungkan bahan; kartu resep ALT berikon.
+
+**Gameplay** — pemain bergerak sendiri menghindar (`MoveSpeed` jadi stat);
+musuh mengepung (gaya pisah + bidik posisi depan + jalur serong); bentuk piece
+terikat rarity; drop ditahan sampai wave beres.
+
+**Wave** — jam mengatur **spawn**, bukan wave. Wave tetap selesai dengan
+menghabiskan lapangan; begitu jendela spawn tutup, sisa musuh ngebut 1,9× dan
+berhenti memutar. Itu membunuh ekor mati tanpa menghapus musuh.
+
+**Varian musuh** — Grunt / Cursed / Stalker (terbang) / Spitter (penembak).
+Peluru musuh punya pool + renderer instanced sendiri.
+
+**Kutukan** — 4 efek negatif dari musuh, 4 piece penangkal, slot terpisah dari buff.
+
+**Performa** — `BestCluster` 1,95 ms → 0,002 ms dan datar; 200 draw call → 1–5;
+cap musuh 200 → 500.
+
+## Bug yang ketemu & dibenerin
+
+- Nova tidak pernah kena buff & crit — mengeluarkan skill terberat dari loop inti
+- `PendingSpawns` berkurang walau spawn gagal → musuh hilang senyap di cap
+- Buffer rantai 4 padahal Frost Prism 5 hit
+- 41% damage tercatat `?` (Fireball & Frost Nova tanpa nama sumber)
+- Rune ★3 tidak bisa didapat dari mana pun → lewat peleburan segel
+- `SeatEvolved` cuma mencoba petak bekas bahan → resep lengkap bisa gagal senyap
+- `BuffCooldownMul` & mana-cost multiplier dibatasi di 1 → nilai negatif (debuff)
+  tidak berpengaruh sama sekali
+- `Separation()` mengembalikan magnitude mentah → menelan kemudi lain, Spitter
+  terdorong masuk melee
+- `TakeDamage` mengurangi Defense × deltaTime → hampir nol terhadap tembakan sesaat
+
+## BERIKUTNYA — dua permintaan yang belum dikerjakan
+
+**1. Ikon buff & debuff di bawah bar mana.** Ikon + **angka tumpukan** di
+sampingnya (`BURN 5`, `TOXIC 8`), dan hover memunculkan penjelasan efeknya.
+Tujuannya: pemain tahu efek negatif apa yang barusan ditempelkan musuh.
+Sekarang buff/debuff cuma baris teks di `GrimoireUI.DrawBuffs()`.
+
+**2. Garis resep muncul saat piece masih DIANGKAT.** Sekarang
+`GrimoireUI.ResolveGhost()` menuntut `ScreenToCell(mouse)` valid — artinya garis
+baru muncul kalau kursor sudah berada di atas grid. Yang diminta: begitu piece
+diangkat dari lantai, langsung kelihatan kabel ke semua calon pasangannya di
+papan, sebelum ditaruh.
+
+Sesudah itu: boss (tinggal satu aset `EnemyArchetype` lagi), animasi baked (VAT),
+optimasi FX `PlayerCaster` (masih GameObject satu-satu), sistem audio.
+
+## Knob kalau ada yang meleset
+
+| Gejala | Knob di `GameBalance.asset` |
+|---|---|
+| musuh kurang banyak | `SpawnRateBase`, `SpawnRatePerWave`, `SpawnRateGrowth` |
+| wave kepanjangan/kependekan | `SpawnWindowBase`, `SpawnWindowPerWave` |
+| ekor akhir wave masih lama | `ClosingSpeedMultiplier` |
+| kerasa diseret, bukan dikepung | `FlankWidth` naikkan, atau `SeparationWeight` |
+| musuh saling tembus | `EnemySeparation` |
+| kepung terlalu mematikan | `EnemyContactDps` (menumpuk per musuh) |
+| Spitter terlalu jauh/dekat | `PreferredRange` di `Assets/GameData/Enemies/Enemy_spitter.asset` |
+| campuran jenis musuh | `Weight` / `WeightPerWave` / `FromWave` di tiap aset arketipe |
+| papan kesempitan | `Grimoire.Width/Height` (const, hardcode 7) |
+---
+
+## Session End: 20260806_130304
+### Commits
+95f106e feat: bullet-haven pass — auto-move, instanced swarm, timed waves, 70 pieces
+### Uncommitted Changes
+Assets/GameData/GameBalance.asset
+docs/AI-HANDOFF.md
+production/session-state/active.md
+---
+
+## Archived Session State: 20260806_131801
+# Session State
+
+<!-- STATUS -->
+Epic: Grimoire Haven — arah bullet-haven
+Feature: Varian musuh (terbang + penembak), kutukan, wave berbasis jendela spawn
+Task: Terpasang & terverifikasi programatik — 2 permintaan UI belum dikerjakan
+<!-- /STATUS -->
+
+## Baca ini dulu
+
+**[docs/AI-HANDOFF.md](../../docs/AI-HANDOFF.md)** — peta file, 24 invarian,
+23 jebakan, daftar "jangan lakukan", dan urutan menjalankan editor tool dari nol.
+Ditulis ulang 2026-08-06; versi sebelumnya sudah salah, bukan sekadar kurang.
+
+> **Catatan alur kerja:** pemilik project memakai dua AI bergantian. Semua progres
+> harus mendarat di dua file ini (`AI-HANDOFF.md` + `active.md`) supaya sesi
+> berikutnya — siapa pun yang menjalankannya — bisa nyambung tanpa membaca ulang
+> seluruh codebase. Update di akhir tiap potongan kerja, bukan di akhir sesi.
+
+## Kondisi sekarang
+
+74 piece · 75 resep · 7 status · 9 reaksi · 6 buff · **4 kutukan** ·
+**4 arketipe musuh** · 74 ikon placeholder.
+
+Wave 15 diuji: **500 musuh hidup, 5 draw call, 59 fps.**
+
+## Yang beres di sesi ini
+
+**Rasa & tampilan** — angka damage melayang yang menggabung hit berdekatan;
+skill AoE/Zone jatuh dari langit; rantai petir melompat musuh ke musuh; sinar
+garis LineRenderer; musuh meledak saat mati; panel skill urut damage; garis
+evolusi menghubungkan bahan; kartu resep ALT berikon.
+
+**Gameplay** — pemain bergerak sendiri menghindar (`MoveSpeed` jadi stat);
+musuh mengepung (gaya pisah + bidik posisi depan + jalur serong); bentuk piece
+terikat rarity; drop ditahan sampai wave beres.
+
+**Wave** — jam mengatur **spawn**, bukan wave. Wave tetap selesai dengan
+menghabiskan lapangan; begitu jendela spawn tutup, sisa musuh ngebut 1,9× dan
+berhenti memutar. Itu membunuh ekor mati tanpa menghapus musuh.
+
+**Varian musuh** — Grunt / Cursed / Stalker (terbang) / Spitter (penembak).
+Peluru musuh punya pool + renderer instanced sendiri.
+
+**Kutukan** — 4 efek negatif dari musuh, 4 piece penangkal, slot terpisah dari buff.
+
+**Performa** — `BestCluster` 1,95 ms → 0,002 ms dan datar; 200 draw call → 1–5;
+cap musuh 200 → 500.
+
+## Bug yang ketemu & dibenerin
+
+- Nova tidak pernah kena buff & crit — mengeluarkan skill terberat dari loop inti
+- `PendingSpawns` berkurang walau spawn gagal → musuh hilang senyap di cap
+- Buffer rantai 4 padahal Frost Prism 5 hit
+- 41% damage tercatat `?` (Fireball & Frost Nova tanpa nama sumber)
+- Rune ★3 tidak bisa didapat dari mana pun → lewat peleburan segel
+- `SeatEvolved` cuma mencoba petak bekas bahan → resep lengkap bisa gagal senyap
+- `BuffCooldownMul` & mana-cost multiplier dibatasi di 1 → nilai negatif (debuff)
+  tidak berpengaruh sama sekali
+- `Separation()` mengembalikan magnitude mentah → menelan kemudi lain, Spitter
+  terdorong masuk melee
+- `TakeDamage` mengurangi Defense × deltaTime → hampir nol terhadap tembakan sesaat
+
+## Strip ikon & kabel resep — SUDAH BERES
+
+**Tiga strip ikon** menggantikan tiga baris teks, ditumpuk di bawah bar mana
+(`View/StatusStrip.cs`): buff (y −96), kutukan (−128), dan tally ailment di
+seluruh swarm (−160). Tiap entri = ikon + angka, hover memunculkan efeknya.
+Teks salah bentuk untuk ini: dia reflow tiap ada yang masuk/keluar, jadi tidak
+ada yang diam cukup lama untuk dikenali. Ikon menahan posisi.
+
+Ikon status & buff digenerate sebagai **glyph pip ala dadu** (1–6 titik) —
+warna saja tidak cukup memisahkan tujuh ailment di ukuran 26 piksel, dan tanpa
+font tidak ada cara menaruh huruf di tekstur.
+
+**Kabel resep saat piece diangkat** (`Grimoire.FindPartners`): begitu piece
+diangkat, kabel langsung terbentang dari KURSOR ke tiap calon pasangan di papan.
+Emas kalau menaruhnya di sebelah situ langsung menyelesaikan resep (bahan 2),
+biru kalau resepnya masih butuh bahan ketiga.
+
+## BERIKUTNYA
+
+1. **Main dan nilai rasanya** — masih belum pernah dinilai tangan manusia
+2. **Boss** — tinggal satu aset `EnemyArchetype` lagi dengan angka besar
+3. **Animasi baked (VAT)** — jahitannya di `EnemyRenderer.Compose()`
+4. **Optimasi FX `PlayerCaster`** — Projectile/Flash/Descent/Zone masih GameObject
+   satu-satu; ini hambatan berikutnya begitu VFX masuk
+5. **Sistem audio**
+6. **Refactor `GrimoireUI.cs`** (~2000 baris)
+
+## Knob kalau ada yang meleset
+
+| Gejala | Knob di `GameBalance.asset` |
+|---|---|
+| musuh kurang banyak | `SpawnRateBase`, `SpawnRatePerWave`, `SpawnRateGrowth` |
+| wave kepanjangan/kependekan | `SpawnWindowBase`, `SpawnWindowPerWave` |
+| ekor akhir wave masih lama | `ClosingSpeedMultiplier` |
+| kerasa diseret, bukan dikepung | `FlankWidth` naikkan, atau `SeparationWeight` |
+| musuh saling tembus | `EnemySeparation` |
+| kepung terlalu mematikan | `EnemyContactDps` (menumpuk per musuh) |
+| Spitter terlalu jauh/dekat | `PreferredRange` di `Assets/GameData/Enemies/Enemy_spitter.asset` |
+| campuran jenis musuh | `Weight` / `WeightPerWave` / `FromWave` di tiap aset arketipe |
+| papan kesempitan | `Grimoire.Width/Height` (const, hardcode 7) |
+---
+
+## Session End: 20260806_131801
+### Commits
+95f106e feat: bullet-haven pass — auto-move, instanced swarm, timed waves, 70 pieces
+### Uncommitted Changes
+Assets/GameData/Buffs/Buff_aliran.asset
+Assets/GameData/Buffs/Buff_bara.asset
+Assets/GameData/Buffs/Buff_fokus.asset
+Assets/GameData/Buffs/Buff_kutukberat.asset
+Assets/GameData/Buffs/Buff_kutukkering.asset
+Assets/GameData/Buffs/Buff_kutuklemah.asset
+Assets/GameData/Buffs/Buff_kutuktimah.asset
+Assets/GameData/Buffs/Buff_naluri.asset
+Assets/GameData/Buffs/Buff_perisai.asset
+Assets/GameData/Buffs/Buff_sumur.asset
+Assets/GameData/GameBalance.asset
+Assets/GameData/Statuses/Status_bleed.asset
+Assets/GameData/Statuses/Status_burn.asset
+Assets/GameData/Statuses/Status_chill.asset
+Assets/GameData/Statuses/Status_poison.asset
+Assets/GameData/Statuses/Status_seret.asset
+Assets/GameData/Statuses/Status_shock.asset
+Assets/GameData/Statuses/Status_stun.asset
+Assets/Scripts/Data/BuffDefinition.cs
+Assets/Scripts/Data/StatusDefinition.cs
+Assets/Scripts/Editor/PlaceholderIconGenerator.cs
+Assets/Scripts/Model/Grimoire.cs
+Assets/Scripts/View/GrimoireLayout.cs
+Assets/Scripts/View/GrimoireUI.cs
+Assets/Scripts/View/TooltipBuilder.cs
+docs/AI-HANDOFF.md
+production/session-logs/session-log.md
+production/session-state/active.md
+---
+

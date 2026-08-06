@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Minor Heal
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 0
   Color: {r: 0.45, g: 0.95, b: 0.55, a: 1}
   Icon: {fileID: 21300000, guid: 40460bb5fed71d541943e98c9c0b5fce, type: 3}
   Kind: 3
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 0
   Range: 0
   Hits: 1
+  Forks: 1
   ManaCost: 20
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -43,4 +45,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: A small top-up on a long cooldown.
+  Blurb: A small top-up on a long cooldown. One cell.

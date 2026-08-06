@@ -67,18 +67,10 @@ namespace Proto.EditorTools
                 var piece = db.Pieces[i];
                 if (piece == null || string.IsNullOrEmpty(piece.Id)) continue;
 
-                string path = $"{IconFolder}/Icon_{piece.Id}.png";
+                var captured = piece;
+                var sprite = Ensure($"Icon_{piece.Id}", () => Render(captured), overwrite,
+                    ref written, ref kept);
 
-                if (File.Exists(path) && !overwrite) kept++;
-                else
-                {
-                    File.WriteAllBytes(path, Render(piece));
-                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
-                    ConfigureImporter(path);
-                    written++;
-                }
-
-                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
                 if (sprite == null || piece.Icon == sprite) continue;
 
                 piece.Icon = sprite;
@@ -86,11 +78,77 @@ namespace Proto.EditorTools
                 linked++;
             }
 
+            // Ailments and buffs have no footprint to draw, so they get a pip glyph. Colour alone
+            // cannot separate seven ailments at 26 pixels, and telling them apart at a glance is
+            // the entire job of the HUD strip.
+            for (int i = 0; i < db.Statuses.Count; i++)
+            {
+                var status = db.Statuses[i];
+                if (status == null || string.IsNullOrEmpty(status.Id)) continue;
+
+                var captured = status;
+                int pips = i;
+                var sprite = Ensure($"Icon_status_{status.Id}", () => Glyph(captured.Color, pips),
+                    overwrite, ref written, ref kept);
+
+                if (sprite == null || status.Icon == sprite) continue;
+
+                status.Icon = sprite;
+                EditorUtility.SetDirty(status);
+                linked++;
+            }
+
+            linked += LinkBuffs(db.Buffs, overwrite, ref written, ref kept);
+            linked += LinkBuffs(db.Debuffs, overwrite, ref written, ref kept);
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
             Debug.Log($"[PlaceholderIcons] {written} PNG baru, {kept} dipertahankan (sudah ada), " +
-                      $"{linked} piece disambungkan ke ikonnya.");
+                      $"{linked} aset disambungkan ke ikonnya.");
+        }
+
+        static int LinkBuffs(System.Collections.Generic.IReadOnlyList<BuffDefinition> buffs,
+            bool overwrite, ref int written, ref int kept)
+        {
+            int linked = 0;
+
+            for (int i = 0; i < buffs.Count; i++)
+            {
+                var buff = buffs[i];
+                if (buff == null || string.IsNullOrEmpty(buff.Id)) continue;
+
+                var captured = buff;
+                int pips = i;
+                var sprite = Ensure($"Icon_buff_{buff.Id}", () => Glyph(captured.Color, pips),
+                    overwrite, ref written, ref kept);
+
+                if (sprite == null || buff.Icon == sprite) continue;
+
+                buff.Icon = sprite;
+                EditorUtility.SetDirty(buff);
+                linked++;
+            }
+
+            return linked;
+        }
+
+        /// <summary>Writes the PNG when missing (or when overwriting), then hands back its sprite.</summary>
+        static Sprite Ensure(string fileName, System.Func<byte[]> draw, bool overwrite,
+            ref int written, ref int kept)
+        {
+            string path = $"{IconFolder}/{fileName}.png";
+
+            if (File.Exists(path) && !overwrite) kept++;
+            else
+            {
+                File.WriteAllBytes(path, draw());
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                ConfigureImporter(path);
+                written++;
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
         static void ConfigureImporter(string path)
@@ -157,6 +215,79 @@ namespace Proto.EditorTools
             var png = texture.EncodeToPNG();
             Object.DestroyImmediate(texture);
             return png;
+        }
+
+        /// <summary>
+        /// A coloured disc carrying dice-style pips. Pips because they read instantly at HUD size
+        /// and need no font — the count is what separates two ailments whose colours are close.
+        /// </summary>
+        static byte[] Glyph(Color color, int index)
+        {
+            var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false);
+            var pixels = new Color32[Size * Size];
+
+            var clear = new Color32(0, 0, 0, 0);
+            var body = (Color32)color;
+            var rim = (Color32)Color.Lerp(color, Color.white, 0.55f);
+            var pip = (Color32)Color.Lerp(color, Color.black, 0.62f);
+
+            float centre = Size * 0.5f;
+            float outer = Size * 0.46f;
+            float inner = outer - 3f;
+
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    float d = Mathf.Sqrt((x - centre) * (x - centre) + (y - centre) * (y - centre));
+                    pixels[y * Size + x] = d > outer ? clear : (d > inner ? rim : body);
+                }
+            }
+
+            // 1..6 pips, laid out like a die face.
+            int count = Mathf.Clamp(index, 0, 5) + 1;
+            float step = Size * 0.19f;
+
+            for (int p = 0; p < count; p++)
+            {
+                float px = centre + PipOffsets[count - 1, p, 0] * step;
+                float py = centre + PipOffsets[count - 1, p, 1] * step;
+                Blot(pixels, px, py, Size * 0.075f, pip);
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply();
+
+            var png = texture.EncodeToPNG();
+            Object.DestroyImmediate(texture);
+            return png;
+        }
+
+        static readonly float[,,] PipOffsets =
+        {
+            { {0,0}, {0,0}, {0,0}, {0,0}, {0,0}, {0,0} },                           // 1
+            { {-1,1}, {1,-1}, {0,0}, {0,0}, {0,0}, {0,0} },                          // 2
+            { {-1,1}, {0,0}, {1,-1}, {0,0}, {0,0}, {0,0} },                          // 3
+            { {-1,1}, {1,1}, {-1,-1}, {1,-1}, {0,0}, {0,0} },                        // 4
+            { {-1,1}, {1,1}, {0,0}, {-1,-1}, {1,-1}, {0,0} },                        // 5
+            { {-1,1}, {1,1}, {-1,0}, {1,0}, {-1,-1}, {1,-1} }                        // 6
+        };
+
+        static void Blot(Color32[] pixels, float cx, float cy, float radius, Color32 color)
+        {
+            int x0 = Mathf.Max(0, Mathf.FloorToInt(cx - radius));
+            int x1 = Mathf.Min(Size - 1, Mathf.CeilToInt(cx + radius));
+            int y0 = Mathf.Max(0, Mathf.FloorToInt(cy - radius));
+            int y1 = Mathf.Min(Size - 1, Mathf.CeilToInt(cy + radius));
+
+            for (int y = y0; y <= y1; y++)
+            {
+                for (int x = x0; x <= x1; x++)
+                {
+                    float dx = x - cx, dy = y - cy;
+                    if (dx * dx + dy * dy <= radius * radius) pixels[y * Size + x] = color;
+                }
+            }
         }
 
         static void ShapeBounds(Vector2Int[] shape, out int w, out int h)

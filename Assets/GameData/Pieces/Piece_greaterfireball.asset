@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Greater Fireball
   Stars: 2
   Layer: 1
-  Shape: 7
+  Shape: 3
   Color: {r: 1, g: 0.68, b: 0.2, a: 1}
   Icon: {fileID: 21300000, guid: 4b1ee37db32d73a45a0833a571c1d093, type: 3}
   Kind: 0
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 0.9
   Range: 8.5
   Hits: 1
+  Forks: 1
   ManaCost: 17
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -43,4 +45,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Far heavier than the bolt it came from, and no slower.
+  Blurb: EVOLVED. Far heavier than the bolt it came from, and no slower. Fills a
+    2x2 base exactly.

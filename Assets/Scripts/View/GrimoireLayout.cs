@@ -24,9 +24,16 @@ namespace Proto
 
         public const int SellW = 182;
         public const int SellH = 40;
-        public const int SellY = 190;
+        // Clears the 4x4 bag, whose top row plus its label reach y=190.
+        public const int SellY = 196;
 
         // Wide enough for "1. Greater Fireball   34.0 dmg   32.4 dps   1.05s   17 mana".
+        // Icon strips, stacked straight under the mana bar (which ends at -90).
+        public const float StripIcon = 26f;
+        public const float StripBuffY = -96f;
+        public const float StripDebuffY = -128f;
+        public const float StripAilmentY = -160f;
+
         public const int SpellPanelW = 380;
         public const int CooldownDiameter = 26;
 

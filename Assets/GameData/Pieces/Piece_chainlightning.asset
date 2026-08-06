@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Chain Lightning
   Stars: 2
   Layer: 1
-  Shape: 6
+  Shape: 3
   Color: {r: 0.9304, g: 0.8782, b: 0.391, a: 1}
   Icon: {fileID: 21300000, guid: c1a08471eb342ab40b60c06fd1864346, type: 3}
   Kind: 2
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 9
   Range: 9
   Hits: 5
+  Forks: 1
   ManaCost: 22
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

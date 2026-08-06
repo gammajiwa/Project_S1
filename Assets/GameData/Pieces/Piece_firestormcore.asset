@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: Firestorm Core
   Stars: 3
   Layer: 1
-  Shape: 9
+  Shape: 11
   Color: {r: 0.963, g: 0.556, b: 0.3636, a: 1}
   Icon: {fileID: 21300000, guid: d2318b6538cce1d449bc22cabc821c71, type: 3}
   Kind: 4
@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 6
   Range: 12
   Hits: 1
+  Forks: 1
   ManaCost: 36
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

@@ -26,9 +26,11 @@ MonoBehaviour:
   Radius: 9
   Range: 8
   Hits: 3
+  Forks: 1
   ManaCost: 12
   ZoneDuration: 4
   ZoneTickInterval: 0.5
+  ZoneDrift: 0
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

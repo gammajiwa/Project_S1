@@ -51,8 +51,9 @@ Keduanya butuh asset terisi di Inspector: `ContentDatabase.asset` dan
 `GameBalance.asset` (di `Assets/GameData/`). Scene menu butuh `ContentDatabase`
 saja, buat codex.
 
-**Isi konten saat ini:** **70 piece**, **71 resep**, 7 status, 9 reaksi, 6 buff,
-70 ikon placeholder.
+**Isi konten saat ini:** **74 piece**, **75 resep**, 7 status, 9 reaksi, 6 buff,
+**4 kutukan**, **4 arketipe musuh**, **91 ikon placeholder**
+(74 piece + 7 status + 10 buff/kutukan).
 
 Piramida rarity — ini disengaja, bukan kebetulan. Cuma piece ★1 yang pernah
 nge-drop dan cuma ★1–★2 yang masuk toko, jadi alas yang lebar itulah yang bikin
@@ -60,11 +61,41 @@ jaring resepnya lebar:
 
 | ★ | Rune | Segel | Skill | Total |
 |---|---|---|---|---|
-| 1 | 6 | 7 | 19 | 32 |
-| 2 | 4 | 3 | 13 | 20 |
+| 1 | 6 | 8 | 20 | 34 |
+| 2 | 4 | 4 | 14 | 22 |
 | 3 | 2 | — | 8 | 10 |
 | 4 | — | — | 4 | 4 |
 | 5 | — | — | 4 | 4 |
+
+### Varian musuh
+
+Empat arketipe (`Assets/GameData/Enemies/`), masing-masing menanyakan pertanyaan
+berbeda ke build — satu jenis musuh cuma pernah bertanya "damage-mu cukup nggak".
+
+| Musuh | Dari wave | Ciri | Jawabannya |
+|---|---|---|---|
+| **Grunt** | 1 | biasa | apa saja |
+| **Cursed** | 3 | besar, lambat, HP ×1,6, menempelkan kutukan saat menyentuh | bunuh duluan, atau `DebuffResist` |
+| **Stalker** | 5 | **terbang**, cepat ×1,55, HP ×0,5, menukik lurus (tidak ikut mengepung) | AoE apa pun — tapi dia tiba duluan |
+| **Spitter** | 7 | berhenti di jarak 11 dan **menembak** | **JANGKAUAN.** Ini satu-satunya musuh yang tidak bisa disentuh build pendek selama wave hidup |
+
+Campurannya bergeser: wave 1 = 100% Grunt, wave 10 = 55/16/18/10, wave 20 =
+37/20/25/18.
+
+### Kutukan
+
+Musuh bisa menempelkan efek negatif ke pemain. Masing-masing menyerang satu jenis
+build, jadi apa pun yang jadi tumpuan run-mu, ada satu yang menyakitinya.
+
+| Kutukan | Efek | Menyakiti |
+|---|---|---|
+| WEAKENED | damage −30% | build damage |
+| SLUGGISH | cooldown +35% | build CDR |
+| LEADEN | kecepatan −1,5 | build gesit — tidak bisa kabur dari kerumunan |
+| DRAINED | mana regen −7, biaya +30% | build mana |
+
+Penangkalnya: Ward Sigil ★1 → Purifier Sigil ★2 (pasif, memotong durasi), dan
+Cleansing Light ★1 → Cleansing Dawn ★2 (`CastKind.Cleanse`, membuang semuanya).
 
 ---
 
@@ -76,9 +107,10 @@ Assets/Scripts/
 │   ├── Enums.cs             StatKind, CastKind, CastTrigger, Layer, Element, StatModifier
 │   ├── Shapes.cs            16 bentuk grid + Rotate() + NameOf() + StarText()
 │   ├── PieceDefinition.cs   rune / skill / segel (SATU tipe untuk ketiganya) + Icon
+│   ├── EnemyArchetype.cs    jenis musuh: tubuh, perilaku, tembakan, kutukan
+│   ├── BuffDefinition.cs    buff pemain — juga dipakai untuk kutukan (Mods negatif)
 │   ├── StatusDefinition.cs  ailment
 │   ├── ReactionDefinition.cs  A + B -> efek, boleh memberi buff
-│   ├── BuffDefinition.cs    buff pemain
 │   ├── RecipeDefinition.cs  2-3 bahan -> hasil
 │   ├── GameBalance.cs       SEMUA angka tuning + kurva wave & laju spawn
 │   ├── SceneLook.cs         SO: matahari, ambient, kabut, warna permukaan
@@ -98,8 +130,9 @@ Assets/Scripts/
 │   ├── GrimoireLayout.cs    SEMUA ukuran piksel & rect, statik murni
 │   ├── TooltipBuilder.cs    kartu stat hover (resep sudah pindah)
 │   ├── RecipePanel.cs       kartu resep ALT — ikon, hasil kiri, formula kanan
+│   ├── StatusStrip.cs       baris ikon + angka + hover (buff / kutukan / ailment)
 │   ├── DamagePopups.cs      angka damage melayang, hit berdekatan digabung
-│   ├── EnemyRenderer.cs     gambar seluruh swarm instanced, TANPA GameObject
+│   ├── EnemyRenderer.cs     gambar instanced — dipakai 2x: musuh & peluru musuh
 │   ├── BoltPool.cs          LineRenderer pool — petir rantai & sinar garis
 │   └── CameraShake.cs       shake berbasis trauma
 ├── Composition/
@@ -113,7 +146,8 @@ Assets/GameData/
 ├── MenuTheme.asset          tampilan UI menu
 ├── SceneLook_Game.asset     cahaya scene game (lantai GELAP)
 ├── SceneLook_Menu.asset     cahaya diorama menu (lantai terang)
-├── Icons/                   70 PNG placeholder — TIMPA filenya buat ganti art
+├── Icons/                   74 PNG placeholder — TIMPA filenya buat ganti art
+├── Enemies/                 4 arketipe musuh
 ├── Pieces/  Statuses/  Reactions/  Buffs/  Recipes/
 ```
 
@@ -162,9 +196,24 @@ Melanggar ini akan merusak performa atau balance dengan cara yang sulit dilacak.
 19. **Rune tidak bisa jadi BAHAN resep**, cuma bisa jadi HASIL. Model cuma
     menerima piece layer-Skill sebagai bahan. Karena itu rune ★2/★3 dibuat lewat
     peleburan **segel** — itu satu-satunya jalur yang sah.
-20. **Wave selesai karena JAM HABIS, bukan karena lapangan bersih.** Musuh yang
-    tersisa disapu, dan **tidak membayar apa-apa** (tidak masuk hitungan kill,
-    tidak roll drop). Kalau membayar, strategi terbaiknya jadi berhenti nembak.
+20. **Jam mengatur SPAWN, bukan wave.** Wave tetap selesai dengan menghabiskan
+    lapangan. Begitu jendela spawn tutup (`Closing`), sisa musuh **ngebut 1,9×**
+    dan **berhenti memutar** — itulah yang membunuh ekor mati tanpa harus
+    menghapus musuh. Menghapus musuh terbaca sebagai game merampok kill-mu.
+    `ClosingTimeout` cuma jaring pengaman untuk build tanpa damage sama sekali.
+21. **Semua arketipe meninggalkan `PreferredRange` saat `Closing`.** Tanpa ini
+    Spitter membuat build berjangkauan pendek tidak akan pernah bisa menutup wave,
+    dan timeout darurat akan meletus di setiap ronde.
+22. **Debuff punya 4 slot SENDIRI, terpisah dari 6 slot buff.** Kalau berbagi,
+    saat dikepung dan terus dikutuk, buff hasil reaksi ketendang keluar — loop inti
+    game mati justru saat pemain paling terdesak.
+23. **`Separation()` dibatasi panjang 1.** Mentahnya, jumlah 14 tetangga bisa
+    bermagnitude belasan dan menelan setiap suku kemudi lain yang dijumlahkan
+    dengannya — Spitter yang mencoba jaga jarak malah terdorong masuk ke melee.
+    Bobotnya diatur lewat `SeparationWeight`, bukan lewat magnitude mentah.
+24. **Damage sesaat pakai `TakeHit`, bukan `TakeDamage`.** `TakeDamage` mengurangi
+    Defense dikali `Time.deltaTime` — benar untuk sentuhan per-frame, dan hampir
+    nol terhadap satu tembakan.
 21. **Bentuk piece terikat rarity.** ★1 = 2–3 petak, ★2 = 4, ★3 = 5, ★4 = 6–7,
     ★5 = 8–9. Semua muat dalam kotak 3×3 — itu batas keras, lihat jebakan #18.
 22. **`ShapeKind` dan `StatKind` cuma boleh DITAMBAH di belakang.** Nilainya
@@ -219,6 +268,9 @@ yang ditandai. Semua mencocokkan lewat **Id aset**, bukan nama tampilan.
 | `Rebalance + Star 5 Tier` | tabel mana/cooldown 15 skill, Meteor jadi jatuh dari langit, 3 piece ★5 + resepnya |
 | `Footprint by Rarity` | pasang tangga bentuk per bintang + tulis ulang blurb |
 | `Expand Content to 70` | 38 piece baru + 48 resep baru, matriks 4 elemen × 6 arketipe, MoveSpeed ke 3 piece |
+| `Generate Curses and Counters` | 4 kutukan + 4 piece penangkal + resepnya |
+| `Generate Enemy Archetypes` | 4 arketipe musuh + laporan campuran per wave |
+| `Generate Heroes` | loadout awal. Melaporkan balik apakah skill pembuka bersentuhan — kalau YA, dia akan melebur sendiri dan pilihannya hilang |
 | `Generate Placeholder Icons` | PNG 64×64 per piece. **Create-only** — art buatanmu aman |
 | `Regenerate Placeholder Icons (TIMPA art)` | **MERUSAK** — tulis ulang semua PNG. Pakai setelah bentuk piece berubah |
 
@@ -282,6 +334,30 @@ Ini semua sudah pernah terjadi. Jangan mengulangi.
     musuh** — skor sel grid-nya.
 20. **Dua resep dengan set bahan yang sama = salah satunya mati diam-diam.**
     `ContentExpansionPass` punya validasi untuk ini; jalankan kalau menambah resep.
+21. **`&` di path `[MenuItem]` adalah modifier Alt untuk shortcut.** Menu dengan
+    `&` di namanya tidak bisa dipanggil lewat nama sama sekali. Tulis "and".
+22. **Mengubah ScriptableObject saat PLAY MODE tidak kembali sendiri saat stop.**
+    Beda dengan objek di scene. Menyetel `bal.CurseChanceBase = 0.6f` untuk tes
+    akan **tetap begitu di memori** setelah keluar play mode, dan `SaveAssets`
+    berikutnya — dari generator mana pun — menuliskannya sebagai nilai desain.
+    Yang bikin ini licin: **`AssetDatabase.ImportAsset` TIDAK memuat ulang instance
+    yang sudah ada**, jadi memaksa reimport bukan cara membatalkannya, dan disk
+    yang masih benar bukan bukti kamu aman. Cara membatalkan yang benar: set balik
+    nilainya secara eksplisit, `SetDirty`, `SaveAssets`, lalu **verifikasi lewat
+    `git diff`** bukan lewat pembacaan runtime.
+23. **`refresh_unity` bisa balik `success` padahal `EditorApplication.isCompiling`
+    masih true.** Type yang baru ditambahkan belum ada dan menu-nya belum terdaftar.
+    Cek `isCompiling` lewat `execute_code`, jangan percaya nilai baliknya saja.
+24. **Masuk play mode tepat setelah menjalankan editor pass bisa memakai data BASI.**
+    Pernah terjadi: `HeroPass` sukses menulis 4 seat, lalu `Init` di play mode cuma
+    memasang 2. Stop, masuk lagi, dan benar. Kalau hasil runtime tidak cocok dengan
+    log pass-nya, ulangi play mode sebelum mencari bug yang tidak ada.
+25. **Bentuk hasil resep HARUS muat di alas yang tersedia.** `CouldSeat()` menjaga
+    warnanya jujur, tapi ia tidak membuat resep mustahil jadi mungkin. Greater
+    Fireball sempat berbentuk Huruf T (3 petak melintang) sementara alas pembuka
+    hero cuma 2×2 — upgrade yang dijanjikan tidak akan pernah bisa terjadi. Kalau
+    sebuah resep memang dimaksudkan tersedia di titik tertentu, cek bentuk hasilnya
+    terhadap alas yang ada di titik itu.
 
 ---
 
@@ -318,14 +394,15 @@ main menu · setelan · camera shake · bar HP/mana beranimasi ·
 **angka damage melayang** yang menggabung hit berdekatan ·
 **proyektil**: jatuh dari langit, petir melompat, sinar garis, ledakan mati musuh ·
 **garis evolusi** yang menghubungkan bahan · **kartu resep berikon** ·
-70 ikon placeholder.
+**kabel resep dari kursor** begitu piece diangkat · **tiga strip ikon**
+(buff / kutukan / ailment) dengan angka dan hover · 91 ikon placeholder.
 
 ## 10. Belum selesai — urutan yang disarankan
 
 | # | Item | Kenapa |
 |---|---|---|
-| 1 | **Main dan nilai rasanya** | semua verifikasi sesi ini programatik. Kurva wave, tekanan grid, lompatan bintang, rasa auto-move — empat hal itu belum pernah dinilai tangan manusia |
-| 2 | **Varian musuh + boss** | diminta pemilik project. `SpawnOne()` sudah jadi satu-satunya tempat stat per musuh diisi — boss = pengisian berbeda di method yang sama |
+| 1 | **Main dan nilai rasanya** | semua verifikasi sesi ini programatik. Kurva wave, tekanan grid, lompatan bintang, rasa auto-move — belum pernah dinilai tangan manusia |
+| 2 | **Boss** | `SpawnOne()` tetap satu-satunya tempat stat per musuh diisi, dan `EnemyArchetype` sudah jadi tempat menaruhnya — boss = satu aset lagi dengan angka besar |
 | 3 | **Animasi baked (VAT)** | jahitannya sudah ada: `Yaw`, `Phase`, dan `EnemyRenderer.Compose()`. Yang belum: shader VAT + tool bake-nya |
 | 4 | **Optimasi FX `PlayerCaster`** | Projectile/Flash/Descent/Zone masih GameObject primitif satu-satu. Ini hambatan berikutnya begitu VFX masuk |
 | 5 | **Jalur Lightning ★2–★3 sudah ada, tapi cek keseimbangan elemen** | Fire/Ice/Arcane/Lightning kini keempatnya sampai ★5 |
