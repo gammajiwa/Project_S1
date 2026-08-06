@@ -48,6 +48,9 @@ MonoBehaviour:
   SpawnBoundsZ: 15.5
   WaveOpenerCount: 9
   WaveOpenerDistance: 0.85
+  BossEveryWaves: 10
+  BiomeEveryWaves: 5
+  CameraDeadZone: 0.22
   EnemySeparation: 1.3
   SeparationWeight: 3
   InterceptLead: 1.1

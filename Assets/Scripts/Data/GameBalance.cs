@@ -111,9 +111,6 @@ namespace Proto
                  "memutar begitu wave menutup.")]
         public float ClosingSpeedMultiplier = 1f;
 
-        [Tooltip("Jaring pengaman. Build tanpa damage sama sekali (misal cuma Heal) tidak akan " +
-                 "pernah menghabiskan sisanya — tanpa batas ini wave-nya menggantung selamanya.")]
-        public float ClosingTimeout = 25f;
 
         [Header("Spawn")]
         [Tooltip("Setengah-lebar KOTAK tempat musuh boleh muncul. Musuh dimunculkan di titik keluar " +
@@ -131,6 +128,20 @@ namespace Proto
         [Range(0.2f, 1f)]
         [Tooltip("Jarak pembuka, sebagai porsi jarak spawn normal.")]
         public float WaveOpenerDistance = 0.6f;
+
+        [Tooltip("Boss muncul tiap kelipatan wave ini. 0 = tidak pernah.")]
+        public int BossEveryWaves = 10;
+
+        [Tooltip("Wajah arena berganti tiap sekian wave. Cuma berlaku kalau biome-nya lebih dari satu.")]
+        [Min(1)] public int BiomeEveryWaves = 5;
+
+        [Header("Kamera")]
+        [Tooltip("Besar zona mati kamera, sebagai porsi setengah layar. Pemain boleh bergerak " +
+                 "sebebasnya di dalam zona ini tanpa kamera ikut sama sekali.\n\n" +
+                 "Terlalu besar dan kamera nyaris tidak pernah bergerak; terlalu kecil dan kamera " +
+                 "menempel di pemain, yang menghapus rasa bahwa PEMAIN yang berpindah, bukan " +
+                 "dunianya yang bergeser.")]
+        [Range(0.05f, 0.8f)] public float CameraDeadZone = 0.22f;
 
         // Knob "musuh terkutuk" sudah dipindah ke aset EnemyArchetype — kapan muncul, seberapa
         // sering, sebesar apa, dan kutukan mana, semuanya milik arketipe sekarang. Dua mekanisme
