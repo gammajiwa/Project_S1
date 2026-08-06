@@ -112,3 +112,15 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# Asset Store content — bought, not authored here, and re-downloadable from the account that
+# owns it. Together these are 3.7 GB against a 1 GB free LFS quota, so committing them would
+# fail the push outright and make every clone a multi-gigabyte download, permanently.
+# What to import, and at which version, is written down in docs/asset-store-packages.md.
+# Note this ignores three specific folders, NOT all of Assets/Plugin — 09_shader is tracked.
+/[Aa]ssets/[Pp]lugin/InnerverseInteractive/
+/[Aa]ssets/[Pp]lugin/InnerverseInteractive.meta
+/[Aa]ssets/[Pp]lugin/Lana Studio/
+/[Aa]ssets/[Pp]lugin/Lana Studio.meta
+/[Aa]ssets/[Pp]lugin/ToonScapes/
+/[Aa]ssets/[Pp]lugin/ToonScapes.meta
