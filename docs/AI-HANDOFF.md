@@ -3,7 +3,10 @@
 Dokumen ini ditulis supaya agent lain bisa lanjut kerja tanpa harus menebak.
 Baca ini **sebelum** menyentuh kode. Terakhir diperbarui: sesi 2026-08-06
 (skill non-serangan, kamera dead-zone, drop jadi benda nyata, solver keseimbangan —
-**§13**; tes build ★5 penuh + bug anggaran mana — **§14**; konten 100 piece).
+**§13**; tes build ★5 penuh + bug anggaran mana — **§14**;
+kamera/DebugConfig/Playground — **§15**; boss ular + biome — **§16**;
+hutan/audio/bar boss — **§17**;
+lapangan tak berujung — **§18**; konten 100 piece).
 
 ---
 
@@ -651,3 +654,481 @@ tanpa crit**. Begitu one-shot putus, gerombolan menumpuk dan pemain kalah.
 
 **Jangan hilangkan sifat ini tanpa sengaja.** Kalau `EnemyHpGrowth` atau damage
 ★5 diubah, dinding endgame bergeser bersamanya.
+
+---
+
+## 15. Kamera yang benar-benar jalan, DebugConfig, dan scene Playground
+
+Ditambahkan 2026-08-06.
+
+### 15.1 Spawn dilepas dari titik nol dunia — ini yang mengunci kamera
+
+`SpawnPoint()` dulu memakai `SpawnBoundsX/Z` sebagai **koordinat dunia absolut**. Itu
+diam-diam mengikat ukuran arena ke jarak tempuh musuh: memperbesar arena berarti
+musuh berjalan lebih lama, jadi arena tidak pernah bisa dibesarkan tanpa merusak
+tempo — dan tanpa arena besar, kamera tidak punya ruang bergerak sama sekali.
+
+Sekarang kotaknya berpusat di **anchor**, dan anchor-nya adalah **rig kamera**
+(`EnemyManager.SetSpawnAnchor`). Bukan pemain: kamera punya zona mati, jadi pemain
+boleh menyimpang jauh dari pusat layar, dan kotak yang mengikuti pemain akan
+menetaskan musuh di dalam layar pada sisi yang barusan ditinggalkan.
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| `ArenaHalfX / Z` | 22 / 17 | **40 / 30** |
+| `SpawnBoundsX / Z` | 24 / 19 (dunia) | **24 / 15.5 (relatif rig)** |
+| `WaveOpenerDistance` | 0,5 | **0,85** |
+| Jarak jalan kamera | 2,4 / 5,1 | **20,4 / 18,1** |
+
+**Kotak spawn WAJIB lebih besar dari layar** (layar = 19,6 × 11,9 pada ortho 11 /
+16:9 / pitch 68°). Kalau tidak, potongan opener otomatis jatuh di dalam layar
+berapa pun nilainya — sempat terjadi, 11 dari 26 musuh menetas di depan mata.
+Terukur setelah perbaikan: **0 dari 9** opener lahir di dalam layar.
+
+Lantai sekarang diukur dari arena (`ArenaHalf + 12`), bukan skala tetap. Tanpa itu
+pemain berjalan keluar dari mesh-nya.
+
+**Batas spatial hash adalah ±64.** Musuh terjauh sekarang ~41,9. Kalau arena
+diperbesar lagi, hitung ulang: `ArenaHalf − setengahLayar + SpawnBounds < 64`.
+
+### 15.2 Bug spatial hash yang sudah lama tidur
+
+`_cellHead` lahir berisi **nol**, dan nol adalah indeks musuh yang sah. Jadi hash
+yang belum pernah dibangun mengaku setiap selnya berpenghuni musuh nomor 0, lalu
+rantainya dibaca lewat `_nextInCell` yang panjangnya masih nol →
+`IndexOutOfRangeException` **tiap frame di dalam Update**, sehingga seluruh gerakan
+swarm mati diam-diam: 500 musuh hidup, semuanya membeku di titik spawn, dan
+`AliveCount` terkunci di 1.
+
+Tidak pernah meletus selama ini cuma karena wave selalu dimulai dari UI, beberapa
+frame setelah Update pertama. `DebugConfig.StartAtWave` memanggil `StartWave` di
+dalam `Awake`, dan langsung membongkarnya.
+
+Diperbaiki dua sisi: `_cellHead` diisi −1 sejak lahir (`NewHeads()`), dan
+`_nextInCell` ikut tumbuh di `SpawnOne`/`SpawnDummy`, bukan cuma di `RebuildHash`.
+
+### 15.3 `DebugConfig` — saklar curang buat rekaman
+
+`Assets/GameData/DebugConfig.asset`, tersambung ke `_Bootstrap` di `Proto.unity`.
+
+**`Enabled` adalah gerbang induk dan defaultnya MATI.** Semua pembaca lewat properti
+`Cheat*` / `*Scale`, tidak pernah membaca field-nya langsung, supaya gerbangnya
+mustahil terlewat di satu tempat. `ProtoBootstrap` juga menyalakan `LogWarning`
+selama gerbangnya hidup.
+
+| Saklar | Efek |
+|---|---|
+| `Invulnerable` | `Drain()` langsung keluar |
+| `InfiniteMana` | mana dikunci penuh tiap frame |
+| `NoCooldowns` | `BuffCooldownMul` jadi 0,01 |
+| `DamageMultiplier` | dikali ke `BuffDamageMul` — satu tempat, kena semua cast |
+| `EnemyHpMultiplier` | dikali di `SpawnOne` |
+| `EnemyCountMultiplier` | dikali ke `WaveTotal` |
+| `StartAtWave` | `GrimoireUI.ApplyCheats` memanggil `StartWave` setelah papan tersusun |
+| `FreezeSpawns` | `TickSpawning` keluar lebih awal |
+| `ForceLoadout` | menimpa `DefaultHero` — isi dengan `HeroLoadout` build bintang 5 |
+| `HideUI` | `_canvas.enabled = false`, buat rekaman bersih |
+| `StartTimeScale` | gerak lambat buat memperlihatkan bentuk skill |
+
+### 15.4 Scene Playground
+
+`Assets/Scenes/Playground.unity` — digenerate lewat **Tools/Grimoire/Build
+Playground Scene**, terdaftar di Build Settings **paling akhir dan dalam keadaan
+mati** supaya tidak pernah ikut ke build rilis.
+
+Isinya `PlaygroundBootstrap`: daftar 74 skill di kiri, boneka dalam formasi yang
+bisa dipilih, dan pembacaan damage terukur.
+
+**Bonekanya DIAM.** Itu bukan penyederhanaan malas — musuh diam adalah satu-satunya
+cara membaca jangkauan sebuah skill secara jujur; di tengah wave sungguhan bentuk
+ledakan tertutup gerombolan yang bergerak.
+
+Dua keputusan yang gampang salah dibaca sebagai bug:
+- `SpawnDummy` memberi `Hp` jauh di atas `MaxHp`. Disengaja: besar angka damage di
+  layar diukur dari **porsi HP musuh**, jadi boneka ber-HP sejuta membuat setiap
+  pukulan tampil sebagai angka mungil. Memisahkan keduanya memberi boneka tahan
+  lama DAN angka sebesar musuh sungguhan.
+- Rune alasnya dipilih yang **tanpa aura**, supaya angka yang diukur tidak dicemari.
+
+`PlayerCaster.CastWithoutWave` ditambahkan khusus untuk ini — buku menembak walau
+tidak ada wave. Menyalakan wave palsu akan mendatangkan gerombolan sungguhan yang
+menimpa boneka yang sedang diamati.
+
+Tombol: panah atas/bawah pilih skill · R susun ulang · 1–4 formasi
+(lingkaran/kisi/baris/acak) · +/− rapat-renggang · SHIFT tahan = gerak lambat ·
+ESC kembali ke menu.
+
+Terukur di sana: Cataclysm pada 40 boneka formasi lingkaran = **522 dps + 329 dps
+BURN**, 58 fps.
+
+### 15.5 Jebakan input yang memakan waktu
+
+Project ini memakai **Input System baru**, dan `UnityEngine.Input` yang lama
+melempar exception **tiap frame** di sana. Dua tempat kena saat membangun Playground:
+
+1. `Input.GetKeyDown(...)` langsung di `Update` — seluruh sisa `Update` ikut mati
+   bersamanya. Semua input WAJIB lewat `Systems/ProtoInput.cs`, yang sudah punya
+   `#if ENABLE_INPUT_SYSTEM` di tiap propertinya. Ditambahkan di sesi ini:
+   `ListStepDown`, `SpreadStepDown`, `SlowMotionHeld`.
+2. **`StandaloneInputModule` adalah modul UI LAMA.** Kalau scene memakai Button/
+   EventSystem sungguhan, modulnya harus `InputSystemUIInputModule`. Gejalanya
+   jahat: UI tetap tergambar rapi, tapi tidak satu tombol pun bisa diklik, dan
+   pesan errornya tidak pernah menyebut nama scene-nya.
+
+Scene game utama tidak pernah kena ini karena `GrimoireUI` menguji klik sendiri
+lewat `ProtoInput` dan tidak memakai EventSystem sama sekali.
+
+---
+
+## 16. Boss ular dan biome
+
+Ditambahkan 2026-08-06.
+
+### 16.1 Boss ular (`Systems/BossSnake.cs` + `Data/BossDefinition.cs`)
+
+Kepalanya yang berpikir; badannya cuma menapaki jejak yang sudah dilalui kepala.
+
+**Keputusan terpenting: tiap ruas didaftarkan sebagai `Enemy` biasa di pool.** Boss
+dengan jalur damage sendiri berarti tiap skill di buku harus diajari cara
+mengenainya — dan yang terjadi selalu sama: satu atau dua skill terlupakan, lalu
+ada build yang secara diam-diam tidak bisa melukai boss sama sekali. Dengan ruasnya
+menjadi musuh biasa, semua yang sudah bisa mengenai musuh otomatis bisa mengenai boss.
+
+Yang membedakan cuma satu: `Enemy.Boss != null` → damage masuk ke **satu kolam HP**
+dan ruasnya tidak pernah mati sendiri.
+
+Tiga tempat yang WAJIB ikut dirutekan, dan dua di antaranya gampang terlewat:
+
+| Tempat | Kenapa |
+|---|---|
+| `Damage()` | jalur utama semua skill |
+| **DoT di `TickEnemies`** | tanpa ini, membakar boss malah MEMUTUS badannya |
+| `SpawnOne()` reset `e.Boss = null` | slot pool dipakai ulang; tanpa reset, musuh biasa mewarisi kepemilikan ruas boss dan jadi tidak bisa dibunuh |
+
+Ruas boss dilewati di `TickEnemies` **setelah** loop ailment (supaya DoT sempat
+berdenyut) tapi **sebelum** gaya pisah / jalur serong / lontaran / damage sentuh —
+empat hal yang akan langsung mencabik bentuk ularnya.
+
+**Panjang badan = bar HP-nya.** `WantedSegments()` menurunkannya dari `HpFraction`,
+jadi memendeknya badan bukan efek terpisah yang perlu diurus: ia jatuh sendiri dari
+satu perhitungan dan mustahil melenceng dari HP aslinya. Pemain tidak perlu membaca
+angka di sudut layar; panjang ularnya sendiri yang mengatakannya.
+
+Perilaku: mengitari pada `OrbitRadius`, meliuk dengan Perlin (bukan acak per frame —
+yang acak menghasilkan getaran, bukan lintasan), dan **menerjang** tiap
+`LungeInterval`. **Menggigit hanya saat menerjang** — kepala yang melukai kapan pun
+ia kebetulan lewat membuat seluruh terjangan jadi tidak berarti.
+
+Kepala punya slot warna sendiri (`_bossHeadTint`) terpisah dari badan: itu satu-satunya
+bagian yang menggigit, jadi harus bisa ditemukan sekejap di antara 24 ruas sesiluet.
+
+Wave tidak dinyatakan beres selama `BossActive` — tanpa penjaga itu, menghabiskan
+gerombolan biasa menutup wave sementara boss masih berkeliling.
+
+Aset: **Tools/Grimoire/Generate Boss** → `Enemies/Boss_serpent.asset`, tersambung ke
+`ContentDatabase.Boss`. Muncul tiap `GameBalance.BossEveryWaves` (10).
+
+Terukur: wave 10, HP 9778, 24 ruas → 15 ruas saat HP 5040; jarak antar ruas 0,96–1,74
+(target 1,05); orbit 13,8 (target 13); 59 fps. Wave 11 tidak memunculkan boss, wave 20
+memunculkannya. Setelah mati: 0 ruas nyasar tertinggal.
+
+### 16.2 Biome (`Data/BiomeDefinition.cs` + `View/BiomeDresser.cs`)
+
+Empat wajah arena, berganti tiap `GameBalance.BiomeEveryWaves` (5):
+Ashen Flats → Frostbound Waste → Emberfall → The Hollow.
+
+Props digambar lewat **`EnemyRenderer` yang sama dengan swarm**, bukan GameObject
+satu-satu. 240 batu sebagai GameObject = 240 draw call yang tidak pernah bergerak;
+lewat renderer instanced, draw call-nya sebanyak jumlah **warna**. Terukur: 260 props
+= **3 draw call**.
+
+Props sengaja **tanpa collider**. Yang dibeli adalah titik acuan, bukan rintangan:
+gerak pemain sudah otomatis dan musuh sudah saling mendorong, jadi rintangan padat
+hanya akan membuat keduanya tersangkut dengan cara yang tidak bisa dibaca.
+
+Tata letak di-seed dari indeks biome, bukan dari waktu — kembali ke biome yang sama
+memberi tata letak yang sama persis, dan tempat itu jadi terasa seperti tempat.
+
+Aset: **Tools/Grimoire/Generate Biomes**.
+
+### 16.3 Dua jebakan editor yang memakan waktu di sesi ini
+
+1. **`SerializedObject` array: ubah ukuran, Apply, `Update()`, BARU isi elemennya.**
+   Mengubah `arraySize` lalu langsung mengisi elemen dalam sesi yang sama menyimpan
+   ukurannya saja — referensi objeknya hilang tanpa satu pun error, dan yang
+   tersimpan adalah slot kosong.
+2. **Jangan `AssetDatabase.Refresh()` tepat sebelum `LoadAssetAtPath`.** Refresh
+   menjadwalkan impor ulang, dan selama impor berjalan LoadAssetAtPath mengembalikan
+   **null** untuk aset yang jelas-jelas ada di disk. `SaveAssets()` saja sudah cukup.
+
+Keduanya gagal dengan cara yang sama jahatnya: sukses tanpa error, hasil kosong.
+
+---
+
+## 17. Hutan, zona kamera, audio, dan bar boss
+
+Ditambahkan 2026-08-06, sesudah §16.
+
+### 17.1 Biome dipangkas jadi SATU hutan
+
+Empat biome bergantian dibatalkan. Empat wajah arena terdengar seperti kedalaman
+dan menghasilkan sebaliknya: tidak ada satu pun yang sempat dikenali, dan tidak ada
+satu pun yang bisa dipoles sampai benar-benar bagus.
+
+Sekarang: **`Biome_forest.asset` — "Verdant Hollow"**, satu-satunya.
+`BiomeDresser.OnWaveStarted` tidak melakukan apa pun kalau biome-nya cuma satu, jadi
+mekanisme pergantiannya tetap ada tanpa perlu dimatikan.
+
+**Pohon = batang + tajuk, dan hubungannya yang penting.** Satu bentuk saja tidak
+pernah terbaca sebagai pohon: silinder sendirian jadi tiang, bola sendirian jadi
+gundukan. Tajuk duduk di `height * 0.92` — persis di puncak menyisakan celah yang
+terbaca sebagai bola melayang.
+
+Angka setelah dikoreksi user (versi pertama terlalu padat):
+
+| | Pertama | Sekarang |
+|---|---|---|
+| Pohon | 300 | **85** |
+| Rumput | 380 semak bulat | **1 400 rumpun tegak** |
+| Bentuk rumput | Sphere, gepeng 0,55 | **Cube, tinggi ×2,8** |
+
+Hutan rapat menutupi gerombolan dan menghapus satu-satunya hal yang harus dibaca
+pemain: musuh datang dari arah mana. Yang dicari adalah **padang terbuka dengan
+pohon sebagai penanda jarak**, bukan rimba.
+
+Terukur: 85 pohon + 1 400 rumput = **11 draw call**, 59 fps bersama boss dan
+110 musuh.
+
+**`EnemyRenderer.Add` sekarang punya varian `Vector3` skala.** Perlu ada karena
+bentuk yang bukan makhluk hidup tidak pernah proporsional — batang itu tinggi-kurus,
+tajuk itu lebar-pipih, dan keduanya mustahil dari satu angka skala. `_stageScale`
+ikut jadi `Vector3[]`; varian `float` lama tetap ada dan meneruskan ke yang baru.
+
+### 17.2 Zona mati kamera jadi knob
+
+`GameBalance.CameraDeadZone` (porsi setengah layar). Dulu tetap di 0,5.
+
+| | Dulu | Sekarang |
+|---|---|---|
+| Porsi | 0,5 | **0,22** |
+| Zona mati | 9,8 × 5,9 unit | **4,3 × 2,6 unit** |
+
+Terverifikasi: pemain digeser ke (12; 8) → rig menyusul ke (7,6; 5,3) lalu **berhenti**
+begitu pemain kembali berada di dalam kotak. Itu perilaku dead zone yang benar —
+kamera tidak pernah memusatkan ulang.
+
+### 17.3 Audio (`Systems/AudioDirector.cs`)
+
+Sebelum ini **tidak ada satu pun `AudioSource` di seluruh project**, dan slider
+volume di menu menyimpan angka yang tidak menggerakkan apa pun.
+
+Klipnya **dibangkitkan, bukan diimpor** — filosofi yang sama dengan ikon placeholder.
+Menunggu aset audio berarti game penuh ledakan ini tetap senyap sampai entah kapan,
+dan kesenyapan itu hal pertama yang terdengar di rekaman untuk client.
+
+Delapan suara: Cast, Blast, Hit, Death, Reaction, Pickup, BossRoar, WaveStart.
+Tiga generator: `Tone` (gigi gergaji bersapuan nada — sinus murni terdengar seperti
+nada uji), `Noise` (derau dengan rata-rata bergerak sebagai tapis rendah murahan),
+`Chime` (dua sinus).
+
+Enam belas voice bergilir, **2D** (`spatialBlend = 0`) karena pemain selalu di tengah
+layar. Tiap jenis suara punya **jeda minimum** — tanpa itu dua puluh musuh yang mati
+bersamaan menumpuk jadi satu bunyi yang memekakkan. Nada diacak ±6% tiap kali, karena
+suara yang persis sama berulang berhenti terdengar sebagai kejadian dan mulai
+terdengar sebagai kerusakan.
+
+**Mengganti dengan file asli**: isi array `Overrides` di komponennya. Tidak ada
+pemanggil yang perlu berubah.
+
+Skill berat dan skill ringan sengaja berbeda suara DAN nada (`Blast` 0,9 vs `Cast`
+1,15) — itu cara termurah membuat papan yang penuh tetap terbaca lewat telinga saja.
+
+### 17.4 Bar HP boss
+
+Di atas layar, lebar penuh, dengan nama dan persen. Panjang badan ular memang sudah
+menceritakan sisa HP-nya dan itu bacaan yang bagus — tapi ia satu-satunya, dan cuma
+terbaca kalau seluruh ularnya kebetulan sedang di layar. Di tengah tiga ratus musuh
+itu hampir tidak pernah terjadi.
+
+`OnBossSpawned` / `OnBossDied` akhirnya punya pelanggan: banner via
+`GrimoireUI.Announce()` (memakai floater yang sama dengan reaksi — widget baru untuk
+tiap kabar penting hanya menambah tempat yang harus dipelajari pemain) dan raungan
+audio.
+
+`PlayerCaster.OnHurt` ditambahkan, dan sengaja **tidak menyala untuk damage yang
+tertahan perisai** — Ward yang berbunyi seperti kena pukul menghapus seluruh gunanya.
+
+### 17.5 Timer akhir wave DICOPOT
+
+Wave sekarang berakhir **hanya kalau lapangannya benar-benar bersih**. Tidak ada jam.
+
+Dulu ada katup pengaman: setelah `ClosingTimeout` (25 detik) semua sisa musuh dihapus
+dan wave dinyatakan beres. Alasannya nyata — build tanpa damage sama sekali tidak akan
+pernah bisa membersihkan lapangan — tapi harganya jauh lebih mahal dari masalah yang
+dipecahkannya: pemain yang sedang menang tiba-tiba kehilangan musuh terakhir yang sudah
+susah payah dikejar, dan kemenangan itu berhenti terasa miliknya.
+
+Build tanpa damage sekarang memang menggantung, dan itu jawaban yang benar: buku yang
+tidak bisa membunuh apa pun adalah build yang kalah, bukan keadaan yang perlu
+diselamatkan diam-diam oleh jam.
+
+Ikut dibuang karena jadi kode mati: `GameBalance.ClosingTimeout`, `EnemyManager.OnSweep`
+(beserta langganannya di `ProtoBootstrap`), dan `_closingElapsed`.
+
+`Closing` **tetap ada** dan masih dipakai — artinya "jendela spawn sudah tutup", yang
+membuat penembak berhenti menjaga jarak dan mematikan gerakan memutar. Itu tentang
+menghabisi ekor wave, bukan tentang mengakhirinya.
+
+Terukur: wave 3, `closing` menyala di t=18,5 dengan 19 musuh sisa; di t=28,4 masih
+jalan dengan 5 sisa (dulu sudah disapu di t≈25); beres di t=36,7 dengan `AliveCount 0`.
+
+---
+
+## 18. Lapangan tak berujung (petak ala Minecraft)
+
+Ditambahkan 2026-08-06, sesudah §17. **Batas arena dicopot sepenuhnya.**
+
+### 18.1 Yang HARUS ikut dilepas, dan satu yang gagal senyap
+
+Melepas batas bukan cuma menghapus `Clamp()`. Empat hal terpaku ke titik nol dunia,
+dan yang pertama adalah jebakan sesungguhnya:
+
+| Apa | Kalau tertinggal |
+|---|---|
+| **Spatial hash** (`_hashOrigin`) | hash cuma seluas 128×128. Pemain di x=300 membuat SELURUH swarm terjepit ke sel tepi: gaya pisah mati, `BestCluster` menunjuk tempat salah, **tanpa satu pun error** |
+| `PlayerMotor.Clamp()` | pemain tidak bisa keluar kotak lama |
+| `ArenaCamera` `_limitX/_limitZ` | kamera berhenti di tepi arena yang sudah tidak ada |
+| `EnemyRenderer.worldBounds` (400) | seluruh batch **hilang dari layar** begitu pemain lewat ~200 unit |
+
+Hash punya **tiga** pembaca — `CellIndex`, `Separation`, `BestCluster` — dan ketiganya
+harus dirutekan ulang. Satu saja tertinggal: hash-nya benar tapi yang membacanya
+menunjuk sel yang salah, dan itu juga senyap.
+
+`_hashOrigin` dikancing ke kelipatan sel, bukan mengikuti pemain mulus, supaya isi sel
+tidak bergeser setengah sel tiap frame dan tetangga tidak berkedip masuk-keluar.
+
+### 18.2 Hutan per petak (`View/BiomeDresser.cs`)
+
+Petak **24 unit**, radius **2 petak** → selalu 25 petak hidup, berapa pun jauhnya
+pemain sudah berjalan.
+
+**Isi tiap petak diturunkan dari koordinat petaknya sendiri lewat hash**
+(`coord.x * 73856093 ^ coord.y * 19349663`), bukan dari daftar yang disimpan. Petak
+yang sama selalu menghasilkan pohon yang sama persis, berapa kali pun ia keluar-masuk
+jangkauan. Tanpa itu "tak terbatas" berubah jadi "berbeda tiap kali menoleh", dan
+tidak ada satu pun tempat yang bisa dikenali.
+
+**`Random.state` WAJIB dipulihkan setelah membangkitkan petak.** Tanpa itu, satu petak
+baru menggeser seluruh keacakan game — jenis musuh, sebaran drop, arah semburan skill —
+dan semuanya jadi bergantung pada ke mana pemain kebetulan berjalan.
+
+Kerapatan di aset (`TreeCount` / `ScatterCount`) masih ditulis untuk arena lama, dan
+diubah jadi per-petak saat runtime dengan membaginya dengan luas arena referensi. Jadi
+angka di aset tetap terbaca sebagai **"seberapa rapat"**, bukan "berapa banyak".
+
+Petak yang tidak tersentuh satu frame langsung dibuang (`Evict`). Itulah yang membuat
+biaya memorinya ditentukan **luas layar**, bukan jarak tempuh.
+
+`View/InfiniteGround.cs` menempelkan bidang lantai ke rig kamera, dikancing ke kelipatan
+10 unit — bidang yang menempel persis membuat bayangannya bergeser halus tiap frame dan
+lantainya terlihat "berenang".
+
+### 18.3 Terukur
+
+Pemain dilempar ke **(594; −443)** — dulu mustahil, arena lama ±40×±30:
+
+```
+lantai ikut ke      (590; -440)
+hash origin         (594; -442)   <- ikut pemain, bukan (0,0)
+petak hutan         25            <- tetap, tidak menumpuk
+pengepungan         8/8 sektor
+fps                 59
+```
+
+Determinisme: petak (27,−16) dibaca, pemain lompat ke (3000; 3000) sehingga petak
+dibuang, lalu kembali. Tiga batang pertama **identik sampai desimal terakhir**.
+
+Beban gabungan di (200; 150): 141 musuh + boss 24 ruas + hutan 25 petak =
+**15 draw call props, 56 fps**, pengepungan 8/8.
+
+**Batas yang tersisa:** hash tetap 128×128 unit di sekitar pemain. Itu bukan batas
+dunia, tapi batas jangkauan pandang swarm — musuh yang lebih jauh dari 64 unit tidak
+ikut dalam gaya pisah maupun `BestCluster`. Karena musuh lahir dalam ~24 unit dari
+kamera, itu tidak pernah tercapai dalam permainan normal.
+
+### 18.4 Koreksi setelah dicoba user
+
+Tiga keluhan, tiga sebab berbeda.
+
+**1. "Kamera gerak-gerak gak jelas kalau sudah end" — ini BUG, bukan setelan.**
+
+`ArenaCamera` menghitung sasarannya dari `transform.position`, sementara transform itu
+sendiri sedang di-`SmoothDamp` MENUJU sasaran tersebut. Umpan balik yang tidak pernah
+mengendap: tiap frame sasarannya dihitung ulang dari titik yang selalu tertinggal, dan
+kameranya merayap pelan tanpa henti bahkan saat pemain berdiri sama sekali diam.
+
+Diperbaiki dengan menyimpan `_focus` sebagai field terpisah dari posisi kamera.
+Terverifikasi: pemain diparkir di (5; 3), rig mengendap tepat di **(0,6978; 0,3899)** —
+persis sasaran teoretisnya (5 − 4,30; 3 − 2,61) — dan **identik di dua sampel terpisah
+beberapa detik**.
+
+**2. "Pohonnya kebesaran".** Pohon setinggi 8 unit di kamera ortografis menutupi
+seperempat layar sendirian, dan yang tertutup selalu gerombolan. Tinggi 4–8,5 → **2,2–4**,
+lebar batang 0,3–0,6 → **0,18–0,34**, jumlah 85 → **55**.
+
+**3. "Rumputnya kebanyakan, ini berat banget."** Dua sebab, dan yang kedua jauh lebih
+besar dari yang pertama:
+
+- **Jumlah**: 1 400 → **260** (≈4 700 props tergambar → **1 117**).
+- **Matriks disusun ulang TIAP FRAME.** Ini penyebab utamanya. `EnemyRenderer` memang
+  menyusun ulang semuanya tiap frame — untuk swarm itu wajib, mereka berjalan. Pohon
+  tidak. Membayar lima ribu perkalian matriks per frame demi hasil yang identik dengan
+  frame sebelumnya adalah cara termudah menjatuhkan fps tanpa ada apa pun berubah
+  di layar.
+
+`View/PropBatch.cs` memanggang matriksnya sekali dan **hanya membangun ulang saat pemain
+menyeberang batas petak**. Selama masih di petak yang sama, biayanya cuma tiga panggilan
+`RenderMeshInstanced` dari buffer yang sudah ada.
+
+Bayangan props juga **dimatikan** — tiap rumpun yang melempar bayangan berarti satu lagi
+objek yang digambar ulang ke peta bayangan tiap frame. Bayangan panjang dari matahari
+rendah tetap ada, dari pemain dan musuh yang jumlahnya ratusan, bukan ribuan.
+
+Terukur sesudahnya: wave 20 dengan **158 musuh + boss 24 ruas + 1 117 props =
+11 draw call props, 59–61 fps**.
+
+### 18.5 Batas arena DIPASANG LAGI — dan kenapa melepasnya keliru
+
+Dibalik atas permintaan user, dengan alasan yang lebih tajam dari analisis awal:
+
+> Seluruh perilaku `PlayerMotor` adalah **menjauh dari tekanan kerumunan**. Tanpa dinding,
+> menjauh SELALU berhasil. Pemain berjalan lurus selamanya, gerombolan mengekor tanpa
+> pernah menyusul, dan tidak pernah ada alasan untuk melawan — wave tidak selesai karena
+> tidak ada yang mati.
+
+Ini pelajaran desain, bukan pelajaran teknis: **lapangan tak berbatas mematikan game yang
+gerak pemainnya otomatis dan defensif.** Dindingnya bukan pembatas teknis, dia bagian dari
+permainannya — terjepit di tepi adalah cara kalah yang sah, dan justru itu yang membuat
+kerumunan jadi ancaman.
+
+Yang dikembalikan:
+- `PlayerMotor.Clamp()` (elips arena)
+- `ArenaCamera._limitX/_limitZ`, dijepit pada **`_focus`** bukan pada posisi kamera —
+  menjepit posisi sementara sasarannya bebas membuat kamera terus mendorong ke dinding
+- Lantai jadi bidang tetap seukuran arena lagi; `View/InfiniteGround.cs` **dihapus**
+
+Yang **tetap dipertahankan** dari kerja "tak berujung", karena semuanya perbaikan sejati:
+- **Hutan berbasis petak** — biaya props ditentukan luas layar, bukan luas arena
+- **`PropBatch`** — matriks dipanggang, tidak disusun ulang tiap frame
+- **Spatial hash yang mengikuti pemain** — lebih tahan banting daripada terpaku titik nol
+- **`worldBounds` besar** — tidak ada batch yang hilang diam-diam
+
+Hutan sekarang dipakai untuk **membingkai dinding**: tiga kali lipat kandidat pohon
+disaring, yang di LUAR arena selalu lolos dan yang di dalam cuma sepertiganya. Hasilnya
+rimbun di luar, lapang di dalam — dindingnya terbaca sebagai batas pohon, bukan sebagai
+batas tak kasat mata tempat kontrol tiba-tiba macet.
+
+Terukur: pemain dilempar ke (500; 400) → ditarik balik ke (27,4; 21,9), di dalam elips;
+rig berhenti tepat di batas (20,4; 18,1). Wave 4 dengan loadout default: 49 kill, wave
+**beres karena lapangan bersih** di t=59,5 (bukan disapu jam), HP pemain utuh 100,
+1 661 props di 11 draw call, 59 fps.
