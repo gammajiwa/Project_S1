@@ -73,6 +73,69 @@ namespace Proto
         [Tooltip("Kutukan yang ditempelkan gigitannya. Boleh kosong.")]
         public BuffDefinition Curse;
 
+        // =====================================================================================
+        //  kelabang: menyelam ke tanah lalu menyembur keluar
+        // =====================================================================================
+        //
+        // Ini bukan boss kedua yang ditulis dari nol. Badannya sudah menapaki jejak kepalanya, dan
+        // jejak itu menyimpan KETINGGIAN juga — jadi begitu kepalanya menukik ke bawah tanah lalu
+        // melengkung naik, seluruh badannya mengikuti busur itu sendiri, satu per satu, persis
+        // seperti cacing yang menyembur. Tidak ada satu baris pun animasi badan yang perlu ditulis.
+
+        [Header("Menyelam (kelabang)")]
+        [Tooltip("Nyalakan untuk boss yang hidup DI BAWAH tanah dan cuma melompat keluar sesekali.")]
+        public bool Burrows;
+
+        [Tooltip("Lama SATU lompatan busur, dari menyembul sampai menukik masuk lagi.\n\n" +
+                 "Pendek dengan sengaja. Kepala yang bertahan lama di atas tanah tidak terbaca " +
+                 "sebagai melompat — terbaca sebagai berjalan-jalan di permukaan.")]
+        public float ArcDuration = 1.1f;
+
+        [Tooltip("Setinggi apa lompatannya. Inilah satu-satunya saat ia bisa dipukul.")]
+        public float ArcHeight = 4.5f;
+
+        [Tooltip("Berapa kali melompat berturut-turut sebelum menyelam dalam.\n\n" +
+                 "Ini yang membuatnya terbaca seperti lumba-lumba: bukan satu lompatan lalu hilang, " +
+                 "tapi dua-tiga lompatan beruntun sambil menembus, baru menghilang.")]
+        [Min(1)] public int BreachBurst = 3;
+
+        [Tooltip("Celupan DANGKAL di antara lompatan beruntun. Bukan menyelam penuh.")]
+        public float DipDuration = 0.45f;
+
+        [Tooltip("Detik ia menghilang dalam-dalam setelah rentetan lompatannya habis. " +
+                 "Selama terbenam ia KEBAL — itu harga yang dibayar pemain karena tak bisa mengejar.")]
+        public float DiveInterval = 5.5f;
+
+        [Tooltip("Sedalam apa ia menyelam. Harus lebih dalam dari ambang terbenam.")]
+        public float DiveDepth = 5f;
+
+        [Header("Semburan racun")]
+        [Tooltip("Jeda antar semburan saat berada di permukaan. 0 = tidak menyembur.")]
+        public float SpitInterval = 0.85f;
+
+        public float SpitDamage = 14f;
+
+        public float SpitSpeed = 11f;
+
+        [Tooltip("Kutukan yang ditempelkan semburannya ke PEMAIN. Ailment tinggal di musuh; " +
+                 "pemain punya jalur debuff-nya sendiri, dan mencampur keduanya cuma bikin satu " +
+                 "di antaranya jadi kebohongan.")]
+        public BuffDefinition SpitCurse;
+
+        [Header("Anak buah")]
+        [Tooltip("Nyalakan untuk versi KECIL: muncul di wave biasa, tidak mengumumkan diri, dan " +
+                 "tidak menampilkan bar HP boss.\n\n" +
+                 "Seluruh sistemnya dipakai ulang apa adanya — ruas, jejak, menyelam, semburan. " +
+                 "Yang membedakan boss dari anak buah cuma ukurannya dan apakah layar berteriak " +
+                 "saat ia datang.")]
+        public bool Minion;
+
+        [Tooltip("Khusus anak buah: mulai muncul dari wave ini.")]
+        [Min(1)] public int MinionFromWave = 6;
+
+        [Tooltip("Khusus anak buah: berapa ekor per wave. Bertambah pelan seiring wave.")]
+        [Min(1)] public int MinionCount = 2;
+
         [Header("Warna")]
         public Color HeadColor = new Color(0.85f, 0.25f, 0.35f);
         public Color BodyColor = new Color(0.45f, 0.18f, 0.3f);

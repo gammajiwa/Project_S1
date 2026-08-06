@@ -30,5 +30,19 @@ MonoBehaviour:
   BiteDamage: 26
   BiteRange: 2.8
   Curse: {fileID: 11400000, guid: e97438df91f41354f9a9d59fa4e3aa12, type: 2}
+  Burrows: 0
+  ArcDuration: 1.1
+  ArcHeight: 3.2
+  BreachBurst: 3
+  DipDuration: 0.45
+  DiveInterval: 4.5
+  DiveDepth: 4
+  SpitInterval: 0.85
+  SpitDamage: 14
+  SpitSpeed: 11
+  SpitCurse: {fileID: 0}
+  Minion: 0
+  MinionFromWave: 6
+  MinionCount: 2
   HeadColor: {r: 0.95, g: 0.32, b: 0.28, a: 1}
   BodyColor: {r: 0.42, g: 0.16, b: 0.32, a: 1}

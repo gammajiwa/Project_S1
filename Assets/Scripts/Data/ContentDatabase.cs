@@ -22,8 +22,8 @@ namespace Proto
         [SerializeField] List<EnemyArchetype> _archetypes = new List<EnemyArchetype>();
         [SerializeField] List<HeroLoadout> _heroes = new List<HeroLoadout>();
 
-        [Tooltip("Boss ular. Satu saja — dua boss sekaligus bukan boss.")]
-        [SerializeField] BossDefinition _boss;
+        [Tooltip("Jenis-jenis boss. Tiap wave boss memilih dari daftar ini.")]
+        [SerializeField] List<BossDefinition> _bosses = new List<BossDefinition>();
 
         readonly Dictionary<string, PieceDefinition> _byId = new Dictionary<string, PieceDefinition>();
         readonly List<PieceDefinition> _runes = new List<PieceDefinition>();
@@ -41,10 +41,17 @@ namespace Proto
         public IReadOnlyList<EnemyArchetype> Archetypes => _archetypes;
         public IReadOnlyList<HeroLoadout> Heroes => _heroes;
 
-        public BossDefinition Boss => _boss;
+        public IReadOnlyList<BossDefinition> BossKinds => _bosses;
+
+        /// <summary>Satu jenis boss acak, atau null kalau belum ada yang dibuat.</summary>
+        public BossDefinition Boss =>
+            _bosses.Count == 0 ? null : _bosses[Random.Range(0, _bosses.Count)];
 
 #if UNITY_EDITOR
-        public void EditorSetBoss(BossDefinition boss) => _boss = boss;
+        public void EditorAddBoss(BossDefinition boss)
+        {
+            if (boss != null && !_bosses.Contains(boss)) _bosses.Add(boss);
+        }
 #endif
 
         /// <summary>The hero a run starts as. Null only when none have been authored.</summary>

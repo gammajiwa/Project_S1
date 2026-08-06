@@ -63,8 +63,14 @@ namespace Proto.EditorTools
 
             EditorUtility.SetDirty(boss);
 
-            db.EditorSetBoss(boss);
+            db.EditorAddBoss(boss);
             EditorUtility.SetDirty(db);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Centipede(db);
+            Grub(db);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -72,6 +78,130 @@ namespace Proto.EditorTools
             Debug.Log($"[BossPass] '{boss.DisplayName}' siap: {boss.MaxSegments} ruas, " +
                       $"HP x{boss.HpMultiplier}, gigit {boss.BiteDamage}. Tersambung ke database.");
             Selection.activeObject = boss;
+        }
+
+        /// <summary>
+        /// Kelabang raksasa yang menyelam ke tanah lalu menyembur keluar.
+        ///
+        /// Perhatikan berapa sedikit yang berbeda dari ular: badannya menapaki jejak kepala, dan
+        /// jejak itu menyimpan ketinggian — jadi begitu kepalanya menukik dan melengkung naik,
+        /// seluruh badan mengikuti busur itu sendiri. Tidak ada animasi badan yang ditulis.
+        /// </summary>
+        static void Centipede(ContentDatabase db)
+        {
+            var a = Load("Boss_centipede");
+
+            a.Id = "centipede";
+            a.DisplayName = "The Gorging Coil";
+            a.Burrows = true;
+
+            // Lebih panjang dan lebih rapat dari ular: kelabang harus terbaca sebagai satu barisan
+            // kaki yang tak habis-habis saat menyembur keluar tanah.
+            a.MaxSegments = 30;
+            a.MinSegments = 5;
+            a.Spacing = 0.85f;
+            a.HeadScale = 2.9f;
+            a.TailScale = 0.7f;
+
+            a.HpMultiplier = 110f;
+
+            // Tidak mengitari — ia MENGEJAR di bawah tanah lalu menyembur tepat di kaki pemain.
+            a.Speed = 7.5f;
+            a.LungeSpeed = 7.5f;
+            a.TurnRate = 110f;
+            a.Wander = 0.6f;
+            a.OrbitRadius = 4f;
+
+            // Melompat tiga kali beruntun, lalu hilang lima setengah detik. Busurnya cuma 1,1
+            // detik: kepala yang bertahan lama di atas tanah tidak terbaca sebagai melompat.
+            a.ArcDuration = 1.1f;
+            a.ArcHeight = 5.5f;
+            a.BreachBurst = 3;
+            a.DipDuration = 0.4f;
+            a.DiveInterval = 5.5f;
+            a.DiveDepth = 6f;
+
+            // Melintasi pemain ITU serangannya. Tidak ada terjangan terpisah.
+            a.BiteDamage = 30f;
+            a.BiteRange = 3.2f;
+            a.LungeInterval = 999f;
+            a.Curse = FindCurse(db, "weakened");
+
+            a.SpitInterval = 0.7f;
+            a.SpitDamage = 15f;
+            a.SpitSpeed = 12f;
+            a.SpitCurse = FindCurse(db, "drained");
+
+            a.HeadColor = new Color(0.75f, 0.85f, 0.3f);
+            a.BodyColor = new Color(0.35f, 0.42f, 0.18f);
+
+            EditorUtility.SetDirty(a);
+            db.EditorAddBoss(a);
+        }
+
+        /// <summary>Versi kecilnya, ikut wave biasa. Sistem yang sama, angka yang jauh lebih kecil.</summary>
+        static void Grub(ContentDatabase db)
+        {
+            var a = Load("Boss_grub");
+
+            a.Id = "grub";
+            a.DisplayName = "Coilspawn";
+            a.Burrows = true;
+            a.Minion = true;
+            a.MinionFromWave = 6;
+            a.MinionCount = 2;
+
+            a.MaxSegments = 7;
+            a.MinSegments = 3;
+            a.Spacing = 0.6f;
+            a.HeadScale = 1.15f;
+            a.TailScale = 0.45f;
+
+            // Setara beberapa musuh biasa, bukan boss. Ia mengganggu, bukan menghadang.
+            a.HpMultiplier = 5f;
+
+            a.Speed = 6.5f;
+            a.LungeSpeed = 6.5f;
+            a.TurnRate = 140f;
+            a.Wander = 0.9f;
+            a.OrbitRadius = 3f;
+
+            a.ArcDuration = 0.8f;
+            a.ArcHeight = 2.6f;
+            a.BreachBurst = 2;
+            a.DipDuration = 0.3f;
+            a.DiveInterval = 3.6f;
+            a.DiveDepth = 3.5f;
+
+            a.BiteDamage = 9f;
+            a.BiteRange = 1.7f;
+            a.LungeInterval = 999f;
+            a.Curse = null;
+
+            a.SpitInterval = 1.4f;
+            a.SpitDamage = 6f;
+            a.SpitSpeed = 10f;
+            a.SpitCurse = null;
+
+            a.HeadColor = new Color(0.66f, 0.78f, 0.34f);
+            a.BodyColor = new Color(0.3f, 0.38f, 0.2f);
+
+            EditorUtility.SetDirty(a);
+            db.EditorAddBoss(a);
+        }
+
+        static BossDefinition Load(string fileName)
+        {
+            string path = Root + "/Enemies/" + fileName + ".asset";
+            var asset = AssetDatabase.LoadAssetAtPath<BossDefinition>(path);
+
+            if (asset == null)
+            {
+                asset = ScriptableObject.CreateInstance<BossDefinition>();
+                AssetDatabase.CreateAsset(asset, path);
+            }
+
+            return asset;
         }
 
         /// <summary>

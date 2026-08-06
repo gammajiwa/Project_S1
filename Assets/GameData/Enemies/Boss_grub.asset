@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cc383ad6c618d4aae22343ea7830c2, type: 3}
+  m_Name: Boss_grub
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BossDefinition
+  Id: grub
+  DisplayName: Coilspawn
+  MaxSegments: 7
+  MinSegments: 3
+  Spacing: 0.6
+  HeadScale: 1.15
+  TailScale: 0.45
+  HpMultiplier: 5
+  OrbitRadius: 3
+  Speed: 6.5
+  LungeSpeed: 6.5
+  TurnRate: 140
+  Wander: 0.9
+  LungeInterval: 999
+  LungeDuration: 1.8
+  BiteDamage: 9
+  BiteRange: 1.7
+  Curse: {fileID: 0}
+  Burrows: 1
+  ArcDuration: 0.8
+  ArcHeight: 2.6
+  BreachBurst: 2
+  DipDuration: 0.3
+  DiveInterval: 3.6
+  DiveDepth: 3.5
+  SpitInterval: 1.4
+  SpitDamage: 6
+  SpitSpeed: 10
+  SpitCurse: {fileID: 0}
+  Minion: 1
+  MinionFromWave: 6
+  MinionCount: 2
+  HeadColor: {r: 0.66, g: 0.78, b: 0.34, a: 1}
+  BodyColor: {r: 0.3, g: 0.38, b: 0.2, a: 1}
