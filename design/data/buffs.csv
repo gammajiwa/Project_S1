@@ -1,0 +1,18 @@
+﻿sep=,
+Id,Nama,Kutukan,Durasi,Mods,Blurb
+afterimage,Afterimage,no,4,DamagePct+0.4; MoveSpeed+0.8,Bayangan yang tertinggal ikut memukul. Damage naik sesaat setelah berkedip.
+aliran,FLOW,no,6,CooldownPct+0.4,Cooldowns run 40% faster.
+bara,EMBER,no,8,DamagePct+0.25,All skill damage +25% for 8 seconds.
+fokus,FOCUS,no,7,AreaPct+0.3; RangePct+0.3,Range and area +30%.
+fortify,Fortify,no,8,Defense+14,Kulit mengeras. Tiap pukulan yang masuk dipangkas.
+frenzy,FRENZY,no,8,CooldownPct+0.06; DamagePct+0.06,"Satu tumpukan tiap musuh mati. Tiap tumpukan: -6% cooldown, +6% damage."
+kutukberat,SLUGGISH,yes,5,CooldownPct-0.35,Cooldown semua skill naik 35%.
+kutukkering,DRAINED,yes,6,ManaRegen-7; ManaCostPct-0.3,Mana berhenti mengalir dan tiap cast jadi lebih mahal.
+kutuklemah,WEAKENED,yes,5,DamagePct-0.3,Damage semua skill turun 30%.
+kutuktimah,LEADEN,yes,4,MoveSpeed-1.5,Kecepatan menghindar turun drastis. Susah keluar dari kerumunan.
+naluri,INSTINCT,no,6,CritChance+0.25; CritDamage+0.5,"Crit chance +25%, crit damage +50%."
+perisai,AEGIS,no,10,Defense+12; HpRegen+2,Defence +12 and HP regen +2 per second.
+power,POWER,no,9,CritChance+0.07; CritDamage+0.12,"Satu tumpukan tiap musuh mati. Tiap tumpukan: +7% peluang crit, +12% damage crit."
+quickcast,Quickcast,no,6,CooldownPct+0.3,Semua cooldown di buku memendek.
+sumur,WELLSPRING,no,8,ManaRegen+6,Mana regen +6 per second.
+swift,Quickfoot,no,5,MoveSpeed+1.5,Kaki ringan. Menghindar jadi jauh lebih cepat.

@@ -1,0 +1,6 @@
+﻿sep=,
+Id,Nama,FromWave,Weight,WeightPerWave,WeightMax,HpMultiplier,SpeedMultiplier,Scale,HoverHeight,UseTint,Tint,PreferredRange,Flanks,AttackInterval,AttackDamage,ShotSpeed,ShotColor,Curse,Blurb
+cursed,Cursed,3,1.2,0.25,20,1.6,0.85,1.45,0,yes,r=0.5 g=0.32 b=0.5 a=1,0,yes,0,8,11,r=0.7 g=1 b=0.5 a=1,WEAKENED,"Besar, lambat, tebal. Menempelkan kutukan tiap kali menyentuhmu."
+grunt,Grunt,1,10,0,20,1,1,1,0,no,r=1 g=1 b=1 a=1,0,yes,0,8,11,r=0.7 g=1 b=0.5 a=1,,"Berjalan lurus ke arahmu. Tidak ada yang istimewa, dan jumlahnya banyak."
+spitter,Spitter,7,1,0.3,20,1.15,0.9,1.1,0,yes,r=0.45 g=0.62 b=0.35 a=1,11,yes,2.2,9,12,r=0.65 g=1 b=0.45 a=1,,Berhenti di luar jangkauan dan meludah. Butuh skill ber-JANGKAUAN panjang untuk menyentuhnya sebelum wave menutup.
+stalker,Stalker,5,1.5,0.35,20,0.5,1.55,0.75,2.3,yes,r=0.55 g=0.78 b=0.95 a=1,0,no,0,8,11,r=0.7 g=1 b=0.5 a=1,,"Terbang, cepat, tipis. Menukik lurus — tidak ikut memutar mengepung."

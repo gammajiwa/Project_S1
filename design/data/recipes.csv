@@ -1,0 +1,103 @@
+﻿sep=,
+Hasil,HasilBintang,Bahan1,Bahan2,Bahan3,JumlahBahan,TotalPetakBahan
+Absolute Zero,5,Frost Prism,Blizzard,Snowstorm,3,13
+Absolute Zero,5,Winter's End,Rime Nova,,2,12
+Ashfall,2,Cinder Patch,Fire Rain,,2,4
+Ashfall,2,Cinder Patch,Cinder Patch,,2,4
+Snowstorm,2,Frost Nova,Poison Pool,,2,6
+Blizzard,2,Frost Nova,Frost Nova,,2,6
+Blizzard,2,Whirling Blade,Frost Nova,,2,5
+Blizzard,2,Pulse Sigil,Frost Nova,,2,5
+Bulwark,4,Aegis,Aegis,,2,8
+Cataclysm,5,Doom Nova,Meteor,,2,12
+Cataclysm,5,Ragnarok,Firestorm Core,,2,11
+Chain Lightning,2,Arc Bolt,Lightning Slash,,2,6
+Chain Lightning,2,Arc Bolt,Spark Bolt,,2,4
+Chaos Meteor,4,Rolling Ember,Sun Strike,,2,9
+Rolling Ember,2,Shove,Fireball,,2,4
+Cleansing Dawn,2,Cleansing Light,Minor Heal,,2,3
+Cleansing Dawn,2,Cleansing Light,Ward Sigil,,2,3
+Firestorm Core,3,Inferno Wave,Ashfall,,2,8
+Firestorm Core,3,Greater Fireball,Ashfall,,2,8
+Frostbite Field,2,Hailstorm,Frost Nova,,2,5
+Frostbite Field,2,Hailstorm,Ice Lance,,2,5
+Glacial Spike,2,Frost Shard,Ice Lance,,2,4
+Glacial Spike,2,Frost Shard,Frost Shard,,2,2
+Gravity Well,2,Vortex,Whirling Blade,,2,5
+Gravity Well,2,Vortex,Poison Pool,,2,6
+Greater Fireball,2,Fireball,Fireball,,2,2
+Greater Fireball,2,Fire Rain,Fireball,,2,3
+Greater Fireball,2,Ember Sigil,Fireball,,2,3
+Greater Heal,2,Minor Heal,Minor Heal,,2,2
+Greater Heal,2,Vitality Sigil,Minor Heal,,2,3
+Inferno Wave,2,Flame Lash,Fireball,,2,3
+Inferno Wave,2,Flame Lash,Ember Burst,,2,4
+Ion Storm,3,Storm Cell,Thunderclap,,2,6
+Ion Storm,3,Storm Cell,Chain Lightning,,2,6
+Frenzy Release,3,Frenzy Sigil,Fire Rain,,2,4
+Frenzy Release,3,Frenzy Sigil,Ember Burst,,2,4
+Maelstrom,5,Tornado,Whirlwind,,2,13
+Mana Well,2,Lesser Ward,Fleetfoot,,2,4
+Meteor,3,Greater Fireball,Greater Fireball,,2,8
+Meteor,3,Fire Rain,Fire Rain,Frost Prism,3,9
+Doom Nova,4,Meteor,Frost Prism,,2,10
+Doom Nova,4,Lightning Slash,Lightning Slash,Arc Bolt,3,9
+Null Sphere,3,Void Lance,Gravity Well,,2,8
+Null Sphere,3,Void Lance,Steam Burst,,2,8
+Plague Bloom,3,Poison Pool,Gravity Well,,2,7
+Plague Bloom,3,Poison Pool,Void Lance,,2,7
+Plague Brand,1,Poison Pool,Vortex,,2,6
+Frost Prism,3,Blizzard,Frost Nova,Wellspring Sigil,3,9
+Frost Prism,3,Whirling Blade,Lightning Slash,Wellspring Sigil,3,7
+Quickcast,2,Fleetfoot,Fleetfoot,,2,4
+Ragnarok,4,Firestorm Core,Meteor,,2,10
+Ragnarok,4,Firestorm Core,Firestorm Core,,2,10
+Reckoning,4,Rupture,Firestorm Core,,2,10
+Reckoning,4,Rupture,Meteor,,2,10
+Rime Nova,3,Frostbite Field,Blizzard,,2,8
+Rime Nova,3,Glacial Spike,Snowstorm,,2,8
+Current Rune,2,Ember Sigil,Pulse Sigil,,2,4
+Whetstone Rune,2,Keen Sigil,Chain Sigil,,2,3
+Storm Rune,3,Ember Sigil,Ember Sigil,Chain Sigil,3,6
+Bastion Rune,2,Vitality Sigil,Flowing Ink,,2,4
+Nadir Rune,3,Razor Sigil,Grand Sigil,,2,8
+Siphon Rune,2,Pulse Sigil,Wellspring Sigil,,2,4
+Rupture,3,Sunder,Whirling Blade,,2,6
+Grand Sigil,2,Vitality Sigil,Vitality Sigil,,2,4
+Conduit Sigil,2,Ember Sigil,Wellspring Sigil,,2,4
+Power Sigil,2,Frenzy Sigil,Keen Sigil,,2,3
+Purifier Sigil,2,Ward Sigil,Ward Sigil,,2,2
+Purifier Sigil,2,Ward Sigil,Wellspring Sigil,,2,3
+Razor Sigil,2,Keen Sigil,Keen Sigil,,2,2
+Singularity,5,Doom Nova,Vortex,Poison Pool,3,13
+Singularity,5,Null Sphere,Plague Bloom,,2,10
+Snowstorm,2,Vortex,Frost Nova,,2,6
+Solar Flare,5,Sun Strike,Chaos Meteor,,2,12
+Steam Burst,2,Fireball,Frost Nova,,2,4
+Steam Burst,2,Fireball,Frost Shard,,2,2
+Steam Burst,2,Poison Pool,Fire Rain,,2,5
+Steam Burst,2,Flowing Ink,Whirling Blade,,2,4
+Stormbreaker,5,Thunder Crown,Tempest,,2,12
+Stormbreaker,5,Thunder Crown,Ion Storm,,2,12
+Storm Shards,3,Spark Shards,Sun Lance,,2,7
+Sunder,2,Plague Brand,Poison Pool,,2,5
+Sunder,2,Plague Brand,Plague Brand,,2,4
+Sun Lance,2,Spark Shards,Fireball,,2,4
+Sun Strike,3,Sun Lance,Sun Lance,,2,8
+Tempest,3,Thunderclap,Chain Lightning,,2,8
+Tempest,3,Thunderclap,Thunderclap,,2,8
+Thunderclap,2,Static Field,Spark Bolt,,2,3
+Thunderclap,2,Static Field,Static Field,,2,4
+Thunder Crown,4,Tempest,Ion Storm,,2,10
+Thunder Crown,4,Tempest,Tempest,,2,10
+Tornado,4,Whirlwind,Whirlwind,,2,10
+Void Lance,2,Rift Chain,Whirling Blade,,2,4
+Void Lance,2,Rift Chain,Rift Chain,,2,4
+Void Step,3,Blink Step,Quickcast,,2,6
+Void Step,3,Blink Step,Blink Step,Fleetfoot,3,6
+Vortex,1,Arc Bolt,Whirling Blade,,2,5
+Aegis,2,Lesser Ward,Lesser Ward,,2,4
+Whirlwind,3,Shove,Rolling Ember,,2,7
+Whirlwind,3,Shove,Shove,Spark Shards,3,9
+Winter's End,4,Rime Nova,Frost Prism,,2,10
+Winter's End,4,Rime Nova,Rime Nova,,2,10
