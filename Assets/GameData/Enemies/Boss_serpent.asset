@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cc383ad6c618d4aae22343ea7830c2, type: 3}
+  m_Name: Boss_serpent
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BossDefinition
+  Id: serpent
+  DisplayName: The Coiled Dread
+  MaxSegments: 24
+  MinSegments: 4
+  Spacing: 1.05
+  HeadScale: 2.6
+  TailScale: 0.85
+  HpMultiplier: 90
+  OrbitRadius: 13
+  Speed: 6.5
+  LungeSpeed: 15
+  TurnRate: 150
+  Wander: 1.4
+  LungeInterval: 6
+  LungeDuration: 1.8
+  BiteDamage: 26
+  BiteRange: 2.8
+  Curse: {fileID: 11400000, guid: e97438df91f41354f9a9d59fa4e3aa12, type: 2}
+  HeadColor: {r: 0.95, g: 0.32, b: 0.28, a: 1}
+  BodyColor: {r: 0.42, g: 0.16, b: 0.32, a: 1}
