@@ -17,25 +17,56 @@ MonoBehaviour:
   BagWidth: 5
   BagHeight: 4
   BaseMaxHp: 100
-  BaseMaxMana: 100
-  BaseManaRegen: 16
+  BaseMaxMana: 120
+  BaseManaRegen: 10
   BaseHpRegen: 2
   HealPerWaveClear: 20
-  EnemiesBase: 5
-  EnemiesPerWave: 2
-  EnemyHpBase: 16
-  EnemyHpPerWave: 5
+  BaseMoveSpeed: 3.2
+  DangerRadius: 6
+  TurnRate: 6
+  ArenaHalfX: 16
+  ArenaHalfZ: 9
+  SpawnRateBase: 0.8
+  SpawnRatePerWave: 0.28
+  SpawnRateGrowth: 1.03
+  SurgeSpawnMultiplier: 1.25
+  WaveRampStart: 0.55
+  WaveRampEnd: 1.6
+  EnemyHpBase: 18
+  EnemyHpPerWave: 4
   EnemySpeedMin: 1.5
   EnemySpeedMax: 2.1
   EnemySpeedPerWave: 0.04
-  EnemyContactDps: 7
-  SpawnIntervalBase: 0.6
-  SpawnIntervalPerWave: 0.02
-  SpawnIntervalMin: 0.2
-  MaxAliveEnemies: 200
+  EnemyContactDps: 10
+  SpawnWindowBase: 30
+  SpawnWindowPerWave: 2.5
+  SpawnWindowMax: 80
+  ClosingSpeedMultiplier: 1.9
+  ClosingTimeout: 25
+  SpawnBoundsX: 24
+  SpawnBoundsZ: 15
+  CurseFromWave: 3
+  CurseChanceBase: 0.08
+  CurseChancePerWave: 0.012
+  CurseChanceMax: 0.3
+  CurseScale: 1.45
+  CurseHpMultiplier: 1.6
+  EnemySeparation: 1.3
+  SeparationWeight: 1.7
+  InterceptLead: 1.1
+  FlankWidth: 6
+  FlankFade: 5
+  MaxAliveEnemies: 500
+  EnemyHpGrowth: 1.05
+  SurgeEveryWaves: 5
+  SurgeHpMultiplier: 1.15
+  ChainJumpRange: 5.5
+  SkyFallHeight: 14
+  SkyFallSpeed: 52
   KillDropChance: 0.12
   WaveClearDrops: 3
   RuneShareOfDrops: 0.25
+  MaxDropsPerWave: 8
   ShopEveryWaves: 3
   ShopSlots: 6
   RerollCostStart: 20

@@ -47,9 +47,11 @@ namespace Proto
             var enemies = managerGo.AddComponent<EnemyManager>();
 
             var caster = playerGo.AddComponent<PlayerCaster>();
+            var motor = playerGo.AddComponent<PlayerMotor>();
 
             enemies.Init(playerGo.transform, caster, _balance, _database);
             caster.Init(enemies, _database, _balance);
+            motor.Init(enemies, caster, _balance);
 
             var shake = cam.gameObject.AddComponent<CameraShake>();
 
@@ -58,6 +60,14 @@ namespace Proto
 
             // Single-target casts stay quiet; only the ones that cover ground get a nudge.
             caster.OnCast += inst => { if (IsHeavy(inst.Def.Kind)) shake.Add(0.07f); };
+
+            // Enemies used to just wink out of existence. A pop on death is what makes clearing a
+            // pack read as an event instead of a disappearance.
+            enemies.OnKill += caster.DeathBurst;
+
+            // The end-of-wave sweep pops too, so the board clearing reads as an event rather than
+            // as everything quietly vanishing.
+            enemies.OnSweep += caster.DeathBurst;
 
             var uiGo = new GameObject("GrimoireUI");
             uiGo.transform.SetParent(transform, false);

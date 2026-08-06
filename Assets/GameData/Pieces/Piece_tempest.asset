@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_tempest
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: tempest
+  DisplayName: Tempest
+  Stars: 3
+  Layer: 1
+  Shape: 9
+  Color: {r: 0.9408, g: 0.89640003, b: 0.482, a: 1}
+  Icon: {fileID: 21300000, guid: 9e0f7f2b22b145744881c9d4ab1a7b88, type: 3}
+  Kind: 4
+  Element: 2
+  BaseDamage: 74
+  BaseCooldown: 3
+  Radius: 6.2
+  Range: 12
+  Hits: 1
+  ManaCost: 35
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  AppliedStatus: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
+  StatusDuration: 5
+  AppliedPoints: 3
+  LegacyStatus: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. Calls the storm down onto the densest pack.

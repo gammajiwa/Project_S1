@@ -36,11 +36,19 @@ namespace Proto
         public float RadiusBonus;
     }
 
-    /// <summary>A recipe group sitting on the board: the span it covers and whether it is complete.</summary>
+    /// <summary>A recipe group sitting on the board: which pieces are in it, and whether it is complete.</summary>
     public class EvoPreview
     {
-        public Vector2Int From;
-        public Vector2Int To;
+        /// <summary>
+        /// Centre of each ingredient, in grid-cell space (so a 2x2 piece at the origin sits at
+        /// 0.5, 0.5). The UI draws the connectors between these points.
+        ///
+        /// This used to be a bounding box instead, which the UI filled in as a coloured rectangle.
+        /// A box says "something around here"; it cannot say WHICH pieces belong to the recipe, and
+        /// with several groups on the board at once the boxes overlap and answer nothing.
+        /// </summary>
+        public Vector2[] Members;
+
         public bool Complete;
         public string ResultName;
     }
@@ -51,8 +59,11 @@ namespace Proto
     /// </summary>
     public class Backpack
     {
-        public const int Width = 4;
-        public const int Height = 3;
+        // 5x4, which is what GameBalance.BagWidth/BagHeight and the HUD layout always assumed —
+        // the column reserves exactly this much room above the sell box. At 4x3 a 3x3 skill filled
+        // three quarters of the bag, and now that the top tier IS 3x3 that had to give.
+        public const int Width = 5;
+        public const int Height = 4;
 
         public readonly List<RuneInstance> Placed = new List<RuneInstance>();
 
@@ -480,21 +491,23 @@ namespace Proto
 
         static EvoPreview MakePreview(List<RuneInstance> group, bool complete, string resultName)
         {
-            var min = new Vector2Int(int.MaxValue, int.MaxValue);
-            var max = new Vector2Int(int.MinValue, int.MinValue);
+            var members = new Vector2[group.Count];
 
             for (int i = 0; i < group.Count; i++)
             {
+                Vector2 sum = Vector2.zero;
+                int cells = 0;
+
                 foreach (var c in group[i].Cells())
                 {
-                    if (c.x < min.x) min.x = c.x;
-                    if (c.y < min.y) min.y = c.y;
-                    if (c.x > max.x) max.x = c.x;
-                    if (c.y > max.y) max.y = c.y;
+                    sum += new Vector2(c.x, c.y);
+                    cells++;
                 }
+
+                members[i] = cells == 0 ? sum : sum / cells;
             }
 
-            return new EvoPreview { From = min, To = max, Complete = complete, ResultName = resultName };
+            return new EvoPreview { Members = members, Complete = complete, ResultName = resultName };
         }
 
         /// <summary>Finds a matching, unlocked, in-line group for one recipe and merges it.</summary>
@@ -587,7 +600,16 @@ namespace Proto
             return true;
         }
 
-        /// <summary>Tries to seat the evolved skill somewhere inside the footprint the pair vacated.</summary>
+        /// <summary>
+        /// Seats the evolved skill, preferring the ground its ingredients just vacated so the build
+        /// keeps its shape.
+        ///
+        /// The board-wide fallback matters now that results are bigger and stranger than the parts
+        /// that make them: a Ring needs eight rune cells in a very particular arrangement, and the
+        /// cells the ingredients freed up will often not contain one. Without the fallback the merge
+        /// simply fails, the ingredients are put back, and the player sees a completed gold recipe
+        /// produce nothing at all — with no way to tell why.
+        /// </summary>
         bool SeatEvolved(PieceDefinition evolved, List<Vector2Int> footprint)
         {
             for (int rot = 0; rot < 4; rot++)
@@ -595,6 +617,17 @@ namespace Proto
                 for (int i = 0; i < footprint.Count; i++)
                 {
                     if (Place(evolved, footprint[i], rot) != null) return true;
+                }
+            }
+
+            for (int rot = 0; rot < 4; rot++)
+            {
+                for (int y = 0; y < Height; y++)
+                {
+                    for (int x = 0; x < Width; x++)
+                    {
+                        if (Place(evolved, new Vector2Int(x, y), rot) != null) return true;
+                    }
                 }
             }
 

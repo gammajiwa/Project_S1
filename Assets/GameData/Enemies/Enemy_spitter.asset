@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a6c106bc3bffeb4bb0c7c37ebd107c3, type: 3}
+  m_Name: Enemy_spitter
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
+  Id: spitter
+  DisplayName: Spitter
+  FromWave: 7
+  Weight: 1
+  WeightPerWave: 0.3
+  WeightMax: 20
+  HpMultiplier: 1.15
+  SpeedMultiplier: 0.9
+  Scale: 1.1
+  HoverHeight: 0
+  UseTint: 1
+  Tint: {r: 0.45, g: 0.62, b: 0.35, a: 1}
+  PreferredRange: 11
+  Flanks: 1
+  AttackInterval: 2.2
+  AttackDamage: 9
+  ShotSpeed: 12
+  ShotColor: {r: 0.65, g: 1, b: 0.45, a: 1}
+  Curse: {fileID: 0}
+  Blurb: Berhenti di luar jangkauan dan meludah. Butuh skill ber-JANGKAUAN panjang
+    untuk menyentuhnya sebelum wave menutup.

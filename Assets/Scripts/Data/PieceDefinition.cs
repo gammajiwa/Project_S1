@@ -26,6 +26,11 @@ namespace Proto
 
         public Color Color = Color.white;
 
+        [Tooltip("Placeholder digenerate lewat Tools/Grimoire/Generate Placeholder Icons. " +
+                 "Buat ganti art: timpa file PNG-nya di Assets/GameData/Icons — generator tidak " +
+                 "pernah menimpa file yang sudah ada. Kosong = jatuh balik ke kotak warna.")]
+        public Sprite Icon;
+
         [Header("Behaviour")]
         public CastKind Kind = CastKind.Projectile;
 

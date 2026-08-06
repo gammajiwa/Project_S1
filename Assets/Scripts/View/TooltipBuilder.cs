@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
@@ -8,22 +7,17 @@ namespace Proto
     /// Turns a piece into the text shown on hover. Pulled out of GrimoireUI because none of it
     /// touches the canvas — it is string building, and it was a fifth of that file.
     ///
-    /// Owning the inventory is left to the caller: <paramref name="ownedCount"/> is injected so this
-    /// class never has to know about the grimoire, the bag, the floor and the cursor separately.
+    /// Recipes moved out to <see cref="RecipePanel"/>, which draws them as icons — this is the stat
+    /// card only, and it no longer needs to know what the player owns.
     /// </summary>
     public class TooltipBuilder
     {
-        readonly ContentDatabase _db;
         readonly GameBalance _balance;
-        readonly System.Func<PieceDefinition, int> _ownedCount;
         readonly StringBuilder _sb = new StringBuilder(512);
 
-        public TooltipBuilder(ContentDatabase db, GameBalance balance,
-            System.Func<PieceDefinition, int> ownedCount)
+        public TooltipBuilder(GameBalance balance)
         {
-            _db = db;
             _balance = balance;
-            _ownedCount = ownedCount;
         }
 
         public string Build(PieceDefinition def, CompiledSpell spell, string origin)
@@ -46,8 +40,8 @@ namespace Proto
             int cells = Mathf.Max(1, def.Cells.Length);
             int perCell = Mathf.RoundToInt(def.AuraValue / cells * 100f);
 
-            _sb.Append("RUNE - alas, ").Append(cells).Append(" petak, elemen ")
-                .Append(def.Element).Append('\n');
+            _sb.Append("RUNE alas  -  ").Append(Shapes.NameOf(def.Shape)).Append(", ")
+                .Append(cells).Append(" petak, elemen ").Append(def.Element).Append('\n');
 
             switch (def.Aura)
             {
@@ -83,7 +77,8 @@ namespace Proto
 
         void AppendSigil(PieceDefinition def, CompiledSpell spell, string origin)
         {
-            _sb.Append("SEGEL pasif - ").Append(def.Cells.Length).Append(" petak, nggak nembak\n");
+            _sb.Append("SEGEL pasif  -  ").Append(Shapes.NameOf(def.Shape)).Append(", ")
+                .Append(def.Cells.Length).Append(" petak, nggak nembak\n");
 
             // Reads Stats[], not the retired Stat/StatValue pair — sigils were migrated onto the
             // array, and this panel silently went blank for every one of them until it followed.
@@ -114,6 +109,8 @@ namespace Proto
                 case StatKind.HpRegen: return "+" + mod.Value.ToString("0.0") + " HP / detik";
                 case StatKind.Defense: return "+" + mod.Value.ToString("0.#") + " pertahanan";
                 case StatKind.AilmentPoints: return "+" + mod.Value.ToString("0") + " poin ailment per tempel";
+                case StatKind.MoveSpeed: return Sign(mod.Value) + mod.Value.ToString("0.0") + " kecepatan menghindar";
+                case StatKind.DebuffResist: return Sign(mod.Value) + Pct(mod.Value) + "% tahan kutukan";
                 case StatKind.ManaCostPct: return "-" + Pct(mod.Value) + "% biaya mana";
                 case StatKind.CooldownPct: return "-" + Pct(mod.Value) + "% cooldown";
                 case StatKind.DamagePct: return "+" + Pct(mod.Value) + "% damage";
@@ -128,7 +125,10 @@ namespace Proto
             }
         }
 
-        static string Pct(float value) => Mathf.RoundToInt(value * 100f).ToString();
+        static string Pct(float value) => Mathf.RoundToInt(Mathf.Abs(value) * 100f).ToString();
+
+        /// <summary>Debuff mods are negative, so the sign has to be read rather than assumed.</summary>
+        static string Sign(float value) => value < 0f ? "-" : "+";
 
         void AppendSkill(PieceDefinition def, CompiledSpell spell)
         {
@@ -137,7 +137,10 @@ namespace Proto
             float range = spell != null ? spell.Range : def.Range;
             float radius = spell != null ? spell.Radius : def.Radius;
 
-            _sb.Append(KindName(def.Kind)).Append(" - ").Append(def.Cells.Length).Append(" petak\n");
+            // Footprint comes off the piece, never out of the blurb. Prose describing a shape only
+            // ever drifts away from the shape it describes.
+            _sb.Append(KindName(def.Kind)).Append("  -  ").Append(Shapes.NameOf(def.Shape))
+                .Append(", ").Append(def.Cells.Length).Append(" petak\n");
             _sb.Append(def.Kind == CastKind.Heal ? "heal " : "damage ").Append(dmg.ToString("0.0"));
             _sb.Append("     cooldown ").Append(cd.ToString("0.00")).Append('s');
             _sb.Append("     mana ").Append(Mathf.RoundToInt(def.ManaCost)).Append('\n');
@@ -190,60 +193,10 @@ namespace Proto
                 case CastKind.Line: return "sapuan garis";
                 case CastKind.Zone: return "kubangan";
                 case CastKind.Passive: return "segel pasif";
+                case CastKind.Cleanse: return "pembersih kutukan";
                 default: return "alas";
             }
         }
 
-        /// <summary>ALT + hover: every recipe this piece appears in, with a tick per owned part.</summary>
-        public string BuildRecipeCard(PieceDefinition def)
-        {
-            _sb.Length = 0;
-            _sb.Append("RESEP yang pakai ").Append(def.DisplayName).Append('\n');
-
-            int found = 0;
-            var seen = new Dictionary<PieceDefinition, int>();
-
-            for (int i = 0; i < _db.Recipes.Count; i++)
-            {
-                var recipe = _db.Recipes[i];
-                if (recipe.Result == null || !Uses(recipe, def)) continue;
-
-                found++;
-                seen.Clear();
-
-                for (int k = 0; k < recipe.Ingredients.Length; k++)
-                {
-                    var ingredient = recipe.Ingredients[k];
-                    if (ingredient == null) continue;
-
-                    // Count duplicates separately: two Fireballs need two in hand, not one.
-                    seen.TryGetValue(ingredient, out int used);
-                    seen[ingredient] = used + 1;
-
-                    if (k > 0) _sb.Append("  +  ");
-                    _sb.Append(_ownedCount(ingredient) >= used + 1 ? "[v] " : "[ ] ")
-                        .Append(ingredient.DisplayName);
-                }
-
-                _sb.Append("\n        =  ").Append(recipe.Result.DisplayName)
-                    .Append("  ").Append(Shapes.StarText(recipe.Result.Stars)).Append('\n');
-            }
-
-            if (found == 0) _sb.Append("(belum ada resep yang pakai ini)\n");
-
-            _sb.Append("\ntaruh bahannya BERSENTUHAN di grimoire - bentuk bebas.\n");
-            _sb.Append("sorotan biru = belum lengkap, emas = jadi evo pas wave beres.");
-            return _sb.ToString();
-        }
-
-        static bool Uses(RecipeDefinition recipe, PieceDefinition def)
-        {
-            for (int k = 0; k < recipe.Ingredients.Length; k++)
-            {
-                if (recipe.Ingredients[k] == def) return true;
-            }
-
-            return false;
-        }
     }
 }

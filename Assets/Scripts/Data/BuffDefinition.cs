@@ -16,8 +16,17 @@ namespace Proto
         [Tooltip("Detik. Kena lagi saat masih aktif -> durasi di-refresh, efek TIDAK ditumpuk.")]
         public float Duration = 6f;
 
-        [Tooltip("Stat yang dinaikkan selama buff aktif. Persen ditulis desimal: 0.25 = 25%.")]
+        [Tooltip("Stat yang dinaikkan selama buff aktif. Persen ditulis desimal: 0.25 = 25%. " +
+                 "Untuk debuff, tulis NEGATIF.")]
         public StatModifier[] Mods;
+
+        [Tooltip("Efek buruk yang ditempelkan musuh, bukan hadiah reaksi. Debuff punya jatah slot " +
+                 "sendiri supaya banjir kutukan tidak menendang buff hasil reaksi keluar — kalau " +
+                 "sampai begitu, loop inti game ini mati justru saat pemain paling terdesak.")]
+        public bool IsDebuff;
+
+        [Tooltip("Khusus debuff: dipotong oleh stat DebuffResist pemain.")]
+        public bool ResistShortensDuration = true;
 
         [TextArea(2, 3)]
         public string Blurb;

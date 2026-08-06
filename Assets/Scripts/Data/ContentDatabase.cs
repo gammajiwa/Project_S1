@@ -16,6 +16,11 @@ namespace Proto
         [SerializeField] List<ReactionDefinition> _reactions = new List<ReactionDefinition>();
         [SerializeField] List<BuffDefinition> _buffs = new List<BuffDefinition>();
 
+        [Tooltip("Kutukan yang ditempelkan musuh. Tipenya sama dengan buff, cuma nilainya negatif.")]
+        [SerializeField] List<BuffDefinition> _debuffs = new List<BuffDefinition>();
+
+        [SerializeField] List<EnemyArchetype> _archetypes = new List<EnemyArchetype>();
+
         readonly Dictionary<string, PieceDefinition> _byId = new Dictionary<string, PieceDefinition>();
         readonly List<PieceDefinition> _runes = new List<PieceDefinition>();
         readonly List<PieceDefinition> _droppableSkills = new List<PieceDefinition>();
@@ -27,6 +32,43 @@ namespace Proto
         public IReadOnlyList<StatusDefinition> Statuses => _statuses;
         public IReadOnlyList<ReactionDefinition> Reactions => _reactions;
         public IReadOnlyList<BuffDefinition> Buffs => _buffs;
+        public IReadOnlyList<BuffDefinition> Debuffs => _debuffs;
+
+        public IReadOnlyList<EnemyArchetype> Archetypes => _archetypes;
+
+        /// <summary>One curse for an enemy to carry, or null when none are authored yet.</summary>
+        public BuffDefinition RandomDebuff()
+        {
+            if (_debuffs.Count == 0) return null;
+            return _debuffs[Random.Range(0, _debuffs.Count)];
+        }
+
+        /// <summary>
+        /// Weighted draw across every archetype unlocked by this wave. Returns null only when no
+        /// archetypes are authored at all — the swarm then falls back to its plain defaults.
+        /// </summary>
+        public EnemyArchetype RollArchetype(int wave)
+        {
+            float total = 0f;
+            for (int i = 0; i < _archetypes.Count; i++)
+            {
+                if (_archetypes[i] != null) total += _archetypes[i].WeightAt(wave);
+            }
+
+            if (total <= 0f) return null;
+
+            float pick = Random.value * total;
+            for (int i = 0; i < _archetypes.Count; i++)
+            {
+                var kind = _archetypes[i];
+                if (kind == null) continue;
+
+                pick -= kind.WeightAt(wave);
+                if (pick <= 0f) return kind;
+            }
+
+            return _archetypes[_archetypes.Count - 1];
+        }
 
         /// <summary>Slot index used by the runtime status array. -1 when the status is unknown.</summary>
         public int IndexOfStatus(StatusDefinition status)
@@ -130,6 +172,18 @@ namespace Proto
             _statuses = statuses;
             _reactions = reactions;
             if (buffs != null) _buffs = buffs;
+            _indexed = false;
+        }
+
+        public void EditorSetDebuffs(List<BuffDefinition> debuffs)
+        {
+            _debuffs = debuffs;
+            _indexed = false;
+        }
+
+        public void EditorSetArchetypes(List<EnemyArchetype> archetypes)
+        {
+            _archetypes = archetypes;
             _indexed = false;
         }
 #endif

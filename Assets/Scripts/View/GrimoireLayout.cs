@@ -26,7 +26,8 @@ namespace Proto
         public const int SellH = 40;
         public const int SellY = 190;
 
-        public const int SpellPanelW = 300;
+        // Wide enough for "1. Greater Fireball   34.0 dmg   32.4 dps   1.05s   17 mana".
+        public const int SpellPanelW = 380;
         public const int CooldownDiameter = 26;
 
         public const int SpeedButtonW = 58;

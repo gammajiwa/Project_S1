@@ -16,16 +16,17 @@ MonoBehaviour:
   DisplayName: Frost Prism
   Stars: 3
   Layer: 1
-  Shape: 2
+  Shape: 10
   Color: {r: 0.6, g: 0.95, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: a2631f75f62a5b64bb386657bce6a751, type: 3}
   Kind: 2
   Element: 1
   BaseDamage: 34
-  BaseCooldown: 2.2
+  BaseCooldown: 2.4
   Radius: 9
   Range: 9
   Hits: 5
-  ManaCost: 24
+  ManaCost: 32
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   Trigger: 0
@@ -42,4 +43,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 3 long. Shattering ice burst. Applies CHILL.
+  Blurb: EVOLVED. Shattering ice, chaining through five enemies. Applies CHILL.

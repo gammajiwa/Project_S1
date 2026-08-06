@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_plaguebloom
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: plaguebloom
+  DisplayName: Plague Bloom
+  Stars: 3
+  Layer: 1
+  Shape: 11
+  Color: {r: 0.74840003, g: 0.5708, b: 0.963, a: 1}
+  Icon: {fileID: 21300000, guid: f3a5337b2854b434a85e72f912acae68, type: 3}
+  Kind: 6
+  Element: 3
+  BaseDamage: 18
+  BaseCooldown: 6
+  Radius: 4.8
+  Range: 11
+  Hits: 1
+  ManaCost: 36
+  ZoneDuration: 6
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  AppliedStatus: {fileID: 11400000, guid: 889746592ae592b4f89696393bec1666, type: 2}
+  StatusDuration: 6
+  AppliedPoints: 3
+  LegacyStatus: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. A spreading bloom of rot. The heaviest POISON there is.

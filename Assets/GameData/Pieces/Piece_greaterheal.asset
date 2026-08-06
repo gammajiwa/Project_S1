@@ -16,8 +16,9 @@ MonoBehaviour:
   DisplayName: Greater Heal
   Stars: 2
   Layer: 1
-  Shape: 1
+  Shape: 6
   Color: {r: 0.7, g: 1, b: 0.75, a: 1}
+  Icon: {fileID: 21300000, guid: 426a5cb470984ae47b8870e7d55b711c, type: 3}
   Kind: 3
   Element: 3
   BaseDamage: 45
@@ -25,11 +26,21 @@ MonoBehaviour:
   Radius: 0
   Range: 0
   Hits: 1
-  ManaCost: 30
-  Status: 0
+  ManaCost: 34
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  AppliedStatus: {fileID: 0}
   StatusDuration: 0
+  AppliedPoints: 1
+  LegacyStatus: 0
   Aura: 0
   AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Nyembuhin 45 HP tiap 10 detik.
+  Blurb: EVOLVED. A real heal, but you wait a long time for it.

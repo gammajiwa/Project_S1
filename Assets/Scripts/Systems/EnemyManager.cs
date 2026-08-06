@@ -29,8 +29,43 @@ namespace Proto
 
         public class Enemy
         {
-            public Transform T;
-            public Renderer R;
+            /// <summary>
+            /// Plain data, not a Transform. Enemies have no GameObject at all — the swarm is drawn
+            /// instanced from this array, which is what keeps a few hundred of them inside one draw
+            /// call instead of a few hundred.
+            /// </summary>
+            public Vector3 Pos;
+
+            /// <summary>Facing, in degrees. Meaningless on a capsule; the models will need it.</summary>
+            public float Yaw;
+
+            /// <summary>Random offset so the swarm does not breathe in unison.</summary>
+            public float Phase;
+
+            /// <summary>
+            /// Which side of the caster this one is trying to get to, -1 to 1. Separation alone
+            /// stops the pack stacking, but every enemy still walks at the same point, so the mass
+            /// piles up behind a running player instead of closing around it. Giving each its own
+            /// approach lane is what turns a chase into an encirclement.
+            /// </summary>
+            public float Flank;
+
+            /// <summary>Index into the renderer's palette. Replaces the old per-enemy tint.</summary>
+            public int Tint;
+
+            /// <summary>
+            /// Body size multiplier. The readable marker for "this one is different" — it survives
+            /// being set on fire, which a colour marker does not, because colour already belongs to
+            /// the ailment readout. A boss is this field turned up.
+            /// </summary>
+            public float Scale;
+
+            /// <summary>What kind of enemy this is. Null falls back to plain chase-and-touch.</summary>
+            public EnemyArchetype Kind;
+
+            /// <summary>Counts down to the next shot. Only used by archetypes that shoot.</summary>
+            public float AttackTimer;
+
             public float Hp;
             public float MaxHp;
             public float Speed;
@@ -49,8 +84,6 @@ namespace Proto
             }
         }
 
-        static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-
         public int Kills { get; private set; }
         public int AliveCount { get; private set; }
         public float Elapsed { get; private set; }
@@ -58,10 +91,26 @@ namespace Proto
 
         public int Wave { get; private set; }
         public bool WaveActive { get; private set; }
-        public int PendingSpawns { get; private set; }
+
+        /// <summary>Seconds of spawning left. When it hits zero the wave enters its closing phase.</summary>
+        public float SpawnTimeLeft { get; private set; }
+
+        public float SpawnWindow { get; private set; }
+
+        /// <summary>
+        /// Spawning is over and the wave is waiting for the field to clear.
+        ///
+        /// This is the whole reason the wave can end on "kill everything" without the dead tail it
+        /// used to have: the moment it flips, the survivors charge. There is nothing left to chase
+        /// across the map, because everything left is running at you.
+        /// </summary>
+        public bool Closing { get; private set; }
 
         public System.Action OnWaveCleared;
         public System.Action<Vector3> OnKill;
+
+        /// <summary>Raised for each enemy removed by the end-of-wave sweep. Pays no reward.</summary>
+        public System.Action<Vector3> OnSweep;
 
         /// <summary>Raised with (position, reaction) so the UI can flash and shout its name.</summary>
         public System.Action<Vector3, ReactionDefinition> OnReaction;
@@ -71,6 +120,13 @@ namespace Proto
 
         /// <summary>Raised with (sumber, damage) untuk damage meter.</summary>
         public System.Action<string, float> OnDamage;
+
+        /// <summary>
+        /// Raised with (posisi, damage, HP maksimum musuh) untuk angka damage yang melayang.
+        /// Max HP ikut dikirim karena besar-kecilnya angka di layar diukur dari porsi HP musuh,
+        /// bukan dari angka mentahnya — 40 damage di wave 2 dan di wave 20 artinya beda jauh.
+        /// </summary>
+        public System.Action<Vector3, float, float> OnEnemyDamaged;
 
         public int Capacity => _balance != null ? _balance.MaxAliveEnemies : 200;
 
@@ -84,11 +140,155 @@ namespace Proto
         PlayerCaster _caster;
         GameBalance _balance;
         ContentDatabase _db;
-        Material _material;
-        MaterialPropertyBlock _mpb;
-        Transform _root;
-        float _spawnTimer;
+        EnemyRenderer _renderer;
+        EnemyRenderer _shotRenderer;
+        readonly Dictionary<EnemyArchetype, int> _shotTint = new Dictionary<EnemyArchetype, int>();
+        readonly Dictionary<EnemyArchetype, int> _archetypeTint = new Dictionary<EnemyArchetype, int>();
+        Vector3 _lastPlayerPos;
+        float _spawnRate;
+        float _spawnBudget;
+        float _closingElapsed;
         int[] _statusCounts = new int[0];
+
+        // ---------- spatial hash ----------
+        //
+        // Only BestCluster needed this. Measured at 154 enemies it cost 1.95 ms per call and it is
+        // called on EVERY area or zone cast, because it asked "how many neighbours" by walking the
+        // whole swarm once per candidate — n squared. Four area skills firing in one frame ate most
+        // of a 60 fps budget on their own.
+        //
+        // Nearest and CrowdPressure measured at 0.007 ms and are left alone. Cheap code does not
+        // need a data structure wrapped around it.
+
+        // Cell dipersempit dari 4 ke 2 karena hash sekarang juga melayani gaya pisah antar musuh,
+        // yang radiusnya cuma ~1.3 — mencari tetangga sedekat itu di dalam kotak 4x4 berarti
+        // memeriksa puluhan musuh yang jelas terlalu jauh.
+        const int HashSide = 64;
+        const float HashCell = 2f;
+        const float HashExtent = HashSide * HashCell * 0.5f;
+
+        readonly int[] _cellHead = new int[HashSide * HashSide];
+        readonly int[] _cellCount = new int[HashSide * HashSide];
+        int[] _nextInCell = new int[0];
+
+        int CellIndex(Vector3 p)
+        {
+            int cx = Mathf.Clamp((int)((p.x + HashExtent) / HashCell), 0, HashSide - 1);
+            int cz = Mathf.Clamp((int)((p.z + HashExtent) / HashCell), 0, HashSide - 1);
+            return cz * HashSide + cx;
+        }
+
+        /// <summary>
+        /// Rebuilt once at the end of the movement pass, so it is at most one frame stale for
+        /// anything that queries it from another component. An enemy moves about 0.03 units in a
+        /// frame; nothing here can tell the difference.
+        /// </summary>
+        void RebuildHash()
+        {
+            if (_nextInCell.Length < _pool.Count)
+            {
+                System.Array.Resize(ref _nextInCell, Mathf.Max(64, _pool.Count * 2));
+            }
+
+            for (int i = 0; i < _cellHead.Length; i++)
+            {
+                _cellHead[i] = -1;
+                _cellCount[i] = 0;
+            }
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                int cell = CellIndex(e.Pos);
+                _nextInCell[i] = _cellHead[cell];
+                _cellHead[cell] = i;
+                _cellCount[cell]++;
+            }
+        }
+
+        /// <summary>Most neighbours one enemy will push against. A pile-up must not cost O(n).</summary>
+        const int MaxSeparationChecks = 14;
+
+        /// <summary>
+        /// How hard this enemy is being crowded, and from which side.
+        ///
+        /// This is the single fix for the conga line. Without it every enemy walks the identical
+        /// path to the identical point and they stack into a queue behind the player; with it they
+        /// cannot occupy the same ground, so a chasing pack spreads sideways and closes as a ring
+        /// instead of a tail. The encirclement is emergent — nothing tells them to surround anyone.
+        /// </summary>
+        Vector3 Separation(Enemy self, Vector3 pos, float radius)
+        {
+            int cx = Mathf.Clamp((int)((pos.x + HashExtent) / HashCell), 0, HashSide - 1);
+            int cz = Mathf.Clamp((int)((pos.z + HashExtent) / HashCell), 0, HashSide - 1);
+
+            int x0 = Mathf.Max(0, cx - 1), x1 = Mathf.Min(HashSide - 1, cx + 1);
+            int z0 = Mathf.Max(0, cz - 1), z1 = Mathf.Min(HashSide - 1, cz + 1);
+
+            Vector3 push = Vector3.zero;
+            float sqrRadius = radius * radius;
+            int checks = 0;
+
+            for (int gz = z0; gz <= z1; gz++)
+            {
+                for (int gx = x0; gx <= x1; gx++)
+                {
+                    for (int i = _cellHead[gz * HashSide + gx]; i >= 0; i = _nextInCell[i])
+                    {
+                        var other = _pool[i];
+                        if (other == self || !other.Alive) continue;
+
+                        Vector3 d = pos - other.Pos;
+                        d.y = 0f;
+
+                        float sqr = d.sqrMagnitude;
+                        if (sqr > sqrRadius) continue;
+
+                        // Exactly co-located: shove apart along a fixed axis rather than dividing
+                        // by zero and freezing them together forever.
+                        if (sqr < 0.0001f)
+                        {
+                            push.x += 0.5f;
+                            continue;
+                        }
+
+                        float distance = Mathf.Sqrt(sqr);
+                        push += d / distance * (1f - distance / radius);
+
+                        if (++checks >= MaxSeparationChecks) return Clamped(push);
+                    }
+                }
+            }
+
+            return Clamped(push);
+        }
+
+        /// <summary>
+        /// Capped at unit length. Raw, the sum of fourteen neighbours can reach a magnitude of ten
+        /// or more, which swamps every other steering term it is added to — a shooter trying to
+        /// hold its range would simply be shoved wherever the crowd was thinnest, including
+        /// straight into melee.
+        /// </summary>
+        static Vector3 Clamped(Vector3 push) =>
+            push.sqrMagnitude > 1f ? push.normalized : push;
+
+        /// <summary>Any living enemy sitting in this cell and still inside the caster's reach.</summary>
+        Enemy PickFromCell(int cell, Vector3 from, float sqrMaxDistance)
+        {
+            for (int i = _cellHead[cell]; i >= 0; i = _nextInCell[i])
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                Vector3 d = e.Pos - from;
+                d.y = 0f;
+                if (d.sqrMagnitude <= sqrMaxDistance) return e;
+            }
+
+            return null;
+        }
 
         public void Init(Transform player, PlayerCaster caster, GameBalance balance, ContentDatabase database)
         {
@@ -96,22 +296,88 @@ namespace Proto
             _caster = caster;
             _balance = balance;
             _db = database;
-            _mpb = new MaterialPropertyBlock();
             _statusCounts = new int[Mathf.Max(1, _db.Statuses.Count)];
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
-            if (shader == null) shader = Shader.Find("Standard");
-            _material = new Material(shader) { enableInstancing = true };
+            _renderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Capsule),
+                BuildPalette(), Capacity, 0.55f, true);
 
-            _root = new GameObject("Enemies").transform;
-            _root.SetParent(transform, false);
+            _shotRenderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Sphere),
+                BuildShotPalette(), MaxShots, 0.3f, false);
+        }
+
+        /// <summary>One shot colour per shooting archetype, so different shooters read apart.</summary>
+        Color[] BuildShotPalette()
+        {
+            _shotTint.Clear();
+
+            var colors = new List<Color> { new Color(0.7f, 1f, 0.5f) };
+
+            for (int i = 0; i < _db.Archetypes.Count; i++)
+            {
+                var kind = _db.Archetypes[i];
+                if (kind == null || !kind.Shoots) continue;
+
+                _shotTint[kind] = colors.Count;
+                colors.Add(kind.ShotColor);
+            }
+
+            return colors.ToArray();
+        }
+
+        /// <summary>
+        /// Every look an enemy can have, flattened into a list the renderer can batch by.
+        ///
+        /// Slot 0 is plain. Then one entry per ailment, then the same ailments again washed toward
+        /// white — that second half is the "two or more at once" tell, the warning that a reaction
+        /// is one application away. Fifteen entries for seven ailments, so at most fifteen draw
+        /// calls no matter how many enemies are alive.
+        /// </summary>
+        Color[] BuildPalette()
+        {
+            int statuses = _db.Statuses.Count;
+            var palette = new List<Color>(1 + statuses * 2 + 8) { _baseColor };
+
+            for (int i = 0; i < statuses; i++)
+            {
+                var status = _db.Statuses[i];
+                palette.Add(status != null ? status.Color : _baseColor);
+            }
+
+            for (int i = 0; i < statuses; i++)
+            {
+                palette.Add(Color.Lerp(palette[1 + i], Color.white, 0.55f));
+            }
+
+            // Archetype colours go last, and are only reached when the enemy carries no ailment.
+            _archetypeTint.Clear();
+
+            for (int i = 0; i < _db.Archetypes.Count; i++)
+            {
+                var kind = _db.Archetypes[i];
+                if (kind == null || !kind.UseTint) continue;
+
+                _archetypeTint[kind] = palette.Count;
+                palette.Add(kind.Tint);
+            }
+
+            return palette.ToArray();
         }
 
         public void StartWave(int wave)
         {
             Wave = wave;
-            PendingSpawns = _balance.EnemiesBase + wave * _balance.EnemiesPerWave;
-            _spawnTimer = 0.25f;
+
+            // The clock governs SPAWNING, not the wave. The wave still ends by clearing the field —
+            // deleting the survivors read as the game confiscating your kills, and it did, because
+            // the rest of the game is shaped like a round you are meant to finish.
+            SpawnWindow = Mathf.Max(1f, _balance.SpawnWindowFor(wave));
+            SpawnTimeLeft = SpawnWindow;
+            Closing = false;
+
+            _spawnRate = _balance.SpawnRateFor(wave);
+            _spawnBudget = 0f;
+            _closingElapsed = 0f;
+
             WaveActive = true;
         }
 
@@ -122,48 +388,151 @@ namespace Proto
             float dt = Time.deltaTime;
             if (WaveActive) Elapsed += dt;
 
+            if (WaveActive && !Closing)
+            {
+                SpawnTimeLeft -= dt;
+                if (SpawnTimeLeft <= 0f)
+                {
+                    SpawnTimeLeft = 0f;
+                    Closing = true;
+                }
+            }
+
             TickSpawning(dt);
             TickEnemies(dt);
 
-            if (WaveActive && PendingSpawns <= 0 && AliveCount == 0)
+            if (!WaveActive || !Closing) return;
+
+            if (AliveCount == 0)
             {
-                WaveActive = false;
-                OnWaveCleared?.Invoke();
+                FinishWave();
+                return;
             }
+
+            // Safety valve only. A loadout with no damage at all — Heal skills and nothing else —
+            // can never clear the field, and without this the wave hangs forever with no way out.
+            _closingElapsed += dt;
+            if (_closingElapsed < _balance.ClosingTimeout) return;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                e.Alive = false;
+                OnSweep?.Invoke(e.Pos);
+            }
+
+            AliveCount = 0;
+            FinishWave();
+        }
+
+        void FinishWave()
+        {
+            WaveActive = false;
+            Closing = false;
+            OnWaveCleared?.Invoke();
         }
 
         void TickSpawning(float dt)
         {
-            if (!WaveActive || PendingSpawns <= 0) return;
+            if (!WaveActive || Closing) return;
 
-            _spawnTimer -= dt;
-            if (_spawnTimer > 0f) return;
+            // Each wave climbs toward its own crescendo instead of running flat from the first
+            // second, so the last stretch is the hardest part rather than the emptiest.
+            float progress = SpawnWindow <= 0f ? 1f : 1f - SpawnTimeLeft / SpawnWindow;
+            _spawnBudget += _spawnRate * _balance.RampAt(progress) * dt;
 
-            _spawnTimer = Mathf.Max(_balance.SpawnIntervalMin,
-                _balance.SpawnIntervalBase - Wave * _balance.SpawnIntervalPerWave);
-            SpawnOne();
-            PendingSpawns--;
+            // Banked spawns are capped: a long spell pinned at the alive cap must not save up a
+            // tidal wave that lands all at once the moment a slot frees.
+            if (_spawnBudget > 20f) _spawnBudget = 20f;
+
+            while (_spawnBudget >= 1f)
+            {
+                if (!SpawnOne()) break;
+                _spawnBudget -= 1f;
+            }
         }
 
-        void SpawnOne()
+        /// <summary>
+        /// Puts one enemy on the field. Every per-enemy stat is filled here and nowhere else, so a
+        /// different kind of enemy — a boss, say — is a different fill of this one method.
+        /// </summary>
+        /// <returns>False when the alive cap is full and nothing could be spawned.</returns>
+        bool SpawnOne()
         {
             var e = GetFree();
-            if (e == null) return;
+            if (e == null) return false;
 
-            float angle = Random.Range(0f, Mathf.PI * 2f);
-            float dist = Random.Range(15f, 18f);
+            var kind = _db.RollArchetype(Wave);
+            e.Kind = kind;
 
-            e.T.position = new Vector3(Mathf.Cos(angle) * dist, 0.55f, Mathf.Sin(angle) * dist);
-            e.MaxHp = _balance.EnemyHpBase + Wave * _balance.EnemyHpPerWave;
-            e.Hp = e.MaxHp;
+            e.Pos = SpawnPoint();
+            e.MaxHp = _balance.EnemyHpFor(Wave);
             e.Speed = Random.Range(_balance.EnemySpeedMin, _balance.EnemySpeedMax) +
                       Wave * _balance.EnemySpeedPerWave;
+            e.Scale = 1f;
+            e.AttackTimer = 0f;
+
+            if (kind != null)
+            {
+                e.MaxHp *= kind.HpMultiplier;
+                e.Speed *= kind.SpeedMultiplier;
+                e.Scale = kind.Scale;
+                e.Pos.y += kind.HoverHeight;
+
+                // Staggered so a batch that spawns together does not volley in perfect unison.
+                if (kind.Shoots) e.AttackTimer = Random.Range(0f, kind.AttackInterval);
+            }
+
+            e.Hp = e.MaxHp;
 
             for (int i = 0; i < StatusSlots; i++) e.Slots[i].Def = -1;
 
+            e.Phase = Random.Range(0f, Mathf.PI * 2f);
+            e.Yaw = Random.Range(0f, 360f);
+
+            // Signed, so half the wave peels left and half peels right and the two halves meet
+            // on the far side of the caster.
+            e.Flank = Random.Range(-1f, 1f);
             e.Alive = true;
-            e.T.gameObject.SetActive(true);
             Paint(e);
+            return true;
+        }
+
+        /// <summary>
+        /// Walks a ray out from the caster in a random direction until it leaves the spawn box, and
+        /// drops the enemy there.
+        ///
+        /// A ring of fixed radius does not work, because the region the camera shows is a wide
+        /// rectangle, not a circle. On a ring, enemies arriving from the sides appear right at the
+        /// screen edge in full view while enemies from above and below are still far off screen.
+        /// Exiting through a box means every direction is off screen by the same margin.
+        /// </summary>
+        Vector3 SpawnPoint()
+        {
+            Vector3 from = _player.position;
+
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float dx = Mathf.Cos(angle);
+            float dz = Mathf.Sin(angle);
+
+            float hx = _balance.SpawnBoundsX;
+            float hz = _balance.SpawnBoundsZ;
+
+            float tx = Mathf.Abs(dx) < 0.0001f
+                ? float.MaxValue
+                : ((dx > 0f ? hx : -hx) - from.x) / dx;
+
+            float tz = Mathf.Abs(dz) < 0.0001f
+                ? float.MaxValue
+                : ((dz > 0f ? hz : -hz) - from.z) / dz;
+
+            // Never behind us, and always at least a little way out even when the caster is already
+            // pressed against the boundary.
+            float t = Mathf.Max(4f, Mathf.Min(tx, tz));
+
+            return new Vector3(from.x + dx * t, 0.55f, from.z + dz * t);
         }
 
         Enemy GetFree()
@@ -175,23 +544,9 @@ namespace Proto
 
             if (_pool.Count >= Capacity) return null;
 
-            var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            go.name = "Enemy";
-            var col = go.GetComponent<Collider>();
-            if (col != null) Destroy(col);
-
-            go.transform.SetParent(_root, false);
-            go.transform.localScale = new Vector3(0.55f, 0.55f, 0.55f);
-
-            var r = go.GetComponent<Renderer>();
-            r.sharedMaterial = _material;
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            r.receiveShadows = false;
-
-            var e = new Enemy { T = go.transform, R = r, Alive = false };
-            go.SetActive(false);
-            _pool.Add(e);
-            return e;
+            var fresh = new Enemy { Alive = false };
+            _pool.Add(fresh);
+            return fresh;
         }
 
         void TickEnemies(float dt)
@@ -201,6 +556,13 @@ namespace Proto
 
             Vector3 target = _player.position;
 
+            // Measured here rather than asked of PlayerMotor: this only needs how the caster is
+            // actually moving, and reading it from the transform keeps the two systems unaware
+            // of each other.
+            Vector3 playerVelocity = dt > 0.0001f ? (target - _lastPlayerPos) / dt : Vector3.zero;
+            if (playerVelocity.sqrMagnitude > 400f) playerVelocity = Vector3.zero;   // teleport guard
+            _lastPlayerPos = target;
+
             for (int i = 0; i < _pool.Count; i++)
             {
                 var e = _pool[i];
@@ -209,7 +571,9 @@ namespace Proto
                 AliveCount++;
                 if (e.ReactionLock > 0f) e.ReactionLock -= dt;
 
-                float speedMul = 1f;
+                // Survivors charge once nothing more is coming. The tail was never about having to
+                // kill the last few — it was about walking to them.
+                float speedMul = Closing ? _balance.ClosingSpeedMultiplier : 1f;
                 bool repaint = false;
 
                 for (int s = 0; s < StatusSlots; s++)
@@ -239,13 +603,14 @@ namespace Proto
                             float dot = def.DamagePerTickPerPoint * e.Slots[s].Points;
                             e.Hp -= dot;
                             OnDamage?.Invoke(def.DisplayName, dot);
+                            OnEnemyDamaged?.Invoke(e.Pos, dot, e.MaxHp);
                         }
                     }
 
                     // Tarikan: geser musuh ke titik tempat ailment ini dipasang.
                     if (def.PullStrength > 0f)
                     {
-                        Vector3 p = e.T.position;
+                        Vector3 p = e.Pos;
                         float dx = e.Slots[s].PullX - p.x;
                         float dz = e.Slots[s].PullZ - p.z;
                         float distSqr = dx * dx + dz * dz;
@@ -255,7 +620,7 @@ namespace Proto
                             float pullStep = def.PullStrength * dt / Mathf.Sqrt(distSqr);
                             p.x += dx * pullStep;
                             p.z += dz * pullStep;
-                            e.T.position = p;
+                            e.Pos = p;
                         }
                     }
                 }
@@ -268,23 +633,239 @@ namespace Proto
 
                 if (repaint) Paint(e);
 
-                Vector3 pos = e.T.position;
+                Vector3 pos = e.Pos;
                 Vector3 delta = target - pos;
                 delta.y = 0f;
                 float sqr = delta.sqrMagnitude;
 
-                if (sqr < 0.85f)
+                Vector3 apart = Separation(e, pos, _balance.EnemySeparation) * _balance.SeparationWeight;
+                float distance = Mathf.Sqrt(sqr);
+
+                // Shooters hold their distance and fire. Once the wave is closing they abandon the
+                // range entirely and charge — otherwise a build with no long-range skill could
+                // never finish a wave, and the safety timeout would fire every single round.
+                float standOff = e.Kind != null && !Closing ? e.Kind.PreferredRange : 0f;
+
+                if (e.Kind != null && e.Kind.Shoots)
                 {
-                    _caster.TakeDamage(_balance.EnemyContactDps * dt);
+                    e.AttackTimer -= dt;
+                    if (e.AttackTimer <= 0f && distance <= e.Kind.PreferredRange * 1.15f)
+                    {
+                        e.AttackTimer = e.Kind.AttackInterval;
+                        FireShot(e, target);
+                    }
+                }
+
+                if (standOff > 0f)
+                {
+                    TickStandOff(e, pos, delta, distance, standOff, apart, speedMul, dt);
                     continue;
                 }
 
-                float inv = 1f / Mathf.Sqrt(sqr);
-                pos.x += delta.x * inv * e.Speed * speedMul * dt;
-                pos.z += delta.z * inv * e.Speed * speedMul * dt;
-                e.T.position = pos;
+                if (sqr < 0.85f)
+                {
+                    _caster.TakeDamage(_balance.EnemyContactDps * dt);
+
+                    // Refreshed on every frame of contact, so a curse lasts as long as you are in
+                    // the crowd plus its duration. Getting out is the counter-play; resistance and
+                    // cleansing shorten what is left once you do.
+                    if (e.Kind != null && e.Kind.Curse != null) _caster.ApplyDebuff(e.Kind.Curse);
+
+                    // Still shoved apart while in contact, so the pack forms a ring around the
+                    // caster instead of every one of them stacking on the same square metre.
+                    if (apart.sqrMagnitude > 0.0001f)
+                    {
+                        e.Pos = pos + apart.normalized * (e.Speed * speedMul * dt);
+                    }
+
+                    continue;
+                }
+
+                // Aim where the caster WILL be. Chasing where it is now means the pack can never
+                // cut a corner, so a player that keeps walking simply tows it around forever.
+                float lead = Mathf.Min(distance / Mathf.Max(0.1f, e.Speed), _balance.InterceptLead);
+                Vector3 aimPoint = target + playerVelocity * lead;
+
+                // Swing wide on the way in, then straighten up for the last few metres. Without the
+                // fade they would circle forever instead of ever arriving.
+                //
+                // Dropped entirely once the wave is closing: swinging wide is what turns the last
+                // handful of enemies into a chase across the map, which is the dead tail the whole
+                // spawn window exists to avoid.
+                bool flanks = e.Kind == null || e.Kind.Flanks;
+                if (flanks && !Closing && distance > _balance.FlankFade)
+                {
+                    Vector3 tangent = new Vector3(-delta.z, 0f, delta.x) / distance;
+                    aimPoint += tangent * (e.Flank * _balance.FlankWidth);
+                }
+
+                Vector3 aim = aimPoint - pos;
+                aim.y = 0f;
+
+                Vector3 heading = aim.sqrMagnitude > 0.0001f ? aim.normalized : delta / distance;
+                heading += apart;
+
+                if (heading.sqrMagnitude > 0.0001f) heading.Normalize();
+
+                pos.x += heading.x * e.Speed * speedMul * dt;
+                pos.z += heading.z * e.Speed * speedMul * dt;
+                e.Pos = pos;
+
+                // Facing does nothing on a capsule, but a walk cycle has to point somewhere.
+                e.Yaw = Mathf.Atan2(heading.x, heading.z) * Mathf.Rad2Deg;
+            }
+
+            RebuildHash();
+            TickShots(dt, target);
+        }
+
+        /// <summary>
+        /// A shooter's holding pattern: close to its preferred range, back off when crowded past it,
+        /// and otherwise stand still and keep firing.
+        ///
+        /// The band matters. Without the back-off, a shooter pushed by separation drifts into melee
+        /// and stops being a different threat; without the dead zone in between it jitters on the
+        /// spot forever.
+        /// </summary>
+        void TickStandOff(Enemy e, Vector3 pos, Vector3 delta, float distance, float standOff,
+            Vector3 apart, float speedMul, float dt)
+        {
+            Vector3 toPlayer = delta / distance;
+
+            // Separation only nudges here. Holding the range is this archetype's whole identity, so
+            // crowd pressure must not be allowed to outvote it.
+            Vector3 heading = apart * 0.35f;
+
+            if (distance > standOff) heading += toPlayer;
+            else if (distance < standOff * 0.65f) heading -= toPlayer;
+
+            if (heading.sqrMagnitude > 0.0001f)
+            {
+                heading.Normalize();
+                pos.x += heading.x * e.Speed * speedMul * dt;
+                pos.z += heading.z * e.Speed * speedMul * dt;
+                e.Pos = pos;
+            }
+
+            // Always facing its target, even while strafing — it is aiming, not walking.
+            e.Yaw = Mathf.Atan2(toPlayer.x, toPlayer.z) * Mathf.Rad2Deg;
+        }
+
+        // ---------- enemy shots ----------
+
+        public class Shot
+        {
+            public Vector3 Pos;
+            public Vector3 Velocity;
+            public float Life;
+            public float Damage;
+            public int Tint;
+            public bool Active;
+        }
+
+        readonly List<Shot> _shots = new List<Shot>(64);
+
+        public int ShotCount { get; private set; }
+
+        void FireShot(Enemy from, Vector3 target)
+        {
+            Vector3 aim = target - from.Pos;
+            aim.y = 0f;
+            if (aim.sqrMagnitude < 0.0001f) return;
+
+            Shot shot = null;
+            for (int i = 0; i < _shots.Count; i++)
+            {
+                if (_shots[i].Active) continue;
+                shot = _shots[i];
+                break;
+            }
+
+            if (shot == null)
+            {
+                if (_shots.Count >= MaxShots) return;
+                shot = new Shot();
+                _shots.Add(shot);
+            }
+
+            float speed = Mathf.Max(1f, from.Kind.ShotSpeed);
+
+            shot.Pos = from.Pos;
+            shot.Velocity = aim.normalized * speed;
+            shot.Damage = from.Kind.AttackDamage;
+            shot.Tint = _shotTint.TryGetValue(from.Kind, out int tint) ? tint : 0;
+
+            // Just past its own range, so a shot the player outran expires instead of chasing.
+            shot.Life = from.Kind.PreferredRange * 1.5f / speed;
+            shot.Active = true;
+        }
+
+        const int MaxShots = 400;
+
+        void TickShots(float dt, Vector3 target)
+        {
+            ShotCount = 0;
+
+            for (int i = 0; i < _shots.Count; i++)
+            {
+                var shot = _shots[i];
+                if (!shot.Active) continue;
+
+                shot.Life -= dt;
+                if (shot.Life <= 0f)
+                {
+                    shot.Active = false;
+                    continue;
+                }
+
+                shot.Pos += shot.Velocity * dt;
+                ShotCount++;
+
+                Vector3 d = shot.Pos - target;
+                d.y = 0f;
+                if (d.sqrMagnitude > 0.55f) continue;
+
+                // A burst, not a per-frame trickle: TakeDamage subtracts defence scaled by delta
+                // time, which is right for contact and nearly nothing against a single hit.
+                _caster.TakeHit(shot.Damage);
+                shot.Active = false;
             }
         }
+
+        /// <summary>
+        /// Hands the swarm to the renderer once per frame, after everything has settled. Enemies own
+        /// no GameObject, so if this stops running they stop existing on screen.
+        /// </summary>
+        void LateUpdate()
+        {
+            if (_renderer == null) return;
+
+            _renderer.Begin();
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                _renderer.Add(e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale);
+            }
+
+            _renderer.Draw(Time.time);
+
+            _shotRenderer.Begin();
+            for (int i = 0; i < _shots.Count; i++)
+            {
+                var shot = _shots[i];
+                if (!shot.Active) continue;
+
+                _shotRenderer.Add(shot.Pos + Vector3.up * 0.2f, 0f, 0f, shot.Tint, 1f);
+            }
+
+            _shotRenderer.Draw(Time.time);
+        }
+
+        /// <summary>Draw calls the swarm cost this frame. Read by nothing but the profiler.</summary>
+        public int DrawBatches => _renderer != null ? _renderer.Batches : 0;
 
         // ---------- status ----------
 
@@ -335,7 +916,7 @@ namespace Proto
 
             if (status.PullStrength > 0f)
             {
-                Vector3 from = origin ?? e.T.position;
+                Vector3 from = origin ?? e.Pos;
                 e.Slots[slot].PullX = from.x;
                 e.Slots[slot].PullZ = from.z;
             }
@@ -400,7 +981,7 @@ namespace Proto
         void Trigger(Enemy e, ReactionDefinition rx, int slotA, int slotB)
         {
             int pointsA = e.Slots[slotA].Points;
-            Vector3 at = e.T.position;
+            Vector3 at = e.Pos;
 
             if (rx.ConsumeA) e.Slots[slotA].Def = -1;
             if (rx.ConsumeB) e.Slots[slotB].Def = -1;
@@ -428,7 +1009,7 @@ namespace Proto
                     var other = _pool[i];
                     if (!other.Alive) continue;
 
-                    Vector3 d = other.T.position - at;
+                    Vector3 d = other.Pos - at;
                     d.y = 0f;
                     if (d.sqrMagnitude > sqrRadius) continue;
 
@@ -456,9 +1037,14 @@ namespace Proto
             return mul;
         }
 
+        /// <summary>
+        /// Picks which palette slot this enemy draws with. Used to push a colour into a per-enemy
+        /// MaterialPropertyBlock — which is exactly what stopped 200 enemies from ever batching.
+        /// Now it just writes an int, and the renderer groups by it.
+        /// </summary>
         void Paint(Enemy e)
         {
-            Color c = _baseColor;
+            int strongestIndex = -1;
             float strongest = 0f;
             int count = 0;
 
@@ -471,23 +1057,28 @@ namespace Proto
                 if (e.Slots[i].Remaining <= strongest) continue;
 
                 strongest = e.Slots[i].Remaining;
-                c = _db.Statuses[defIndex].Color;
+                strongestIndex = defIndex;
+            }
+
+            if (strongestIndex < 0)
+            {
+                // No ailment: fall back to whatever kind of enemy it is.
+                e.Tint = e.Kind != null && _archetypeTint.TryGetValue(e.Kind, out int kindTint)
+                    ? kindTint
+                    : 0;
+                return;
             }
 
             // Two or more ailments at once reads as near-white: the "about to react" tell.
-            if (count >= 2) c = Color.Lerp(c, Color.white, 0.55f);
-
-            _mpb.SetColor(BaseColorId, c);
-            e.R.SetPropertyBlock(_mpb);
+            int statuses = _db.Statuses.Count;
+            e.Tint = count >= 2 ? 1 + statuses + strongestIndex : 1 + strongestIndex;
         }
 
         void Kill(Enemy e)
         {
             e.Alive = false;
-            Vector3 at = e.T.position;
-            e.T.gameObject.SetActive(false);
             Kills++;
-            OnKill?.Invoke(at);
+            OnKill?.Invoke(e.Pos);
         }
 
         // ---------- damage API ----------
@@ -499,7 +1090,12 @@ namespace Proto
 
             float dealt = damage * DamageTakenMultiplier(e);
             e.Hp -= dealt;
-            if (dealt > 0f) OnDamage?.Invoke(sourceName ?? "?", dealt);
+
+            if (dealt > 0f)
+            {
+                OnDamage?.Invoke(sourceName ?? "?", dealt);
+                OnEnemyDamaged?.Invoke(e.Pos, dealt, e.MaxHp);
+            }
 
             if (status != null) ApplyStatus(e, status, duration, points, allowReaction, origin);
             else Paint(e);
@@ -517,51 +1113,71 @@ namespace Proto
                 var e = _pool[i];
                 if (!e.Alive) continue;
 
-                Vector3 d = e.T.position - center;
+                Vector3 d = e.Pos - center;
                 d.y = 0f;
                 if (d.sqrMagnitude <= sqrRadius) Damage(e, damage, status, duration, points, allowReaction, sourceName, center);
             }
         }
 
         /// <summary>
-        /// The enemy with the most neighbours inside <paramref name="clusterRadius"/> — i.e. the
-        /// best place to drop an area skill. Only ever called on cast, never per frame.
+        /// Where to drop an area skill: the thickest part of the crowd within reach.
+        ///
+        /// It scores GRID CELLS, not enemies. The old version asked every enemy in range how many
+        /// neighbours it had, which is n squared, and a spatial index does not rescue it — by the
+        /// time a wave has converged, the whole swarm is standing inside one blast radius, so any
+        /// "who is near me" query still touches everyone. Measured: 1.95 ms at 154 enemies, and
+        /// wrapping a grid around the same question made it 4.85 ms at 200.
+        ///
+        /// Scoring cells instead costs the same whether ten enemies are alive or a thousand: the
+        /// work is bounded by how many cells the caster can reach, and enemy count only ever shows
+        /// up as an integer already counted during the movement pass.
         /// </summary>
         public Enemy BestCluster(Vector3 from, float maxDistance, float clusterRadius)
         {
-            Enemy best = null;
-            int bestCount = -1;
-
             float sqrMax = maxDistance * maxDistance;
-            float sqrCluster = clusterRadius * clusterRadius;
 
-            for (int i = 0; i < _pool.Count; i++)
+            // How many cells out to sum for one blast. Cells are 4 units, so a 6 unit radius reaches
+            // roughly two of them in each direction.
+            int block = Mathf.Clamp(Mathf.CeilToInt(clusterRadius / HashCell), 1, 4);
+
+            int reach = Mathf.Clamp(Mathf.CeilToInt(maxDistance / HashCell), 1, HashSide);
+            int originX = Mathf.Clamp((int)((from.x + HashExtent) / HashCell), 0, HashSide - 1);
+            int originZ = Mathf.Clamp((int)((from.z + HashExtent) / HashCell), 0, HashSide - 1);
+
+            int minX = Mathf.Max(0, originX - reach), maxX = Mathf.Min(HashSide - 1, originX + reach);
+            int minZ = Mathf.Max(0, originZ - reach), maxZ = Mathf.Min(HashSide - 1, originZ + reach);
+
+            int bestScore = 0;
+            int bestCell = -1;
+
+            for (int cz = minZ; cz <= maxZ; cz++)
             {
-                var candidate = _pool[i];
-                if (!candidate.Alive) continue;
-
-                Vector3 toCandidate = candidate.T.position - from;
-                toCandidate.y = 0f;
-                if (toCandidate.sqrMagnitude > sqrMax) continue;
-
-                int count = 0;
-                for (int k = 0; k < _pool.Count; k++)
+                for (int cx = minX; cx <= maxX; cx++)
                 {
-                    var other = _pool[k];
-                    if (!other.Alive) continue;
+                    // Empty cells cannot be the centre of anything worth hitting.
+                    if (_cellCount[cz * HashSide + cx] == 0) continue;
 
-                    Vector3 d = other.T.position - candidate.T.position;
-                    d.y = 0f;
-                    if (d.sqrMagnitude <= sqrCluster) count++;
+                    int score = 0;
+                    int bz0 = Mathf.Max(0, cz - block), bz1 = Mathf.Min(HashSide - 1, cz + block);
+                    int bx0 = Mathf.Max(0, cx - block), bx1 = Mathf.Min(HashSide - 1, cx + block);
+
+                    for (int bz = bz0; bz <= bz1; bz++)
+                    {
+                        for (int bx = bx0; bx <= bx1; bx++) score += _cellCount[bz * HashSide + bx];
+                    }
+
+                    if (score <= bestScore) continue;
+
+                    var candidate = PickFromCell(cz * HashSide + cx, from, sqrMax);
+                    if (candidate == null) continue;
+
+                    bestScore = score;
+                    bestCell = cz * HashSide + cx;
                 }
-
-                if (count <= bestCount) continue;
-
-                bestCount = count;
-                best = candidate;
             }
 
-            return best;
+            // Fall back to the closest enemy: better to fire at something than to hold the cast.
+            return bestCell < 0 ? Nearest(from, maxDistance) : PickFromCell(bestCell, from, sqrMax);
         }
 
         /// <summary>Damages everything inside a rectangle running from origin along dir.</summary>
@@ -577,7 +1193,7 @@ namespace Proto
                 var e = _pool[i];
                 if (!e.Alive) continue;
 
-                Vector3 d = e.T.position - origin;
+                Vector3 d = e.Pos - origin;
                 d.y = 0f;
 
                 float along = Vector3.Dot(d, dir);
@@ -590,6 +1206,38 @@ namespace Proto
             }
         }
 
+        /// <summary>
+        /// Which way to run. Every enemy inside <paramref name="radius"/> pushes the caster away,
+        /// harder the closer it is; the sum is the escape direction.
+        ///
+        /// A crowd on one side gives a strong, obvious answer. A crowd on ALL sides cancels out and
+        /// returns near zero — that is deliberate, and it is how being surrounded kills you.
+        /// </summary>
+        public Vector3 CrowdPressure(Vector3 at, float radius)
+        {
+            if (radius <= 0f) return Vector3.zero;
+
+            Vector3 push = Vector3.zero;
+            float sqrRadius = radius * radius;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                Vector3 d = at - e.Pos;
+                d.y = 0f;
+
+                float sqr = d.sqrMagnitude;
+                if (sqr > sqrRadius || sqr < 0.0001f) continue;
+
+                float distance = Mathf.Sqrt(sqr);
+                push += d / distance * (1f - distance / radius);
+            }
+
+            return push.sqrMagnitude > 1f ? push.normalized : push;
+        }
+
         public Enemy Nearest(Vector3 from, float maxDistance)
         {
             Enemy best = null;
@@ -600,7 +1248,7 @@ namespace Proto
                 var e = _pool[i];
                 if (!e.Alive) continue;
 
-                Vector3 d = e.T.position - from;
+                Vector3 d = e.Pos - from;
                 d.y = 0f;
                 float sqr = d.sqrMagnitude;
                 if (sqr >= bestSqr) continue;
@@ -610,6 +1258,63 @@ namespace Proto
             }
 
             return best;
+        }
+
+        /// <summary>
+        /// Walks a chain the way a chain is supposed to walk: the first link is the nearest enemy
+        /// to <paramref name="from"/>, and every link after that hops from the enemy just hit to the
+        /// nearest one it has not touched yet, within <paramref name="jumpRange"/>.
+        ///
+        /// This replaces "grab the N nearest enemies to the caster", which never actually travelled
+        /// anywhere — a chain skill could not reach past its own range no matter how tightly the
+        /// swarm was packed, and there was nothing to draw a bolt between.
+        /// </summary>
+        /// <returns>How many links were made. Positions are in <paramref name="buffer"/> order.</returns>
+        public int ChainFrom(Vector3 from, float firstRange, float jumpRange, Enemy[] buffer, int maxHits)
+        {
+            int found = 0;
+            int limit = Mathf.Min(maxHits, buffer.Length);
+
+            Vector3 at = from;
+            float reach = firstRange;
+
+            while (found < limit)
+            {
+                Enemy best = null;
+                float bestSqr = reach * reach;
+
+                for (int i = 0; i < _pool.Count; i++)
+                {
+                    var e = _pool[i];
+                    if (!e.Alive) continue;
+
+                    bool taken = false;
+                    for (int k = 0; k < found; k++)
+                    {
+                        if (buffer[k] != e) continue;
+                        taken = true;
+                        break;
+                    }
+
+                    if (taken) continue;
+
+                    Vector3 d = e.Pos - at;
+                    d.y = 0f;
+                    float sqr = d.sqrMagnitude;
+                    if (sqr >= bestSqr) continue;
+
+                    bestSqr = sqr;
+                    best = e;
+                }
+
+                if (best == null) break;
+
+                buffer[found++] = best;
+                at = best.Pos;
+                reach = jumpRange;
+            }
+
+            return found;
         }
 
         /// <summary>Fills <paramref name="buffer"/> with the closest living enemies. Returns how many.</summary>
@@ -638,7 +1343,7 @@ namespace Proto
 
                     if (taken) continue;
 
-                    Vector3 d = e.T.position - from;
+                    Vector3 d = e.Pos - from;
                     d.y = 0f;
                     float sqr = d.sqrMagnitude;
                     if (sqr >= bestSqr) continue;

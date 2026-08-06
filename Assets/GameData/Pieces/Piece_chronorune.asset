@@ -18,6 +18,7 @@ MonoBehaviour:
   Layer: 0
   Shape: 2
   Color: {r: 0.5, g: 0.35, b: 0.85, a: 1}
+  Icon: {fileID: 21300000, guid: 5d2cc71353359c3428f9899eff1c22ee, type: 3}
   Kind: 5
   Element: 3
   BaseDamage: 0
@@ -26,6 +27,8 @@ MonoBehaviour:
   Range: 0
   Hits: 1
   ManaCost: 0
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -37,7 +40,9 @@ MonoBehaviour:
   Aura: 2
   AuraValue: 0.35999998
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 17
+    Value: 0.4
   Stat: 0
   StatValue: 0
   Blurb: '3 panjang. Tiap petak skill di atasnya: cooldown -12%.'

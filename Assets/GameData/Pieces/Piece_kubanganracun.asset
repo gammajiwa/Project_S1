@@ -18,6 +18,7 @@ MonoBehaviour:
   Layer: 1
   Shape: 5
   Color: {r: 0.5, g: 0.85, b: 0.35, a: 1}
+  Icon: {fileID: 21300000, guid: 97f67842ca92d8547b29650ea7fc836e, type: 3}
   Kind: 6
   Element: 3
   BaseDamage: 5
@@ -25,7 +26,7 @@ MonoBehaviour:
   Radius: 3
   Range: 9
   Hits: 1
-  ManaCost: 14
+  ManaCost: 15
   ZoneDuration: 5
   ZoneTickInterval: 0.5
   Trigger: 0
@@ -42,4 +43,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: L-shape. Leaves a lingering pool. Applies POISON.
+  Blurb: Leaves a lingering pool. Applies POISON.

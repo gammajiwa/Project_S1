@@ -16,16 +16,17 @@ MonoBehaviour:
   DisplayName: Doom Nova
   Stars: 4
   Layer: 1
-  Shape: 2
+  Shape: 13
   Color: {r: 1, g: 0.95, b: 0.6, a: 1}
+  Icon: {fileID: 21300000, guid: 08ca5451f47f89843a1c522f74a1a330, type: 3}
   Kind: 1
   Element: 0
   BaseDamage: 110
-  BaseCooldown: 4.5
+  BaseCooldown: 4.2
   Radius: 9
   Range: 9
   Hits: 1
-  ManaCost: 45
+  ManaCost: 58
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   Trigger: 0
@@ -42,4 +43,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 3 long. The heaviest blast in the book. Applies BURN.
+  Blurb: EVOLVED. The heaviest blast in the book. Applies BURN.

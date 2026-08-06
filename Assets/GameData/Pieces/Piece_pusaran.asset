@@ -16,8 +16,9 @@ MonoBehaviour:
   DisplayName: Vortex
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 2
   Color: {r: 0.7, g: 0.5, b: 0.95, a: 1}
+  Icon: {fileID: 21300000, guid: 93273f862fe16c241b530efecab05699, type: 3}
   Kind: 4
   Element: 3
   BaseDamage: 6
@@ -42,5 +43,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: "3 long. Drags enemies together. Applies DRAG \u2014 the setup for mass
-    reactions."
+  Blurb: Drags enemies together. Applies DRAG - the setup for mass reactions.

@@ -60,13 +60,18 @@ namespace Proto
         // --- shop / recipes ---
         const int ShopSlots = 6;
 
-        const int EvoLinePool = 8;
-        
+        // One group needs a connector per pair of ingredients, not a single box, so the pool has to
+        // cover (members - 1) segments for every group on the board at once.
+        const int EvoLinePool = 24;
 
-        // Same blue and gold as before, but they fill an area now instead of drawing a bar, so the
-        // alpha has to stay low enough to read the pieces underneath.
-        static readonly Color AreaIncomplete = new Color(0.35f, 0.62f, 1f, 0.26f);
-        static readonly Color AreaComplete = new Color(1f, 0.85f, 0.3f, 0.34f);
+        const float EvoLineThin = 5f;
+        const float EvoLineThick = 8f;
+
+
+        // Blue while the recipe is short a part, gold once it is complete. These are lines now, not
+        // a wash over an area, so they can be opaque — a line has to be followed, not just noticed.
+        static readonly Color LinkIncomplete = new Color(0.4f, 0.68f, 1f, 0.85f);
+        static readonly Color LinkComplete = new Color(1f, 0.84f, 0.32f, 0.95f);
 
         // Browsing the codex belongs to the main menu now. A run only ever writes to it.
         DiscoveryLog _codex;
@@ -78,6 +83,9 @@ namespace Proto
         Image[] _evoLines;
         List<EvoPreview> _previews = new List<EvoPreview>();
         float _previewTimer;
+
+        /// <summary>Scratch buffer for ordering one group's ingredients. A recipe takes at most 3.</summary>
+        readonly Vector2[] _evoWalk = new Vector2[4];
 
         // Last previewed drag position, so the lines can be recomputed the moment the cursor moves
         // instead of waiting out the idle throttle.
@@ -116,6 +124,9 @@ namespace Proto
         Image[] _spellFill;
         Text[] _spellText;
 
+        /// <summary>Row order for the panel: indices into Book.Spells, sorted by damage.</summary>
+        readonly int[] _spellOrder = new int[MaxSpellRows];
+
         Image[] _speedButtons;
         Text[] _speedLabels;
         int _speedSlot;
@@ -126,6 +137,7 @@ namespace Proto
         float _meterTimer;
 
         Text _buffText;
+        Text _debuffText;
 
         Text _hudText;
         Image _hpBg;
@@ -161,6 +173,9 @@ namespace Proto
         float[] _floatLife;
         Vector3[] _floatWorld;
 
+        DamagePopups _popups;
+        RecipePanel _recipes;
+
         readonly StringBuilder _sb = new StringBuilder(256);
 
         public void Init(PlayerCaster player, EnemyManager enemies, Camera cam,
@@ -171,13 +186,18 @@ namespace Proto
             _camera = cam;
             _db = database;
             _balance = balance;
-            _tooltips = new TooltipBuilder(database, balance, OwnedCount);
+            _tooltips = new TooltipBuilder(balance);
             _rerollCost = balance.RerollCostStart;
 
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (_font == null) _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
 
             BuildCanvas();
+
+            // Built first on purpose: on this canvas creation order is draw order, so the damage
+            // numbers pass UNDER the grimoire and the panels instead of covering them.
+            _popups = new DamagePopups(_canvas.transform, _font, cam);
+
             BuildGrid();
             BuildSkillWidgets();
             BuildBackpack();
@@ -191,9 +211,14 @@ namespace Proto
             BuildMeter();
             BuildFloaters();
 
+            // Built last: on this canvas creation order is draw order, and the recipe card has to
+            // sit on top of everything it is explaining.
+            _recipes = new RecipePanel(_canvas.transform, _font, _db, OwnedCount);
+
             Enemies.OnWaveCleared += OnWaveCleared;
             Enemies.OnKill += OnEnemyKilled;
             Enemies.OnDamage += _meter.Record;
+            Enemies.OnEnemyDamaged += _popups.Push;
             Player.OnCast += OnSpellCast;
             Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
 
@@ -522,7 +547,9 @@ namespace Proto
 
             for (int i = 0; i < MaxSpellRows; i++)
             {
-                float y = Margin + i * 44;
+                // Row 0 is the TOP row. The list is sorted by damage, so the heaviest skill has to
+                // sit where the eye lands first — the old bottom-up order buried it.
+                float y = Margin + (MaxSpellRows - 1 - i) * 44;
                 _spellBg[i] = MakeImage($"SpellBg_{i}", new Vector2(-Margin, y), new Vector2(SpellPanelW, 40),
                     new Color(0.1f, 0.1f, 0.14f, 0.85f), new Vector2(1f, 0f));
 
@@ -538,7 +565,7 @@ namespace Proto
 
             MakeText("SpellTitle", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 6),
                 new Vector2(400, 22), 15, new Color(0.85f, 0.82f, 0.95f),
-                new Vector2(1f, 0f), TextAnchor.LowerRight).text = "SPELL AKTIF  (buff dari rune di bawahnya)";
+                new Vector2(1f, 0f), TextAnchor.LowerRight).text = "SPELL AKTIF  -  urut damage terbesar";
         }
 
         void BuildSpeedControl()
@@ -632,6 +659,10 @@ namespace Proto
             _buffText = MakeText("Buffs", new Vector2(Margin, -160), new Vector2(700, 24), 15,
                 new Color(1f, 0.92f, 0.55f), new Vector2(0f, 1f), TextAnchor.UpperLeft);
             _buffText.text = "";
+
+            _debuffText = MakeText("Debuffs", new Vector2(Margin, -182), new Vector2(700, 24), 15,
+                new Color(1f, 0.45f, 0.45f), new Vector2(0f, 1f), TextAnchor.UpperLeft);
+            _debuffText.text = "";
         }
 
         void DrawMeter()
@@ -646,19 +677,27 @@ namespace Proto
 
         void DrawBuffs()
         {
-            var buffs = Player.Buffs;
+            _buffText.text = Line(Player.Buffs, "BUFF:  ");
+
+            // Its own line, in red. A curse buried in the same yellow strip as your rewards is a
+            // curse the player never notices, and the whole point is to make them react to it.
+            _debuffText.text = Line(Player.Debuffs, "KUTUKAN:  ");
+        }
+
+        string Line(PlayerCaster.BuffSlot[] slots, string label)
+        {
             _sb.Length = 0;
 
-            for (int i = 0; i < buffs.Length; i++)
+            for (int i = 0; i < slots.Length; i++)
             {
-                if (buffs[i].Def == null) continue;
+                if (slots[i].Def == null) continue;
 
                 if (_sb.Length > 0) _sb.Append("   ");
-                _sb.Append(buffs[i].Def.DisplayName)
-                    .Append(' ').Append(buffs[i].Remaining.ToString("0.0")).Append('s');
+                _sb.Append(slots[i].Def.DisplayName)
+                    .Append(' ').Append(slots[i].Remaining.ToString("0.0")).Append('s');
             }
 
-            _buffText.text = _sb.Length > 0 ? "BUFF:  " + _sb : "";
+            return _sb.Length > 0 ? label + _sb : "";
         }
 
         void BuildFloaters()
@@ -712,11 +751,50 @@ namespace Proto
             return false;
         }
 
-        /// <summary>Every drop lands loose. The player decides where it actually goes.</summary>
-        void RouteDrop(PieceDefinition def, Vector3 at)
+        /// <summary>
+        /// Kill drops wait here until the wave is over.
+        ///
+        /// The grimoire is locked while a wave runs, so a piece that lands mid-wave is something you
+        /// can only watch — and by the time the wave ends the floor is carpeted with items that
+        /// arrived while you had no say. Handing them all over at once, when the board unlocks, is
+        /// the moment the player can actually act on them.
+        /// </summary>
+        readonly List<PieceDefinition> _pendingDrops = new List<PieceDefinition>();
+
+        /// <summary>Value of drops rolled past the per-wave cap. Paid out as coins instead.</summary>
+        int _pendingGold;
+
+        void ReleaseDrops()
         {
-            AddLoose(def);
-            PushFloater(at, def.DisplayName, def.Color);
+            for (int i = 0; i < _balance.WaveClearDrops; i++)
+            {
+                var bonus = _db.RandomDrop(_balance.RuneShareOfDrops);
+                if (bonus != null) _pendingDrops.Add(bonus);
+            }
+
+            int count = _pendingDrops.Count;
+            for (int i = 0; i < count; i++) AddLoose(_pendingDrops[i]);
+            _pendingDrops.Clear();
+
+            _gold += _pendingGold;
+
+            // One line for the whole haul. The pieces are already scattered on screen to be seen —
+            // a floater per drop would just bury them under their own labels.
+            if (count > 0 || _pendingGold > 0)
+            {
+                _sb.Length = 0;
+                if (count > 0) _sb.Append(count).Append(" drop");
+                if (_pendingGold > 0)
+                {
+                    if (_sb.Length > 0) _sb.Append("   ");
+                    _sb.Append("kelebihan kejual +").Append(_pendingGold).Append(" koin");
+                }
+
+                PushFloater(Player.transform.position + Vector3.up * 2.4f,
+                    _sb.ToString(), new Color(0.8f, 0.95f, 1f));
+            }
+
+            _pendingGold = 0;
         }
 
         void AddLoose(PieceDefinition def, Vector2? at = null)
@@ -804,6 +882,7 @@ namespace Proto
 
             Redraw();
             TickFloaters(Time.unscaledDeltaTime);
+            _popups.Tick(Time.unscaledDeltaTime);
             HandleBanner();
         }
 
@@ -1106,7 +1185,12 @@ namespace Proto
         void OnEnemyKilled(Vector3 at)
         {
             if (Random.value > _balance.KillDropChance) return;
-            RouteDrop(_db.RandomDrop(_balance.RuneShareOfDrops), at);
+
+            var drop = _db.RandomDrop(_balance.RuneShareOfDrops);
+            if (drop == null) return;
+
+            if (_pendingDrops.Count < _balance.MaxDropsPerWave) _pendingDrops.Add(drop);
+            else _pendingGold += ValueOf(drop);
         }
 
         void OnWaveCleared()
@@ -1116,10 +1200,7 @@ namespace Proto
             // Shop is an event: it only shows up every few waves, with fresh stock.
             if (Enemies.Wave % _balance.ShopEveryWaves == 0) RollShop();
 
-            for (int i = 0; i < _balance.WaveClearDrops; i++)
-            {
-                RouteDrop(_db.RandomDrop(_balance.RuneShareOfDrops), Player.transform.position + Vector3.up * 2f);
-            }
+            ReleaseDrops();
 
             var evolutions = Book.ResolveEvolutions();
             for (int i = 0; i < Book.Placed.Count; i++) Discover(Book.Placed[i].Def);
@@ -1156,23 +1237,72 @@ namespace Proto
                 _previews = Book.FindPendingGroups(ghostDef, ghostOrigin, _heldRot);
             }
 
-            for (int i = 0; i < EvoLinePool; i++)
+            int cursor = 0;
+            for (int g = 0; g < _previews.Count; g++) cursor = DrawEvoGroup(_previews[g], cursor);
+            for (int i = cursor; i < EvoLinePool; i++) _evoLines[i].enabled = false;
+        }
+
+        /// <summary>
+        /// Wires one recipe group together. The ingredients are visited nearest-first so the chain
+        /// hugs the pieces instead of criss-crossing the board when a group has three parts.
+        /// </summary>
+        int DrawEvoGroup(EvoPreview preview, int cursor)
+        {
+            var members = preview.Members;
+            if (members == null || members.Length < 2) return cursor;
+
+            var color = preview.Complete ? LinkComplete : LinkIncomplete;
+            float thickness = preview.Complete ? EvoLineThick : EvoLineThin;
+
+            // Walk order: start at the first ingredient, then always hop to the closest one left.
+            System.Array.Copy(members, _evoWalk, members.Length);
+            int count = members.Length;
+
+            for (int i = 1; i < count; i++)
             {
-                bool used = i < _previews.Count;
-                _evoLines[i].enabled = used;
-                if (!used) continue;
+                int nearest = i;
+                float bestSqr = float.MaxValue;
 
-                var p = _previews[i];
+                for (int k = i; k < count; k++)
+                {
+                    float sqr = (_evoWalk[k] - _evoWalk[i - 1]).sqrMagnitude;
+                    if (sqr >= bestSqr) continue;
 
-                // Groups only have to touch now, not line up, so a bar between two ends would lie
-                // about which cells are involved. Highlight the area they cover instead.
-                var min = CellAnchor(p.From.x, p.From.y);
-                var max = CellAnchor(p.To.x, p.To.y) + new Vector2(CellSize, CellSize);
+                    bestSqr = sqr;
+                    nearest = k;
+                }
 
-                _evoLines[i].rectTransform.anchoredPosition = (min + max) * 0.5f;
-                _evoLines[i].rectTransform.sizeDelta = (max - min) + new Vector2(6f, 6f);
-                _evoLines[i].color = p.Complete ? AreaComplete : AreaIncomplete;
+                var swap = _evoWalk[i];
+                _evoWalk[i] = _evoWalk[nearest];
+                _evoWalk[nearest] = swap;
+
+                if (cursor >= EvoLinePool) break;
+                DrawEvoLink(_evoLines[cursor++], _evoWalk[i - 1], _evoWalk[i], color, thickness);
             }
+
+            return cursor;
+        }
+
+        static void DrawEvoLink(Image line, Vector2 fromCell, Vector2 toCell, Color color, float thickness)
+        {
+            var a = GridPoint(fromCell);
+            var b = GridPoint(toCell);
+            var delta = b - a;
+
+            line.enabled = true;
+            line.color = color;
+            line.rectTransform.anchoredPosition = (a + b) * 0.5f;
+            line.rectTransform.sizeDelta = new Vector2(delta.magnitude, thickness);
+            line.rectTransform.localRotation =
+                Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
+        }
+
+        /// <summary>Centre of a (possibly fractional) grid cell, in canvas pixels.</summary>
+        static Vector2 GridPoint(Vector2 cell)
+        {
+            float step = CellSize + CellGap;
+            return new Vector2(Margin + cell.x * step + CellSize * 0.5f,
+                               Margin + cell.y * step + CellSize * 0.5f);
         }
 
         /// <summary>
@@ -1352,6 +1482,7 @@ namespace Proto
                 // Carrying something â€” the card would just sit in the way.
                 _tipBg.enabled = false;
                 _tipText.enabled = false;
+                _recipes.Hide();
                 Player.ShowRange(_held.Range, _held.Color);
                 return;
             }
@@ -1400,13 +1531,24 @@ namespace Proto
             {
                 _tipBg.enabled = false;
                 _tipText.enabled = false;
+                _recipes.Hide();
                 Player.HideRange();
                 return;
             }
 
-            _tipText.text = ProtoInput.AltHeld
-                ? _tooltips.BuildRecipeCard(hovered)
-                : _tooltips.Build(hovered, spell, origin);
+            // ALT swaps the stat card for the recipe card. They occupy the same corner of the
+            // screen, so exactly one of them is ever up.
+            if (ProtoInput.AltHeld)
+            {
+                _tipBg.enabled = false;
+                _tipText.enabled = false;
+                _recipes.Show(hovered, ProtoInput.MousePosition);
+                ShowHoverRange(hovered, spell);
+                return;
+            }
+
+            _recipes.Hide();
+            _tipText.text = _tooltips.Build(hovered, spell, origin);
 
             var m = ProtoInput.MousePosition;
             float x = Mathf.Min(m.x + 18f, Screen.width - 372f);
@@ -1417,6 +1559,11 @@ namespace Proto
             _tipBg.enabled = true;
             _tipText.enabled = true;
 
+            ShowHoverRange(hovered, spell);
+        }
+
+        void ShowHoverRange(PieceDefinition hovered, CompiledSpell spell)
+        {
             if (hovered.Layer == Layer.Skill && hovered.Range > 0f)
             {
                 Player.ShowRange(spell != null ? spell.Range : hovered.Range, hovered.Color);
@@ -1612,29 +1759,70 @@ namespace Proto
             _sellLabel.text = _held != null ? "JUAL  +" + ValueOf(_held) : "JUAL";
         }
 
+        /// <summary>
+        /// Orders the panel by damage, heaviest first, into <see cref="_spellOrder"/>.
+        ///
+        /// Insertion sort on purpose: the list is never longer than the number of skills that fit on
+        /// a 7x7 board, and this runs every frame — <c>List.Sort</c> would allocate a comparer on a
+        /// hot path to save nothing.
+        /// </summary>
+        int SortSpellsByDamage()
+        {
+            var spells = Book.Spells;
+            int count = Mathf.Min(spells.Count, _spellOrder.Length);
+
+            for (int i = 0; i < count; i++) _spellOrder[i] = i;
+
+            for (int i = 1; i < count; i++)
+            {
+                int current = _spellOrder[i];
+                int k = i - 1;
+
+                while (k >= 0 && Heavier(spells[current], spells[_spellOrder[k]]))
+                {
+                    _spellOrder[k + 1] = _spellOrder[k];
+                    k--;
+                }
+
+                _spellOrder[k + 1] = current;
+            }
+
+            return count;
+        }
+
+        /// <summary>Bigger hit wins; equal hits are broken by whichever lands more often.</summary>
+        static bool Heavier(CompiledSpell a, CompiledSpell b)
+        {
+            if (!Mathf.Approximately(a.Damage, b.Damage)) return a.Damage > b.Damage;
+            return a.Cooldown < b.Cooldown;
+        }
+
         void DrawSpells()
         {
             var spells = Book.Spells;
+            int count = SortSpellsByDamage();
 
             for (int i = 0; i < MaxSpellRows; i++)
             {
-                bool used = i < spells.Count;
+                bool used = i < count;
                 _spellBg[i].enabled = used;
                 _spellFill[i].enabled = used;
                 _spellText[i].enabled = used;
                 if (!used) continue;
 
-                var s = spells[i];
+                var s = spells[_spellOrder[i]];
                 float progress = s.Cooldown <= 0f ? 1f : 1f - Mathf.Clamp01(s.Source.CdTimer / s.Cooldown);
                 _spellFill[i].fillAmount = progress;
                 _spellFill[i].color = new Color(s.Source.Def.Color.r, s.Source.Def.Color.g,
                     s.Source.Def.Color.b, 0.35f);
 
                 _sb.Length = 0;
-                _sb.Append(s.Source.Def.DisplayName);
-                _sb.Append("  dmg ").Append(s.Damage.ToString("0.0"));
-                _sb.Append("  cd ").Append(s.Cooldown.ToString("0.00")).Append('s');
-                _sb.Append("  mana ").Append(Mathf.RoundToInt(s.Source.Def.ManaCost));
+                _sb.Append(i + 1).Append(". ").Append(s.Source.Def.DisplayName);
+                _sb.Append("   ").Append(s.Damage.ToString("0.0")).Append(" dmg");
+                _sb.Append("   ").Append((s.Cooldown <= 0f ? 0f : s.Damage / s.Cooldown).ToString("0.0"))
+                    .Append(" dps");
+                _sb.Append("   ").Append(s.Cooldown.ToString("0.00")).Append('s');
+                _sb.Append("   ").Append(Mathf.RoundToInt(s.Source.Def.ManaCost)).Append(" mana");
 
                 if (s.DamageBonus > 0f) _sb.Append("  +").Append(Mathf.RoundToInt(s.DamageBonus * 100f)).Append("%D");
                 if (s.CooldownBonus > 0f) _sb.Append("  -").Append(Mathf.RoundToInt(s.CooldownBonus * 100f)).Append("%CD");
@@ -1689,8 +1877,17 @@ namespace Proto
         {
             _sb.Length = 0;
             _sb.Append("WAVE ").Append(Enemies.Wave);
+
+            // Two different questions, so two different readouts: while enemies are still arriving
+            // the clock is what matters, and once they stop it is the head count.
+            if (Enemies.WaveActive)
+            {
+                _sb.Append(Enemies.Closing
+                    ? "    HABISKAN SISANYA"
+                    : "    datang " + Mathf.CeilToInt(Enemies.SpawnTimeLeft) + "s");
+            }
+
             _sb.Append("    musuh ").Append(Enemies.AliveCount);
-            _sb.Append(" (sisa ").Append(Enemies.PendingSpawns).Append(')');
             _sb.Append("    kills ").Append(Enemies.Kills);
             _sb.Append("    koin ").Append(_gold);
             _hudText.text = _sb.ToString();

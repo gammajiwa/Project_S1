@@ -18,6 +18,10 @@ namespace Proto
             public StatusDefinition Status;
             public float StatusDuration;
             public int Points;
+
+            /// <summary>Carried so the damage meter can name the skill that fired it.</summary>
+            public string SourceName;
+
             public bool Active;
         }
 
@@ -59,80 +63,159 @@ namespace Proto
             public float Remaining;
         }
 
+        /// <summary>
+        /// Debuffs get their own four slots rather than sharing the buff array.
+        ///
+        /// Sharing looked cheaper and is a trap: while surrounded you are being cursed constantly,
+        /// so a shared array would evict the reaction buffs exactly when the wave is at its worst.
+        /// The whole game is built on reaction -> buff -> bigger hit, and it must not switch itself
+        /// off under pressure.
+        /// </summary>
+        public const int DebuffSlots = 4;
+
         readonly BuffSlot[] _buffs = new BuffSlot[BuffSlots];
+        readonly BuffSlot[] _debuffs = new BuffSlot[DebuffSlots];
         readonly float[] _buffStats = new float[(int)StatKind.Count];
+        readonly float[] _debuffStats = new float[(int)StatKind.Count];
 
         public BuffSlot[] Buffs => _buffs;
+        public BuffSlot[] Debuffs => _debuffs;
 
-        /// <summary>Stat akhir: dari grimoire (permanen selama tersusun) + buff (sementara).</summary>
-        public float Total(StatKind kind) => Book.Stat(kind) + _buffStats[(int)kind];
+        /// <summary>Stat akhir: grimoire (permanen selama tersusun) + buff + debuff (sementara).</summary>
+        public float Total(StatKind kind) =>
+            Book.Stat(kind) + _buffStats[(int)kind] + _debuffStats[(int)kind];
 
         public void ApplyBuff(BuffDefinition def)
         {
             if (def == null) return;
 
-            int slot = -1;
+            if (def.IsDebuff) Land(def, _debuffs, DebuffSlots, DebuffDuration(def));
+            else Land(def, _buffs, BuffSlots, def.Duration);
+
+            Recompute();
+        }
+
+        /// <summary>Curses land through here so resistance is applied in exactly one place.</summary>
+        public void ApplyDebuff(BuffDefinition def)
+        {
+            if (def == null || !def.IsDebuff) return;
+
+            Land(def, _debuffs, DebuffSlots, DebuffDuration(def));
+            Recompute();
+        }
+
+        float DebuffDuration(BuffDefinition def)
+        {
+            if (!def.ResistShortensDuration) return def.Duration;
+
+            // Floored, never zeroed: full immunity would make the counters mandatory rather than
+            // a choice, and a debuff you cannot feel is content that may as well not exist.
+            float resist = Mathf.Clamp(Total(StatKind.DebuffResist), 0f, 0.8f);
+            return def.Duration * (1f - resist);
+        }
+
+        static void Land(BuffDefinition def, BuffSlot[] slots, int count, float duration)
+        {
+            int chosen = -1;
             float shortest = float.MaxValue;
             int weakest = 0;
 
-            for (int i = 0; i < BuffSlots; i++)
+            for (int i = 0; i < count; i++)
             {
-                if (_buffs[i].Def == def) { slot = i; break; }
-                if (_buffs[i].Def == null) { slot = i; break; }
+                if (slots[i].Def == def) { chosen = i; break; }
+                if (slots[i].Def == null) { chosen = i; break; }
 
-                if (_buffs[i].Remaining >= shortest) continue;
-                shortest = _buffs[i].Remaining;
+                if (slots[i].Remaining >= shortest) continue;
+                shortest = slots[i].Remaining;
                 weakest = i;
             }
 
-            if (slot < 0) slot = weakest;
+            if (chosen < 0) chosen = weakest;
 
-            _buffs[slot].Def = def;
-            _buffs[slot].Remaining = def.Duration;   // refresh, tidak menumpuk
-            RecomputeBuffStats();
+            slots[chosen].Def = def;
+            slots[chosen].Remaining = duration;   // refresh, tidak menumpuk
+        }
+
+        /// <summary>Drops every curse. The whole point of <see cref="CastKind.Cleanse"/>.</summary>
+        public bool ClearDebuffs()
+        {
+            bool any = false;
+
+            for (int i = 0; i < DebuffSlots; i++)
+            {
+                if (_debuffs[i].Def == null) continue;
+                _debuffs[i].Def = null;
+                any = true;
+            }
+
+            if (any) Recompute();
+            return any;
         }
 
         void TickBuffs(float dt)
         {
+            bool changed = Expire(_buffs, BuffSlots, dt) | Expire(_debuffs, DebuffSlots, dt);
+            if (changed) Recompute();
+        }
+
+        static bool Expire(BuffSlot[] slots, int count, float dt)
+        {
             bool changed = false;
 
-            for (int i = 0; i < BuffSlots; i++)
+            for (int i = 0; i < count; i++)
             {
-                if (_buffs[i].Def == null) continue;
+                if (slots[i].Def == null) continue;
 
-                _buffs[i].Remaining -= dt;
-                if (_buffs[i].Remaining > 0f) continue;
+                slots[i].Remaining -= dt;
+                if (slots[i].Remaining > 0f) continue;
 
-                _buffs[i].Def = null;
+                slots[i].Def = null;
                 changed = true;
             }
 
-            if (changed) RecomputeBuffStats();
+            return changed;
         }
 
-        void RecomputeBuffStats()
+        void Recompute()
         {
-            System.Array.Clear(_buffStats, 0, _buffStats.Length);
+            Sum(_buffs, BuffSlots, _buffStats);
+            Sum(_debuffs, DebuffSlots, _debuffStats);
+        }
 
-            for (int i = 0; i < BuffSlots; i++)
+        static void Sum(BuffSlot[] slots, int count, float[] into)
+        {
+            System.Array.Clear(into, 0, into.Length);
+
+            for (int i = 0; i < count; i++)
             {
-                var def = _buffs[i].Def;
+                var def = slots[i].Def;
                 if (def == null || def.Mods == null) continue;
 
                 for (int m = 0; m < def.Mods.Length; m++)
                 {
                     var mod = def.Mods[m];
                     if (mod.Type == StatKind.None || mod.Type == StatKind.Count) continue;
-                    _buffStats[(int)mod.Type] += mod.Value;
+                    into[(int)mod.Type] += mod.Value;
                 }
             }
         }
 
         // Buff berubah saat wave berjalan, jadi ini dipakai SAAT CAST — bukan saat kompilasi grid.
-        float BuffDamageMul => 1f + _buffStats[(int)StatKind.DamagePct];
-        float BuffCooldownMul => Mathf.Clamp(1f - _buffStats[(int)StatKind.CooldownPct], 0.25f, 1f);
-        float BuffAreaMul => 1f + _buffStats[(int)StatKind.AreaPct];
-        float BuffRangeMul => 1f + _buffStats[(int)StatKind.RangePct];
+        //
+        // Batas atasnya 2, bukan 1. Dulu 1, dan itu berarti nilai NEGATIF tidak berpengaruh sama
+        // sekali: sebuah debuff "cast jadi lambat" akan tampil di HUD, lalu tidak melakukan apa pun.
+        float BuffDamageMul => Mathf.Max(0.05f, 1f + _buffStats[(int)StatKind.DamagePct]
+                                                  + _debuffStats[(int)StatKind.DamagePct]);
+        float BuffCooldownMul => Mathf.Clamp(1f - _buffStats[(int)StatKind.CooldownPct]
+                                                - _debuffStats[(int)StatKind.CooldownPct], 0.25f, 2f);
+        float BuffAreaMul => Mathf.Max(0.2f, 1f + _buffStats[(int)StatKind.AreaPct]
+                                                + _debuffStats[(int)StatKind.AreaPct]);
+        float BuffRangeMul => Mathf.Max(0.2f, 1f + _buffStats[(int)StatKind.RangePct]
+                                                 + _debuffStats[(int)StatKind.RangePct]);
+
+        /// <summary>Mana cost from the temporary layer. The grid's own share lives on Grimoire.</summary>
+        float BuffManaCostMul => Mathf.Clamp(1f - _buffStats[(int)StatKind.ManaCostPct]
+                                                - _debuffStats[(int)StatKind.ManaCostPct], 0.2f, 2f);
 
         /// <summary>Satu lemparan crit. Dipanggil sekali per cast, bukan per musuh.</summary>
         float RollCrit()
@@ -148,6 +231,7 @@ namespace Proto
 
         EnemyManager _enemies;
         ContentDatabase _db;
+        GameBalance _balance;
 
         // A triggered cast can trigger again, but only a few links deep. Without this a chain
         // build locks the frame.
@@ -159,7 +243,12 @@ namespace Proto
 
         readonly List<Projectile> _projectiles = new List<Projectile>(64);
         readonly List<Flash> _flashes = new List<Flash>(32);
-        readonly EnemyManager.Enemy[] _chainBuffer = new EnemyManager.Enemy[4];
+
+        // Twelve, not four. The old buffer was shorter than the longest chain skill in the book
+        // (Frost Prism hits five), so two of its links were silently thrown away every cast.
+        readonly EnemyManager.Enemy[] _chainBuffer = new EnemyManager.Enemy[12];
+
+        BoltPool _bolts;
         LineRenderer _rangeRing;
 
         /// <summary>Draws a ground ring showing a skill's reach while you hover it.</summary>
@@ -200,7 +289,10 @@ namespace Proto
             _rangeRing.useWorldSpace = false;
             _rangeRing.loop = true;
             _rangeRing.widthMultiplier = 0.12f;
-            _rangeRing.sharedMaterial = _fxMaterial;
+
+            // The bolt material, not the FX one: URP/Unlit ignores LineRenderer vertex colours, so
+            // on the shared FX material this ring drew white whatever colour it was handed.
+            _rangeRing.sharedMaterial = _bolts.Material;
             _rangeRing.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             _rangeRing.enabled = false;
         }
@@ -209,6 +301,7 @@ namespace Proto
         {
             _enemies = enemies;
             _db = database;
+            _balance = balance;
 
             Book = new Grimoire(database);
 
@@ -226,6 +319,8 @@ namespace Proto
 
             _fxRoot = new GameObject("FX").transform;
             _fxRoot.SetParent(transform.parent, false);
+
+            _bolts = new BoltPool(_fxRoot);
 
             _enemies.OnReaction += OnReactionFired;
             _enemies.OnStatusApplied += OnEnemyStatusApplied;
@@ -256,8 +351,10 @@ namespace Proto
 
             TickBuffs(dt);
             TickProjectiles(dt);
+            TickDescents(dt);
             TickZones(dt);
             TickFlashes(dt);
+            _bolts.Tick(dt);
         }
 
         /// <summary>Called when a wave starts so every spell opens on a ready cooldown.</summary>
@@ -281,7 +378,7 @@ namespace Proto
                 if (s.Source.CdTimer > 0f) continue;
 
                 // Cooldown is ready but the book is dry â€” hold the cast until mana comes back.
-                float cost = s.Source.Def.ManaCost * Book.ManaCostMultiplier;
+                float cost = s.Source.Def.ManaCost * Book.ManaCostMultiplier * BuffManaCostMul;
                 if (Mana < cost) continue;
 
                 // No valid target: stay ready and idle. The cooldown must not keep spinning.
@@ -313,7 +410,7 @@ namespace Proto
                 if (_db.IndexOfStatus(def.TriggerStatus) != statusIndex) continue;
                 if (points < def.TriggerPoints) continue;
                 if (s.Source.CdTimer > 0f) continue;
-                float triggerCost = def.ManaCost * Book.ManaCostMultiplier;
+                float triggerCost = def.ManaCost * Book.ManaCostMultiplier * BuffManaCostMul;
                 if (Mana < triggerCost) continue;
 
                 _triggerDepth++;
@@ -336,34 +433,26 @@ namespace Proto
             if (target == null || !target.Alive) return false;
 
             var def = spell.Source.Def;
-            Vector3 at = target.T.position;
+            Vector3 at = target.Pos;
             int points = def.AppliedPoints + Book.BonusAilmentPoints;
 
             switch (def.Kind)
             {
                 case CastKind.Nova:
-                    _enemies.DamageArea(at, spell.Radius, spell.Damage,
-                        def.AppliedStatus, def.StatusDuration, points);
-                    SpawnFlash(at, spell.Radius * 2f, 0.3f, def.Color);
-                    return true;
-
-                case CastKind.Chain:
                 {
-                    int count = _enemies.NearestMany(at, spell.Range, _chainBuffer);
-                    if (count == 0) return false;
-
-                    for (int i = 0; i < count && i < def.Hits; i++)
-                    {
-                        _enemies.Damage(_chainBuffer[i], spell.Damage * BuffDamageMul * RollCrit(),
-                            def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
-                        SpawnFlash(_chainBuffer[i].T.position, 1.8f, 0.18f, def.Color);
-                    }
-
+                    float radius = spell.Radius * BuffAreaMul;
+                    _enemies.DamageArea(at, radius, spell.Damage * BuffDamageMul * RollCrit(),
+                        def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
+                    SpawnFlash(at, radius * 2f, 0.3f, def.Color);
                     return true;
                 }
 
+                case CastKind.Chain:
+                    return CastChain(spell, def, at, spell.Damage * BuffDamageMul * RollCrit());
+
                 case CastKind.Projectile:
-                    _enemies.Damage(target, spell.Damage * BuffDamageMul * RollCrit(), def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
+                    _enemies.Damage(target, spell.Damage * BuffDamageMul * RollCrit(),
+                        def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
                     SpawnFlash(at, 1.8f, 0.2f, def.Color);
                     return true;
 
@@ -389,7 +478,7 @@ namespace Proto
                     var target = _enemies.Nearest(transform.position, spell.Range);
                     if (target == null) return false;
 
-                    Vector3 dir = target.T.position - transform.position;
+                    Vector3 dir = target.Pos - transform.position;
                     dir.y = 0f;
                     FireProjectile(dir.normalized, spell.Damage * BuffDamageMul * RollCrit(), def, def.Color);
                     return true;
@@ -397,29 +486,24 @@ namespace Proto
 
                 case CastKind.Nova:
                 {
-                    // Do not detonate into an empty field â€” that was burning mana for nothing.
-                    if (_enemies.Nearest(transform.position, spell.Radius) == null) return false;
+                    float radius = spell.Radius * BuffAreaMul;
 
-                    _enemies.DamageArea(transform.position, spell.Radius, spell.Damage,
-                        def.AppliedStatus, def.StatusDuration, def.AppliedPoints + Book.BonusAilmentPoints);
-                    SpawnFlash(transform.position, spell.Radius * 2f, 0.3f, def.Color);
+                    // Do not detonate into an empty field â€” that was burning mana for nothing.
+                    if (_enemies.Nearest(transform.position, radius) == null) return false;
+
+                    // Buffs and crit apply here exactly like they do to every other cast. They did
+                    // not before, which quietly excluded the heaviest skills in the book — every
+                    // Nova, up to Doom Nova — from the reaction -> buff -> bigger hit loop.
+                    _enemies.DamageArea(transform.position, radius,
+                        spell.Damage * BuffDamageMul * RollCrit(),
+                        def.AppliedStatus, def.StatusDuration, AilmentPoints(def), true, def.DisplayName);
+
+                    SpawnFlash(transform.position, radius * 2f, 0.3f, def.Color);
                     return true;
                 }
 
                 case CastKind.Chain:
-                {
-                    int count = _enemies.NearestMany(transform.position, spell.Range, _chainBuffer);
-                    if (count == 0) return false;
-
-                    for (int i = 0; i < count && i < def.Hits; i++)
-                    {
-                        var e = _chainBuffer[i];
-                        _enemies.Damage(e, spell.Damage, def.AppliedStatus, def.StatusDuration, def.AppliedPoints + Book.BonusAilmentPoints);
-                        SpawnFlash(e.T.position, 1.8f, 0.18f, def.Color);
-                    }
-
-                    return true;
-                }
+                    return CastChain(spell, def, transform.position, spell.Damage * BuffDamageMul * RollCrit());
 
                 case CastKind.Heal:
                 {
@@ -430,17 +514,28 @@ namespace Proto
                     return true;
                 }
 
+                case CastKind.Cleanse:
+                {
+                    // Holds its cooldown and its mana when there is nothing to cleanse, the same way
+                    // Heal refuses to fire at full health. A cleanser that burns itself on an empty
+                    // debuff bar is never up when a curse actually lands.
+                    if (!ClearDebuffs()) return false;
+
+                    if (spell.Damage > 0f) Hp = Mathf.Min(MaxHp, Hp + spell.Damage);
+                    SpawnFlash(transform.position, 4f, 0.35f, def.Color);
+                    return true;
+                }
+
                 case CastKind.AreaAtTarget:
                 {
                     // Land on the thickest part of the crowd, not on top of ourselves.
                     var cluster = _enemies.BestCluster(transform.position, spell.Range, spell.Radius);
                     if (cluster == null) return false;
 
-                    Vector3 at = cluster.T.position;
-                    _enemies.DamageArea(at, spell.Radius * BuffAreaMul,
-                        spell.Damage * BuffDamageMul * RollCrit(),
-                        def.AppliedStatus, def.StatusDuration, AilmentPoints(def), true, def.DisplayName);
-                    SpawnFlash(at, spell.Radius * 2f, 0.3f, def.Color);
+                    // Crit is rolled here, at cast, and carried down with the shot — rolling it on
+                    // impact would break the one-roll-per-cast rule the whole game is tuned around.
+                    LaunchDescent(cluster.Pos, spell, def,
+                        spell.Damage * BuffDamageMul * RollCrit(), spell.Radius * BuffAreaMul);
                     return true;
                 }
 
@@ -449,15 +544,18 @@ namespace Proto
                     var target = _enemies.Nearest(transform.position, spell.Range);
                     if (target == null) return false;
 
-                    Vector3 dir = target.T.position - transform.position;
+                    Vector3 dir = target.Pos - transform.position;
                     dir.y = 0f;
 
                     float halfWidth = Mathf.Max(0.4f, spell.Radius);
-                    _enemies.DamageLine(transform.position, dir, spell.Range * BuffRangeMul, halfWidth,
+                    float length = spell.Range * BuffRangeMul;
+
+                    _enemies.DamageLine(transform.position, dir, length, halfWidth,
                         spell.Damage * BuffDamageMul * RollCrit(),
                         def.AppliedStatus, def.StatusDuration, AilmentPoints(def), def.DisplayName);
 
-                    SpawnBeam(transform.position, dir.normalized, spell.Range, halfWidth, def.Color);
+                    _bolts.Beam(transform.position, transform.position + dir.normalized * length,
+                        def.Color, halfWidth * 1.6f);
                     return true;
                 }
 
@@ -466,7 +564,8 @@ namespace Proto
                     var cluster = _enemies.BestCluster(transform.position, spell.Range, spell.Radius);
                     if (cluster == null) return false;
 
-                    SpawnZone(cluster.T.position, spell, def);
+                    // Zones fall out of the sky too — the pool forms where the glob lands.
+                    LaunchDescent(cluster.Pos, spell, def, 0f, 0f);
                     return true;
                 }
             }
@@ -475,6 +574,170 @@ namespace Proto
         }
 
         int AilmentPoints(PieceDefinition def) => def.AppliedPoints + Book.BonusAilmentPoints;
+
+        // ---------- chain lightning ----------
+
+        /// <summary>
+        /// Hops enemy to enemy and draws a bolt along every hop. Shared by the cooldown cast and the
+        /// ailment-triggered one so both look and reach the same.
+        /// </summary>
+        bool CastChain(CompiledSpell spell, PieceDefinition def, Vector3 origin, float damage)
+        {
+            int count = _enemies.ChainFrom(origin, spell.Range, _balance.ChainJumpRange,
+                _chainBuffer, def.Hits);
+
+            if (count == 0) return false;
+
+            Vector3 from = origin;
+            int points = AilmentPoints(def);
+
+            for (int i = 0; i < count; i++)
+            {
+                var target = _chainBuffer[i];
+                Vector3 to = target.Pos;
+
+                _bolts.Arc(from, to, def.Color);
+                SpawnFlash(to, 1.6f, 0.15f, def.Color);
+
+                _enemies.Damage(target, damage, def.AppliedStatus, def.StatusDuration,
+                    points, true, def.DisplayName, from);
+
+                from = to;
+            }
+
+            return true;
+        }
+
+        // ---------- sky-falling casts ----------
+
+        /// <summary>
+        /// A shot that falls onto a ground point and only pays out when it lands. Area skills and
+        /// zones both use it, which is why the payload is split into a damage half and a zone half.
+        /// </summary>
+        class Descent
+        {
+            public Transform T;
+            public TrailRenderer Trail;
+            public Renderer R;
+            public Vector3 Target;
+
+            public CompiledSpell Spell;
+            public PieceDefinition Def;
+            public float Damage;
+            public float Radius;
+            public bool IsZone;
+
+            public bool Active;
+        }
+
+        readonly List<Descent> _descents = new List<Descent>(8);
+
+        void LaunchDescent(Vector3 at, CompiledSpell spell, PieceDefinition def,
+            float damage, float radius)
+        {
+            Descent d = null;
+            for (int i = 0; i < _descents.Count; i++)
+            {
+                if (_descents[i].Active) continue;
+                d = _descents[i];
+                break;
+            }
+
+            if (d == null)
+            {
+                var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                go.name = "Descent";
+                var col = go.GetComponent<Collider>();
+                if (col != null) Destroy(col);
+
+                go.transform.SetParent(_fxRoot, false);
+                go.transform.localScale = Vector3.one * 0.85f;
+
+                var r = go.GetComponent<Renderer>();
+                r.sharedMaterial = _fxMaterial;
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+                var trail = go.AddComponent<TrailRenderer>();
+                trail.sharedMaterial = _bolts.Material;
+                trail.time = 0.22f;
+                trail.widthMultiplier = 0.7f;
+                trail.numCapVertices = 2;
+                trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                trail.receiveShadows = false;
+
+                d = new Descent { T = go.transform, Trail = trail, R = r };
+                _descents.Add(d);
+            }
+
+            d.Target = new Vector3(at.x, 0.35f, at.z);
+            d.Spell = spell;
+            d.Def = def;
+            d.Damage = damage;
+            d.Radius = radius;
+            d.IsZone = def.Kind == CastKind.Zone;
+            d.Active = true;
+
+            // A slight slant reads as "thrown from somewhere" rather than spawned directly overhead.
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float lean = _balance.SkyFallHeight * 0.22f;
+            d.T.position = d.Target + Vector3.up * _balance.SkyFallHeight +
+                           new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * lean;
+
+            _mpb.SetColor(BaseColorId, def.Color);
+            d.R.SetPropertyBlock(_mpb);
+
+            d.Trail.startColor = new Color(def.Color.r, def.Color.g, def.Color.b, 0.9f);
+            d.Trail.endColor = new Color(def.Color.r, def.Color.g, def.Color.b, 0f);
+
+            // Pooled trails remember where they were last used — without this the shot arrives
+            // dragging a streak from the previous impact clean across the map.
+            d.T.gameObject.SetActive(true);
+            d.Trail.Clear();
+        }
+
+        void TickDescents(float dt)
+        {
+            float step = _balance.SkyFallSpeed * dt;
+
+            for (int i = 0; i < _descents.Count; i++)
+            {
+                var d = _descents[i];
+                if (!d.Active) continue;
+
+                Vector3 delta = d.Target - d.T.position;
+                if (delta.sqrMagnitude <= step * step)
+                {
+                    Impact(d);
+                    continue;
+                }
+
+                d.T.position += delta.normalized * step;
+            }
+        }
+
+        void Impact(Descent d)
+        {
+            d.Active = false;
+            d.T.position = d.Target;
+            d.T.gameObject.SetActive(false);
+
+            if (d.IsZone)
+            {
+                SpawnZone(d.Target, d.Spell, d.Def);
+                return;
+            }
+
+            _enemies.DamageArea(d.Target, d.Radius, d.Damage, d.Def.AppliedStatus,
+                d.Def.StatusDuration, AilmentPoints(d.Def), true, d.Def.DisplayName);
+
+            SpawnFlash(d.Target, d.Radius * 2f, 0.3f, d.Def.Color);
+        }
+
+        /// <summary>A pop where an enemy died. Wired from the composition root, not from combat.</summary>
+        public void DeathBurst(Vector3 at)
+        {
+            SpawnFlash(at, 2.2f, 0.18f, new Color(0.95f, 0.72f, 0.55f));
+        }
 
         void FireProjectile(Vector3 dir, float damage, PieceDefinition source, Color color)
         {
@@ -516,6 +779,7 @@ namespace Proto
             p.Status = source.AppliedStatus;
             p.StatusDuration = source.StatusDuration;
             p.Points = source.AppliedPoints + Book.BonusAilmentPoints;
+            p.SourceName = source.DisplayName;
             p.Active = true;
         }
 
@@ -540,7 +804,7 @@ namespace Proto
                 var hit = _enemies.Nearest(p.T.position, 0.75f);
                 if (hit != null)
                 {
-                    _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points);
+                    _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points, true, p.SourceName);
                     SpawnFlash(p.T.position, 1.4f, 0.15f, Color.white);
                     Retire(p);
                 }
@@ -553,6 +817,10 @@ namespace Proto
             p.T.gameObject.SetActive(false);
         }
 
+        /// <summary>Ceiling on the flash pool. Every kill pops one, so at 150 enemies a wave this
+        /// would otherwise grow without bound and never shrink.</summary>
+        const int MaxFlashes = 96;
+
         void SpawnFlash(Vector3 pos, float size, float life, Color color)
         {
             Flash f = null;
@@ -562,6 +830,16 @@ namespace Proto
                 {
                     f = _flashes[i];
                     break;
+                }
+            }
+
+            if (f == null && _flashes.Count >= MaxFlashes)
+            {
+                // Saturated: recycle whatever is closest to finishing.
+                f = _flashes[0];
+                for (int i = 1; i < _flashes.Count; i++)
+                {
+                    if (_flashes[i].Life < f.Life) f = _flashes[i];
                 }
             }
 
@@ -682,13 +960,6 @@ namespace Proto
             }
         }
 
-        /// <summary>A flat rectangle standing in for a sweep. Cheap, and it reads instantly.</summary>
-        void SpawnBeam(Vector3 origin, Vector3 dir, float length, float halfWidth, Color color)
-        {
-            Vector3 mid = origin + dir * (length * 0.5f);
-            SpawnFlash(mid, halfWidth * 2f + length * 0.35f, 0.18f, color);
-        }
-
         void TickFlashes(float dt)
         {
             for (int i = 0; i < _flashes.Count; i++)
@@ -710,18 +981,37 @@ namespace Proto
             }
         }
 
+        /// <summary>Sustained contact damage, already scaled by delta time by the caller.</summary>
         public void TakeDamage(float amount)
         {
             if (!Alive) return;
 
             // Defense is flat damage reduction, floored so it can never make you immortal.
-            Hp -= Mathf.Max(amount * 0.1f, amount - Total(StatKind.Defense) * Time.deltaTime);
-            if (Hp <= 0f)
-            {
-                Hp = 0f;
-                Alive = false;
-                if (_enemies != null) _enemies.Running = false;
-            }
+            Drain(Mathf.Max(amount * 0.1f, amount - Total(StatKind.Defense) * Time.deltaTime));
+        }
+
+        /// <summary>
+        /// A single hit, like an enemy shot. Needs its own curve: <see cref="TakeDamage"/> subtracts
+        /// defence scaled by delta time, which is correct for a per-frame trickle and comes out to
+        /// almost nothing against one burst — a fully armoured caster would take shots at full price.
+        /// </summary>
+        public void TakeHit(float amount)
+        {
+            if (!Alive || amount <= 0f) return;
+
+            float defense = Mathf.Max(0f, Total(StatKind.Defense));
+            float reduction = Mathf.Clamp(defense / (defense + 20f), 0f, 0.75f);
+            Drain(amount * (1f - reduction));
+        }
+
+        void Drain(float amount)
+        {
+            Hp -= amount;
+            if (Hp > 0f) return;
+
+            Hp = 0f;
+            Alive = false;
+            if (_enemies != null) _enemies.Running = false;
         }
     }
 }

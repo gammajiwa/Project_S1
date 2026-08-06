@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_thunderclap
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: thunderclap
+  DisplayName: Thunderclap
+  Stars: 2
+  Layer: 1
+  Shape: 7
+  Color: {r: 0.9304, g: 0.8782, b: 0.391, a: 1}
+  Icon: {fileID: 21300000, guid: 2757758c4d75b364897970f68e36cf5d, type: 3}
+  Kind: 1
+  Element: 2
+  BaseDamage: 32
+  BaseCooldown: 2.8
+  Radius: 5.5
+  Range: 5.5
+  Hits: 1
+  ManaCost: 24
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  AppliedStatus: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
+  StatusDuration: 4
+  AppliedPoints: 2
+  LegacyStatus: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. A blast centred on you, wide enough to clear a ring.

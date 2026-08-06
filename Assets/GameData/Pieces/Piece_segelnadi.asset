@@ -18,6 +18,7 @@ MonoBehaviour:
   Layer: 1
   Shape: 1
   Color: {r: 0.55, g: 0.9, b: 0.6, a: 1}
+  Icon: {fileID: 21300000, guid: 93b01e36bb706e046b020be6b97e86fb, type: 3}
   Kind: 7
   Element: 3
   BaseDamage: 0

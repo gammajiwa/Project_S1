@@ -18,14 +18,15 @@ MonoBehaviour:
   Layer: 1
   Shape: 1
   Color: {r: 0.9, g: 0.3, b: 0.35, a: 1}
+  Icon: {fileID: 21300000, guid: 737d970375e3c784d9a5b57daae24c1a, type: 3}
   Kind: 1
   Element: 3
   BaseDamage: 11
-  BaseCooldown: 1.6
+  BaseCooldown: 1.5
   Radius: 3.2
   Range: 3.2
   Hits: 1
-  ManaCost: 8
+  ManaCost: 9
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   Trigger: 0
@@ -42,4 +43,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 2 long. Fast spinning strike. Applies BLEED.
+  Blurb: Spins around you. Close-range guard, and the source of BLEED.

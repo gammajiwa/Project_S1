@@ -16,22 +16,31 @@ MonoBehaviour:
   DisplayName: Greater Fireball
   Stars: 2
   Layer: 1
-  Shape: 1
+  Shape: 7
   Color: {r: 1, g: 0.68, b: 0.2, a: 1}
+  Icon: {fileID: 21300000, guid: 4b1ee37db32d73a45a0833a571c1d093, type: 3}
   Kind: 0
   Element: 0
   BaseDamage: 34
-  BaseCooldown: 0.95
+  BaseCooldown: 1.05
   Radius: 0.9
   Range: 8.5
   Hits: 1
-  ManaCost: 13
+  ManaCost: 17
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
   AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
   StatusDuration: 5.5
-  AppliedStacks: 1
+  AppliedPoints: 1
   LegacyStatus: 1
   Aura: 0
   AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Proyektil jauh lebih besar, BURN lebih lama.
+  Blurb: EVOLVED. Far heavier than the bolt it came from, and no slower.

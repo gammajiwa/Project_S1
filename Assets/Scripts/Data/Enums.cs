@@ -27,7 +27,10 @@ namespace Proto
         Zone,
 
         Passive,
-        AuraOnly
+        AuraOnly,
+
+        /// <summary>Membuang semua debuff yang sedang menempel. Tidak menembak apa pun.</summary>
+        Cleanse
     }
 
     /// <summary>
@@ -74,6 +77,16 @@ namespace Proto
 
         /// <summary>Menambah POIN tiap kali skill menempelkan ailment. Bikin pemicu cepat penuh.</summary>
         AilmentPoints,
+
+        /// <summary>
+        /// Kecepatan pemain menghindar. Ditambahkan DI BELAKANG, sebelum Count, supaya nilai enum
+        /// yang sudah tersimpan di aset tidak bergeser — Count lama (17) tidak pernah dipakai
+        /// sebagai data, jadi slot itu aman diambil.
+        /// </summary>
+        MoveSpeed,
+
+        /// <summary>Memotong durasi debuff yang ditempelkan musuh. 0.4 = durasinya tinggal 60%.</summary>
+        DebuffResist,
 
         Count
     }

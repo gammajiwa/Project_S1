@@ -16,22 +16,31 @@ MonoBehaviour:
   DisplayName: Frost Nova
   Stars: 1
   Layer: 1
-  Shape: 2
+  Shape: 5
   Color: {r: 0.42, g: 0.78, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 5608a9553edec464e9a32d5adbd36ae4, type: 3}
   Kind: 1
   Element: 1
-  BaseDamage: 9
-  BaseCooldown: 3.2
+  BaseDamage: 11
+  BaseCooldown: 3
   Radius: 4.5
   Range: 4.5
   Hits: 1
-  ManaCost: 14
+  ManaCost: 13
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
   AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
   StatusDuration: 3.5
-  AppliedStacks: 1
+  AppliedPoints: 1
   LegacyStatus: 2
   Aura: 0
   AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 3 panjang. Ledakan es melingkar, nempel CHILL.  2x segaris -> Blizzard.
+  Blurb: Freezing burst centred on you. Applies CHILL.
