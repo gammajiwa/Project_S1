@@ -1268,3 +1268,135 @@ Seluruh sistemnya dipakai ulang apa adanya.
 rentetan panggilan berturut-turut menghasilkan angka yang **jauh lebih buruk dari
 kenyataan** — satu sesi sempat melaporkan "20 fps" dan "171 ms di lapangan kosong",
 yang mustahil. Ukur fps di panggilan yang **tidak melakukan apa pun selain membacanya**.
+
+---
+
+## 20. Props dari aset (Ultimate Nature Starter), dan tampilan yang ikut ketahuan
+
+Pack `Assets/Plugin/InnerverseInteractive/Ultimate Nature – Starter` dipasang menggantikan
+props primitif. **Pack ini UNTRACKED di git** — kalau repo di-clone tanpa folder itu, hutannya
+kosong dan `Tools/Grimoire/Generate Biomes` akan menjerit di console. Commit atau catat.
+
+### Perubahan struktur
+
+`BiomeDefinition` tidak lagi punya field pohon/semak primitif (`TreeCount`, `TrunkColors`,
+`ScatterShape`, dst). Gantinya **satu daftar datar `PropModel[]`** — mesh, material per submesh,
+kerapatan, dan aturan sebaran per entri. Tiga lapisan tetap (batang/tajuk/semak) masuk akal
+selama props masih dirakit dari primitif; dengan mesh sungguhan, pohon sudah sebuah pohon.
+
+`PropBatch` berubah dari "satu mesh + palet warna" jadi **"satu mesh + material per submesh"**.
+Semua submesh memakai daftar matriks yang SAMA; yang bertambah cuma panggilan gambarnya.
+
+Isi: 13 jenis prop — 2 cemara, rumput, bunga, semak, jamur, 2 batu, 2 kerikil, batang, tunggul,
+ranting. **Tebing dan gunung sengaja tidak dipakai.**
+
+### Angka terukur
+
+| | |
+|---|---|
+| Props terlihat | ~3 900 |
+| Draw call props | 19 (naik dari 11) |
+| fps wave 8 | 59–63 |
+
+**Menggambar props praktis gratis.** Diukur langsung: mematikan seluruh props menghemat 1,35 ms,
+dan mematikan **bayangan pohon saja** menghemat 1,35 ms yang sama persis. Jadi seluruh biayanya
+ada di pass bayangan, tepatnya alpha-clip daun cemara. Cascade 4→2 cuma menghemat 0,16 ms —
+bukan di situ. Knob-nya `CastShadows` per entri; mematikan `spruce-short` saja = +0,75 ms.
+
+### Layar itu 39 × 22 unit, BUKAN 19,6 × 11,9
+
+Angka lama di dokumen ini salah dan menyesatkan dua keputusan sekaligus:
+
+1. **`ClearingRadius` 10** membuat halaman kosong sebesar seluruh layar — run dimulai tanpa
+   satu pun pohon terlihat. Sekarang 5,5.
+2. **Pohon 3–5 unit** terlalu kecil di layar 22 unit. Sekarang **5,7–8,5**.
+
+Rumusnya: `orthographicSize 11` → tinggi 22 unit, lebar 22 × 16/9 = 39,1.
+
+### Kamera menunduk 68°, dan itu mengubah apa yang terlihat
+
+Benda TEGAK setinggi *h* cuma terproyeksi **0,37 h** di layar; benda REBAH sepanjang *L*
+terproyeksi 0,93 L. Rumput setengah unit karena itu tampil setinggi 0,18 unit — ia tidak
+terbaca sebagai rumput, ia terbaca sebagai coretan.
+
+`PropModel.FaceCamera` (0..1) merebahkannya ke arah kamera. **Tidak perlu billboard per-frame:**
+kamera ortografis dan tidak pernah berputar, cuma bergeser — jadi ini SATU rotasi tetap yang
+ikut dipanggang ke matriks, gratis. Yang direbahkan otomatis jadi dua sisi (`_Cull` 0), kalau
+tidak helai yang membelakangi kamera hilang.
+
+**0,45, dan angka ini dua sisi.** 0,7 sempat dipakai: helai yang tadinya menghadap langit jadi
+menghadap kamera, berhenti menangkap matahari, dan seluruh rumpunnya membaca sebagai gumpalan
+GELAP. Mengecat ulang warnanya tidak menolong — gelapnya dari arah normal, bukan dari warna.
+
+> Kalau suatu hari kamera bisa diputar pemain, `FaceCamera` yang pertama harus dicabut:
+> matriks yang sudah dipanggang tidak ikut berputar.
+
+### Lantai: satu ubin 6 unit tidak bisa memuat bercak
+
+Ini akar "texture ground jelek banget". Ubin selebar 6 unit di layar 39 unit **tidak bisa memuat
+apa pun yang lebih besar dari seperenam layar** — seluruh variasinya terpaksa berfrekuensi
+tinggi, dan bidang yang variasinya cuma berfrekuensi tinggi selalu terbaca sebagai bintik
+seragam. Yang hilang bukan detailnya, yang hilang BERCAKNYA.
+
+Sekarang dua skala: **peta dasar** untuk bercak (ubin **44 unit** — wajib lebih lebar dari layar,
+kalau tidak dua salinan terlihat bersamaan dan otak membaca petak) dan **peta detail** untuk
+butiran (`UNS_Terrain_Grass`, ubin 5 unit, `_DETAIL_MULX2`).
+
+Bercaknya dua sumbu, bukan satu: terang-teduh **dan** hangat-dingin. Variasi terang saja
+menghasilkan lapangan abu-abu yang diberi warna.
+
+> `_DETAIL_MULX2` WAJIB di-enable. Tanpa keyword itu seluruh blok detail dilewati — petanya
+> terpasang, angkanya benar, dan tidak ada apa pun yang berubah di layar.
+
+> Terrain grass pack **gagal sebagai peta DASAR** (hijau pekatnya menimpa segalanya jadi hijau
+> jenuh yang datar) tapi **benar sebagai peta DETAIL**. Kekuatannya 0,4 — di 0,75 ia bukan
+> menambah butiran, ia menggelapkan bercak yang baru dibuat.
+
+### Grading sudah melenceng dari generatornya
+
+`PP_GoldenHour.asset` berisi bloom **0,95 di ambang 0,80** dan vignette **0,45**, sementara
+`LookBuilder.cs` menulis 0,4 di ambang 1,1 dan 0,16. Seseorang menyetel tangan di Inspector dan
+kodenya tidak ikut — dan `LoadOrCreateProfile()` **berhenti begitu asetnya ada**, jadi menjalankan
+ulang pass-nya tidak pernah memperbaikinya.
+
+Bloom 4× terlalu kuat di ambang terlalu rendah = separuh lantai yang kena matahari ikut mekar =
+kabut susu di atas segalanya. **Itu penyebab terbesar lantai terlihat berlumpur, bukan teksturnya.**
+
+Sekarang `LoadOrCreateProfile()` **menulis ulang seluruh isi profil tiap jalan** (komponen lama
+dibuang dulu — tanpa itu tiap jalan menumpuk satu set baru). Bloom 0,32 @ 1,25, vignette 0,2.
+
+### ACES terkunci di belakang Atmosphere
+
+Demo pack memakai **Tonemapping ACES**, dan itu sempat dipasang. Hasilnya **seluruh lapangan
+jadi CYAN terang.**
+
+Penyebabnya bukan grading-nya: `View/Atmosphere.cs` menggambar berkas cahaya dan bayangan awan
+dengan shader **`Sprites/Default`** — shader lawas ruang-gamma yang tidak mengerti pipeline HDR.
+Berkas cahayanya ADDITIVE, dan begitu tonemap-nya filmik hasil tambahannya lewat jauh di atas
+jangkauan lalu terlipat jadi warna yang salah.
+
+**Terbukti dengan mematikan kedua bidang itu — cyan hilang; dan dengan mengembalikan Neutral
+sambil kedua bidang menyala — cyan juga hilang.**
+
+Jadi ACES adalah peningkatan nyata yang menunggu satu pekerjaan lain: memindahkan kedua bidang
+`Atmosphere` ke shader URP transparan yang benar. Sampai itu selesai, **Neutral yang benar.**
+
+### Terrain system: TIDAK, dan bukan karena selera
+
+`Environment/Terrain/Data/UNS_Terrain.asset` di-serialize oleh **Unity 6000.5.3f1** sementara
+project ini **6000.3.6f1**. Unity menolak mengimpornya — `GetMainAssetTypeAtPath` mengembalikan
+`DefaultAsset`, 0 sub-aset. Itulah kenapa demo scene pack menampilkan **"Terrain Asset Missing"**
+di Inspector.
+
+**Demo scene yang terlihat cantik itu me-render tanpa terrain sama sekali.** Rumput lebatnya
+datang dari grup `UNS_Vegetation` / `UNS_Rocks` / `UNS_Natural_Props` — prefab yang ditaruh,
+persis cara yang dipakai di sini. Yang membuatnya cantik adalah volume profile-nya.
+
+Terlepas dari itu, Terrain tetap salah untuk game ini: arenanya datar (heightmap tak terpakai),
+hutannya deterministik dari hash koordinat (Terrain menuntut map yang dilukis tangan), dan
+props kita 19 draw call ±0 ms (detail-renderer Terrain punya jalur sendiri yang lebih mahal).
+
+### Invarian yang diuji ulang setelah perubahan
+
+- **Determinisme petak**: petak (3,−7) dibangkitkan dua kali → 148 matriks, **beda 0**.
+- **`Random.state` global utuh**: `0.5868507` sebelum dan sesudah membangkitkan petak.
