@@ -190,7 +190,7 @@ MonoBehaviour:
     Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
-    Chance: 0.5
+    Chance: 0.35
     RepeatEvery: 0
     Lifetime: 14
     Count: 1
@@ -216,18 +216,36 @@ MonoBehaviour:
     Overcast: 0
   - Name: Berangin
     Effects:
-    - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+    - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
       Chance: 1
       RepeatEvery: 0
       Lifetime: 14
       Count: 1
       MinDistance: 6
       Spread: 16
-      Scale: 1.8
-      Grain: 0.2
+      Scale: 0.1
+      Grain: 1
       CoverageOnly: 0
-      Height: 12
+      Height: 15
       Offset: {x: -22, y: 0}
+      HideInRain: 0
+      OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
+      FollowCamera: 0
+    - Prefab: {fileID: 5934260843391118005, guid: 759cb2b5117f71a44958ae09d3735fc5, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 0.09
+      Grain: 1
+      CoverageOnly: 0
+      Height: 14
+      Offset: {x: -26, y: 0}
       HideInRain: 0
       OnlyClear: 0
       Tint: {r: 1, g: 1, b: 1, a: 1}

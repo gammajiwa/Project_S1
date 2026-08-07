@@ -287,10 +287,12 @@ namespace Proto.EditorTools
                 // Daun MENEMPEL DI KAMERA, bukan ditaruh sebagai kantong. Daun berguguran
                 // seharusnya ada di mana-mana dan seragam, jadi menghitungnya di luar layar cuma
                 // membayar partikel yang tidak pernah dilihat siapa pun.
-                Ambient("Wind_Leaves_Tornado/Leaves_green", 0.8f,
+                // Ditipiskan dari 0,8 — daun yang selalu ada mengaburkan wave BERANGIN, dan
+                // berangin sekarang justru dibaca dari daunnya.
+                Ambient("Wind_Leaves_Tornado/Leaves_green", 0.35f,
                     scale: 0.1f, height: 15f, follow: true, offX: -22f),
 
-                Ambient("Wind_Leaves_Tornado/LeavesSpin_orange", 0.3f,
+                Ambient("Wind_Leaves_Tornado/LeavesSpin_orange", 0.15f,
                     scale: 0.09f, height: 14f, follow: true, offX: -26f),
 
                 // Kawanan burung LEWAT, tidak menetap. Burung yang terus-menerus berputar di atas
@@ -323,12 +325,19 @@ namespace Proto.EditorTools
             {
                 new WeatherMood { Name = "Cerah", Weight = 1f },
 
+                // SEPOI-SEPOI, bukan badai debu: berangin = daun melayang pelan (pilihan
+                // pemilik project). Wind_heavy pensiun dari sini — ia cuma boleh datang
+                // menemani hujan dan badai.
                 new WeatherMood
                 {
                     Name = "Berangin",
                     Weight = 5f,
                     Overcast = 0.15f,
-                    Effects = new[] { Fx("Wind_Leaves_Tornado/Wind_heavy", 1.8f, 0.2f, 12f, -22f) }
+                    Effects = new[]
+                    {
+                        Fx("Wind_Leaves_Tornado/Leaves_green", 0.1f, 1f, 15f, -22f),
+                        Fx("Wind_Leaves_Tornado/Leaves_orange", 0.09f, 1f, 14f, -26f)
+                    }
                 },
 
                 // Hujan diperbesar 4–6 KALI. Prefab-nya disetel untuk kamera setinggi badan, dan di
@@ -683,7 +692,7 @@ namespace Proto.EditorTools
                 Ambient("Light/Moonlight", 1f, spread: 3, near: 12f, far: 30f,
                     scale: 1f, height: 0f, hideInRain: true),
 
-                Ambient("Wind_Leaves_Tornado/Leaves_green", 0.5f,
+                Ambient("Wind_Leaves_Tornado/Leaves_green", 0.3f,
                     scale: 0.1f, height: 15f, follow: true, offX: -22f)
             };
 
@@ -704,7 +713,11 @@ namespace Proto.EditorTools
                     Name = "Berangin",
                     Weight = 5f,
                     Speed = 0.8f,
-                    Effects = new[] { Fx("Wind_Leaves_Tornado/Wind_heavy", 1.8f, 0.2f, 12f, -22f) }
+                    Effects = new[]
+                    {
+                        Fx("Wind_Leaves_Tornado/Leaves_green", 0.1f, 1f, 15f, -22f),
+                        Fx("Wind_Leaves_Tornado/Leaves_orange", 0.09f, 1f, 14f, -26f)
+                    }
                 },
 
                 // Mendung malam ditahan rendah. Lapangannya sudah gelap; meredupkan bulan lebih

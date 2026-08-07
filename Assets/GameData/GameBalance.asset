@@ -51,8 +51,8 @@ MonoBehaviour:
   WaveOpenerDistance: 0.85
   BossEveryWaves: 5
   NightChance: 0.5
-  DuskChance: 0.7
-  MidnightChance: 0.7
+  DuskChance: 0.35
+  MidnightChance: 0.35
   CameraDeadZone: 0.22
   EnemySeparation: 1.3
   SeparationWeight: 3

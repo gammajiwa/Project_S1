@@ -225,6 +225,12 @@ namespace Proto
                     ? (flavour < _balance.MidnightChance && _biomes.Length > 3 ? 3 : 1)
                     : (flavour < _balance.DuskChance && _biomes.Length > 2 ? 2 : 0);
 
+                // Dua wave pertama SELALU siang. Urutan hash kebetulan membuka tiap run dengan
+                // malam lalu TENGAH MALAM — dan pemain yang sering mengulang run mengalami
+                // pembukaan itu berkali-kali, sampai terbaca "gelap melulu" padahal sebarannya
+                // benar. Pembukaan harus terbaca; kegelapan biar datang belakangan.
+                if (wave <= 2) index = 0;
+
                 index = Mathf.Min(index, _biomes.Length - 1);
 
                 if (_biomes[index] != null && _biomes[index] != _current) Apply(_biomes[index]);
