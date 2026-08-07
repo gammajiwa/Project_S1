@@ -1540,3 +1540,32 @@ Keputusan pemilik project, dua-duanya mengikat:
    — klon menghapus komponen kabut HAZE.
 4. `Weather.Spawn` sekarang paham `Stretch` untuk sistem yang SUDAH 3D (kalikan Y
    saja) — tapi untuk beam paket lihat butir 1: jangan dipakai.
+
+## 23. Empat wajah arena + malam bercahaya + cuaca berangin (2026-08-07, lanjutan)
+
+Kecelakaan jadi fitur: grade demo UNS yang sempat menimpa siang DISUKAI — tapi sebagai
+SORE, bukan siang. Hasil akhirnya EMPAT wajah, diundi per wave dua tahap
+(`WaveHash` salt 3389 siang/malam, salt 7717 rasa):
+
+| # | Aset | Grade | Ciri |
+|---|---|---|---|
+| 0 | Biome_forest (Verdant Hollow) | PP_Sunny — look LAMA (restore git) | siang biasa, sun 2,4 |
+| 1 | Biome_forest_night (MALAM) | PP_Night — look lama | "cahaya internal": 7 lampu x5,5 r24, ambient dinaikkan, kunang-kunang DIKURANGI (2 kantong, chance 0,7) |
+| 2 | Biome_forest_sore (SENJA) | PP_Sore = klon profil demo UNS (ACES, hangat) | sun 2,5 pitch 16 — bayangan panjang |
+| 3 | Biome_forest_midnight (TENGAH MALAM) | PP_Midnight = PP_Night exposure −1, sat −22 | sun 0,3, 4 lampu, kabut 18-85, player light 6 |
+
+Knob: `NightChance` 0,5 / `DuskChance` 0,3 / `MidnightChance` 0,3 di GameBalance.
+Urutan array `_biomes` WAJIB [siang, malam, senja, tengah-malam] — dua slot pertama
+kompatibel dengan scene lama.
+
+**Cuaca (permintaan): BERANGIN 50% / basah 40% / cerah 10%** — bobot 1/5/2/1,4/0,6
+(malam 1/5/2,4/1,6). Konsekuensi yang diambil sadar: god ray Sunlight/Moonlight
+DILEPAS dari OnlyClear (cerah tinggal 10% — beam yang cuma hidup di situ praktis tak
+pernah terlihat); ia tampil juga saat berangin, tetap sembunyi saat hujan
+(HideInRain). Kupu-kupu tetap OnlyClear sesuai permintaan lama.
+
+**PP_Sunny tidak pernah ditimpa pass lagi** (`AdoptSunnyGrade` hanya membuat kalau
+belum ada). BuildSore/BuildMidnight menyalin siang/malam dengan guard daftar-tuning
+yang sama seperti BuildNight; sore/tengah-malam mewarisi suasana induknya (termasuk
+beam god ray setelan tangan). `HazePass` meng-configure EMPAT profil; urutan tetap:
+Generate Biomes dulu, Install Volumetric Fog sesudahnya.
