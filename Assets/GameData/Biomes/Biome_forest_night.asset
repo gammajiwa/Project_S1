@@ -134,6 +134,71 @@ MonoBehaviour:
   GrassPerChunk: 0
   GrassWidth: {x: 0.7, y: 1.3}
   TreeShadows: 1
+  AmbientVfx:
+  - Prefab: {fileID: 8973330300912168040, guid: 9aa7c091dcba0854da1e0a6489480cb8, type: 3}
+    Chance: 0.85
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 3
+    MinDistance: 7
+    Spread: 18
+    Scale: 0.5
+    Height: 1.3
+    HideInRain: 1
+  - Prefab: {fileID: 3828618210362263252, guid: 8f41ad0a1c80078468704eac1a277797, type: 3}
+    Chance: 0.5
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 2
+    MinDistance: 9
+    Spread: 20
+    Scale: 0.45
+    Height: 1.6
+    HideInRain: 1
+  - Prefab: {fileID: 8461968100781004250, guid: 90d119ac94f1a3e4bb7c918b865b2f39, type: 3}
+    Chance: 0.55
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 2
+    MinDistance: 6
+    Spread: 15
+    Scale: 0.5
+    Height: 0.6
+    HideInRain: 1
+  - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
+    Chance: 0.5
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 1
+    MinDistance: 6
+    Spread: 16
+    Scale: 0.4
+    Height: 15
+    HideInRain: 0
+  WeatherMoods:
+  - Name: Sunyi
+    Effects: []
+    Weight: 4
+    Speed: 1
+    Scale: 1
+    Wet: 0
+    Overcast: 0
+  - Name: Berangin
+    Effects:
+    - {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+    Weight: 2
+    Speed: 0.8
+    Scale: 2.5
+    Wet: 0
+    Overcast: 0
+  - Name: Gerimis
+    Effects:
+    - {fileID: 462285787367926183, guid: 930b1612c29db3342ac0d3b6b97d692c, type: 3}
+    Weight: 1.5
+    Speed: 0.85
+    Scale: 4
+    Wet: 1
+    Overcast: 0.35
   SmokePocket: {fileID: 0}
   GloomLayers: 1
   GloomWobble: 11
@@ -151,7 +216,7 @@ MonoBehaviour:
   CloudSize: 44
   CloudCoverage: 0.42
   CloudSpeed: 7
-  RayColor: {r: 0.55, g: 0.68, b: 1, a: 0.07}
+  RayColor: {r: 0.55, g: 0.68, b: 1, a: 0}
   RaySize: 34
   RayCoverage: 0.4
   LampCount: 10

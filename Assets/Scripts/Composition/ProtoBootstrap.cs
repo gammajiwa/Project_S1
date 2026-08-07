@@ -124,7 +124,11 @@ namespace Proto
                 gloom.transform.SetParent(transform, false);
                 gloom.Init(_rig, playerGo.transform, span);
 
-                dresser.Attach(lamps, glow, sky, gloom, playerGo.transform);
+                var weather = new GameObject("Weather").AddComponent<Weather>();
+                weather.transform.SetParent(transform, false);
+                weather.Init(_rig, sun, sky);
+
+                dresser.Attach(lamps, glow, sky, gloom, weather, playerGo.transform);
             }
 
             var audio = new GameObject("Audio").AddComponent<AudioDirector>();

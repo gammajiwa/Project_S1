@@ -134,6 +134,99 @@ MonoBehaviour:
   GrassPerChunk: 0
   GrassWidth: {x: 0.7, y: 1.3}
   TreeShadows: 1
+  AmbientVfx:
+  - Prefab: {fileID: 885642106820311149, guid: 907a599345fcdce43a93e33092c9c23e, type: 3}
+    Chance: 0.75
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 3
+    MinDistance: 7
+    Spread: 17
+    Scale: 0.55
+    Height: 1.2
+    HideInRain: 1
+  - Prefab: {fileID: 6971241529967863841, guid: 26078ef05f29a104db9d2c3278c44332, type: 3}
+    Chance: 0.45
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 2
+    MinDistance: 9
+    Spread: 19
+    Scale: 0.5
+    Height: 1.4
+    HideInRain: 1
+  - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
+    Chance: 0.8
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 2
+    MinDistance: 5
+    Spread: 15
+    Scale: 0.4
+    Height: 16
+    HideInRain: 0
+  - Prefab: {fileID: 1075691852205303549, guid: ed92b7453a076ed4cbadb64dc2e8f7e5, type: 3}
+    Chance: 0.3
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 1
+    MinDistance: 6
+    Spread: 16
+    Scale: 0.35
+    Height: 14
+    HideInRain: 0
+  - Prefab: {fileID: 3105971867596470410, guid: f98910772b6a83248bd86304a7837293, type: 3}
+    Chance: 0.8
+    RepeatEvery: 55
+    Lifetime: 16
+    Count: 1
+    MinDistance: 6
+    Spread: 16
+    Scale: 1
+    Height: 0
+    HideInRain: 0
+  WeatherMoods:
+  - Name: Cerah
+    Effects: []
+    Weight: 3.5
+    Speed: 1
+    Scale: 1
+    Wet: 0
+    Overcast: 0
+  - Name: Berangin
+    Effects:
+    - {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+    Weight: 2.5
+    Speed: 1
+    Scale: 2.5
+    Wet: 0
+    Overcast: 0.2
+  - Name: Gerimis
+    Effects:
+    - {fileID: 462285787367926183, guid: 930b1612c29db3342ac0d3b6b97d692c, type: 3}
+    Weight: 2
+    Speed: 0.85
+    Scale: 4
+    Wet: 1
+    Overcast: 0.45
+  - Name: Hujan
+    Effects:
+    - {fileID: 1598139546896201481, guid: 8a45e81b43a1eb6489c7fd455eae937d, type: 3}
+    - {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+    Weight: 1.5
+    Speed: 1
+    Scale: 5
+    Wet: 1
+    Overcast: 0.7
+  - Name: Badai
+    Effects:
+    - {fileID: 4366900416175226820, guid: c75e302e0191e4049ad0274e59a3a7b8, type: 3}
+    - {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+    Weight: 0.8
+    Speed: 1.25
+    Scale: 6
+    Wet: 1
+    Overcast: 0.85
   SmokePocket: {fileID: 0}
   GloomLayers: 1
   GloomWobble: 11
@@ -151,7 +244,7 @@ MonoBehaviour:
   CloudSize: 16
   CloudCoverage: 0.42
   CloudSpeed: 7
-  RayColor: {r: 1, g: 0.97, b: 0.82, a: 0.16}
+  RayColor: {r: 1, g: 0.97, b: 0.82, a: 0}
   RaySize: 34
   RayCoverage: 0.4
   LampCount: 0

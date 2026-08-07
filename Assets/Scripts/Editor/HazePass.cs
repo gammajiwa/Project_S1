@@ -266,24 +266,26 @@ namespace Proto.EditorTools
 
             // Kabut MENGENDAP di lantai, bukan memenuhi ruang. Kamera duduk 18,5 unit di atas;
             // kabut setinggi itu berarti melihat seluruh lapangan lewat susu.
-            // Asap mengendap SETINGGI PINGGANG, bukan memenuhi ruang. Kamera duduk 18,5 unit di
-            // atas; asap setinggi itu berarti melihat seluruh lapangan lewat susu, dan yang hilang
-            // pertama adalah gerombolan. Batas 7 unit membuat pohon menembusnya dari atas — dan
-            // batang yang keluar dari lautan asap itulah yang membuat asapnya terbaca punya
-            // permukaan, bukan sekadar warna yang ditumpuk.
-            Set(fog.HeightFogFactor, 1.4f);
-            Set(fog.MaxFogHeight, 7f);
-            Set(fog.HeightFogSmoothness, 2f);
+            // TINGGI, dan ini yang membuat berkas cahaya mungkin sama sekali.
+            //
+            // Berkas adalah KOLOM — ia berdiri dari tajuk pohon sampai ke tanah. Kolom setinggi
+            // tujuh unit tidak akan pernah terbaca sebagai berkas karena pohonnya sendiri setinggi
+            // delapan; yang tergambar cuma kabut yang mengendap di kaki. Batas 22 unit membuat
+            // seluruh tinggi pohon berada DI DALAM kabut, jadi bayangan tajuknya memotong kabut
+            // sepanjang kolom — dan potongan itulah berkasnya.
+            Set(fog.HeightFogFactor, 0.8f);
+            Set(fog.MaxFogHeight, 22f);
+            Set(fog.HeightFogSmoothness, 5f);
             Set(fog.CameraRelativeHeightFog, false);
 
-            // NOL di siang hari, dan ini penyebab utama "kabutnya terlalu kuat".
+            // INILAH berkas cahayanya. Parameter ini menaikkan kepadatan kabut di daerah yang TIDAK
+            // terbayangi, jadi celah di antara bayangan tajuk terisi cahaya yang menempati ruang.
             //
-            // Parameter ini menaikkan kepadatan kabut di daerah yang TIDAK terbayangi. Gunanya
-            // membuat berkas cahaya terbaca di hutan rapat, tempat sebagian besar lantai berada di
-            // bawah bayangan dan celah terangnya sedikit. Lapangan ini kebalikannya: hampir seluruh
-            // layar tidak terbayangi, jadi yang dinaikkan kepadatannya adalah SELURUHNYA — dan
-            // justru bagian yang seharusnya paling bening.
-            Set(fog.GlobalMainLightDensityBoost, night ? 0.3f : 0f);
+            // Sempat dinolkan karena pada 0,9 ia memutihkan seluruh layar — tapi itu terjadi saat
+            // kabutnya masih setinggi 7 unit DAN sumbangan mataharinya masih 3,2. Dua-duanya sudah
+            // dibetulkan, jadi sekarang yang naik kepadatannya cuma kolom udara di atas lantai,
+            // bukan lantainya sendiri. 0,45 — cukup untuk terlihat, jauh dari 0,9 yang membakar.
+            Set(fog.GlobalMainLightDensityBoost, night ? 0.3f : 0.45f);
 
             // Sumbangan lampu selain matahari, dan angkanya SANGAT peka.
             //

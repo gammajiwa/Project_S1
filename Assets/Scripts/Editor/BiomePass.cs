@@ -215,6 +215,108 @@ namespace Proto.EditorTools
             // tepat di tengah layar — persis hal yang sedang dihindari.
             forest.SmokePocket = null;
 
+            // Suasana tempatnya — dan TIDAK semuanya dipakai sekaligus.
+            //
+            // Tiap entri punya peluangnya sendiri, diundi sekali per sesi. Daftar yang seluruhnya
+            // menyala bersamaan membuat tiap run terlihat sama persis, dan tempatnya berhenti punya
+            // suasana; yang tersisa cuma daftar isian yang penuh.
+            forest.AmbientVfx = new[]
+            {
+                // Kupu-kupu DISEBAR, bukan menempel di pemain. Tiga kantong terpisah, tak satu pun
+                // lebih dekat dari 7 unit — segerombol kupu-kupu yang mengelilingi pemain ke mana
+                // pun ia pergi tidak terbaca sebagai kupu-kupu, melainkan sebagai efek yang
+                // menempel di karakter.
+                Ambient("Butterflies/Butterflies_ellow", 0.75f, spread: 3, near: 7f, far: 17f,
+                    scale: 0.55f, height: 1.2f, hideInRain: true),
+
+                Ambient("Butterflies/Butterflies_white", 0.45f, spread: 2, near: 9f, far: 19f,
+                    scale: 0.5f, height: 1.4f, hideInRain: true),
+
+                // Daun berguguran hampir SELALU ada — dan "hampir" itu yang penting. Sesuatu yang
+                // tidak pernah absen berhenti diperhatikan.
+                //
+                // Dikecilkan ke 0,4 dan DILAHIRKAN 16 UNIT DI ATAS. Kamera duduk 18,5 unit di atas
+                // dan menunduk: daun yang lahir setinggi mata tidak pernah terlihat jatuh, ia cuma
+                // muncul lalu mendarat. Lahir jauh di atas berarti ia sudah melayang turun sebelum
+                // masuk pandangan — dan karena melintas lebih dekat ke kamera lebih dulu, ia
+                // terlihat besar dulu lalu mengecil saat turun.
+                // Daun MENEMPEL DI KAMERA, bukan ditaruh sebagai kantong. Daun berguguran
+                // seharusnya ada di mana-mana dan seragam, jadi menghitungnya di luar layar cuma
+                // membayar partikel yang tidak pernah dilihat siapa pun.
+                Ambient("Wind_Leaves_Tornado/Leaves_green", 0.8f,
+                    scale: 0.5f, height: 15f, follow: true),
+
+                Ambient("Wind_Leaves_Tornado/LeavesSpin_orange", 0.3f,
+                    scale: 0.45f, height: 14f, follow: true),
+
+                // Kawanan burung LEWAT, tidak menetap. Burung yang terus-menerus berputar di atas
+                // kepala berhenti jadi kejadian dan berubah jadi hiasan; yang membuatnya hidup
+                // adalah ia datang, lewat, lalu lama tidak muncul lagi.
+                Ambient("Birds/Birds_flock_V", 0.8f, repeat: 55f, lifetime: 16f)
+            };
+
+            // Berkas cahaya datar DICOPOT. Alpha nol mematikan lapisannya sama sekali — bidang
+            // tidak punya tinggi, dan berkas yang tidak punya tinggi bukan berkas. Penggantinya
+            // berkas volumetrik sungguhan dari kabut froxel, disetel di HazePass.
+            forest.RayColor = new Color(1f, 0.97f, 0.82f, 0f);
+
+            // Cuaca, diundi tiap wave. Entri pertama SENGAJA kosong — tanpa cuaca cerah di daftar,
+            // tiap wave selalu ada sesuatu yang jatuh dari langit, dan hujan berhenti terasa
+            // sebagai kejadian karena tidak pernah ada jeda di antaranya.
+            forest.WeatherMoods = new[]
+            {
+                new WeatherMood { Name = "Cerah", Weight = 3.5f },
+
+                new WeatherMood
+                {
+                    Name = "Berangin",
+                    Weight = 2.5f,
+                    Scale = 1.8f,
+                    Overcast = 0.2f,
+                    Effects = Vfx("Wind_Leaves_Tornado/Wind_heavy")
+                },
+
+                // Hujan diperbesar 4–6 KALI. Prefab-nya disetel untuk kamera setinggi badan, dan di
+                // kamera yang menunduk dari 18 unit ukuran aslinya cuma menetes di satu petak
+                // selebar beberapa unit — hujan yang tidak menutupi layar terbaca sebagai bocor.
+                new WeatherMood
+                {
+                    Name = "Gerimis",
+                    Weight = 2f,
+                    Speed = 0.85f,
+                    Scale = 2.1f,
+                    Wet = true,
+                    Overcast = 0.45f,
+                    Effects = Vfx("Rain/Rain_calm")
+                },
+
+                new WeatherMood
+                {
+                    Name = "Hujan",
+                    Weight = 1.5f,
+                    Scale = 2.4f,
+                    Wet = true,
+                    Overcast = 0.7f,
+                    Effects = Vfx("Rain/Rain_average", "Wind_Leaves_Tornado/Wind_heavy")
+                },
+
+                new WeatherMood
+                {
+                    Name = "Badai",
+                    Weight = 0.8f,
+                    Speed = 1.25f,
+                    Scale = 2.7f,
+                    Wet = true,
+                    Overcast = 0.85f,
+
+                    // TANPA daun di sini, dan itu koreksi. Pengali ukuran cuaca berlaku untuk
+                    // SELURUH efeknya, dan badai butuh 6× supaya hujannya menutupi layar — pengali
+                    // yang sama mengubah daun jadi selebar dua meter, melayang seperti layang-layang.
+                    // Daun sudah diurus lapisan suasana dengan ukurannya sendiri.
+                    Effects = Vfx("Rain/Rain_heavy", "Wind_Leaves_Tornado/Wind_heavy")
+                }
+            };
+
             // Jarang DAN pendek. Pohon setinggi 8 unit di kamera ortografis menutupi seperempat
             // layar sendirian, dan yang tertutup selalu gerombolan — satu-satunya hal yang harus
             // dibaca pemain. Yang dicari adalah padang terbuka dengan pohon sebagai penanda jarak,
@@ -472,6 +574,55 @@ namespace Proto.EditorTools
             night.CloudSize = 44f;
             night.RayColor = new Color(0.55f, 0.68f, 1f, 0.07f);
 
+            // KUNANG-KUNANG. Varian "_fog" kupu-kupu itu yang bercahaya sendiri, dan di lapangan
+            // gelap ia berhenti terbaca sebagai kupu-kupu — yang tersisa cuma titik cahaya yang
+            // mengembara, dan itu persis kunang-kunang. Bara api menambah yang naik perlahan.
+            night.AmbientVfx = new[]
+            {
+                Ambient("Butterflies/Butterflies_ellow_fog", 0.85f, spread: 3, near: 7f, far: 18f,
+                    scale: 0.5f, height: 1.3f, hideInRain: true),
+
+                Ambient("Butterflies/Butterflies_turquoise_fog", 0.5f, spread: 2, near: 9f, far: 20f,
+                    scale: 0.45f, height: 1.6f, hideInRain: true),
+
+                Ambient("Embers/Embers_calm", 0.55f, spread: 2, near: 6f, far: 15f,
+                    scale: 0.5f, height: 0.6f, hideInRain: true),
+
+                Ambient("Wind_Leaves_Tornado/Leaves_green", 0.5f,
+                    scale: 0.5f, height: 15f, follow: true)
+            };
+
+            night.RayColor = new Color(0.55f, 0.68f, 1f, 0f);
+
+            // Cuaca malam lebih tenang. Badai di atas lapangan yang sudah gelap tidak menambah
+            // suasana — ia cuma menghapus apa yang masih bisa dibaca.
+            night.WeatherMoods = new[]
+            {
+                new WeatherMood { Name = "Sunyi", Weight = 4f },
+
+                new WeatherMood
+                {
+                    Name = "Berangin",
+                    Weight = 2f,
+                    Speed = 0.8f,
+                    Scale = 1.8f,
+                    Effects = Vfx("Wind_Leaves_Tornado/Wind_heavy")
+                },
+
+                // Mendung malam ditahan di 0,35. Lapangannya sudah gelap; meredupkan matahari lebih
+                // jauh tidak menambah suasana, ia cuma menghapus siluet yang masih bisa dibaca.
+                new WeatherMood
+                {
+                    Name = "Gerimis",
+                    Weight = 1.5f,
+                    Speed = 0.85f,
+                    Scale = 2.1f,
+                    Wet = true,
+                    Overcast = 0.35f,
+                    Effects = Vfx("Rain/Rain_calm")
+                }
+            };
+
             night.PostProcess = AssetDatabase.LoadAssetAtPath<VolumeProfile>(
                 "Assets/GameData/Look/PP_Night.asset");
 
@@ -623,6 +774,56 @@ namespace Proto.EditorTools
                 Weight = weight,
                 SizeMultiplier = sizeMultiplier
             };
+        }
+
+        const string Vfxs = "Assets/Plugin/Lana Studio/Environment VFX pack/Prefabs/";
+
+        /// <summary>
+        /// Memuat sekumpulan prefab VFX dan MELAPORKAN yang tidak ketemu.
+        ///
+        /// Slot kosong di daftar cuaca gagal dengan cara yang paling sulit dilihat: cuacanya tetap
+        /// berganti, namanya tetap muncul, dan yang hilang cuma satu lapis dari beberapa — hujan
+        /// tanpa anginnya, badai tanpa daunnya.
+        /// </summary>
+        /// <summary>Satu entri suasana. <c>repeat &gt; 0</c> berarti ia LEWAT, bukan menetap.</summary>
+        static AmbientVfxEntry Ambient(string name, float chance, float repeat = 0f,
+            float lifetime = 14f, int spread = 1, float near = 6f, float far = 16f,
+            float scale = 1f, float height = 0f, bool hideInRain = false, bool follow = false)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Vfxs + name + ".prefab");
+
+            if (prefab == null)
+                Debug.LogError("[BiomePass] VFX tidak ketemu: " + Vfxs + name + ".prefab");
+
+            return new AmbientVfxEntry
+            {
+                Prefab = prefab,
+                Chance = chance,
+                RepeatEvery = repeat,
+                Lifetime = lifetime,
+                Count = spread,
+                MinDistance = near,
+                Spread = far,
+                Scale = scale,
+                Height = height,
+                HideInRain = hideInRain,
+                FollowCamera = follow
+            };
+        }
+
+        static GameObject[] Vfx(params string[] names)
+        {
+            var kept = new System.Collections.Generic.List<GameObject>(names.Length);
+
+            foreach (var name in names)
+            {
+                var go = AssetDatabase.LoadAssetAtPath<GameObject>(Vfxs + name + ".prefab");
+
+                if (go != null) kept.Add(go);
+                else Debug.LogError("[BiomePass] VFX tidak ketemu: " + Vfxs + name + ".prefab");
+            }
+
+            return kept.ToArray();
         }
 
         static MeshProp[] Kit(params MeshProp[] props)

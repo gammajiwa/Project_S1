@@ -230,6 +230,21 @@ namespace Proto
         // Yang jauh dari pemain menggelap, bertepi titik-titik raster komik. Ini milik DUNIA, bukan
         // layar: satu tempat tetap gelap sampai pemain benar-benar mendatanginya.
 
+        // =========================================================================
+        //  suasana
+        // =========================================================================
+
+        [Header("VFX suasana")]
+        [Tooltip("Suasana yang melekat pada tempatnya, bukan pada wave. Tiap entri punya peluang " +
+                 "sendiri untuk dipakai, jadi tidak semuanya muncul bersamaan — dan dua run tidak " +
+                 "pernah terlihat sama persis.")]
+        public AmbientVfxEntry[] AmbientVfx;
+
+        [Tooltip("Diundi ulang tiap wave. Ini yang membuat dua wave berturut-turut tidak pernah " +
+                 "terasa sama. Sertakan satu entri KOSONG sebagai cuaca cerah — tanpa itu, tiap " +
+                 "wave selalu ada sesuatu yang jatuh dari langit.")]
+        public WeatherMood[] WeatherMoods;
+
         [Header("Asap volumetrik")]
         [Tooltip("Kantong udara bersih yang menempel di pemain. Asapnya sendiri adalah kabut " +
                  "global; yang ini MENGURANGI kepadatannya di sekitar pemain, jadi yang tersisa " +

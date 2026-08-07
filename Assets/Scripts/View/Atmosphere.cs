@@ -102,14 +102,26 @@ namespace Proto
                 biome.CloudSize, biome.CloudCoverage, 0.18f,
                 wind, biome.CloudSpeed, 0.015f, 0.45f, Vector2.one, false);
 
-            // Berkasnya diregangkan tajam pada satu sumbu, dan itu satu-satunya hal yang membuatnya
-            // terbaca sebagai cahaya yang MENEMBUS sesuatu alih-alih sebagai gumpalan kedua.
-            _rays = BuildLayer(shader, "GodRays", 0.06f, biome.RayColor,
-                biome.RaySize, biome.RayCoverage, 0.3f,
-                wind, biome.CloudSpeed * 0.35f, 0.12f, 0.15f,
-                new Vector2(0.28f, 2.4f), true);
+            // Berkas cahaya DICOPOT dari sini, dan itu koreksi atas kesalahan yang mendasar.
+            //
+            // Versi lama menggambarnya sebagai bidang datar di atas tanah — pola terang bergaris
+            // yang diregangkan searah matahari. Trik itu punya batas yang tidak bisa dilewati:
+            // bidang tidak punya TINGGI. Berkas cahaya yang meyakinkan adalah kolom yang berdiri
+            // dari tajuk pohon sampai ke tanah, dan tidak ada bidang setipis apa pun yang bisa
+            // berpura-pura punya tinggi di kamera yang menunduk.
+            //
+            // Penggantinya berkas volumetrik sungguhan: kabut froxel HAZE yang kepadatannya
+            // dinaikkan di daerah tak terbayangi, sehingga celah di antara bayangan pohon terisi
+            // cahaya yang benar-benar menempati ruang. Disetel di HazePass, bukan di sini.
+            if (biome.RayColor.a > 0.001f)
+            {
+                _rays = BuildLayer(shader, "GodRays", 0.06f, biome.RayColor,
+                    biome.RaySize, biome.RayCoverage, 0.3f,
+                    wind, biome.CloudSpeed * 0.35f, 0.12f, 0.15f,
+                    new Vector2(0.28f, 2.4f), true);
 
-            _rays.localRotation = Quaternion.Euler(90f, biome.SunYaw, 0f);
+                _rays.localRotation = Quaternion.Euler(90f, biome.SunYaw, 0f);
+            }
         }
 
         Transform BuildLayer(Shader shader, string label, float height, Color tint,
@@ -157,14 +169,15 @@ namespace Proto
 
         void LateUpdate()
         {
-            if (_follow == null || _clouds == null || _rays == null) return;
+            if (_follow == null || _clouds == null) return;
 
             // Yang diikuti cuma POSISI bidangnya. Polanya tidak ikut — ia dihitung dari koordinat
             // dunia di dalam shader, jadi ia sudah diam di tanah tanpa dibantu apa pun dari sini.
             Vector3 at = _follow.position;
 
             _clouds.position = new Vector3(at.x, _clouds.localPosition.y, at.z);
-            _rays.position = new Vector3(at.x, _rays.localPosition.y, at.z);
+
+            if (_rays != null) _rays.position = new Vector3(at.x, _rays.localPosition.y, at.z);
         }
     }
 }

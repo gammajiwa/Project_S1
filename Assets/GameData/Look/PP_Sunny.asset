@@ -281,13 +281,13 @@ MonoBehaviour:
     m_Value: {r: 1, g: 0.95, b: 0.8, a: 1}
   _heightFogFactor:
     m_OverrideState: 1
-    m_Value: 1.4
+    m_Value: 0.8
   _maxFogHeight:
     m_OverrideState: 1
-    m_Value: 7
+    m_Value: 22
   _heightFogSmoothness:
     m_OverrideState: 1
-    m_Value: 2
+    m_Value: 5
   _cameraRelativeHeightFog:
     m_OverrideState: 1
     m_Value: 0
@@ -302,7 +302,7 @@ MonoBehaviour:
     m_Value: 0.35
   _globalMainLightDensityBoost:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 0.45
   _globalSecondaryLightDensityBoost:
     m_OverrideState: 1
     m_Value: 0

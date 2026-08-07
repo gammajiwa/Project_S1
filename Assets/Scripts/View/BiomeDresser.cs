@@ -170,6 +170,7 @@ namespace Proto
         Light _playerLight;
         Atmosphere _sky;
         Gloom _gloom;
+        Weather _weather;
         Transform _player;
         GameObject _smoke;
 
@@ -178,12 +179,13 @@ namespace Proto
         /// null — arena tanpa lampu atau tanpa awan tetap jalan.
         /// </summary>
         public void Attach(ArenaLights lights, Light playerLight, Atmosphere sky, Gloom gloom,
-            Transform player)
+            Weather weather, Transform player)
         {
             _lights = lights;
             _playerLight = playerLight;
             _sky = sky;
             _gloom = gloom;
+            _weather = weather;
             _player = player;
 
             if (_current != null) Relight(_current);
@@ -210,6 +212,11 @@ namespace Proto
         /// <summary>Mati kecuali <see cref="AutoCycle"/> dinyalakan — lihat catatannya di sana.</summary>
         public void OnWaveStarted(int wave)
         {
+            // Cuaca diundi ulang tiap wave TERLEPAS dari AutoCycle. Yang dimatikan AutoCycle adalah
+            // pergantian wajah arena — siang jadi malam sendiri — bukan cuaca. Wajah yang berganti
+            // sendiri tidak pernah sempat dikenali; cuaca yang berganti justru sebaliknya.
+            if (_weather != null) _weather.Roll(wave);
+
             if (!AutoCycle) return;
             if (_biomes == null || _biomes.Length <= 1) return;
 
@@ -315,6 +322,7 @@ namespace Proto
             if (_lights != null) _lights.Apply(biome);
             if (_sky != null) _sky.Apply(biome);
             if (_gloom != null) _gloom.Apply(biome);
+            if (_weather != null) _weather.Apply(biome);
 
             // Kantong udara bersih di sekitar pemain. Dibuat ulang tiap pergantian wajah karena
             // ukurannya boleh berbeda antara siang dan malam.

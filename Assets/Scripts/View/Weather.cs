@@ -1,0 +1,473 @@
+using UnityEngine;
+
+namespace Proto
+{
+    /// <summary>
+    /// VFX suasana yang mengikuti kamera: kupu-kupu, daun beterbangan, burung, hujan, badai.
+    ///
+    /// Dua lapis yang sengaja dipisah:
+    ///
+    /// <b>Ambient</b> selalu menyala selama wajah arena ini dipakai — ia bagian dari tempatnya.
+    /// <b>Cuaca</b> diundi ulang tiap wave, dan itulah yang membuat dua wave berturut-turut tidak
+    /// pernah terasa sama. Menggabungkan keduanya jadi satu daftar berarti kupu-kupu ikut hilang
+    /// begitu hujan turun, dan yang hilang justru hal yang membuat tempatnya dikenali.
+    ///
+    /// Semua efek dipaksa ke <b>ruang simulasi DUNIA</b>. Prefab-nya lahir dalam ruang lokal, dan
+    /// selama pemancarnya diam itu benar. Di sini pemancarnya menempel di kamera: dalam ruang lokal,
+    /// setiap tetes hujan yang sudah jatuh ikut diseret saat pemain berjalan — seluruh hujan
+    /// bergerak menyamping seperti kaca yang digeser, bukan seperti hujan.
+    /// </summary>
+    public class Weather : MonoBehaviour
+    {
+        Transform _follow;
+        Transform _ambient;
+        Transform _mood;
+
+        BiomeDefinition _biome;
+        float[] _cumulative = System.Array.Empty<float>();
+        int _current = -1;
+
+        /// <summary>Cuaca yang sedang berlaku. Untuk ditampilkan atau dicatat.</summary>
+        public string MoodName { get; private set; } = "";
+
+        Light _sun;
+        Atmosphere _sky;
+
+        // Nilai cerah, direkam saat wajah arena dipasang. Mendung dihitung DARI sini, bukan dengan
+        // mengalikan nilai yang sedang berlaku — mengalikan berulang membuat tiap pergantian cuaca
+        // menggelapkan lapangan sedikit lagi sampai akhirnya hitam.
+        float _clearSun;
+        Color _clearSky;
+        Color _clearEquator;
+        Color _clearGround;
+        Color _clearCloud;
+        float _clearCoverage;
+
+        public void Init(Transform follow, Light sun, Atmosphere sky)
+        {
+            _follow = follow;
+            _sun = sun;
+            _sky = sky;
+        }
+
+        public void Apply(BiomeDefinition biome)
+        {
+            _biome = biome;
+            _current = -1;
+            MoodName = "";
+
+            Clear(ref _ambient);
+            Clear(ref _mood);
+
+            _passing.Clear();
+            _pockets.Clear();
+
+            if (biome == null || _follow == null) return;
+
+            _clearSun = biome.SunIntensity;
+            _clearSky = biome.AmbientSky;
+            _clearEquator = biome.AmbientEquator;
+            _clearGround = biome.AmbientGround;
+            _clearCloud = biome.CloudColor;
+            _clearCoverage = biome.CloudCoverage;
+
+            BuildAmbient(biome);
+
+            // Bobotnya dinormalkan sekali di sini supaya pengundiannya cukup satu angka 0–1.
+            // Total bobot berubah tiap kali daftarnya disunting, dan bersamanya berubah pula
+            // seluruh urutan cuaca yang sudah disetujui.
+            var moods = biome.WeatherMoods;
+            _cumulative = new float[moods != null ? moods.Length : 0];
+
+            float running = 0f;
+
+            for (int i = 0; i < _cumulative.Length; i++)
+            {
+                running += Mathf.Max(0f, moods[i].Weight);
+                _cumulative[i] = running;
+            }
+
+            if (running > 0f)
+            {
+                for (int i = 0; i < _cumulative.Length; i++) _cumulative[i] /= running;
+            }
+
+            Roll(1);
+        }
+
+        /// <summary>
+        /// Mengundi cuaca untuk wave ini.
+        ///
+        /// Diseed dari NOMOR WAVE lewat System.Random, bukan dari UnityEngine.Random. Yang terakhir
+        /// itu urutan acak milik gameplay — jenis musuh, sebaran drop, arah semburan skill — dan
+        /// mengambil satu angka dari sana menggeser seluruh sisanya. Diseed juga berarti wave yang
+        /// sama selalu bercuaca sama, jadi "wave 7 itu yang hujan" tetap benar di setiap run.
+        /// </summary>
+        public void Roll(int wave)
+        {
+            if (_biome == null || _cumulative.Length == 0) return;
+
+            var dice = new System.Random(wave * 7919 + 104729);
+            float roll = (float)dice.NextDouble();
+
+            int pick = _cumulative.Length - 1;
+
+            for (int i = 0; i < _cumulative.Length; i++)
+            {
+                if (roll <= _cumulative[i]) { pick = i; break; }
+            }
+
+            if (pick == _current) return;
+
+            _current = pick;
+
+            var mood = _biome.WeatherMoods[pick];
+            MoodName = mood.Name;
+
+            Clear(ref _mood);
+            // Cuaca menempel di kamera dan membesar UTUH — butiran ikut, bukan cuma cakupan.
+            //
+            // Sempat dibuat cakupan saja, dan hasilnya hujan yang tidak terlihat sama sekali:
+            // tetesnya 0,09 unit, yang di kamera ini kira-kira TIGA PIKSEL, dan tiga piksel gelap
+            // di atas lapangan yang sedang mendung memang tidak akan pernah terlihat. Yang membuat
+            // pembesaran utuh aman sekarang adalah daun sudah dikeluarkan dari daftar cuaca —
+            // dulu pengali yang sama mengubahnya jadi selebar dua meter.
+            _mood = Spawn("Cuaca " + mood.Name, mood.Effects, mood.Speed, null, mood.Scale);
+
+            // Kupu-kupu berteduh. Yang tetap beterbangan di tengah hujan adalah hal pertama yang
+            // membocorkan bahwa cuacanya cuma lapisan yang ditumpuk di atas suasana, bukan sesuatu
+            // yang terjadi PADA lapangannya.
+            for (int i = 0; i < _pockets.Count; i++)
+            {
+                var pocket = _pockets[i];
+                if (pocket.Node == null || !pocket.HideInRain) continue;
+
+                pocket.Node.gameObject.SetActive(!mood.Wet);
+            }
+
+            Overcast(mood.Overcast);
+        }
+
+        /// <summary>
+        /// Mendung: matahari meredup, ambient mendingin, bayangan awan menebal dan meluas.
+        ///
+        /// Keempatnya sekaligus, dan itu memang intinya. Meredupkan matahari saja menghasilkan
+        /// lapangan gelap yang bayangannya tetap setajam tengah hari — mendung yang sebenarnya
+        /// justru MENGHAPUS bayangan tajam, karena cahayanya datang dari seluruh langit.
+        /// </summary>
+        void Overcast(float amount)
+        {
+            amount = Mathf.Clamp01(amount);
+
+            if (_sun != null) _sun.intensity = Mathf.Lerp(_clearSun, _clearSun * 0.34f, amount);
+
+            RenderSettings.ambientSkyColor = Color.Lerp(_clearSky, _clearSky * 0.62f, amount);
+            RenderSettings.ambientEquatorColor = Color.Lerp(_clearEquator, _clearEquator * 0.6f, amount);
+            RenderSettings.ambientGroundColor = Color.Lerp(_clearGround, _clearGround * 0.6f, amount);
+
+            if (_sky == null || _biome == null) return;
+
+            // Awan ikut menebal dan meluas. Hujan tanpa awan yang menggelap terbaca sebagai hujan
+            // di bawah langit cerah — dan mata menangkap kejanggalan itu sebelum sempat menamainya.
+            var thick = _clearCloud;
+            thick.a = Mathf.Lerp(_clearCloud.a, 1f, amount);
+
+            _biome.CloudColor = thick;
+            _biome.CloudCoverage = Mathf.Lerp(_clearCoverage, 0.82f, amount);
+
+            _sky.Apply(_biome);
+
+            _biome.CloudColor = _clearCloud;
+            _biome.CloudCoverage = _clearCoverage;
+        }
+
+        struct Passing
+        {
+            public AmbientVfxEntry Entry;
+            public float DueAt;
+            public GameObject Live;
+            public float ExpiresAt;
+        }
+
+        readonly System.Collections.Generic.List<Passing> _passing =
+            new System.Collections.Generic.List<Passing>();
+
+        /// <summary>
+        /// Menyusun suasana sesi ini: mengundi mana yang dipakai, lalu memisahkan yang MENETAP dari
+        /// yang LEWAT.
+        ///
+        /// Undiannya per sesi, bukan per frame — suasana yang berubah-ubah sendiri di tengah
+        /// permainan terbaca sebagai efek yang berkedip, bukan sebagai tempat.
+        /// </summary>
+        void BuildAmbient(BiomeDefinition biome)
+        {
+            var entries = biome.AmbientVfx;
+            if (entries == null || entries.Length == 0) return;
+
+            // System.Random, bukan UnityEngine.Random — yang terakhir itu urutan acak milik
+            // gameplay, dan mengambil satu angka dari sana menggeser seluruh sisanya.
+            var dice = new System.Random(System.Environment.TickCount);
+
+            foreach (var entry in entries)
+            {
+                if (entry == null || !entry.Valid) continue;
+                if (dice.NextDouble() > entry.Chance) continue;
+
+                if (entry.FollowCamera)
+                {
+                    // Menempel di kamera: yang cakupannya luas dan seragam tidak perlu dihitung di
+                    // luar layar sama sekali. Itu juga sebabnya ia tidak ikut daftar kantong —
+                    // tidak ada yang perlu dipindahkan, karena ia tidak pernah tertinggal.
+                    var carried = Spawn("Ikut " + entry.Prefab.name, new[] { entry.Prefab },
+                        1f, transform, entry.Scale);
+
+                    if (carried != null) carried.localPosition = new Vector3(0f, entry.Height, 0f);
+                    continue;
+                }
+
+                if (entry.RepeatEvery <= 0f)
+                {
+                    Scatter(entry);
+                    continue;
+                }
+
+                // Yang pertama tidak langsung datang. Kawanan burung yang sudah terbang di detik
+                // nol terbaca sebagai bagian dari perlengkapan, bukan sebagai sesuatu yang lewat.
+                _passing.Add(new Passing
+                {
+                    Entry = entry,
+                    DueAt = Time.time + (float)dice.NextDouble() * entry.RepeatEvery
+                });
+            }
+        }
+
+        struct Pocket
+        {
+            public Transform Node;
+            public float Near;
+            public float Far;
+            public float Height;
+            public bool HideInRain;
+        }
+
+        readonly System.Collections.Generic.List<Pocket> _pockets =
+            new System.Collections.Generic.List<Pocket>();
+
+        /// <summary>
+        /// Menetaskan satu efek sebagai BEBERAPA KANTONG yang berjauhan, bukan satu gerombolan di
+        /// kaki pemain.
+        ///
+        /// Kantongnya tidak menempel di kamera. Ia ditaruh di titik dunia, dibiarkan tertinggal saat
+        /// pemain berjalan, lalu dipindahkan ke depan begitu jaraknya terlalu jauh — jadi ia selalu
+        /// cukup dekat untuk terlihat tanpa pernah menempel di karakter.
+        /// </summary>
+        void Scatter(AmbientVfxEntry entry)
+        {
+            if (_ambient == null)
+            {
+                _ambient = new GameObject("Ambient").transform;
+
+                // DI LUAR simpul yang mengikuti kamera, dan ini wajib. Simpul itu bergerak tiap
+                // frame; kantong yang tergantung padanya akan ikut terseret, dan seluruh gunanya —
+                // tertinggal di tempat saat pemain berjalan — hilang tanpa satu pun error.
+                _ambient.SetParent(transform.parent, false);
+            }
+
+            for (int i = 0; i < Mathf.Max(1, entry.Count); i++)
+            {
+                var group = Spawn(entry.Prefab.name + " " + i, new[] { entry.Prefab }, 1f,
+                    _ambient, entry.Scale);
+
+                if (group == null) continue;
+
+                var pocket = new Pocket
+                {
+                    Node = group,
+                    Near = entry.MinDistance,
+                    Far = Mathf.Max(entry.MinDistance + 1f, entry.Spread),
+                    Height = entry.Height,
+                    HideInRain = entry.HideInRain
+                };
+
+                Place(pocket);
+                _pockets.Add(pocket);
+            }
+        }
+
+        void Place(Pocket pocket)
+        {
+            // Cincin, bukan lingkaran penuh: mengundi jarak secara merata dari nol akan menumpuk
+            // sebagian besar titik di dekat pusat, dan yang dihindari justru itu.
+            float angle = Random.Range(0f, Mathf.PI * 2f);
+            float radius = Mathf.Lerp(pocket.Near, pocket.Far, Random.value);
+
+            Vector3 at = _follow != null ? _follow.position : Vector3.zero;
+
+            pocket.Node.position = new Vector3(
+                at.x + Mathf.Cos(angle) * radius, pocket.Height, at.z + Mathf.Sin(angle) * radius);
+        }
+
+        void TickPockets()
+        {
+            if (_follow == null) return;
+
+            Vector3 at = _follow.position;
+
+            for (int i = 0; i < _pockets.Count; i++)
+            {
+                var pocket = _pockets[i];
+                if (pocket.Node == null) continue;
+
+                Vector3 delta = pocket.Node.position - at;
+                delta.y = 0f;
+
+                // Dipindahkan hanya kalau sudah JAUH DI LUAR jangkauan, bukan tepat di batasnya.
+                // Memindahkan di batas membuat kantongnya berkedip maju-mundur setiap kali pemain
+                // bergoyang di sekitar jarak itu.
+                if (delta.sqrMagnitude < pocket.Far * pocket.Far * 2.25f) continue;
+
+                Place(pocket);
+            }
+        }
+
+        void TickPassing()
+        {
+            for (int i = 0; i < _passing.Count; i++)
+            {
+                var slot = _passing[i];
+
+                if (slot.Live != null)
+                {
+                    if (Time.time < slot.ExpiresAt) continue;
+
+                    Destroy(slot.Live);
+                    slot.Live = null;
+
+                    // Jeda diacak setengah sampai satu setengah kali. Jeda yang tepat sama
+                    // terbaca sebagai jadwal, bukan sebagai kebetulan.
+                    slot.DueAt = Time.time + slot.Entry.RepeatEvery * Random.Range(0.5f, 1.5f);
+                    _passing[i] = slot;
+                    continue;
+                }
+
+                if (Time.time < slot.DueAt) continue;
+
+                var group = Spawn("Lewat " + slot.Entry.Prefab.name, new[] { slot.Entry.Prefab }, 1f);
+
+                slot.Live = group != null ? group.gameObject : null;
+                slot.ExpiresAt = Time.time + slot.Entry.Lifetime;
+                _passing[i] = slot;
+            }
+        }
+
+        void Clear(ref Transform slot)
+        {
+            if (slot != null) Destroy(slot.gameObject);
+            slot = null;
+        }
+
+        /// <summary>
+        /// Menetaskan satu kelompok efek di bawah satu induk bernama.
+        ///
+        /// Dikelompokkan supaya hierarkinya tetap terbaca: satu simpul untuk yang selalu ada, satu
+        /// lagi untuk cuaca yang sedang berlaku. Tanpa itu, dua belas sistem partikel berserakan di
+        /// akar scene dan tidak ada yang tahu mana milik siapa saat ada yang harus dimatikan.
+        /// </summary>
+        /// <param name="coverageOnly">
+        /// Benar = yang membesar CAKUPAN pemancarnya, ukuran butirannya tetap. Salah = butirannya
+        /// ikut membesar.
+        ///
+        /// Dua kebutuhan yang berlawanan dan sempat dikerjakan satu cara. Hujan perlu MENUTUPI
+        /// layar: tetesnya harus tetap sebesar tetes, yang harus meluas adalah petak tempat ia
+        /// turun. Daun sebaliknya — yang salah justru ukuran daunnya sendiri.
+        ///
+        /// Membesarkan keduanya dengan skala transform menghasilkan badai bertetes selebar pohon
+        /// dan daun selebar dua meter yang melayang seperti layang-layang.
+        /// </param>
+        Transform Spawn(string label, GameObject[] prefabs, float speed, Transform parent = null,
+            float scale = 1f, bool coverageOnly = false)
+        {
+            if (prefabs == null || prefabs.Length == 0) return null;
+
+            var root = new GameObject(label).transform;
+            root.SetParent(parent != null ? parent : transform, false);
+
+            for (int i = 0; i < prefabs.Length; i++)
+            {
+                if (prefabs[i] == null) continue;
+
+                var go = Instantiate(prefabs[i], root);
+                go.transform.localPosition = Vector3.zero;
+                go.transform.localRotation = Quaternion.identity;
+
+                float size = Mathf.Max(0.01f, scale);
+                go.transform.localScale = Vector3.one * size;
+
+                foreach (var system in go.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    var main = system.main;
+
+                    // WAJIB. Lihat catatan kelas: ruang lokal menyeret partikel yang sudah lahir.
+                    main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+                    // INI yang memisahkan cakupan dari ukuran.
+                    //
+                    // Shape  : skala transform hanya menggeser TEMPAT partikel lahir. Butirannya
+                    //          tetap sebesar aslinya — persis yang dibutuhkan hujan.
+                    // Hierarchy: skala transform ikut mengubah ukuran butirannya.
+                    //
+                    // Bawaannya Local, yang mengabaikan skala induk sepenuhnya — jadi menyetel
+                    // skala transform tanpa mengubah mode ini tidak melakukan apa pun, dan gagalnya
+                    // diam: efeknya tetap tergambar, cuma seukuran semula.
+                    main.scalingMode = coverageOnly
+                        ? ParticleSystemScalingMode.Shape
+                        : ParticleSystemScalingMode.Hierarchy;
+
+                    // Cakupan yang meluas tanpa tambahan partikel menghasilkan hujan yang makin
+                    // jarang seiring makin lebar. Lajunya dinaikkan LINEAR terhadap skala, bukan
+                    // kuadrat: mengikuti luas sebenarnya berarti 6x jadi 36x partikel, dan itu
+                    // membeli kerapatan yang tidak pernah terlihat dengan harga yang terasa.
+                    if (coverageOnly && size > 1f)
+                    {
+                        var emission = system.emission;
+                        var rate = emission.rateOverTime;
+                        rate.constantMax *= size;
+                        rate.constantMin *= size;
+                        emission.rateOverTime = rate;
+
+                        main.maxParticles = Mathf.Min(20000,
+                            Mathf.RoundToInt(main.maxParticles * size));
+                    }
+                    main.simulationSpeed = Mathf.Max(0.01f, main.simulationSpeed * speed);
+
+                    // Bayangan MATI. Ribuan partikel yang melempar bayangan berarti ribuan objek
+                    // tambahan di peta bayangan tiap frame, dan tidak satu pun terbaca di kamera
+                    // yang menunduk.
+                    var renderer = system.GetComponent<ParticleSystemRenderer>();
+
+                    if (renderer != null)
+                    {
+                        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        renderer.receiveShadows = false;
+                    }
+                }
+            }
+
+            return root;
+        }
+
+        void LateUpdate()
+        {
+            if (_follow == null) return;
+
+            // Simpul ini mengikuti kamera, dan itu benar untuk CUACA — hujan memang harus turun di
+            // mana pun pemain berada. Kantong suasana justru sebaliknya: ia ditaruh di titik dunia
+            // dan sengaja tertinggal, jadi ia diurus terpisah di TickPockets.
+            Vector3 at = _follow.position;
+            transform.position = new Vector3(at.x, 0f, at.z);
+
+            TickPassing();
+            TickPockets();
+        }
+    }
+}
