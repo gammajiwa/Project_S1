@@ -153,6 +153,14 @@ namespace Proto
                  "aturan yang dipakai cuaca. 0 = selalu siang. Cuma berlaku kalau biome-nya dua.")]
         [Range(0f, 1f)] public float NightChance = 0.5f;
 
+        [Tooltip("Porsi wave SIANG yang jatuh sebagai SENJA (grade emas, matahari rendah). " +
+                 "Butuh wajah arena ketiga terpasang.")]
+        [Range(0f, 1f)] public float DuskChance = 0.3f;
+
+        [Tooltip("Porsi wave MALAM yang jatuh sebagai TENGAH MALAM (lebih pekat, lampu lebih " +
+                 "sedikit). Butuh wajah arena keempat terpasang.")]
+        [Range(0f, 1f)] public float MidnightChance = 0.3f;
+
         [Header("Kamera")]
         [Tooltip("Besar zona mati kamera, sebagai porsi setengah layar. Pemain boleh bergerak " +
                  "sebebasnya di dalam zona ini tanpa kamera ikut sama sekali.\n\n" +

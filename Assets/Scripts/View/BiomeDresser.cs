@@ -215,7 +215,17 @@ namespace Proto
             // menghasilkan wave malam yang selalu bercuaca bawaan, tanpa satu pun error.
             if (_biomes != null && _biomes.Length > 1 && _balance != null)
             {
-                int index = WaveHash.Roll01(wave, 3389) < _balance.NightChance ? 1 : 0;
+                // Dua undian terpisah: siang-atau-malam dulu, lalu RASA-nya. Urutan array wajib
+                // [siang, malam, senja, tengah-malam] — dua slot pertama dipertahankan supaya
+                // scene lama yang cuma punya dua wajah tetap jalan tanpa disentuh.
+                bool night = WaveHash.Roll01(wave, 3389) < _balance.NightChance;
+                float flavour = WaveHash.Roll01(wave, 7717);
+
+                int index = night
+                    ? (flavour < _balance.MidnightChance && _biomes.Length > 3 ? 3 : 1)
+                    : (flavour < _balance.DuskChance && _biomes.Length > 2 ? 2 : 0);
+
+                index = Mathf.Min(index, _biomes.Length - 1);
 
                 if (_biomes[index] != null && _biomes[index] != _current) Apply(_biomes[index]);
             }

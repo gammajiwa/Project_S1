@@ -108,10 +108,9 @@ namespace Proto.EditorTools
             // dicoba dan nyaris tidak terlihat, karena tonemap ACES memampatkan ujung terangnya —
             // yang dikurangi cuma sisa jangkauan yang memang sudah tidak terpakai.
             //
-            // KEMBALI ke 2,8 milik demo. Grade sekarang ACES (profil demo UNS) yang memampatkan
-            // ujung terang — matahari 2,4 di bawah ACES terbaca suram, dan "suram" adalah persis
-            // keluhan pemilik project terhadap tampilannya.
-            forest.SunIntensity = 2.8f;
+            // 2,4 — look siang yang lama, yang dipilih pemilik project setelah membandingkan
+            // langsung dengan grade demo. Grade demo tidak dibuang: ia jadi wajah SENJA.
+            forest.SunIntensity = 2.4f;
 
             // Ambient BIRU LANGIT, bukan putih. Di gaya ilustrasi, bagian yang tidak kena matahari
             // tidak boleh gelap — ia harus tetap BERWARNA, dan warnanya harus warna langit.
@@ -271,8 +270,11 @@ namespace Proto.EditorTools
                 // "cahayanya dari matahari, jangan di atas kepala player". Lapisan ikut-kamera
                 // dari prefab yang sama sudah DIBUANG: dialah yang dulu nangkring di pusat layar.
                 // JANGAN tambahkan stretch/tint/follow di sini — itu menimpa setelan tangan.
+                // BUKAN OnlyClear lagi: cerah cuma 10% sekarang — god ray yang cuma hidup di
+                // situ praktis tidak pernah terlihat. Ia tampil juga saat berangin, tetap
+                // ngumpet saat hujan.
                 Ambient("Light/Sunlight", 1f, spread: 3, near: 12f, far: 30f,
-                    scale: 1f, height: 0f, hideInRain: true, onlyClear: true),
+                    scale: 1f, height: 0f, hideInRain: true),
 
                 // Daun berguguran hampir SELALU ada — dan "hampir" itu yang penting. Sesuatu yang
                 // tidak pernah absen berhenti diperhatikan.
@@ -314,17 +316,17 @@ namespace Proto.EditorTools
             // Sama seperti di atas: diisi sekali, lalu milik penyetel.
             bool freshMoods = forest.WeatherMoods == null || forest.WeatherMoods.Length == 0;
 
-            // Sebaran yang diminta: cerah 60%, berangin 20%, basah TOTAL 20% (gerimis + hujan +
-            // badai berbagi jatah itu). Bobot ditulis supaya totalnya sepuluh — persentasenya
-            // terbaca langsung dari angkanya.
+            // Sebaran permintaan terbaru: BERANGIN 50%, basah TOTAL 40% (gerimis + hujan +
+            // badai), cerah 10%. Bobot ditulis supaya totalnya sepuluh — persentasenya terbaca
+            // langsung dari angkanya.
             if (freshMoods) forest.WeatherMoods = new[]
             {
-                new WeatherMood { Name = "Cerah", Weight = 6f },
+                new WeatherMood { Name = "Cerah", Weight = 1f },
 
                 new WeatherMood
                 {
                     Name = "Berangin",
-                    Weight = 2f,
+                    Weight = 5f,
                     Overcast = 0.15f,
                     Effects = new[] { Fx("Wind_Leaves_Tornado/Wind_heavy", 1.8f, 0.2f, 12f, -22f) }
                 },
@@ -339,7 +341,7 @@ namespace Proto.EditorTools
                 new WeatherMood
                 {
                     Name = "Gerimis",
-                    Weight = 1f,
+                    Weight = 2f,
                     Speed = 0.85f,
                     Wet = true,
                     Overcast = 0.35f,
@@ -349,7 +351,7 @@ namespace Proto.EditorTools
                 new WeatherMood
                 {
                     Name = "Hujan",
-                    Weight = 0.7f,
+                    Weight = 1.4f,
                     Wet = true,
                     Overcast = 0.6f,
                     Effects = new[]
@@ -362,7 +364,7 @@ namespace Proto.EditorTools
                 new WeatherMood
                 {
                     Name = "Badai",
-                    Weight = 0.3f,
+                    Weight = 0.6f,
                     Speed = 1.25f,
                     Wet = true,
                     Overcast = 0.85f,
@@ -522,12 +524,16 @@ namespace Proto.EditorTools
 
             string nightPath = BuildNight(forest);
 
+            var nightAsset = AssetDatabase.LoadAssetAtPath<BiomeDefinition>(nightPath);
+            string sorePath = BuildSore(forest);
+            string midnightPath = BuildMidnight(nightAsset);
+
             AssetDatabase.SaveAssets();
 
             // TIDAK ada Refresh() di sini. Refresh menjadwalkan impor ulang, dan selama impor itu
             // berjalan LoadAssetAtPath mengembalikan null untuk aset yang jelas-jelas ada di disk —
             // yang tersimpan ke scene lalu jadi slot kosong, tanpa satu pun error.
-            Attach(new[] { path, nightPath });
+            Attach(new[] { path, nightPath, sorePath, midnightPath });
 
             Debug.Log($"[BiomePass] '{forest.DisplayName}' siap: {forest.TreeCount} pohon " +
                       $"({forest.MeshTreeShare:P0} bermesh dari {forest.MeshTrees.Length} jenis), " +
@@ -609,9 +615,11 @@ namespace Proto.EditorTools
             night.SunYaw = 300f;
             night.SunIntensity = 0.55f;
 
-            night.AmbientSky = new Color(0.14f, 0.19f, 0.32f);
-            night.AmbientEquator = new Color(0.11f, 0.15f, 0.25f);
-            night.AmbientGround = new Color(0.06f, 0.08f, 0.13f);
+            // Dinaikkan dari (0,14; 0,19; 0,32) — "jangan gelap gulita". Malam yang terbaca
+            // bukan malam yang hitam, melainkan malam yang cahayanya PUNYA TEMPAT.
+            night.AmbientSky = new Color(0.17f, 0.22f, 0.36f);
+            night.AmbientEquator = new Color(0.13f, 0.17f, 0.28f);
+            night.AmbientGround = new Color(0.07f, 0.09f, 0.15f);
 
             night.FogEnabled = true;
             night.FogColor = new Color(0.09f, 0.13f, 0.22f);
@@ -627,12 +635,15 @@ namespace Proto.EditorTools
             // sudah terang merata. Di malam hari ia justru satu-satunya yang membuat lapangan punya
             // tempat terang dan tempat gelap, dan kabut volumetrik mengubah tiap lampu jadi kolam
             // cahaya yang terlihat isinya.
-            night.LampCount = 10;
+            // "Cahaya internal": SEDIKIT titik tapi KUAT dan lebar — beberapa bagian lapangan
+            // benar-benar terang, sisanya remang. Sepuluh lampu lemah menghasilkan remang merata
+            // yang tidak menerangi apa pun; tujuh lampu kuat menghasilkan TEMPAT.
+            night.LampCount = 7;
             night.LampColor = new Color(1f, 0.72f, 0.36f);
             night.LampColorCool = new Color(0.36f, 0.58f, 1f);
-            night.LampIntensity = 3.5f;
-            night.LampRange = 20f;
-            night.LampHeight = 4.5f;
+            night.LampIntensity = 5.5f;
+            night.LampRange = 24f;
+            night.LampHeight = 5f;
 
             // Lampu yang dibawa pemain. Dingin, supaya ia terbaca sebagai cahaya sihir yang
             // dibawa — bukan sebagai obor, yang akan menyaingi lampu hangat di lapangan.
@@ -659,16 +670,18 @@ namespace Proto.EditorTools
                 // bangkitan EnsureFireflies. Varian _fog kupu-kupu DICOPOT dari malam: ia tetap
                 // terbaca sebagai kupu-kupu yang menyala, dan kupu-kupu milik siang. Satu-satunya
                 // makhluk yang boleh menyala di malam adalah kunang-kunang.
-                Ambient("Assets/GameData/Look/Fireflies", 0.9f, spread: 4, near: 6f, far: 22f,
+                // Dikurangi dari 4+3 kantong — "terlalu banyak kunang-kunang". Dua kantong
+                // sudah cukup jadi tanda kehidupan; sisanya biar dikerjakan lampu arena.
+                Ambient("Assets/GameData/Look/Fireflies", 0.7f, spread: 2, near: 7f, far: 22f,
                     scale: 1f, height: 0.9f, hideInRain: true),
 
-                Ambient("Embers/Embers_calm", 0.5f, spread: 3, near: 6f, far: 18f,
+                Ambient("Embers/Embers_calm", 0.35f, spread: 2, near: 6f, far: 18f,
                     scale: 0.5f, height: 0.6f, hideInRain: true),
 
                 // Beam cahaya BULAN milik paket, apa adanya — aturan yang sama dengan siang:
                 // bentuk milik prefab (setelan tangan pemilik project), kode cuma menempatkan.
                 Ambient("Light/Moonlight", 1f, spread: 3, near: 12f, far: 30f,
-                    scale: 1f, height: 0f, hideInRain: true, onlyClear: true),
+                    scale: 1f, height: 0f, hideInRain: true),
 
                 Ambient("Wind_Leaves_Tornado/Leaves_green", 0.5f,
                     scale: 0.1f, height: 15f, follow: true, offX: -22f)
@@ -680,16 +693,16 @@ namespace Proto.EditorTools
             // suasana — ia cuma menghapus apa yang masih bisa dibaca.
             bool freshNightMoods = night.WeatherMoods == null || night.WeatherMoods.Length == 0;
 
-            // Sebaran yang sama dengan siang: sunyi 60%, berangin 20%, basah 20%. Badai sengaja
+            // Sebaran yang sama dengan siang: berangin 50%, basah 40%, sunyi 10%. Badai tetap
             // absen — badai di atas lapangan yang sudah gelap cuma menghapus yang masih terbaca.
             if (freshNightMoods) night.WeatherMoods = new[]
             {
-                new WeatherMood { Name = "Sunyi", Weight = 6f },
+                new WeatherMood { Name = "Sunyi", Weight = 1f },
 
                 new WeatherMood
                 {
                     Name = "Berangin",
-                    Weight = 2f,
+                    Weight = 5f,
                     Speed = 0.8f,
                     Effects = new[] { Fx("Wind_Leaves_Tornado/Wind_heavy", 1.8f, 0.2f, 12f, -22f) }
                 },
@@ -699,7 +712,7 @@ namespace Proto.EditorTools
                 new WeatherMood
                 {
                     Name = "Gerimis",
-                    Weight = 1.2f,
+                    Weight = 2.4f,
                     Speed = 0.85f,
                     Wet = true,
                     Overcast = 0.25f,
@@ -709,7 +722,7 @@ namespace Proto.EditorTools
                 new WeatherMood
                 {
                     Name = "Hujan",
-                    Weight = 0.8f,
+                    Weight = 1.6f,
                     Wet = true,
                     Overcast = 0.4f,
                     Effects = new[] { Fx("Rain/Rain_average", 2.6f, 1.1f, 0f, 0f, true) }
@@ -730,50 +743,28 @@ namespace Proto.EditorTools
         }
 
         /// <summary>
-        /// Mengadopsi profil demo hutan UNS SEUTUHNYA — ACES, kontras, white balance, grain,
-        /// semuanya. Ini jawaban atas keluhan yang sah: "lihat aset yang gw beli, kok jadinya
-        /// begini" — yang membuat demo paketnya cantik memang profil ini, dan meredamnya
-        /// (exposure diturunkan, ACES dicabut) menghasilkan lapangan suram yang bukan barang
-        /// yang dibeli siapa pun.
-        ///
-        /// Isi PP_Sunny DIKLON dari profil demo tiap pass jalan, pada GUID yang sama — rujukan
-        /// biome dan SceneLook tidak pernah putus. Komponen kabut HAZE ikut terhapus di sini;
-        /// jalankan Tools/Grimoire/Install Volumetric Fog SETELAH pass ini.
+        /// PP_Sunny milik penyetel: TIDAK PERNAH ditimpa kalau sudah ada. Pelajaran mahal hari
+        /// ini — mengkloninya dari profil demo mengubah SIANG jadi senja tanpa diminta. Grade
+        /// demo yang ternyata disukai itu sekarang wajah tersendiri: SENJA (PP_Sore).
         /// </summary>
         static void AdoptSunnyGrade()
         {
-            const string source = Nature + "Demo/Lighting/Forest/UNS_Forest_Volume_Profile.asset";
             const string copy = "Assets/GameData/Look/PP_Sunny.asset";
-
-            var demo = AssetDatabase.LoadAssetAtPath<VolumeProfile>(source);
-
-            if (demo == null)
-            {
-                Debug.LogError("[BiomePass] profil demo UNS tidak ketemu: " + source);
-                return;
-            }
-
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(copy);
 
             if (profile == null)
             {
+                const string source = "Assets/Plugin/ToonScapes/Shared Assets/Volume Profiles/" +
+                                      "TS_Profile_Sunny_01.asset";
+
                 if (!AssetDatabase.CopyAsset(source, copy))
                 {
-                    Debug.LogError("[BiomePass] gagal menyalin profil demo ke " + copy);
+                    Debug.LogError("[BiomePass] gagal menyalin profil warna dari " + source);
                     return;
                 }
 
                 profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(copy);
             }
-            else
-            {
-                CloneProfileInto(demo, profile);
-            }
-
-            var night = AssetDatabase.LoadAssetAtPath<VolumeProfile>(
-                "Assets/GameData/Look/PP_Night.asset");
-
-            if (night != null) CloneProfileInto(demo, night);
 
             var look = AssetDatabase.LoadAssetAtPath<SceneLook>("Assets/GameData/SceneLook_Game.asset");
 
@@ -790,29 +781,153 @@ namespace Proto.EditorTools
             EditorUtility.SetDirty(look);
         }
 
-        /// <summary>Menyamakan ISI profil dengan sumber pada GUID tujuan yang tetap.</summary>
-        static void CloneProfileInto(VolumeProfile source, VolumeProfile target)
+        /// <summary>
+        /// Wajah SENJA — lahir dari kecelakaan yang disukai: grade demo UNS yang sempat menimpa
+        /// siang. Sekarang ia wajah sendiri: matahari RENDAH keemasan (bayangan panjang adalah
+        /// separuh identitas senja), ambient hangat, dan PP_Sore = klon profil demo (ACES, white
+        /// balance hangat). Hutan & suasananya menyalin siang — termasuk god ray Sunlight yang
+        /// disetel tangan.
+        /// </summary>
+        static string BuildSore(BiomeDefinition day)
         {
-            foreach (var old in target.components)
+            string path = Folder + "/Biome_forest_sore.asset";
+            var sore = AssetDatabase.LoadAssetAtPath<BiomeDefinition>(path);
+
+            if (sore == null)
             {
-                if (old != null) Object.DestroyImmediate(old, true);
+                sore = ScriptableObject.CreateInstance<BiomeDefinition>();
+                AssetDatabase.CreateAsset(sore, path);
             }
 
-            target.components.Clear();
+            var keptVfx = sore.AmbientVfx;
+            var keptMoods = sore.WeatherMoods;
 
-            foreach (var component in source.components)
+            EditorUtility.CopySerialized(day, sore);
+
+            // Tuning penyetel menang; wajah yang belum pernah disetel mewarisi milik siang.
+            if (keptVfx != null && keptVfx.Length > 0) sore.AmbientVfx = keptVfx;
+            if (keptMoods != null && keptMoods.Length > 0) sore.WeatherMoods = keptMoods;
+
+            sore.name = "Biome_forest_sore";
+            sore.Id = "forest_sore";
+            sore.DisplayName = "SENJA";
+
+            sore.SunColor = new Color(1f, 0.72f, 0.42f);
+            sore.SunPitch = 16f;
+            sore.SunYaw = 147f;
+            sore.SunIntensity = 2.5f;
+
+            sore.AmbientSky = new Color(0.55f, 0.42f, 0.4f);
+            sore.AmbientEquator = new Color(0.47f, 0.34f, 0.31f);
+            sore.AmbientGround = new Color(0.25f, 0.18f, 0.15f);
+
+            sore.FogColor = new Color(0.95f, 0.78f, 0.58f);
+            sore.FogStart = 55f;
+            sore.FogEnd = 210f;
+
+            sore.PostProcess = SoreGrade();
+
+            EditorUtility.SetDirty(sore);
+            return path;
+        }
+
+        static VolumeProfile SoreGrade()
+        {
+            const string path = "Assets/GameData/Look/PP_Sore.asset";
+            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (existing != null) return existing;
+
+            const string source = Nature + "Demo/Lighting/Forest/UNS_Forest_Volume_Profile.asset";
+
+            if (!AssetDatabase.CopyAsset(source, path))
             {
-                if (component == null) continue;
-
-                var clone = Object.Instantiate(component);
-                clone.name = component.name;
-                clone.hideFlags = HideFlags.HideInHierarchy;
-
-                AssetDatabase.AddObjectToAsset(clone, target);
-                target.components.Add(clone);
+                Debug.LogError("[BiomePass] gagal menyalin profil demo ke " + path);
+                return null;
             }
 
-            EditorUtility.SetDirty(target);
+            return AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+        }
+
+        /// <summary>
+        /// Wajah TENGAH MALAM — malam yang lebih pekat: bulan nyaris padam, kabut rapat, lampu
+        /// arena tinggal empat (kolam cahayanya justru makin berarti), dan PP_Midnight = salinan
+        /// PP_Night yang exposure-nya dijatuhkan. Suasananya menyalin malam — kunang-kunang dan
+        /// Moonlight ikut.
+        /// </summary>
+        static string BuildMidnight(BiomeDefinition night)
+        {
+            string path = Folder + "/Biome_forest_midnight.asset";
+            var mid = AssetDatabase.LoadAssetAtPath<BiomeDefinition>(path);
+
+            if (mid == null)
+            {
+                mid = ScriptableObject.CreateInstance<BiomeDefinition>();
+                AssetDatabase.CreateAsset(mid, path);
+            }
+
+            var keptVfx = mid.AmbientVfx;
+            var keptMoods = mid.WeatherMoods;
+
+            EditorUtility.CopySerialized(night, mid);
+
+            if (keptVfx != null && keptVfx.Length > 0) mid.AmbientVfx = keptVfx;
+            if (keptMoods != null && keptMoods.Length > 0) mid.WeatherMoods = keptMoods;
+
+            mid.name = "Biome_forest_midnight";
+            mid.Id = "forest_midnight";
+            mid.DisplayName = "TENGAH MALAM";
+
+            mid.SunColor = new Color(0.5f, 0.62f, 1f);
+            mid.SunPitch = 66f;
+            mid.SunIntensity = 0.3f;
+
+            mid.AmbientSky = new Color(0.08f, 0.11f, 0.2f);
+            mid.AmbientEquator = new Color(0.06f, 0.085f, 0.16f);
+            mid.AmbientGround = new Color(0.035f, 0.05f, 0.09f);
+
+            mid.FogColor = new Color(0.05f, 0.07f, 0.13f);
+            mid.FogStart = 18f;
+            mid.FogEnd = 85f;
+
+            mid.LampCount = 4;
+            mid.LampIntensity = 4.5f;
+            mid.LampRange = 22f;
+
+            mid.PlayerLightIntensity = 6f;
+
+            mid.PostProcess = MidnightGrade();
+
+            EditorUtility.SetDirty(mid);
+            return path;
+        }
+
+        static VolumeProfile MidnightGrade()
+        {
+            const string path = "Assets/GameData/Look/PP_Midnight.asset";
+            var existing = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (existing != null) return existing;
+
+            if (!AssetDatabase.CopyAsset("Assets/GameData/Look/PP_Night.asset", path))
+            {
+                Debug.LogError("[BiomePass] gagal menyalin PP_Night ke " + path);
+                return null;
+            }
+
+            var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+
+            // Dijatuhkan SEKALI saat lahir, sesudahnya milik penyetel.
+            if (profile != null && profile.TryGet<ColorAdjustments>(out var color))
+            {
+                color.postExposure.overrideState = true;
+                color.postExposure.value = -1f;
+
+                color.saturation.overrideState = true;
+                color.saturation.value = -22f;
+
+                EditorUtility.SetDirty(profile);
+            }
+
+            return profile;
         }
 
         static MeshProp Prop(string prefabPath, int lod, float weight, float sizeMultiplier = 1f)

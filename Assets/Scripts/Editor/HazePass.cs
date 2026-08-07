@@ -57,6 +57,10 @@ namespace Proto.EditorTools
             Configure(Grade, false);
             Configure(NightGrade, true);
 
+            // Wajah senja & tengah malam — dibuat Generate Biomes; jalankan pass itu DULU.
+            Configure("Assets/GameData/Look/PP_Sore.asset", false);
+            Configure("Assets/GameData/Look/PP_Midnight.asset", true);
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
@@ -192,7 +196,7 @@ namespace Proto.EditorTools
             // Profil malam dibuat dengan MENYALIN profil siang, supaya seluruh gradasi warnanya
             // (tonemap, kontras, bloom) tetap satu keluarga. Yang membedakan malam dari siang
             // seharusnya cahayanya, bukan cara warnanya diproses.
-            if (profile == null && night)
+            if (profile == null && night && path == NightGrade)
             {
                 if (AssetDatabase.CopyAsset(Grade, NightGrade))
                     profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(NightGrade);

@@ -10,30 +10,30 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce75cd28cacacec4e80208fad6326994, type: 3}
-  m_Name: Biome_forest
+  m_Name: Biome_forest_midnight
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BiomeDefinition
-  Id: forest
-  DisplayName: Verdant Hollow
+  Id: forest_midnight
+  DisplayName: TENGAH MALAM
   GroundColor: {r: 0.5, g: 0.58, b: 0.42, a: 1}
-  HorizonColor: {r: 0.32, g: 0.62, b: 0.86, a: 1}
+  HorizonColor: {r: 0.05, g: 0.07, b: 0.13, a: 1}
   GroundMaterial: {fileID: 0}
   GroundLayers: []
   GroundSize: {x: 140, y: 120}
   GroundPatchSize: 26
   GroundPatchCoverage: 0.28
-  Skybox: {fileID: 2100000, guid: 0abb308d27287d24c8430daeffdc8e46, type: 2}
-  PostProcess: {fileID: 11400000, guid: 727e9afeee12d82489cd6d9a06dc2436, type: 2}
-  SunColor: {r: 1, g: 0.9, b: 0.68, a: 1}
-  SunPitch: 35
-  SunYaw: 147
-  SunIntensity: 2.4
-  AmbientSky: {r: 0.42, g: 0.55, b: 0.68, a: 1}
-  AmbientEquator: {r: 0.33, g: 0.45, b: 0.54, a: 1}
-  AmbientGround: {r: 0.2, g: 0.25, b: 0.28, a: 1}
+  Skybox: {fileID: 0}
+  PostProcess: {fileID: 11400000, guid: 2c3ca8c5d0f91984b8a819081bfdb257, type: 2}
+  SunColor: {r: 0.5, g: 0.62, b: 1, a: 1}
+  SunPitch: 66
+  SunYaw: 300
+  SunIntensity: 0.3
+  AmbientSky: {r: 0.08, g: 0.11, b: 0.2, a: 1}
+  AmbientEquator: {r: 0.06, g: 0.085, b: 0.16, a: 1}
+  AmbientGround: {r: 0.035, g: 0.05, b: 0.09, a: 1}
   FogEnabled: 1
-  FogColor: {r: 0.825, g: 1, b: 0.994, a: 1}
-  FogStart: 60
-  FogEnd: 220
+  FogColor: {r: 0.05, g: 0.07, b: 0.13, a: 1}
+  FogStart: 18
+  FogEnd: 85
   TreeCount: 55
   TrunkHeightRange: {x: 5, y: 8}
   TrunkWidthRange: {x: 0.18, y: 0.34}
@@ -135,43 +135,43 @@ MonoBehaviour:
   GrassWidth: {x: 0.7, y: 1.3}
   TreeShadows: 1
   AmbientVfx:
-  - Prefab: {fileID: 885642106820311149, guid: 907a599345fcdce43a93e33092c9c23e, type: 3}
-    Chance: 0.75
+  - Prefab: {fileID: 59684608221799730, guid: 27df465e230ee984aa595bf69a6411e2, type: 3}
+    Chance: 0.7
     RepeatEvery: 0
     Lifetime: 14
-    Count: 4
-    MinDistance: 9
-    Spread: 24
-    Scale: 0.35
+    Count: 2
+    MinDistance: 6
+    Spread: 22
+    Scale: 1
     Grain: 1
     CoverageOnly: 0
-    Height: 1.2
+    Height: 0.9
     Offset: {x: 0, y: 0}
     HideInRain: 1
-    OnlyClear: 1
+    OnlyClear: 0
     Tint: {r: 1, g: 1, b: 1, a: 1}
     CullSheets: 0
     Stretch: 1
     FollowCamera: 0
-  - Prefab: {fileID: 6971241529967863841, guid: 26078ef05f29a104db9d2c3278c44332, type: 3}
-    Chance: 0.45
+  - Prefab: {fileID: 8461968100781004250, guid: 90d119ac94f1a3e4bb7c918b865b2f39, type: 3}
+    Chance: 0.35
     RepeatEvery: 0
     Lifetime: 14
-    Count: 3
-    MinDistance: 9
-    Spread: 26
-    Scale: 0.32
+    Count: 2
+    MinDistance: 6
+    Spread: 18
+    Scale: 0.5
     Grain: 1
     CoverageOnly: 0
-    Height: 1.4
+    Height: 0.6
     Offset: {x: 0, y: 0}
     HideInRain: 1
-    OnlyClear: 1
+    OnlyClear: 0
     Tint: {r: 1, g: 1, b: 1, a: 1}
     CullSheets: 0
     Stretch: 1
     FollowCamera: 0
-  - Prefab: {fileID: 161898164893142898, guid: a4cd458af09655443839cde63bed5f7b, type: 3}
+  - Prefab: {fileID: 8190179072261642156, guid: a6a6e24e3257fbf4b82b6e8f51f39384, type: 3}
     Chance: 1
     RepeatEvery: 0
     Lifetime: 14
@@ -190,7 +190,7 @@ MonoBehaviour:
     Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
-    Chance: 0.8
+    Chance: 0.5
     RepeatEvery: 0
     Lifetime: 14
     Count: 1
@@ -207,62 +207,8 @@ MonoBehaviour:
     CullSheets: 0
     Stretch: 1
     FollowCamera: 1
-  - Prefab: {fileID: 1075691852205303549, guid: ed92b7453a076ed4cbadb64dc2e8f7e5, type: 3}
-    Chance: 0.3
-    RepeatEvery: 0
-    Lifetime: 14
-    Count: 1
-    MinDistance: 6
-    Spread: 16
-    Scale: 0.09
-    Grain: 1
-    CoverageOnly: 0
-    Height: 14
-    Offset: {x: -26, y: 0}
-    HideInRain: 0
-    OnlyClear: 0
-    Tint: {r: 1, g: 1, b: 1, a: 1}
-    CullSheets: 0
-    Stretch: 1
-    FollowCamera: 1
-  - Prefab: {fileID: 3105971867596470410, guid: f98910772b6a83248bd86304a7837293, type: 3}
-    Chance: 0.8
-    RepeatEvery: 45
-    Lifetime: 18
-    Count: 1
-    MinDistance: 34
-    Spread: 60
-    Scale: 0.7
-    Grain: 1
-    CoverageOnly: 0
-    Height: 14
-    Offset: {x: 0, y: 0}
-    HideInRain: 0
-    OnlyClear: 0
-    Tint: {r: 1, g: 1, b: 1, a: 1}
-    CullSheets: 0
-    Stretch: 1
-    FollowCamera: 0
-  - Prefab: {fileID: 6995352602588480830, guid: b02ca8a32cde2ef42bc2f18d7152475b, type: 3}
-    Chance: 0.5
-    RepeatEvery: 75
-    Lifetime: 16
-    Count: 1
-    MinDistance: 34
-    Spread: 58
-    Scale: 0.6
-    Grain: 1
-    CoverageOnly: 0
-    Height: 12
-    Offset: {x: 0, y: 0}
-    HideInRain: 0
-    OnlyClear: 0
-    Tint: {r: 1, g: 1, b: 1, a: 1}
-    CullSheets: 0
-    Stretch: 1
-    FollowCamera: 0
   WeatherMoods:
-  - Name: Cerah
+  - Name: Sunyi
     Effects: []
     Weight: 1
     Speed: 1
@@ -289,9 +235,9 @@ MonoBehaviour:
       Stretch: 1
       FollowCamera: 0
     Weight: 5
-    Speed: 1
+    Speed: 0.8
     Wet: 0
-    Overcast: 0.15
+    Overcast: 0
   - Name: Gerimis
     Effects:
     - Prefab: {fileID: 462285787367926183, guid: 930b1612c29db3342ac0d3b6b97d692c, type: 3}
@@ -312,10 +258,10 @@ MonoBehaviour:
       CullSheets: 0
       Stretch: 1
       FollowCamera: 0
-    Weight: 2
+    Weight: 2.4
     Speed: 0.85
     Wet: 1
-    Overcast: 0.35
+    Overcast: 0.25
   - Name: Hujan
     Effects:
     - Prefab: {fileID: 1598139546896201481, guid: 8a45e81b43a1eb6489c7fd455eae937d, type: 3}
@@ -336,74 +282,14 @@ MonoBehaviour:
       CullSheets: 0
       Stretch: 1
       FollowCamera: 0
-    - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
-      Chance: 1
-      RepeatEvery: 0
-      Lifetime: 14
-      Count: 1
-      MinDistance: 6
-      Spread: 16
-      Scale: 1.8
-      Grain: 0.2
-      CoverageOnly: 0
-      Height: 12
-      Offset: {x: -22, y: 0}
-      HideInRain: 0
-      OnlyClear: 0
-      Tint: {r: 1, g: 1, b: 1, a: 1}
-      CullSheets: 0
-      Stretch: 1
-      FollowCamera: 0
-    Weight: 1.4
+    Weight: 1.6
     Speed: 1
     Wet: 1
-    Overcast: 0.6
-  - Name: Badai
-    Effects:
-    - Prefab: {fileID: 4366900416175226820, guid: c75e302e0191e4049ad0274e59a3a7b8, type: 3}
-      Chance: 1
-      RepeatEvery: 0
-      Lifetime: 14
-      Count: 1
-      MinDistance: 6
-      Spread: 16
-      Scale: 3
-      Grain: 1.2
-      CoverageOnly: 1
-      Height: 0
-      Offset: {x: 0, y: 0}
-      HideInRain: 0
-      OnlyClear: 0
-      Tint: {r: 1, g: 1, b: 1, a: 1}
-      CullSheets: 0
-      Stretch: 1
-      FollowCamera: 0
-    - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
-      Chance: 1
-      RepeatEvery: 0
-      Lifetime: 14
-      Count: 1
-      MinDistance: 6
-      Spread: 16
-      Scale: 2
-      Grain: 0.2
-      CoverageOnly: 0
-      Height: 12
-      Offset: {x: -26, y: 0}
-      HideInRain: 0
-      OnlyClear: 0
-      Tint: {r: 1, g: 1, b: 1, a: 1}
-      CullSheets: 0
-      Stretch: 1
-      FollowCamera: 0
-    Weight: 0.6
-    Speed: 1.25
-    Wet: 1
-    Overcast: 0.85
+    Overcast: 0.4
   OvercastSun: 0.72
   OvercastAmbient: 1.3
   OvercastCloud: 0.8
-  RainPlayerLight: 3.5
+  RainPlayerLight: 5.5
   SmokePocket: {fileID: 0}
   GloomLayers: 1
   GloomWobble: 11
@@ -418,21 +304,21 @@ MonoBehaviour:
   GloomDrift: 0.5
   GloomDotSize: 16
   GloomSmooth: 0.6
-  CloudColor: {r: 0.05, g: 0.07, b: 0.13, a: 1}
-  CloudSize: 16
+  CloudColor: {r: 0.02, g: 0.03, b: 0.08, a: 0.16}
+  CloudSize: 44
   CloudCoverage: 0.42
   CloudSpeed: 7
-  RayColor: {r: 1, g: 0.97, b: 0.82, a: 0}
+  RayColor: {r: 0.55, g: 0.68, b: 1, a: 0}
   RaySize: 34
   RayCoverage: 0.4
-  LampCount: 0
-  LampColor: {r: 1, g: 0.82, b: 0.55, a: 1}
-  LampColorCool: {r: 0.45, g: 0.65, b: 1, a: 1}
-  LampIntensity: 3.2
-  LampRange: 26
-  LampHeight: 7
-  PlayerLightIntensity: 0
-  PlayerLightColor: {r: 0.7, g: 0.85, b: 1, a: 1}
-  PlayerLightRange: 12
+  LampCount: 4
+  LampColor: {r: 1, g: 0.72, b: 0.36, a: 1}
+  LampColorCool: {r: 0.36, g: 0.58, b: 1, a: 1}
+  LampIntensity: 4.5
+  LampRange: 22
+  LampHeight: 5
+  PlayerLightIntensity: 6
+  PlayerLightColor: {r: 0.62, g: 0.8, b: 1, a: 1}
+  PlayerLightRange: 14
   PlayerLightHeight: 2.2
   ClearingRadius: 10

@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ce75cd28cacacec4e80208fad6326994, type: 3}
-  m_Name: Biome_forest
+  m_Name: Biome_forest_sore
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BiomeDefinition
-  Id: forest
-  DisplayName: Verdant Hollow
+  Id: forest_sore
+  DisplayName: SENJA
   GroundColor: {r: 0.5, g: 0.58, b: 0.42, a: 1}
   HorizonColor: {r: 0.32, g: 0.62, b: 0.86, a: 1}
   GroundMaterial: {fileID: 0}
@@ -22,18 +22,18 @@ MonoBehaviour:
   GroundPatchSize: 26
   GroundPatchCoverage: 0.28
   Skybox: {fileID: 2100000, guid: 0abb308d27287d24c8430daeffdc8e46, type: 2}
-  PostProcess: {fileID: 11400000, guid: 727e9afeee12d82489cd6d9a06dc2436, type: 2}
-  SunColor: {r: 1, g: 0.9, b: 0.68, a: 1}
-  SunPitch: 35
+  PostProcess: {fileID: 11400000, guid: 189594465f7aa404dbdaeeff900777db, type: 2}
+  SunColor: {r: 1, g: 0.72, b: 0.42, a: 1}
+  SunPitch: 16
   SunYaw: 147
-  SunIntensity: 2.4
-  AmbientSky: {r: 0.42, g: 0.55, b: 0.68, a: 1}
-  AmbientEquator: {r: 0.33, g: 0.45, b: 0.54, a: 1}
-  AmbientGround: {r: 0.2, g: 0.25, b: 0.28, a: 1}
+  SunIntensity: 2.5
+  AmbientSky: {r: 0.55, g: 0.42, b: 0.4, a: 1}
+  AmbientEquator: {r: 0.47, g: 0.34, b: 0.31, a: 1}
+  AmbientGround: {r: 0.25, g: 0.18, b: 0.15, a: 1}
   FogEnabled: 1
-  FogColor: {r: 0.825, g: 1, b: 0.994, a: 1}
-  FogStart: 60
-  FogEnd: 220
+  FogColor: {r: 0.95, g: 0.78, b: 0.58, a: 1}
+  FogStart: 55
+  FogEnd: 210
   TreeCount: 55
   TrunkHeightRange: {x: 5, y: 8}
   TrunkWidthRange: {x: 0.18, y: 0.34}

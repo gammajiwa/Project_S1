@@ -154,6 +154,8 @@ MonoBehaviour:
   _biomes:
   - {fileID: 11400000, guid: 597559a2b5a9d6b48b78f0c88205ab4f, type: 2}
   - {fileID: 11400000, guid: 95d3fe2aa0dfdbd4dafdfe920c1cef02, type: 2}
+  - {fileID: 11400000, guid: 51b986cfee21d3e429b1051b8d690986, type: 2}
+  - {fileID: 11400000, guid: 128f4f15a02757d42ab7b2288c502749, type: 2}
   _cheats: {fileID: 11400000, guid: e38904ef8c695ea46b7f3a938296f413, type: 2}
 --- !u!4 &982952184
 Transform:

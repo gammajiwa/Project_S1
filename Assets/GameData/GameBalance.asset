@@ -38,6 +38,8 @@ MonoBehaviour:
   EnemySpeedMax: 2.4
   EnemySpeedPerWave: 0.025
   EnemyContactDps: 10
+  EnemyContactDpsPerWave: 1.7
+  EnemyDamageGrowth: 1.055
   EnemiesBase: 12
   EnemiesPerWave: 6
   EnemyCountGrowth: 1.05
@@ -48,7 +50,9 @@ MonoBehaviour:
   WaveOpenerCount: 9
   WaveOpenerDistance: 0.85
   BossEveryWaves: 5
-  BiomeEveryWaves: 5
+  NightChance: 0.5
+  DuskChance: 0.7
+  MidnightChance: 0.7
   CameraDeadZone: 0.22
   EnemySeparation: 1.3
   SeparationWeight: 3
@@ -65,12 +69,44 @@ MonoBehaviour:
   KillDropChance: 0.035
   WaveClearDrops: 1
   RuneShareOfDrops: 0.25
+  DropStarWeights:
+  - 82
+  - 12
+  - 4.5
+  - 1.5
+  - 0
   MaxDropsPerWave: 3
   ShopEveryWaves: 3
   ShopSlots: 6
   RerollCostStart: 20
   RerollCostIncrement: 15
   ShopHighRollChance: 0.18
+  MapFloorsPerAct: 15
+  MapLanes: 3
+  MapEliteChance: 0.15
+  MapShopChance: 0.12
+  MapEventChance: 0.1
+  MapGambleChance: 0.08
+  MapEliteMinFloor: 3
+  EliteHpMul: 2.2
+  EliteCountMul: 1.25
+  EliteDamageMul: 1.3
+  EliteBossChance: 0.4
+  BossNodeCount: 2
+  BossNodeHpMul: 2.5
+  BossNodeAggroMul: 1.6
+  GambleCost: 40
+  GambleWeights:
+  - 30
+  - 25
+  - 15
+  - 18
+  - 9
+  - 3
+  GambleSmallGold: 25
+  GambleBigGold: 90
+  EventGoldGift: 80
+  EventTradeCost: 45
   PriceRune: 20
   PriceSigil: 35
   PriceStar1: 30
