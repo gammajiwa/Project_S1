@@ -135,38 +135,26 @@ MonoBehaviour:
   GrassWidth: {x: 0.7, y: 1.3}
   TreeShadows: 1
   AmbientVfx:
-  - Prefab: {fileID: 8973330300912168040, guid: 9aa7c091dcba0854da1e0a6489480cb8, type: 3}
-    Chance: 0.85
+  - Prefab: {fileID: 59684608221799730, guid: 27df465e230ee984aa595bf69a6411e2, type: 3}
+    Chance: 0.9
     RepeatEvery: 0
     Lifetime: 14
     Count: 4
-    MinDistance: 7
+    MinDistance: 6
     Spread: 22
-    Scale: 0.5
+    Scale: 1
     Grain: 1
     CoverageOnly: 0
-    Height: 1.3
+    Height: 0.9
     Offset: {x: 0, y: 0}
     HideInRain: 1
     OnlyClear: 0
-    FollowCamera: 0
-  - Prefab: {fileID: 3828618210362263252, guid: 8f41ad0a1c80078468704eac1a277797, type: 3}
-    Chance: 0.5
-    RepeatEvery: 0
-    Lifetime: 14
-    Count: 3
-    MinDistance: 9
-    Spread: 24
-    Scale: 0.45
-    Grain: 1
-    CoverageOnly: 0
-    Height: 1.6
-    Offset: {x: 0, y: 0}
-    HideInRain: 1
-    OnlyClear: 0
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 8461968100781004250, guid: 90d119ac94f1a3e4bb7c918b865b2f39, type: 3}
-    Chance: 0.55
+    Chance: 0.5
     RepeatEvery: 0
     Lifetime: 14
     Count: 3
@@ -179,6 +167,27 @@ MonoBehaviour:
     Offset: {x: 0, y: 0}
     HideInRain: 1
     OnlyClear: 0
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
+    FollowCamera: 0
+  - Prefab: {fileID: 8190179072261642156, guid: a6a6e24e3257fbf4b82b6e8f51f39384, type: 3}
+    Chance: 1
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 3
+    MinDistance: 12
+    Spread: 30
+    Scale: 1
+    Grain: 1
+    CoverageOnly: 0
+    Height: 0
+    Offset: {x: 0, y: 0}
+    HideInRain: 1
+    OnlyClear: 1
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
     Chance: 0.5
@@ -194,6 +203,9 @@ MonoBehaviour:
     Offset: {x: -22, y: 0}
     HideInRain: 0
     OnlyClear: 0
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 1
   WeatherMoods:
   - Name: Sunyi
@@ -218,6 +230,9 @@ MonoBehaviour:
       Offset: {x: -22, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     Weight: 2
     Speed: 0.8
@@ -239,6 +254,9 @@ MonoBehaviour:
       Offset: {x: 0, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     Weight: 1.2
     Speed: 0.85
@@ -260,6 +278,9 @@ MonoBehaviour:
       Offset: {x: 0, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     Weight: 0.8
     Speed: 1

@@ -56,6 +56,14 @@ namespace Proto
         /// <summary>Dipanggil tiap kali ia menyemburkan racun. Argumennya arah tembak.</summary>
         public System.Action<Vector3, Vector3> OnSpit;
 
+        /// <summary>
+        /// Pengali agresi per-EKOR, dipasang setelah <see cref="Begin"/>. Membagi jeda terjangan,
+        /// selaman, dan semburan — bukan menulis ke <see cref="Def"/>, karena Def itu ASET yang
+        /// dipakai bersama: mengubahnya untuk satu boss mengubah semua boss, dan menetap sampai
+        /// editor ditutup.
+        /// </summary>
+        public float Aggro = 1f;
+
         public void Begin(BossDefinition def, Vector3 at, float hp)
         {
             Def = def;
@@ -181,7 +189,7 @@ namespace Proto
 
                 // Lompatan habis. Masih ada sisa rentetan? Celup dangkal saja, bukan menyelam.
                 _breachesLeft--;
-                _diveTimer = _breachesLeft > 0 ? Def.DipDuration : Def.DiveInterval;
+                _diveTimer = (_breachesLeft > 0 ? Def.DipDuration : Def.DiveInterval) / Aggro;
                 return;
             }
 
@@ -207,7 +215,7 @@ namespace Proto
             _spitTimer -= dt;
             if (_spitTimer > 0f) return;
 
-            _spitTimer = Def.SpitInterval;
+            _spitTimer = Def.SpitInterval / Aggro;
 
             Vector3 dir = target - _head;
             dir.y = 0f;
@@ -227,7 +235,7 @@ namespace Proto
             else if (_lungeTimer <= 0f)
             {
                 _lungeLeft = Def.LungeDuration;
-                _lungeTimer = Def.LungeInterval;
+                _lungeTimer = Def.LungeInterval / Aggro;
             }
 
             Vector3 toPlayer = target - _head;

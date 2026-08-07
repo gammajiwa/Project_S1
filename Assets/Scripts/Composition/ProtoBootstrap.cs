@@ -74,7 +74,8 @@ namespace Proto
 
             var shake = cam.gameObject.AddComponent<CameraShake>();
 
-            _rig.gameObject.AddComponent<ArenaCamera>().Init(playerGo.transform, cam, _balance);
+            var arenaCam = _rig.gameObject.AddComponent<ArenaCamera>();
+            arenaCam.Init(playerGo.transform, cam, _balance);
 
             // Musuh lahir relatif terhadap apa yang TERLIHAT, bukan terhadap pemain. Kamera punya
             // zona mati, jadi pemain boleh menyimpang jauh dari pusat layar — kotak yang mengikuti
@@ -174,6 +175,13 @@ namespace Proto
             uiGo.transform.SetParent(transform, false);
             var ui = uiGo.AddComponent<GrimoireUI>();
             ui.Init(caster, enemies, cam, _database, _balance, dresser);
+
+            // Sutradara run: peta act, portal antar wave, pulau rehat. Dipasang SETELAH UI —
+            // ia mengecek WaveActive saat lahir, dan saklar curang OpeningWave hidup di ui.Init.
+            var run = new GameObject("RunDirector").AddComponent<RunDirector>();
+            run.transform.SetParent(transform, false);
+            run.Init(enemies, motor, arenaCam, cam, _balance, _database, playerGo.transform, _rig);
+            ui.AttachRun(run);
 
             // Diumumkan lewat banner yang sama dengan reaksi, bukan lewat widget baru: pemain
             // sudah tahu harus melihat ke mana saat sesuatu penting terjadi.

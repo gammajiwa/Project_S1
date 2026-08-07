@@ -185,6 +185,17 @@ namespace Proto
 
         public static Rect RecipeButtonRect() => new Rect(RightX() + 94, SellY + SellH + 8, 88, 32);
 
+        public static Rect MapButtonRect() => new Rect(RightX() + 188, SellY + SellH + 8, 88, 32);
+
+        /// <summary>Panel peta run: MELEBAR, kiri ke kanan seperti peta referensi — 15 lantai
+        /// jadi 15 kolom, dan layar lebar memang punya ruangnya di sumbu itu.</summary>
+        public static Rect MapPanelRect()
+        {
+            float w = Mathf.Min(1560f, Screen.width - 120f);
+            float h = Mathf.Min(540f, Screen.height - 140f);
+            return new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
+        }
+
         // ---------- loose drops ----------
 
         /// <summary>Drops scatter anywhere on screen, clear of the left column and the HUD strip.</summary>

@@ -26,7 +26,7 @@ MonoBehaviour:
   SunColor: {r: 1, g: 0.9, b: 0.68, a: 1}
   SunPitch: 35
   SunYaw: 147
-  SunIntensity: 2.4
+  SunIntensity: 2.8
   AmbientSky: {r: 0.42, g: 0.55, b: 0.68, a: 1}
   AmbientEquator: {r: 0.33, g: 0.45, b: 0.54, a: 1}
   AmbientGround: {r: 0.2, g: 0.25, b: 0.28, a: 1}
@@ -149,6 +149,9 @@ MonoBehaviour:
     Offset: {x: 0, y: 0}
     HideInRain: 1
     OnlyClear: 1
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 6971241529967863841, guid: 26078ef05f29a104db9d2c3278c44332, type: 3}
     Chance: 0.45
@@ -164,36 +167,27 @@ MonoBehaviour:
     Offset: {x: 0, y: 0}
     HideInRain: 1
     OnlyClear: 1
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 161898164893142898, guid: a4cd458af09655443839cde63bed5f7b, type: 3}
-    Chance: 0.85
+    Chance: 1
     RepeatEvery: 0
     Lifetime: 14
-    Count: 1
-    MinDistance: 8
-    Spread: 26
-    Scale: 0.75
-    Grain: 1
-    CoverageOnly: 1
-    Height: 0.5
-    Offset: {x: 0, y: 0}
-    HideInRain: 1
-    OnlyClear: 1
-    FollowCamera: 1
-  - Prefab: {fileID: 1493543632105723886, guid: af935127fcbc9be4cb3226b78c24b6d9, type: 3}
-    Chance: 0.8
-    RepeatEvery: 0
-    Lifetime: 14
-    Count: 2
-    MinDistance: 8
-    Spread: 20
-    Scale: 0.6
+    Count: 3
+    MinDistance: 12
+    Spread: 30
+    Scale: 1
     Grain: 1
     CoverageOnly: 0
     Height: 0
     Offset: {x: 0, y: 0}
     HideInRain: 1
     OnlyClear: 1
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
     Chance: 0.8
@@ -209,6 +203,9 @@ MonoBehaviour:
     Offset: {x: -22, y: 0}
     HideInRain: 0
     OnlyClear: 0
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 1
   - Prefab: {fileID: 1075691852205303549, guid: ed92b7453a076ed4cbadb64dc2e8f7e5, type: 3}
     Chance: 0.3
@@ -224,6 +221,9 @@ MonoBehaviour:
     Offset: {x: -26, y: 0}
     HideInRain: 0
     OnlyClear: 0
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 1
   - Prefab: {fileID: 3105971867596470410, guid: f98910772b6a83248bd86304a7837293, type: 3}
     Chance: 0.8
@@ -239,6 +239,9 @@ MonoBehaviour:
     Offset: {x: 0, y: 0}
     HideInRain: 0
     OnlyClear: 0
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 0
   - Prefab: {fileID: 6995352602588480830, guid: b02ca8a32cde2ef42bc2f18d7152475b, type: 3}
     Chance: 0.5
@@ -254,6 +257,9 @@ MonoBehaviour:
     Offset: {x: 0, y: 0}
     HideInRain: 0
     OnlyClear: 0
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+    CullSheets: 0
+    Stretch: 1
     FollowCamera: 0
   WeatherMoods:
   - Name: Cerah
@@ -278,6 +284,9 @@ MonoBehaviour:
       Offset: {x: -22, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     Weight: 2
     Speed: 1
@@ -299,6 +308,9 @@ MonoBehaviour:
       Offset: {x: 0, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     Weight: 1
     Speed: 0.85
@@ -320,6 +332,9 @@ MonoBehaviour:
       Offset: {x: 0, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
       Chance: 1
@@ -335,6 +350,9 @@ MonoBehaviour:
       Offset: {x: -22, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     Weight: 0.7
     Speed: 1
@@ -356,6 +374,9 @@ MonoBehaviour:
       Offset: {x: 0, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
       Chance: 1
@@ -371,6 +392,9 @@ MonoBehaviour:
       Offset: {x: -26, y: 0}
       HideInRain: 0
       OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
       FollowCamera: 0
     Weight: 0.3
     Speed: 1.25

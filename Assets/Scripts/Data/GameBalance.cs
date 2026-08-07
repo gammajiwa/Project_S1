@@ -245,6 +245,65 @@ namespace Proto
         public int RerollCostIncrement = 15;
         [Range(0f, 1f)] public float ShopHighRollChance = 0.18f;
 
+        [Header("Peta Run")]
+        [Tooltip("Jumlah lantai per act; boss di puncak. Nomor wave global terus berjalan " +
+                 "lintas act, jadi kurva kesulitan lama tidak tersentuh.")]
+        [Min(3)] public int MapFloorsPerAct = 15;
+
+        [Range(2, 5)] public int MapLanes = 3;
+
+        [Tooltip("Peluang jenis node istimewa per node — sisanya pertarungan biasa.")]
+        [Range(0f, 1f)] public float MapEliteChance = 0.15f;
+        [Range(0f, 1f)] public float MapShopChance = 0.12f;
+        [Range(0f, 1f)] public float MapEventChance = 0.1f;
+        [Range(0f, 1f)] public float MapGambleChance = 0.08f;
+
+        [Tooltip("Elite baru boleh muncul dari lantai ini. Elite di lantai awal bukan " +
+                 "pilihan melainkan tembok.")]
+        public int MapEliteMinFloor = 3;
+
+        [Header("Elite & boss puncak")]
+        [Tooltip("Pengali wave ELITE: keras lewat nyawa, jumlah, dan gigitan — bukan lewat " +
+                 "kecepatan, karena kecepatan mengubah rasa kontrol, bukan tingkat bahaya.")]
+        public float EliteHpMul = 2.2f;
+
+        public float EliteCountMul = 1.25f;
+
+        public float EliteDamageMul = 1.3f;
+
+        [Tooltip("Peluang sebuah elite berisi MINI-BOSS (satu boss menumpang wave biasa) " +
+                 "alih-alih sekadar wave yang dikeraskan.")]
+        [Range(0f, 1f)] public float EliteBossChance = 0.4f;
+
+        [Tooltip("Boss puncak act 1: berapa ekor sekaligus. Act berikutnya menambah satu " +
+                 "per act sampai mentok jumlah jenis boss yang ada.")]
+        public int BossNodeCount = 2;
+
+        [Tooltip("Pengali nyawa boss puncak. Puncak harus TEBAL — yang diuji bukan refleks " +
+                 "melainkan seluruh mesin damage yang dirakit sepanjang act.")]
+        public float BossNodeHpMul = 2.5f;
+
+        [Tooltip("Pengali agresi boss puncak: jeda serangannya dibagi angka ini.")]
+        public float BossNodeAggroMul = 1.6f;
+
+        [Header("Judi (slot)")]
+        public int GambleCost = 40;
+
+        [Tooltip("Bobot hasil slot, urutannya: kosong / koin kecil / koin besar / " +
+                 "piece ★2 / piece ★3 / piece ★4. Dinormalkan sendiri.")]
+        public float[] GambleWeights = { 30f, 25f, 15f, 18f, 9f, 3f };
+
+        public int GambleSmallGold = 25;
+
+        public int GambleBigGold = 90;
+
+        [Header("Kejadian")]
+        [Tooltip("Koin dari pilihan aman kejadian.")]
+        public int EventGoldGift = 80;
+
+        [Tooltip("Harga pilihan tukar nasib — bayar ini, dapat piece ★3 acak.")]
+        public int EventTradeCost = 45;
+
         [Header("Harga")]
         public int PriceRune = 20;
         public int PriceSigil = 35;

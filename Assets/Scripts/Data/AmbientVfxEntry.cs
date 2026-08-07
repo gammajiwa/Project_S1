@@ -77,6 +77,21 @@ namespace Proto
                  "seperti kupu-kupu di tengah hujan.")]
         public bool OnlyClear;
 
+        [Tooltip("Pewarna partikel. Putih = warna asli prefab. Berkas matahari yang sama " +
+                 "jadi cahaya bulan hanya dengan mendinginkan warnanya di sini.")]
+        public Color Tint = Color.white;
+
+        [Tooltip("Matikan sistem partikel yang butirannya lebih lebar dari 5 unit di dalam " +
+                 "prefab ini. Prefab debu paket aset menyembunyikan LEMBARAN beam raksasa di " +
+                 "dalamnya — di kamera atas ia tergambar sebagai balok cahaya UFO yang menelan " +
+                 "pemain. Yang dibeli dari prefab ini debunya, bukan beamnya.")]
+        public bool CullSheets;
+
+        [Tooltip("TINGGI butiran dikali ini (lebar tetap). God ray wajib menjulang: puncaknya " +
+                 "harus keluar layar sehingga yang terlihat cuma pangkal bawahnya — berkas yang " +
+                 "kelihatan ujung atasnya terbaca keluar dari tempat dekat, bukan dari langit.")]
+        [Min(0.1f)] public float Stretch = 1f;
+
         [Tooltip("Menempel di kamera alih-alih ditaruh sebagai kantong di titik dunia.\n\n" +
                  "Untuk yang CAKUPANNYA LUAS dan seragam — daun berguguran, hujan. Yang seperti itu " +
                  "seharusnya ada di mana-mana, jadi menghitungnya di luar layar cuma membayar " +

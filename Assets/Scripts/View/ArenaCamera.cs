@@ -72,6 +72,20 @@ namespace Proto
         /// </summary>
         Vector3 _focus;
 
+        /// <summary>Bebas dari jepitan arena — dinyalakan selama pemain di pulau rehat.</summary>
+        public bool Roam;
+
+        /// <summary>
+        /// Lompat seketika (pindah ke/dari pulau). Fokus dan kecepatan ikut di-reset — tanpa itu
+        /// kamera ber-SmoothDamp ratusan unit melintasi hutan, dan pemain menonton perjalanannya.
+        /// </summary>
+        public void Teleport(Vector3 at)
+        {
+            _focus = new Vector3(at.x, transform.position.y, at.z);
+            transform.position = _focus;
+            _velocity = Vector3.zero;
+        }
+
         void Awake() => _focus = transform.position;
 
         void LateUpdate()
@@ -87,8 +101,12 @@ namespace Proto
 
             // Dijepit SETELAH digeser, dan pada _focus bukan pada posisi kamera — menjepit posisi
             // sementara sasarannya bebas berarti kamera terus mendorong ke dinding tanpa henti.
-            _focus.x = Mathf.Clamp(_focus.x, -_limitX, _limitX);
-            _focus.z = Mathf.Clamp(_focus.z, -_limitZ, _limitZ);
+            if (!Roam)
+            {
+                _focus.x = Mathf.Clamp(_focus.x, -_limitX, _limitX);
+                _focus.z = Mathf.Clamp(_focus.z, -_limitZ, _limitZ);
+            }
+
             _focus.y = transform.position.y;
 
             transform.position = Vector3.SmoothDamp(transform.position, _focus, ref _velocity, _smooth);

@@ -179,14 +179,21 @@ namespace Proto
         /// </summary>
         public PieceDefinition RandomDrop(float runeShare, float[] starWeights = null)
         {
+            return RandomOfStar(RollStar(starWeights), runeShare);
+        }
+
+        /// <summary>
+        /// Piece acak TEPAT berbintang ini — hadiah slot dan kejadian memesan bintangnya sendiri.
+        /// Bintang yang pool-nya kosong turun setingkat, bukan gagal senyap.
+        /// </summary>
+        public PieceDefinition RandomOfStar(int star, float runeShare)
+        {
             Index();
 
-            // Bintang yang pool-nya kosong TURUN setingkat, bukan gagal senyap — undian ★4 di
-            // konten yang belum punya ★4 harus tetap menjatuhkan sesuatu.
-            for (int star = RollStar(starWeights); star >= 1; star--)
+            for (int s = Mathf.Clamp(star, 1, 5); s >= 1; s--)
             {
-                var runes = _dropRunesByStar[star - 1];
-                var others = _dropOthersByStar[star - 1];
+                var runes = _dropRunesByStar[s - 1];
+                var others = _dropOthersByStar[s - 1];
 
                 bool wantRune = Random.value < runeShare;
                 var pool = wantRune ? runes : others;

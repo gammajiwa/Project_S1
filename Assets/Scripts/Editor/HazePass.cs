@@ -292,7 +292,9 @@ namespace Proto.EditorTools
             // kabutnya masih setinggi 7 unit DAN sumbangan mataharinya masih 3,2. Dua-duanya sudah
             // dibetulkan, jadi sekarang yang naik kepadatannya cuma kolom udara di atas lantai,
             // bukan lantainya sendiri. 0,45 — cukup untuk terlihat, jauh dari 0,9 yang membakar.
-            Set(fog.GlobalMainLightDensityBoost, night ? 0.3f : 0.45f);
+            // Malam DINAIKKAN menyamai siang: berkas bulan diminta "agak terang", dan yang
+            // menjual kolom cahayanya justru kepadatan di daerah tak terbayangi ini.
+            Set(fog.GlobalMainLightDensityBoost, 0.45f);
 
             // Sumbangan lampu selain matahari, dan angkanya SANGAT peka.
             //

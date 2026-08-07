@@ -85,6 +85,46 @@ namespace Proto
         int _rerollCost;
         readonly PieceDefinition[] _shop = new PieceDefinition[ShopSlots];
 
+        // ---------- peta run & pulau rehat ----------
+        RunDirector _run;
+        bool _mapOpen;
+
+        Image _mapBg;
+        Text _mapTitle;
+        Text _mapLegend;
+        Image _mapBtnBg;
+        Text _mapBtnLabel;
+        Image[] _mapEdges = System.Array.Empty<Image>();
+        Image[] _mapNodes = System.Array.Empty<Image>();
+        Image[] _mapRings = System.Array.Empty<Image>();
+        Text[] _mapGlyphs = System.Array.Empty<Text>();
+        Text _mapYou;
+        int _mapSig = -1;
+
+        // Segmen pendek per sambungan — jalur bezier putus-putus ala peta referensi.
+        const int MapSegsPerEdge = 7;
+
+        bool _gambleOpen;
+        float _spinLeft;
+        int _slotOutcome = -1;
+        string _slotResultLine = "";
+        Image _slotBg;
+        Text _slotTitle;
+        readonly Text[] _slotReels = new Text[3];
+        Image _slotSpinBg;
+        Text _slotSpinLabel;
+        Text _slotInfo;
+
+        bool _eventOpen;
+        bool _eventDone;
+        Image _eventBg;
+        Text _eventTitle;
+        Text _eventBody;
+        Image _eventABg;
+        Image _eventBBg;
+        Text _eventALabel;
+        Text _eventBLabel;
+
         Image[] _evoLines;
         List<EvoPreview> _previews = new List<EvoPreview>();
         List<EvoPreview> _bagPreviews = new List<EvoPreview>();
@@ -1178,8 +1218,9 @@ namespace Proto
             }
         }
 
+        // Dengan sutradara run terpasang, tombol MULAI WAVE pensiun — portal yang memberangkatkan.
         bool CanStartWave() =>
-            Player.Alive && !Enemies.WaveActive && Book.Spells.Count > 0;
+            _run == null && Player.Alive && !Enemies.WaveActive && Book.Spells.Count > 0;
 
         void StartNextWave()
         {
@@ -1211,6 +1252,27 @@ namespace Proto
             {
                 _gridTitle.text = "GRIMOIRE   (bisa diubah)";
                 _bannerText.color = new Color(0.55f, 0.95f, 0.6f);
+
+                if (_run != null)
+                {
+                    if (_run.Resting)
+                        _bannerText.text = "PULAU REHAT — " + RunDirector.KindLabel(_run.RestKind) +
+                                           "\nklik portal LANJUT kalau sudah";
+                    else if (Enemies.Wave == 0)
+                        _bannerText.text = "SUSUN GRIMOIRE-MU\nlalu klik PORTAL buat berangkat   -   M = peta";
+                    else
+                        _bannerText.text = "WAVE " + Enemies.Wave +
+                                           " BERES\nklik PORTAL berikutnya   -   M = peta";
+
+                    if (Book.Spells.Count == 0)
+                    {
+                        _bannerText.color = new Color(1f, 0.75f, 0.4f);
+                        _bannerText.text += "\n\npasang minimal 1 SKILL di atas rune dulu";
+                    }
+
+                    return;
+                }
+
                 if (Enemies.Wave == 0)
                     _bannerText.text = "SUSUN GRIMOIRE-MU";
                 else if (ShopEventActive)
@@ -1237,6 +1299,9 @@ namespace Proto
 
         void HandleInput()
         {
+            // Peta boleh diintip kapan pun, termasuk saat wave berjalan — ia murni baca.
+            if (_run != null && ProtoInput.MapDown) _mapOpen = !_mapOpen;
+
             if (!Player.Alive || _inputLock > 0f) return;
 
             // Grimoire is locked while a wave runs â€” you only watch.
@@ -1400,10 +1465,83 @@ namespace Proto
 
         /// <summary>Shop / recipe panel clicks. Returns true when the click was consumed.</summary>
         bool ShopEventActive =>
-            Player.Alive && !Enemies.WaveActive && Enemies.Wave > 0 && Enemies.Wave % _balance.ShopEveryWaves == 0;
+            Player.Alive && !Enemies.WaveActive &&
+            (_run != null
+                ? _run.Resting && _run.RestKind == RunNodeKind.Shop
+                : Enemies.Wave > 0 && Enemies.Wave % _balance.ShopEveryWaves == 0);
 
         bool HandlePanelClick(Vector2 mouse)
         {
+            if (_run != null && MapButtonRect().Contains(mouse))
+            {
+                _mapOpen = !_mapOpen;
+                return true;
+            }
+
+            if (_mapOpen)
+            {
+                // Peta itu kaca: klik di luar menutupnya, klik di dalam tidak memilih apa-apa —
+                // memilih tetap urusan portal di lapangan.
+                _mapOpen = MapPanelRect().Contains(mouse);
+                return true;
+            }
+
+            if (_eventOpen)
+            {
+                // Modal sungguhan: kejadian menelan SEMUA klik. Pilihan yang bisa tertutup oleh
+                // klik nyasar bukan pilihan.
+                if (EventOptionRect(0).Contains(mouse))
+                {
+                    _gold += _balance.EventGoldGift;
+                    Announce("+" + _balance.EventGoldGift + " KOIN", new Color(1f, 0.84f, 0.32f));
+                    _eventDone = true;
+                    _eventOpen = false;
+                }
+                else if (EventOptionRect(1).Contains(mouse) && _gold >= _balance.EventTradeCost)
+                {
+                    _gold -= _balance.EventTradeCost;
+                    var prize = _db.RandomOfStar(3, 0.25f);
+
+                    if (prize != null)
+                    {
+                        AddLoose(prize, NearScatterPos(PanelRect().center, 2));
+                        Discover(prize);
+                        Announce(prize.DisplayName + "!", new Color(0.75f, 0.5f, 1f));
+                    }
+
+                    _eventDone = true;
+                    _eventOpen = false;
+                }
+
+                return true;
+            }
+
+            if (_gambleOpen)
+            {
+                if (!PanelRect().Contains(mouse))
+                {
+                    _gambleOpen = false;
+                    return true;
+                }
+
+                if (RerollRect().Contains(mouse) && _spinLeft <= 0f)
+                {
+                    if (_gold < _balance.GambleCost)
+                    {
+                        _slotResultLine = "koin kurang";
+                        return true;
+                    }
+
+                    // Hasil diundi SEKARANG, animasi cuma menunda pengumumannya — gulungan yang
+                    // menentukan hasil di frame berhentinya sendiri tidak bisa dites.
+                    _gold -= _balance.GambleCost;
+                    _slotOutcome = RollGambleOutcome();
+                    _spinLeft = 1.15f;
+                }
+
+                return true;
+            }
+
             if (ShopEventActive && ShopButtonRect().Contains(mouse))
             {
                 _shopOpen = !_shopOpen;
@@ -1506,8 +1644,9 @@ namespace Proto
         {
             Player.Hp = Mathf.Min(Player.MaxHp, Player.Hp + _balance.HealPerWaveClear);
 
-            // Shop is an event: it only shows up every few waves, with fresh stock.
-            if (Enemies.Wave % _balance.ShopEveryWaves == 0) RollShop();
+            // Toko milik PETA sekarang — stoknya dikocok saat mendarat di node toko. Jalur
+            // kelipatan-wave lama cuma hidup kalau run berjalan tanpa sutradara peta.
+            if (_run == null && Enemies.Wave % _balance.ShopEveryWaves == 0) RollShop();
 
             ReleaseDrops();
 
@@ -1688,6 +1827,637 @@ namespace Proto
             return _held;
         }
 
+        // ==================================================================
+        //  peta run, pulau rehat, slot, kejadian
+        // ==================================================================
+
+        /// <summary>Menyambungkan sutradara run. UI yang memegang gold dan papan, jadi semua
+        /// akibat node (stok toko, hadiah slot, tukar nasib) dieksekusi di sini.</summary>
+        public void AttachRun(RunDirector run)
+        {
+            _run = run;
+
+            run.CanEmbark = () => Player.Alive && Book.Spells.Count > 0;
+
+            // Ritual yang dulu milik tombol MULAI WAVE, sekarang milik langkah masuk portal.
+            run.OnEmbark = () =>
+            {
+                StashHeld();
+                SellLoose();
+                Player.ResetCooldowns();
+            };
+
+            run.OnRestEntered = OnRestEntered;
+            run.OnAnnounce = (message, color) => Announce(message, color);
+            run.ClickBlocked = () => _mapOpen || _shopOpen || _gambleOpen || _eventOpen;
+
+            BuildRunPanels();
+        }
+
+        void OnRestEntered(RunNodeKind kind)
+        {
+            _shopOpen = false;
+            _gambleOpen = false;
+            _eventOpen = false;
+
+            if (kind == RunNodeKind.Shop)
+            {
+                // Stok DIKOCOK tiap kali singgah — node toko yang isinya itu-itu saja bukan
+                // hadiah, cuma etalase.
+                RollShop();
+                _shopOpen = true;
+            }
+            else if (kind == RunNodeKind.Gamble)
+            {
+                _gambleOpen = true;
+                _spinLeft = 0f;
+                _slotOutcome = -1;
+                _slotResultLine = "";
+            }
+            else if (kind == RunNodeKind.Event)
+            {
+                _eventOpen = true;
+                _eventDone = false;
+            }
+        }
+
+        void BuildRunPanels()
+        {
+            int nodeCap = Mathf.Max(1, _balance.MapFloorsPerAct * _balance.MapLanes);
+
+            // PEKAT penuh, bukan 0,97 — di bawahnya ada papan grimoire dan teks banner, dan
+            // keduanya membayang tembus di alpha berapa pun selain satu.
+            _mapBg = MakeImage("MapBg", Vector2.zero, Vector2.zero,
+                new Color(0.045f, 0.055f, 0.1f, 1f), Vector2.zero);
+            _mapTitle = MakeText("MapTitle", Vector2.zero, new Vector2(320f, 30f), 22,
+                new Color(1f, 0.9f, 0.6f), Vector2.zero, TextAnchor.MiddleCenter);
+            _mapLegend = MakeText("MapLegend", Vector2.zero, new Vector2(460f, 24f), 13,
+                new Color(0.8f, 0.85f, 0.9f), Vector2.zero, TextAnchor.MiddleCenter);
+
+            Centre(_mapBg.rectTransform);
+            Centre(_mapTitle.rectTransform);
+            Centre(_mapLegend.rectTransform);
+
+            // Jalur = bezier PUTUS-PUTUS, pola yang sama dengan peta referensi (RoguelikeMapUI):
+            // tiap sambungan dipecah jadi segmen pendek bercelah dengan control point acak
+            // ber-seed — jalan setapak yang berkelok, bukan kabel penggaris.
+            _mapEdges = new Image[nodeCap * 2 * MapSegsPerEdge];
+
+            for (int i = 0; i < _mapEdges.Length; i++)
+            {
+                _mapEdges[i] = MakeImage("MapSeg" + i, Vector2.zero, new Vector2(10f, 5f),
+                    Color.gray, Vector2.zero);
+                Centre(_mapEdges[i].rectTransform);
+                _mapEdges[i].enabled = false;
+            }
+
+            _mapNodes = new Image[nodeCap];
+            _mapRings = new Image[nodeCap];
+            _mapGlyphs = new Text[nodeCap];
+
+            for (int i = 0; i < nodeCap; i++)
+            {
+                _mapRings[i] = MakeImage("MapRing" + i, Vector2.zero, new Vector2(42f, 42f),
+                    Color.white, Vector2.zero);
+                Centre(_mapRings[i].rectTransform);
+                _mapRings[i].enabled = false;
+
+                _mapNodes[i] = MakeImage("MapNode" + i, Vector2.zero, new Vector2(34f, 34f),
+                    Color.white, Vector2.zero);
+                Centre(_mapNodes[i].rectTransform);
+                _mapNodes[i].enabled = false;
+
+                _mapGlyphs[i] = MakeText("MapGlyph" + i, Vector2.zero, new Vector2(36f, 30f), 16,
+                    Color.black, Vector2.zero, TextAnchor.MiddleCenter);
+                Centre(_mapGlyphs[i].rectTransform);
+                _mapGlyphs[i].enabled = false;
+            }
+
+            _mapYou = MakeText("MapYou", Vector2.zero, new Vector2(120f, 24f), 15,
+                new Color(1f, 0.85f, 0.4f), Vector2.zero, TextAnchor.MiddleCenter);
+            Centre(_mapYou.rectTransform);
+            _mapYou.text = "KAMU";
+            _mapYou.enabled = false;
+
+            _mapBg.enabled = false;
+            _mapTitle.enabled = false;
+            _mapLegend.enabled = false;
+
+            _mapBtnBg = MakeImage("MapBtn", Vector2.zero, Vector2.zero,
+                new Color(0.2f, 0.3f, 0.45f, 0.9f), Vector2.zero);
+            _mapBtnLabel = MakeText("MapBtnLabel", Vector2.zero, new Vector2(88f, 32f), 14,
+                Color.white, Vector2.zero, TextAnchor.MiddleCenter);
+            _mapBtnLabel.text = "PETA (M)";
+            Centre(_mapBtnBg.rectTransform);
+            Centre(_mapBtnLabel.rectTransform);
+            _mapBtnBg.enabled = false;
+            _mapBtnLabel.enabled = false;
+
+            // ---- slot ----
+            _slotBg = MakeImage("SlotBg", Vector2.zero, new Vector2(PanelW, PanelH),
+                new Color(0.1f, 0.05f, 0.11f, 0.97f), Vector2.zero);
+            _slotTitle = MakeText("SlotTitle", Vector2.zero, new Vector2(500f, 30f), 22,
+                new Color(1f, 0.45f, 0.85f), Vector2.zero, TextAnchor.MiddleCenter);
+            _slotInfo = MakeText("SlotInfo", Vector2.zero, new Vector2(500f, 44f), 15,
+                new Color(0.9f, 0.9f, 0.95f), Vector2.zero, TextAnchor.MiddleCenter);
+            _slotSpinBg = MakeImage("SlotSpin", Vector2.zero, Vector2.zero,
+                new Color(0.75f, 0.2f, 0.5f, 0.95f), Vector2.zero);
+            _slotSpinLabel = MakeText("SlotSpinLabel", Vector2.zero, new Vector2(240f, 34f), 18,
+                Color.white, Vector2.zero, TextAnchor.MiddleCenter);
+
+            Centre(_slotBg.rectTransform);
+            Centre(_slotTitle.rectTransform);
+            Centre(_slotInfo.rectTransform);
+            Centre(_slotSpinBg.rectTransform);
+            Centre(_slotSpinLabel.rectTransform);
+
+            for (int i = 0; i < 3; i++)
+            {
+                _slotReels[i] = MakeText("SlotReel" + i, Vector2.zero, new Vector2(120f, 80f), 52,
+                    Color.white, Vector2.zero, TextAnchor.MiddleCenter);
+                Centre(_slotReels[i].rectTransform);
+                _slotReels[i].enabled = false;
+            }
+
+            _slotBg.enabled = false;
+            _slotTitle.enabled = false;
+            _slotInfo.enabled = false;
+            _slotSpinBg.enabled = false;
+            _slotSpinLabel.enabled = false;
+
+            // ---- kejadian ----
+            _eventBg = MakeImage("EventBg", Vector2.zero, new Vector2(PanelW, PanelH),
+                new Color(0.08f, 0.06f, 0.12f, 0.97f), Vector2.zero);
+            _eventTitle = MakeText("EventTitle", Vector2.zero, new Vector2(500f, 30f), 22,
+                new Color(0.75f, 0.5f, 1f), Vector2.zero, TextAnchor.MiddleCenter);
+            _eventBody = MakeText("EventBody", Vector2.zero, new Vector2(540f, 140f), 17,
+                new Color(0.92f, 0.92f, 0.97f), Vector2.zero, TextAnchor.MiddleCenter);
+            _eventABg = MakeImage("EventA", Vector2.zero, Vector2.zero,
+                new Color(0.2f, 0.4f, 0.25f, 0.95f), Vector2.zero);
+            _eventBBg = MakeImage("EventB", Vector2.zero, Vector2.zero,
+                new Color(0.4f, 0.24f, 0.45f, 0.95f), Vector2.zero);
+            _eventALabel = MakeText("EventALabel", Vector2.zero, new Vector2(260f, 60f), 16,
+                Color.white, Vector2.zero, TextAnchor.MiddleCenter);
+            _eventBLabel = MakeText("EventBLabel", Vector2.zero, new Vector2(260f, 60f), 16,
+                Color.white, Vector2.zero, TextAnchor.MiddleCenter);
+
+            Centre(_eventBg.rectTransform);
+            Centre(_eventTitle.rectTransform);
+            Centre(_eventBody.rectTransform);
+            Centre(_eventABg.rectTransform);
+            Centre(_eventBBg.rectTransform);
+            Centre(_eventALabel.rectTransform);
+            Centre(_eventBLabel.rectTransform);
+
+            _eventBg.enabled = false;
+            _eventTitle.enabled = false;
+            _eventBody.enabled = false;
+            _eventABg.enabled = false;
+            _eventBBg.enabled = false;
+            _eventALabel.enabled = false;
+            _eventBLabel.enabled = false;
+        }
+
+        /// <summary>Widget yang diposisikan lewat titik TENGAHNYA — pivot bawaan MakeImage ada
+        /// di pojok, dan panel yang dihitung dari pojok selalu meleset separuh ukurannya.</summary>
+        static void Centre(RectTransform rt) => rt.pivot = new Vector2(0.5f, 0.5f);
+
+        static Rect EventOptionRect(int side)
+        {
+            var panel = PanelRect();
+            float w = (panel.width - 48f) * 0.5f;
+            float x = side == 0 ? panel.xMin + 16f : panel.xMax - 16f - w;
+            return new Rect(x, panel.yMin + 18f, w, 64f);
+        }
+
+        void DrawRunPanels(float dt)
+        {
+            bool hasRun = _run != null;
+
+            if (_mapBtnBg != null)
+            {
+                _mapBtnBg.enabled = hasRun;
+                _mapBtnLabel.enabled = hasRun;
+
+                if (hasRun)
+                {
+                    var r = MapButtonRect();
+                    _mapBtnBg.rectTransform.anchoredPosition = r.center;
+                    _mapBtnBg.rectTransform.sizeDelta = r.size;
+                    _mapBtnLabel.rectTransform.anchoredPosition = r.center;
+                }
+            }
+
+            DrawMapOverlay();
+            DrawGamble(dt);
+            DrawEvent();
+        }
+
+        void DrawMapOverlay()
+        {
+            bool open = _mapOpen && _run != null && _mapBg != null;
+
+            if (_mapBg != null)
+            {
+                _mapBg.enabled = open;
+                _mapTitle.enabled = open;
+                _mapLegend.enabled = open;
+                if (_mapYou != null) _mapYou.enabled = open && _run != null && _run.Map.At >= 0;
+            }
+
+            if (!open)
+            {
+                _mapSig = -1;
+
+                for (int i = 0; i < _mapNodes.Length; i++)
+                {
+                    if (_mapNodes[i] == null) continue;
+                    _mapNodes[i].enabled = false;
+                    _mapRings[i].enabled = false;
+                    _mapGlyphs[i].enabled = false;
+                }
+
+                for (int i = 0; i < _mapEdges.Length; i++)
+                {
+                    if (_mapEdges[i] != null) _mapEdges[i].enabled = false;
+                }
+
+                return;
+            }
+
+            var map = _run.Map;
+            var reachable = map.Reachable();
+
+            // Tata letak cuma dihitung saat ada yang berubah — enam ratus segmen yang disusun
+            // ulang enam puluh kali sedetik adalah harga tanpa barang.
+            int sig = _run.Act * 100000 + (map.At + 2) * 100 + map.Nodes.Count;
+
+            if (sig != _mapSig)
+            {
+                _mapSig = sig;
+                LayoutMap(map, reachable);
+            }
+
+            // Denyut per frame — murah, cuma warna: node yang BISA diinjak yang bernapas.
+            float pulse = 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 5f);
+
+            for (int i = 0; i < map.Nodes.Count && i < _mapNodes.Length; i++)
+            {
+                var n = map.Nodes[i];
+
+                if (reachable.Contains(n))
+                {
+                    var tone = RunDirector.KindColor(n.Kind);
+                    tone.a = pulse;
+                    _mapNodes[i].color = tone;
+                    _mapRings[i].color = new Color(1f, 1f, 1f, pulse);
+                }
+                else if (map.At == n.Index)
+                {
+                    _mapRings[i].color = new Color(1f, 0.85f, 0.4f, 0.6f + 0.4f * pulse);
+                }
+            }
+        }
+
+        /// <summary>Posisi layar satu node — KIRI ke KANAN seperti peta referensi (lantai jadi
+        /// kolom, lajur jadi baris), plus jitter ber-seed supaya berhenti terbaca sebagai kisi.
+        /// Seed membuatnya diam: peta yang bergoyang tiap frame bukan peta.</summary>
+        Vector2 MapNodePos(RunNode n, Rect panel, int floors, int lanes)
+        {
+            float left = panel.xMin + 64f;
+            float right = panel.xMax - 64f;
+            float bottom = panel.yMin + 70f;
+            float top = panel.yMax - 84f;
+
+            float colW = (right - left) / Mathf.Max(1, floors - 1);
+            float rowH = (top - bottom) / Mathf.Max(1, lanes - 1);
+
+            uint h = (uint)((n.Index + 1) * 2654435761u);
+            float jx = ((h & 0xFF) / 255f - 0.5f) * 16f;
+            float jy = (((h >> 8) & 0xFF) / 255f - 0.5f) * 30f;
+
+            return new Vector2(left + n.Floor * colW + jx, bottom + n.Lane * rowH + jy);
+        }
+
+        void LayoutMap(RunMap map, List<RunNode> reachable)
+        {
+            var panel = MapPanelRect();
+
+            _mapBg.rectTransform.sizeDelta = panel.size;
+            _mapBg.rectTransform.anchoredPosition = panel.center;
+
+            _mapTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 30f);
+            _mapTitle.text = "PETA RUN  -  ACT " + _run.Act;
+
+            _mapLegend.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMin + 22f);
+            _mapLegend.text =
+                "W wave    E elite    T toko    ? kejadian    S slot    B boss        M = tutup";
+
+            int seg = 0;
+
+            foreach (var n in map.Nodes)
+            {
+                Vector2 a = MapNodePos(n, panel, map.Floors, map.Lanes);
+
+                foreach (int nextIndex in n.Next)
+                {
+                    Vector2 b = MapNodePos(map.Nodes[nextIndex], panel, map.Floors, map.Lanes);
+
+                    bool walked = _run.Trail.Contains(n.Index) && _run.Trail.Contains(nextIndex);
+                    bool offered = map.At == n.Index && reachable.Contains(map.Nodes[nextIndex]);
+
+                    Color tone = walked ? new Color(0.55f, 0.85f, 0.55f, 0.85f)
+                        : offered ? new Color(1f, 0.85f, 0.3f, 0.95f)
+                        : new Color(0.55f, 0.58f, 0.66f, 0.38f);
+
+                    seg = DrawTrail(a, b, n.Index * 31 + nextIndex * 7, tone, seg);
+                }
+            }
+
+            for (; seg < _mapEdges.Length; seg++) _mapEdges[seg].enabled = false;
+
+            for (int i = 0; i < _mapNodes.Length; i++)
+            {
+                bool live = i < map.Nodes.Count;
+                if (_mapNodes[i] == null) continue;
+
+                _mapNodes[i].enabled = live;
+                _mapRings[i].enabled = live;
+                _mapGlyphs[i].enabled = live;
+                if (!live) continue;
+
+                var n = map.Nodes[i];
+                var pos = MapNodePos(n, panel, map.Floors, map.Lanes);
+
+                bool now = map.At == n.Index;
+                bool next = reachable.Contains(n);
+                bool walked = _run.Trail.Contains(n.Index);
+
+                // Jitter ukuran & rotasi ala peta referensi — ber-seed, jadi diam di tempat.
+                uint h = (uint)((n.Index + 1) * 1274126177u);
+                float wobble = ((h & 0xFF) / 255f - 0.5f) * 0.24f;
+                float twist = (((h >> 8) & 0xFF) / 255f - 0.5f) * 14f;
+
+                float size = (now ? 46f : next ? 38f : 32f) * (1f + wobble);
+
+                // Boss selalu paling besar — ia tujuan seluruh act, dan mata harus menemukannya
+                // dalam sedetik pertama peta terbuka.
+                if (n.Kind == RunNodeKind.Boss) size *= 1.35f;
+
+                var tone = RunDirector.KindColor(n.Kind);
+                Color ring;
+
+                if (now) ring = new Color(1f, 0.85f, 0.4f, 1f);
+                else if (next) ring = Color.white;
+                else if (walked)
+                {
+                    ring = new Color(0.55f, 0.85f, 0.55f, 0.7f);
+                    tone.a = 0.85f;
+                }
+                else
+                {
+                    // Terkunci: DIPUCATKAN, bukan sekadar dipudarkan — warna jenisnya masih
+                    // terbaca (buat merencanakan jalur), tapi jelas belum bisa diinjak.
+                    tone = Color.Lerp(tone, new Color(0.3f, 0.32f, 0.38f), 0.55f);
+                    tone.a = 0.55f;
+                    ring = new Color(0f, 0f, 0f, 0.35f);
+                }
+
+                _mapRings[i].rectTransform.anchoredPosition = pos;
+                _mapRings[i].rectTransform.sizeDelta = new Vector2(size + 8f, size + 8f);
+                _mapRings[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
+                _mapRings[i].color = ring;
+
+                _mapNodes[i].rectTransform.anchoredPosition = pos;
+                _mapNodes[i].rectTransform.sizeDelta = new Vector2(size, size);
+                _mapNodes[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
+                _mapNodes[i].color = tone;
+
+                _mapGlyphs[i].rectTransform.anchoredPosition = pos;
+                _mapGlyphs[i].text = RunDirector.KindLabel(n.Kind).Substring(0, 1);
+                _mapGlyphs[i].color = new Color(0f, 0f, 0f, 0.85f);
+
+                if (now && _mapYou != null)
+                {
+                    _mapYou.rectTransform.anchoredPosition =
+                        pos + new Vector2(0f, size * 0.5f + 16f);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Satu sambungan sebagai bezier kubik yang di-sample jadi segmen pendek BERCELAH —
+        /// jalan setapak, bukan kabel. Control point diacak ber-seed dari indeks node, jadi
+        /// kelokannya sama setiap kali peta dibuka.
+        /// </summary>
+        int DrawTrail(Vector2 from, Vector2 to, int seed, Color tone, int seg)
+        {
+            Vector2 span = to - from;
+            float length = span.magnitude;
+            if (length < 1f) return seg;
+
+            Vector2 perp = new Vector2(-span.y, span.x) / length;
+
+            var rng = new System.Random(seed);
+            float curve = length * 0.3f;
+            Vector2 p1 = from + span * 0.33f
+                         + perp * ((float)(rng.NextDouble() * 2.0 - 1.0) * curve);
+            Vector2 p2 = from + span * 0.67f
+                         + perp * ((float)(rng.NextDouble() * 2.0 - 1.0) * curve);
+
+            Vector2 prev = from;
+
+            for (int i = 1; i <= MapSegsPerEdge && seg < _mapEdges.Length; i++)
+            {
+                float t = i / (float)MapSegsPerEdge;
+                float u = 1f - t;
+
+                Vector2 point = u * u * u * from + 3f * u * u * t * p1 + 3f * u * t * t * p2
+                                + t * t * t * to;
+
+                // Celah 30% di tiap segmen — patahan kecil itulah yang membuatnya terbaca
+                // sebagai jejak di peta, bukan kabel listrik.
+                Vector2 centre = (prev + point) * 0.5f;
+                Vector2 dir = point - prev;
+                float len = dir.magnitude * 0.7f;
+
+                var img = _mapEdges[seg++];
+                img.enabled = true;
+                img.color = tone;
+                img.rectTransform.anchoredPosition = centre;
+                img.rectTransform.sizeDelta = new Vector2(len, 5f);
+                img.rectTransform.localEulerAngles =
+                    new Vector3(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+
+                prev = point;
+            }
+
+            return seg;
+        }
+
+        static readonly string[] SlotFaces = { "X", "o", "O", "*2", "*3", "*4" };
+
+        void DrawGamble(float dt)
+        {
+            bool open = _gambleOpen && _run != null;
+            if (_slotBg == null) return;
+
+            _slotBg.enabled = open;
+            _slotTitle.enabled = open;
+            _slotInfo.enabled = open;
+            _slotSpinBg.enabled = open;
+            _slotSpinLabel.enabled = open;
+            for (int i = 0; i < 3; i++) _slotReels[i].enabled = open;
+
+            if (!open) return;
+
+            var panel = PanelRect();
+            _slotBg.rectTransform.anchoredPosition = panel.center;
+            _slotTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
+            _slotTitle.text = "MESIN SLOT — " + _balance.GambleCost + " KOIN SEKALI PUTAR";
+
+            for (int i = 0; i < 3; i++)
+            {
+                _slotReels[i].rectTransform.anchoredPosition =
+                    new Vector2(panel.center.x + (i - 1) * 130f, panel.center.y + 24f);
+            }
+
+            var spin = RerollRect();
+            _slotSpinBg.rectTransform.anchoredPosition = spin.center;
+            _slotSpinBg.rectTransform.sizeDelta = spin.size;
+            _slotSpinLabel.rectTransform.anchoredPosition = spin.center;
+            _slotSpinLabel.text = _spinLeft > 0f ? ". . ." : "PUTAR!";
+
+            _slotInfo.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMin + 58f);
+            _slotInfo.text = _slotResultLine + "\nkoin: " + _gold;
+
+            if (_spinLeft > 0f)
+            {
+                _spinLeft -= dt;
+
+                // Gulungan mengocok wajah dari WAKTU, bukan dari Random gameplay — kocokan visual
+                // enam puluh kali sedetik menggeser seluruh sebaran drop tanpa satu pun error.
+                for (int i = 0; i < 3; i++)
+                {
+                    int face = (int)(Time.unscaledTime * 21f + i * 7.3f) % SlotFaces.Length;
+                    _slotReels[i].text = SlotFaces[face];
+                }
+
+                if (_spinLeft <= 0f) SettleGamble();
+            }
+        }
+
+        int RollGambleOutcome()
+        {
+            var weights = _balance.GambleWeights;
+            if (weights == null || weights.Length == 0) return 0;
+
+            float total = 0f;
+            for (int i = 0; i < weights.Length; i++) total += Mathf.Max(0f, weights[i]);
+            if (total <= 0f) return 0;
+
+            float roll = Random.value * total;
+
+            for (int i = 0; i < weights.Length; i++)
+            {
+                roll -= Mathf.Max(0f, weights[i]);
+                if (roll <= 0f) return i;
+            }
+
+            return 0;
+        }
+
+        void SettleGamble()
+        {
+            _spinLeft = 0f;
+
+            int outcome = _slotOutcome;
+            _slotOutcome = -1;
+            if (outcome < 0) return;
+
+            bool win = outcome != 0;
+
+            for (int i = 0; i < 3; i++)
+            {
+                _slotReels[i].text = win ? SlotFaces[outcome] : SlotFaces[(i * 2 + 1) % 3];
+            }
+
+            switch (outcome)
+            {
+                case 1:
+                    _gold += _balance.GambleSmallGold;
+                    _slotResultLine = "+" + _balance.GambleSmallGold + " koin";
+                    break;
+
+                case 2:
+                    _gold += _balance.GambleBigGold;
+                    _slotResultLine = "+" + _balance.GambleBigGold + " KOIN!";
+                    break;
+
+                case 3:
+                case 4:
+                case 5:
+                    var prize = _db.RandomOfStar(outcome - 1, 0.25f);
+
+                    if (prize != null)
+                    {
+                        AddLoose(prize, NearScatterPos(PanelRect().center, 1));
+                        Discover(prize);
+                        _slotResultLine = "JACKPOT: " + prize.DisplayName + "!";
+                    }
+
+                    break;
+
+                default:
+                    _slotResultLine = "zonk.";
+                    break;
+            }
+
+            Announce(_slotResultLine,
+                win ? new Color(1f, 0.84f, 0.32f) : new Color(0.7f, 0.7f, 0.75f));
+        }
+
+        void DrawEvent()
+        {
+            bool open = _eventOpen && _run != null;
+            if (_eventBg == null) return;
+
+            _eventBg.enabled = open;
+            _eventTitle.enabled = open;
+            _eventBody.enabled = open;
+            _eventABg.enabled = open;
+            _eventBBg.enabled = open;
+            _eventALabel.enabled = open;
+            _eventBLabel.enabled = open;
+
+            if (!open) return;
+
+            var panel = PanelRect();
+            _eventBg.rectTransform.anchoredPosition = panel.center;
+            _eventTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
+            _eventTitle.text = "PERTAPA HUTAN";
+            _eventBody.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.center.y + 30f);
+            _eventBody.text = "Sesosok pertapa duduk menghadap api unggun.\n\n" +
+                              "\"Jalan di depanmu tidak gratis, penyihir.\nPilih bekalmu.\"";
+
+            var a = EventOptionRect(0);
+            var b = EventOptionRect(1);
+
+            _eventABg.rectTransform.anchoredPosition = a.center;
+            _eventABg.rectTransform.sizeDelta = a.size;
+            _eventALabel.rectTransform.anchoredPosition = a.center;
+            _eventALabel.text = "AMBIL BERKAH\n+" + _balance.EventGoldGift + " koin";
+
+            bool affordable = _gold >= _balance.EventTradeCost;
+            _eventBBg.rectTransform.anchoredPosition = b.center;
+            _eventBBg.rectTransform.sizeDelta = b.size;
+            _eventBBg.color = affordable
+                ? new Color(0.4f, 0.24f, 0.45f, 0.95f)
+                : new Color(0.25f, 0.22f, 0.27f, 0.8f);
+            _eventBLabel.rectTransform.anchoredPosition = b.center;
+            _eventBLabel.text = "TUKAR NASIB\n-" + _balance.EventTradeCost + " koin  >  piece *3";
+        }
+
         void Redraw()
         {
             DrawGrid();
@@ -1701,6 +2471,7 @@ namespace Proto
             DrawBossBar();
             DrawMeter();
             DrawBuffs();
+            DrawRunPanels(Time.deltaTime);
             UpdateTooltip();
         }
 

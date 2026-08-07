@@ -23,6 +23,32 @@ namespace Proto
 
         Vector3 _heading;
 
+        // Tujuan berjalan yang dipasang dari luar (portal antar wave). Selama ada tujuan, kemudi
+        // kabur dimatikan — antar wave lapangannya kosong, dan portal yang ditinggal setengah
+        // jalan demi "menghindar" dari kerumunan yang tidak ada terbaca sebagai kontrol rusak.
+        Vector3? _destination;
+        System.Action _onArrive;
+        bool _roam;
+
+        /// <summary>Sedang berjalan menuju titik yang dipasang lewat <see cref="WalkTo"/>.</summary>
+        public bool Walking => _destination.HasValue;
+
+        /// <summary>Bebas keluar elips arena. Dinding arena bukan aturan di pulau rehat.</summary>
+        public void SetRoam(bool roam) => _roam = roam;
+
+        /// <summary>Jalan sendiri ke titik ini, lalu panggil balik sesampainya.</summary>
+        public void WalkTo(Vector3 at, System.Action onArrive)
+        {
+            _destination = at;
+            _onArrive = onArrive;
+        }
+
+        public void CancelWalk()
+        {
+            _destination = null;
+            _onArrive = null;
+        }
+
         public void Init(EnemyManager enemies, PlayerCaster caster, GameBalance balance)
         {
             _enemies = enemies;
@@ -36,6 +62,35 @@ namespace Proto
 
             float dt = Time.deltaTime;
             Vector3 pos = transform.position;
+
+            if (_destination.HasValue)
+            {
+                var to = _destination.Value;
+                to.y = pos.y;
+
+                Vector3 gap = to - pos;
+                gap.y = 0f;
+
+                float pace = Mathf.Max(0.5f, _balance.BaseMoveSpeed + _caster.Total(StatKind.MoveSpeed));
+
+                if (gap.magnitude <= pace * dt + 0.35f)
+                {
+                    transform.position = _roam ? to : Clamp(to);
+                    _heading = Vector3.zero;
+
+                    // Dikosongkan SEBELUM dipanggil: callback boleh langsung memasang tujuan baru,
+                    // dan membersihkannya sesudah panggilan akan menghapus tujuan yang baru itu.
+                    var arrived = _onArrive;
+                    CancelWalk();
+                    arrived?.Invoke();
+                    return;
+                }
+
+                _heading = gap.normalized;
+                pos += _heading * (pace * dt);
+                transform.position = _roam ? pos : Clamp(pos);
+                return;
+            }
 
             Vector3 want = _enemies.CrowdPressure(pos, _balance.DangerRadius);
 
@@ -53,7 +108,7 @@ namespace Proto
             float speed = Mathf.Max(0f, _balance.BaseMoveSpeed + _caster.Total(StatKind.MoveSpeed));
             pos += _heading * (speed * dt);
 
-            transform.position = Clamp(pos);
+            transform.position = _roam ? pos : Clamp(pos);
         }
 
         /// <summary>

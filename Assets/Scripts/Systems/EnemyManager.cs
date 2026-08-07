@@ -174,6 +174,40 @@ namespace Proto
         /// <summary>Saklar curang. Null di build normal, dan setiap pembacaan lewat propertinya.</summary>
         public DebugConfig Cheats;
 
+        // ------------------------------------------------------------------
+        //  modifier wave berikutnya — dipasang RunDirector (node peta: elite / boss puncak)
+        // ------------------------------------------------------------------
+        //
+        // Pola yang sama dengan DebugConfig: dikalikan di titik pakai, GameBalance tidak pernah
+        // ditimpa. Direset saat wave BERES, jadi elite tidak pernah menular ke wave sesudahnya.
+        float _nextHpMul = 1f;
+        float _nextCountMul = 1f;
+        float _nextDamageMul = 1f;
+        int _nextBossCount;
+        float _nextBossHpMul = 1f;
+        float _nextBossAggro = 1f;
+        bool _nextBossAllKinds;
+
+        /// <summary>Pengali wave BERIKUTNYA (node elite). Berlaku sekali, reset saat wave beres.</summary>
+        public void SetNextWaveMods(float hpMul, float countMul, float damageMul)
+        {
+            _nextHpMul = Mathf.Max(0.1f, hpMul);
+            _nextCountMul = Mathf.Max(0.1f, countMul);
+            _nextDamageMul = Mathf.Max(0.1f, damageMul);
+        }
+
+        /// <summary>
+        /// Boss pesanan untuk wave berikutnya. <paramref name="allKinds"/> = jenis bergiliran
+        /// (puncak act: ular DAN kelabang, bukan dua ular); false = jenis acak (mini-boss elite).
+        /// </summary>
+        public void ForceBossNode(int count, float hpMul, float aggro, bool allKinds)
+        {
+            _nextBossCount = Mathf.Max(0, count);
+            _nextBossHpMul = Mathf.Max(0.1f, hpMul);
+            _nextBossAggro = Mathf.Max(0.25f, aggro);
+            _nextBossAllKinds = allKinds;
+        }
+
         Vector3 _lastPlayerPos;
         float _spawnRate;
         float _spawnBudget;
@@ -493,7 +527,8 @@ namespace Proto
             // and "how many are left" is the only number they can actually act on. The rate below
             // still exists, but it only decides how fast that count arrives.
             WaveTotal = Mathf.Max(1, Mathf.RoundToInt(
-                _balance.EnemyCountFor(wave) * (Cheats != null ? Cheats.EnemyCountScale : 1f)));
+                _balance.EnemyCountFor(wave) * (Cheats != null ? Cheats.EnemyCountScale : 1f)
+                * _nextCountMul));
             PendingSpawns = WaveTotal;
             Closing = false;
 
@@ -510,7 +545,8 @@ namespace Proto
                 if (SpawnOne(_balance.WaveOpenerDistance)) PendingSpawns--;
             }
 
-            if (_balance.BossEveryWaves > 0 && wave % _balance.BossEveryWaves == 0) SpawnBoss(wave);
+            if (_nextBossCount > 0) SpawnBossNode(wave);
+            else if (_balance.BossEveryWaves > 0 && wave % _balance.BossEveryWaves == 0) SpawnBoss(wave);
 
             SpawnMinions(wave);
 
@@ -618,14 +654,15 @@ namespace Proto
             }
         }
 
-        void Hatch(BossDefinition def, int wave)
+        void Hatch(BossDefinition def, int wave, float hpMul = 1f, float aggro = 1f)
         {
             var snake = new BossSnake();
 
             Vector3 at = SpawnPoint(1f);
             at.y = 0.9f;
 
-            snake.Begin(def, at, _balance.EnemyHpFor(wave) * def.HpMultiplier);
+            snake.Begin(def, at, _balance.EnemyHpFor(wave) * def.HpMultiplier * hpMul);
+            snake.Aggro = Mathf.Max(0.25f, aggro);
             snake.OnSpit += (from, dir) => SpitShot(snake, from, dir, wave);
 
             _bosses.Add(snake);
@@ -644,6 +681,33 @@ namespace Proto
             for (int i = 0; i < count; i++)
             {
                 Hatch(def, wave);
+            }
+        }
+
+        /// <summary>
+        /// Boss pesanan peta run — node puncak act atau elite ber-mini-boss. Jumlah, nyawa, dan
+        /// agresinya dititip lewat <see cref="ForceBossNode"/>; jalur boss kelipatan-wave yang
+        /// lama dilewati supaya pesanan tidak dobel.
+        /// </summary>
+        void SpawnBossNode(int wave)
+        {
+            var kinds = new List<BossDefinition>();
+            var all = _db.BossKinds;
+
+            for (int i = 0; i < all.Count; i++)
+            {
+                if (all[i] != null && !all[i].Minion) kinds.Add(all[i]);
+            }
+
+            if (kinds.Count == 0) return;
+
+            for (int i = 0; i < _nextBossCount; i++)
+            {
+                var def = _nextBossAllKinds
+                    ? kinds[i % kinds.Count]
+                    : kinds[Random.Range(0, kinds.Count)];
+
+                Hatch(def, wave, _nextBossHpMul, _nextBossAggro);
             }
         }
 
@@ -824,6 +888,16 @@ namespace Proto
         {
             WaveActive = false;
             Closing = false;
+
+            // Modifier peta habis masa berlakunya bersama wave-nya — elite tidak menular.
+            _nextHpMul = 1f;
+            _nextCountMul = 1f;
+            _nextDamageMul = 1f;
+            _nextBossCount = 0;
+            _nextBossHpMul = 1f;
+            _nextBossAggro = 1f;
+            _nextBossAllKinds = false;
+
             OnWaveCleared?.Invoke();
         }
 
@@ -864,7 +938,8 @@ namespace Proto
             e.Kind = kind;
 
             e.Pos = SpawnPoint(distanceScale);
-            e.MaxHp = _balance.EnemyHpFor(Wave) * (Cheats != null ? Cheats.EnemyHpScale : 1f);
+            e.MaxHp = _balance.EnemyHpFor(Wave) * (Cheats != null ? Cheats.EnemyHpScale : 1f)
+                      * _nextHpMul;
             e.Speed = Random.Range(_balance.EnemySpeedMin, _balance.EnemySpeedMax) +
                       Wave * _balance.EnemySpeedPerWave;
             e.Scale = 1f;
@@ -1141,7 +1216,7 @@ namespace Proto
 
                 if (sqr < 0.85f)
                 {
-                    _caster.TakeDamage(_balance.ContactDpsFor(Wave) * dt);
+                    _caster.TakeDamage(_balance.ContactDpsFor(Wave) * _nextDamageMul * dt);
 
                     // Refreshed on every frame of contact, so a curse lasts as long as you are in
                     // the crowd plus its duration. Getting out is the counter-play; resistance and
@@ -1273,7 +1348,7 @@ namespace Proto
 
             shot.Pos = from.Pos;
             shot.Velocity = aim.normalized * speed;
-            shot.Damage = from.Kind.AttackDamage * _balance.EnemyDamageScale(Wave);
+            shot.Damage = from.Kind.AttackDamage * _balance.EnemyDamageScale(Wave) * _nextDamageMul;
             shot.Tint = _shotTint.TryGetValue(from.Kind, out int tint) ? tint : 0;
             shot.Curse = null;
 

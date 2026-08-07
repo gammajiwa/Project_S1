@@ -220,7 +220,13 @@ namespace Proto
                 if (_biomes[index] != null && _biomes[index] != _current) Apply(_biomes[index]);
             }
 
-            if (_weather != null) _weather.Roll(wave);
+            if (_weather != null)
+            {
+                _weather.Roll(wave);
+
+                // Portal memindahkan pemain sebelum wave mulai — suasananya ikut pindah.
+                _weather.Rescatter();
+            }
         }
 
         void Apply(BiomeDefinition biome)

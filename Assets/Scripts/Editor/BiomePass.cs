@@ -59,6 +59,9 @@ namespace Proto.EditorTools
 
             if (!AssetDatabase.IsValidFolder(Folder)) AssetDatabase.CreateFolder(Root, "Biomes");
 
+            EnsureFireflies();
+            EnsureGodRay();
+
             string path = Folder + "/Biome_forest.asset";
             var forest = AssetDatabase.LoadAssetAtPath<BiomeDefinition>(path);
 
@@ -105,9 +108,10 @@ namespace Proto.EditorTools
             // dicoba dan nyaris tidak terlihat, karena tonemap ACES memampatkan ujung terangnya —
             // yang dikurangi cuma sisa jangkauan yang memang sudah tidak terpakai.
             //
-            // 1,9 ternyata kelewatan — lapangannya berhenti terbaca sebagai siang. 2,4 menahan
-            // kesan teduh tanpa kehilangan waktunya.
-            forest.SunIntensity = 2.4f;
+            // KEMBALI ke 2,8 milik demo. Grade sekarang ACES (profil demo UNS) yang memampatkan
+            // ujung terang — matahari 2,4 di bawah ACES terbaca suram, dan "suram" adalah persis
+            // keluhan pemilik project terhadap tampilannya.
+            forest.SunIntensity = 2.8f;
 
             // Ambient BIRU LANGIT, bukan putih. Di gaya ilustrasi, bagian yang tidak kena matahari
             // tidak boleh gelap — ia harus tetap BERWARNA, dan warnanya harus warna langit.
@@ -261,22 +265,14 @@ namespace Proto.EditorTools
                 Ambient("Butterflies/Butterflies_white", 0.45f, spread: 3, near: 9f, far: 26f,
                     scale: 0.32f, height: 1.4f, hideInRain: true, onlyClear: true),
 
-                // Debu cahaya yang berkedip — milik SIANG CERAH saja. Menempel di kamera sebagai
-                // SATU lapis yang menutupi layar (CoverageOnly menjaga butirannya tetap sebesar
-                // debu): debu memang harus ada di mana-mana, dan menghitungnya di luar layar cuma
-                // membayar partikel yang tidak dilihat siapa pun. Versi lama menaruhnya di paket
-                // HUJAN dengan skala Hierarchy — satu gumpal kecil menempel di pusat kamera,
-                // itulah "godray kecil yang ngumpul di tengah".
-                Ambient("Light/Sunlight", 0.85f, scale: 0.75f, height: 0.5f,
-                    hideInRain: true, onlyClear: true, follow: true, coverage: true),
-
-                // Berkas matahari sungguhan (mesh shaft ToonScapes): DUA kantong dunia yang
-                // berjauhan. Prefab-nya sendiri sudah sebidang berkas selebar ~30 unit pada skala
-                // 1 — empat kantong sebesar itu menutupi seluruh layar, dan berkas yang menutupi
-                // segalanya bukan berkas lagi.
-                Ambient("Assets/Plugin/ToonScapes/Spring Isles/Particles/TSI_Sun_Shaft_01A",
-                    0.8f, spread: 2, near: 8f, far: 20f, scale: 0.6f, height: 0f,
-                    hideInRain: true, onlyClear: true),
+                // God ray = BEAM MILIK PAKETNYA, dirender APA ADANYA — bentuk, tinggi, dan
+                // warnanya DISETEL LANGSUNG DI PREFAB oleh pemilik project. Kode cuma mengurus
+                // PENEMPATAN: TIGA titik acak di area, tidak pernah lebih dekat dari 12 unit —
+                // "cahayanya dari matahari, jangan di atas kepala player". Lapisan ikut-kamera
+                // dari prefab yang sama sudah DIBUANG: dialah yang dulu nangkring di pusat layar.
+                // JANGAN tambahkan stretch/tint/follow di sini — itu menimpa setelan tangan.
+                Ambient("Light/Sunlight", 1f, spread: 3, near: 12f, far: 30f,
+                    scale: 1f, height: 0f, hideInRain: true, onlyClear: true),
 
                 // Daun berguguran hampir SELALU ada — dan "hampir" itu yang penting. Sesuatu yang
                 // tidak pernah absen berhenti diperhatikan.
@@ -659,17 +655,20 @@ namespace Proto.EditorTools
 
             if (freshNightVfx) night.AmbientVfx = new[]
             {
-                // Kunang-kunang: varian _fog kupu-kupu yang bercahaya sendiri. HANYA malam (hidup
-                // di aset ini saja) dan disebar beberapa kantong — titik cahaya yang mengembara
-                // berjauhan, bukan satu gerombol di kaki pemain.
-                Ambient("Butterflies/Butterflies_ellow_fog", 0.85f, spread: 4, near: 7f, far: 22f,
-                    scale: 0.5f, height: 1.3f, hideInRain: true),
+                // KUNANG-KUNANG sungguhan — titik cahaya berkedip yang mengembara, prefab
+                // bangkitan EnsureFireflies. Varian _fog kupu-kupu DICOPOT dari malam: ia tetap
+                // terbaca sebagai kupu-kupu yang menyala, dan kupu-kupu milik siang. Satu-satunya
+                // makhluk yang boleh menyala di malam adalah kunang-kunang.
+                Ambient("Assets/GameData/Look/Fireflies", 0.9f, spread: 4, near: 6f, far: 22f,
+                    scale: 1f, height: 0.9f, hideInRain: true),
 
-                Ambient("Butterflies/Butterflies_turquoise_fog", 0.5f, spread: 3, near: 9f,
-                    far: 24f, scale: 0.45f, height: 1.6f, hideInRain: true),
-
-                Ambient("Embers/Embers_calm", 0.55f, spread: 3, near: 6f, far: 18f,
+                Ambient("Embers/Embers_calm", 0.5f, spread: 3, near: 6f, far: 18f,
                     scale: 0.5f, height: 0.6f, hideInRain: true),
+
+                // Beam cahaya BULAN milik paket, apa adanya — aturan yang sama dengan siang:
+                // bentuk milik prefab (setelan tangan pemilik project), kode cuma menempatkan.
+                Ambient("Light/Moonlight", 1f, spread: 3, near: 12f, far: 30f,
+                    scale: 1f, height: 0f, hideInRain: true, onlyClear: true),
 
                 Ambient("Wind_Leaves_Tornado/Leaves_green", 0.5f,
                     scale: 0.1f, height: 15f, follow: true, offX: -22f)
@@ -730,20 +729,52 @@ namespace Proto.EditorTools
             return path;
         }
 
+        /// <summary>
+        /// Mengadopsi profil demo hutan UNS SEUTUHNYA — ACES, kontras, white balance, grain,
+        /// semuanya. Ini jawaban atas keluhan yang sah: "lihat aset yang gw beli, kok jadinya
+        /// begini" — yang membuat demo paketnya cantik memang profil ini, dan meredamnya
+        /// (exposure diturunkan, ACES dicabut) menghasilkan lapangan suram yang bukan barang
+        /// yang dibeli siapa pun.
+        ///
+        /// Isi PP_Sunny DIKLON dari profil demo tiap pass jalan, pada GUID yang sama — rujukan
+        /// biome dan SceneLook tidak pernah putus. Komponen kabut HAZE ikut terhapus di sini;
+        /// jalankan Tools/Grimoire/Install Volumetric Fog SETELAH pass ini.
+        /// </summary>
         static void AdoptSunnyGrade()
         {
-            const string source = "Assets/Plugin/ToonScapes/Shared Assets/Volume Profiles/" +
-                                  "TS_Profile_Sunny_01.asset";
+            const string source = Nature + "Demo/Lighting/Forest/UNS_Forest_Volume_Profile.asset";
             const string copy = "Assets/GameData/Look/PP_Sunny.asset";
 
-            if (AssetDatabase.LoadAssetAtPath<VolumeProfile>(copy) == null &&
-                !AssetDatabase.CopyAsset(source, copy))
+            var demo = AssetDatabase.LoadAssetAtPath<VolumeProfile>(source);
+
+            if (demo == null)
             {
-                Debug.LogError("[BiomePass] gagal menyalin profil warna dari " + source);
+                Debug.LogError("[BiomePass] profil demo UNS tidak ketemu: " + source);
                 return;
             }
 
             var profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(copy);
+
+            if (profile == null)
+            {
+                if (!AssetDatabase.CopyAsset(source, copy))
+                {
+                    Debug.LogError("[BiomePass] gagal menyalin profil demo ke " + copy);
+                    return;
+                }
+
+                profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(copy);
+            }
+            else
+            {
+                CloneProfileInto(demo, profile);
+            }
+
+            var night = AssetDatabase.LoadAssetAtPath<VolumeProfile>(
+                "Assets/GameData/Look/PP_Night.asset");
+
+            if (night != null) CloneProfileInto(demo, night);
+
             var look = AssetDatabase.LoadAssetAtPath<SceneLook>("Assets/GameData/SceneLook_Game.asset");
 
             if (profile == null || look == null)
@@ -754,66 +785,34 @@ namespace Proto.EditorTools
             }
 
             look.PostProcess = profile;
-            Calm(profile);
-
-            // Bayangan penuh, seperti di demo. 0,7 adalah sisa dari rig lama, tempat bayangan
-            // sekadar menambah kegelapan pada lapangan yang memang sudah gelap; di lapangan terang
-            // bayangan itulah satu-satunya sumber kedalaman, dan meredamnya menghapus kedalamannya.
             look.ShadowStrength = 1f;
 
             EditorUtility.SetDirty(look);
         }
 
-        /// <summary>
-        /// Menurunkan exposure dan saturasi profil demo.
-        ///
-        /// Angka aslinya (+0,65 exposure, +12 saturasi, +12 kontras) disetel untuk demo yang
-        /// isinya batu putih, air biru, dan langit — layar dengan rentang warna lebar, tempat
-        /// dorongan sekuat itu terbaca sebagai cerah. Kamera game ini menunduk ke lapangan yang
-        /// SELURUHNYA hijau, dan mendorong satu warna yang mengisi seluruh layar sejauh itu tidak
-        /// menghasilkan cerah melainkan menyilaukan: tidak ada warna lain yang tersisa untuk
-        /// dibandingkan, jadi yang tersisa cuma hijau yang berteriak.
-        ///
-        /// Kontrasnya justru DINAIKKAN. Yang kurang dari lapangan sewarna bukan intensitasnya,
-        /// melainkan jarak antara bagian terang dan bagian teduhnya.
-        /// </summary>
-        static void Calm(VolumeProfile profile)
+        /// <summary>Menyamakan ISI profil dengan sumber pada GUID tujuan yang tetap.</summary>
+        static void CloneProfileInto(VolumeProfile source, VolumeProfile target)
         {
-            if (profile.TryGet<ColorAdjustments>(out var color))
+            foreach (var old in target.components)
             {
-                // Digelapkan dari +0,05. Ini lantai HUTAN, bukan padang terbuka — sinar yang
-                // sampai ke bawah sudah disaring tajuk di atasnya, dan lantai hutan yang seterang
-                // padang adalah hal pertama yang membocorkan bahwa tajuknya tidak ada.
-                color.postExposure.overrideState = true;
-                color.postExposure.value = -0.65f;
-
-                color.saturation.overrideState = true;
-                color.saturation.value = -6f;
-
-                color.contrast.overrideState = true;
-                color.contrast.value = 16f;
+                if (old != null) Object.DestroyImmediate(old, true);
             }
 
-            // Bloom di atas lapangan hijau terang menyebarkan hijau itu ke seluruh layar dan
-            // menghapus tepi tiap benda di atasnya — termasuk tepi musuh.
-            if (profile.TryGet<Bloom>(out var bloom))
-            {
-                bloom.threshold.overrideState = true;
-                bloom.threshold.value = 1.1f;
+            target.components.Clear();
 
-                bloom.intensity.overrideState = true;
-                bloom.intensity.value = 0.25f;
+            foreach (var component in source.components)
+            {
+                if (component == null) continue;
+
+                var clone = Object.Instantiate(component);
+                clone.name = component.name;
+                clone.hideFlags = HideFlags.HideInHierarchy;
+
+                AssetDatabase.AddObjectToAsset(clone, target);
+                target.components.Add(clone);
             }
 
-            // Vignette lembut, bukan bingkai. 0,3 masih terbaca sebagai sudut yang kotor di
-            // lapangan seterang ini.
-            if (profile.TryGet<Vignette>(out var vignette))
-            {
-                vignette.intensity.overrideState = true;
-                vignette.intensity.value = 0.2f;
-            }
-
-            EditorUtility.SetDirty(profile);
+            EditorUtility.SetDirty(target);
         }
 
         static MeshProp Prop(string prefabPath, int lod, float weight, float sizeMultiplier = 1f)
@@ -922,11 +921,15 @@ namespace Proto.EditorTools
         static AmbientVfxEntry Ambient(string name, float chance, float repeat = 0f,
             float lifetime = 14f, int spread = 1, float near = 6f, float far = 16f,
             float scale = 1f, float height = 0f, bool hideInRain = false, bool follow = false,
-            float offX = 0f, float offZ = 0f, bool onlyClear = false, bool coverage = false)
+            float offX = 0f, float offZ = 0f, bool onlyClear = false, bool coverage = false,
+            Color? tint = null, float stretch = 1f, bool cullSheets = false)
         {
             return new AmbientVfxEntry
             {
                 Prefab = LoadVfx(name),
+                Tint = tint ?? Color.white,
+                Stretch = stretch,
+                CullSheets = cullSheets,
                 Chance = chance,
                 RepeatEvery = repeat,
                 Lifetime = lifetime,
@@ -956,6 +959,243 @@ namespace Proto.EditorTools
                 Offset = new Vector2(offX, 0f),
                 CoverageOnly = coverage
             };
+        }
+
+        /// <summary>
+        /// Prefab god ray BUATAN SENDIRI, dibangkitkan sekali.
+        ///
+        /// Mesh shaft paket (TSI) menyerah di kamera ini: ia dirancang untuk kamera sejajar
+        /// mata, dan dari 68 derajat di atas ia memipih jadi GENANGAN cahaya di lantai — bukan
+        /// berkas. Yang selalu terbaca sebagai god ray di kamera atas adalah PITA yang menghadap
+        /// kamera, miring searah matahari (searah bayangan pohon), pangkal jelas di bawah dan
+        /// puncak yang MELURUH habis lewat gradien — jadi sumbernya tidak pernah terlihat.
+        /// </summary>
+        static void EnsureGodRay()
+        {
+            const string path = "Assets/GameData/Look/GodRay.prefab";
+
+            // SELALU ditulis ulang — bentuk god ray milik pass ini, dan menimpanya lewat
+            // SaveAsPrefabAsset mempertahankan GUID, jadi rujukan di aset biome tidak putus.
+
+            // ---- tekstur gradien: melintang = bel lembut, membujur = pangkal lembut,
+            //      badan panjang, lenyap total sebelum ujung ----
+            const string texPath = "Assets/GameData/Look/GodRayGradient.asset";
+            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
+            bool freshTexture = texture == null;
+
+            if (freshTexture)
+            {
+                texture = new Texture2D(64, 256, TextureFormat.RGBA32, false)
+                {
+                    name = "GodRayGradient"
+                };
+            }
+
+            texture.wrapMode = TextureWrapMode.Clamp;
+            texture.filterMode = FilterMode.Bilinear;
+
+            {
+                int w = texture.width;
+                int h = texture.height;
+                var pixels = new Color32[w * h];
+
+                for (int y = 0; y < h; y++)
+                {
+                    float v = y / (float)(h - 1);
+
+                    // Membujur: naik lembut di 7% pertama (pangkal TANPA tepi kotak), bertahan,
+                    // lalu meluruh dan NOL di 85% — sisa 15% teratas kosong supaya ujungnya tidak
+                    // pernah kelihatan, dari mana pun kamera memotongnya.
+                    float baseIn = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(v / 0.07f));
+                    float fadeOut = Mathf.Clamp01(1f - v / 0.85f);
+                    float along = baseIn * fadeOut * fadeOut;
+
+                    for (int x = 0; x < w; x++)
+                    {
+                        float u = x / (float)(w - 1);
+
+                        // Melintang: bel kosinus — tepi kiri-kanan lenyap lembut.
+                        float across = Mathf.Sin(u * Mathf.PI);
+                        across = Mathf.Pow(across, 1.6f);
+
+                        byte a = (byte)(Mathf.Clamp01(along * across) * 255f);
+                        pixels[y * w + x] = new Color32(255, 255, 255, a);
+                    }
+                }
+
+                texture.SetPixels32(pixels);
+                texture.Apply();
+            }
+
+            if (freshTexture) AssetDatabase.CreateAsset(texture, texPath);
+            else EditorUtility.SetDirty(texture);
+
+            // ---- material: pinjam setelan additive milik shaft paket, tukar teksturnya ----
+            const string matPath = "Assets/GameData/Look/GodRay.mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(matPath);
+
+            if (material == null)
+            {
+                Material template = null;
+                var tsi = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/Plugin/ToonScapes/Spring Isles/Particles/TSI_Sun_Shaft_01A.prefab");
+
+                if (tsi != null)
+                {
+                    foreach (var r in tsi.GetComponentsInChildren<ParticleSystemRenderer>(true))
+                    {
+                        if (r.sharedMaterial == null) continue;
+                        template = r.sharedMaterial;
+                        break;
+                    }
+                }
+
+                if (template == null)
+                {
+                    Debug.LogError("[BiomePass] material shaft TSI tidak ketemu — god ray batal.");
+                    return;
+                }
+
+                material = new Material(template) { name = "GodRay" };
+                material.SetTexture("_BaseMap", texture);
+                material.SetTexture("_MainTex", texture);
+                AssetDatabase.CreateAsset(material, matPath);
+            }
+
+            // ---- prefab: TIGA pita menghadap kamera, miring searah matahari ----
+            //
+            // Euler(68; 0; z): menghadap persis kamera yang menunduk 68 derajat (anchor-nya
+            // Gloom — quad Euler(90;0;0) menghadap kamera tegak lurus), lalu z memutarnya DI
+            // BIDANG LAYAR. +22 derajat = condong kiri-atas, searah matahari siang (bayangan
+            // pohon jatuh kanan-bawah). Tiga pita beda lebar/kemiringan supaya terbaca sebagai
+            // cahaya menembus tajuk, bukan satu papan.
+            //
+            // PANJANG 46 unit — layar cuma 22 unit tingginya: badan pita selalu menembus tepi
+            // atas layar, dan gradien sudah menghabisinya sebelum ujung. Sumbernya tak pernah
+            // terlihat, persis god ray sungguhan.
+            var root = new GameObject("GodRay");
+
+            BuildBlade(root.transform, material, 0f, 3.2f, 46f, 22f, 1f);
+            BuildBlade(root.transform, material, -3.4f, 1.6f, 38f, 17f, 0.55f);
+            BuildBlade(root.transform, material, 2.9f, 2.1f, 42f, 27f, 0.7f);
+
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+
+            Debug.Log("[BiomePass] prefab god ray dibangkitkan: " + path);
+        }
+
+        static void BuildBlade(Transform parent, Material material, float side, float width,
+            float length, float tilt, float strength)
+        {
+            var blade = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            blade.name = "Blade";
+
+            var collider = blade.GetComponent<Collider>();
+            if (collider != null) Object.DestroyImmediate(collider);
+
+            var rotation = Quaternion.Euler(68f, 0f, tilt);
+
+            blade.transform.SetParent(parent, false);
+            blade.transform.localRotation = rotation;
+
+            // Pivot quad di tengah — digeser setengah panjang SEPANJANG sumbu pitanya sendiri,
+            // jadi pangkalnya duduk di titik kantong dan seluruh badannya menjulang ke atas layar.
+            blade.transform.localPosition = rotation * new Vector3(side, length * 0.5f, 0f);
+            blade.transform.localScale = new Vector3(width, length, 1f);
+
+            var renderer = blade.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            // Kekuatan per pita dibawa lewat skala alpha di property block SAAT spawn — di sini
+            // cukup disimpan di nama supaya Weather bisa membacanya tanpa komponen baru.
+            blade.name = "Blade " + strength.ToString("0.00");
+        }
+
+        /// <summary>
+        /// Prefab kunang-kunang, dibangkitkan sekali dan tidak pernah ditimpa. Paket VFX tidak
+        /// punya kunang-kunang — varian _fog kupu-kupu sempat dipakai dan tetap terbaca sebagai
+        /// kupu-kupu yang menyala. Yang membuat kunang-kunang terbaca adalah KEDIPNYA, dan kedip
+        /// itu dikerjakan gradasi alpha bergelombang di Color over Lifetime.
+        /// </summary>
+        static void EnsureFireflies()
+        {
+            const string path = "Assets/GameData/Look/Fireflies.prefab";
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(path) != null) return;
+
+            var go = new GameObject("Fireflies");
+            var ps = go.AddComponent<ParticleSystem>();
+
+            var main = ps.main;
+            main.loop = true;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(5f, 9f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.25f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.14f);
+            main.startColor = new Color(1f, 0.86f, 0.38f, 1f);
+            main.maxParticles = 120;
+
+            var emission = ps.emission;
+            emission.rateOverTime = 8f;
+
+            var shape = ps.shape;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(9f, 1.8f, 9f);
+
+            // Mengembara lewat noise, bukan lewat kecepatan awal — kunang-kunang berbelok
+            // terus-menerus, tidak meluncur lurus.
+            var noise = ps.noise;
+            noise.enabled = true;
+            noise.strength = 0.55f;
+            noise.frequency = 0.22f;
+            noise.damping = true;
+
+            var lifeColor = ps.colorOverLifetime;
+            lifeColor.enabled = true;
+
+            var gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(Color.white, 0f),
+                    new GradientColorKey(Color.white, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(0f, 0f),
+                    new GradientAlphaKey(1f, 0.1f),
+                    new GradientAlphaKey(0.1f, 0.3f),
+                    new GradientAlphaKey(1f, 0.5f),
+                    new GradientAlphaKey(0.08f, 0.7f),
+                    new GradientAlphaKey(0.9f, 0.88f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            lifeColor.color = gradient;
+
+            // Material dipinjam dari bara milik paketnya — titik lembut additive, persis yang
+            // dibutuhkan. Menulis shader sendiri untuk satu titik glow itu pemborosan.
+            var embers = AssetDatabase.LoadAssetAtPath<GameObject>(
+                Vfxs + "Embers/Embers_calm.prefab");
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+
+            if (embers != null)
+            {
+                foreach (var source in embers.GetComponentsInChildren<ParticleSystemRenderer>(true))
+                {
+                    if (source.sharedMaterial == null) continue;
+                    renderer.sharedMaterial = source.sharedMaterial;
+                    break;
+                }
+            }
+
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+
+            PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+
+            Debug.Log("[BiomePass] prefab kunang-kunang dibangkitkan: " + path);
         }
 
         static MeshProp[] Kit(params MeshProp[] props)

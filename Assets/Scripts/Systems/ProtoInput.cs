@@ -84,6 +84,20 @@ namespace Proto
             }
         }
 
+        /// <summary>Buka-tutup peta run. Cuma mengintip — memilih tetap lewat portal.</summary>
+        public static bool MapDown
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                return kb != null && kb.mKey.wasPressedThisFrame;
+#else
+                return Input.GetKeyDown(KeyCode.M);
+#endif
+            }
+        }
+
         /// <summary>Back out of a menu page, or leave a run for the main menu.</summary>
         public static bool BackDown
         {

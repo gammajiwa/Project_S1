@@ -25,17 +25,17 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Ceiling: 0.92
-    - _Churn: 0.11
-    - _DotAngle: 45
-    - _DotSharpness: 1.4
-    - _DotSize: 16
-    - _Drift: 0.5
-    - _Inner: 15
-    - _Outer: 27
-    - _Scale: 11
-    - _Smooth: 0.6
-    - _Warp: 0.8
+    - _Ceiling: 0.851
+    - _Churn: 0.3
+    - _DotAngle: 53.4
+    - _DotSharpness: 2.2
+    - _DotSize: 32.9
+    - _Drift: 0.6
+    - _Inner: 19
+    - _Outer: 21.21
+    - _Scale: 3
+    - _Smooth: 0.876
+    - _Warp: 1.005
     - _Wobble: 11
     m_Colors:
     - _Center: {r: 0, g: 0, b: 0, a: 0}

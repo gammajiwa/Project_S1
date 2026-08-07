@@ -178,7 +178,8 @@ namespace Proto
                     if (effect == null || !effect.Valid) continue;
 
                     var node = Spawn(effect.Prefab.name, new[] { effect.Prefab }, mood.Speed,
-                        _mood, effect.Scale, effect.CoverageOnly, effect.Grain);
+                        _mood, effect.Scale, effect.CoverageOnly, effect.Grain, effect.Tint,
+                        effect.Stretch, effect.CullSheets);
 
                     if (node == null) continue;
 
@@ -339,7 +340,8 @@ namespace Proto
                     }
 
                     var carried = Spawn("Ikut " + entry.Prefab.name, new[] { entry.Prefab },
-                        1f, _carried, entry.Scale, entry.CoverageOnly, entry.Grain);
+                        1f, _carried, entry.Scale, entry.CoverageOnly, entry.Grain, entry.Tint,
+                        entry.Stretch, entry.CullSheets);
 
                     if (carried != null)
                     {
@@ -409,7 +411,8 @@ namespace Proto
             for (int i = 0; i < Mathf.Max(1, entry.Count); i++)
             {
                 var group = Spawn(entry.Prefab.name + " " + i, new[] { entry.Prefab }, 1f,
-                    _ambient, entry.Scale);
+                    _ambient, entry.Scale, entry.CoverageOnly, entry.Grain, entry.Tint,
+                    entry.Stretch, entry.CullSheets);
 
                 if (group == null) continue;
 
@@ -461,6 +464,33 @@ namespace Proto
                 if (delta.sqrMagnitude < pocket.Far * pocket.Far * 2.25f) continue;
 
                 Place(pocket);
+            }
+        }
+
+        /// <summary>
+        /// Menyebar ulang seluruh kantong dan mengacak ulang jadwal yang lewat. Dipanggil tiap
+        /// wave baru: portal memindahkan pemain ke tempat lain, dan kupu-kupu yang masih
+        /// menunggu di titik lama membocorkan bahwa "tempat lain" itu bohong.
+        /// </summary>
+        public void Rescatter()
+        {
+            for (int i = 0; i < _pockets.Count; i++)
+            {
+                if (_pockets[i].Node != null) Place(_pockets[i]);
+            }
+
+            for (int i = 0; i < _passing.Count; i++)
+            {
+                var slot = _passing[i];
+
+                if (slot.Live != null)
+                {
+                    Destroy(slot.Live);
+                    slot.Live = null;
+                }
+
+                slot.DueAt = Time.time + slot.Entry.RepeatEvery * Random.Range(0.3f, 1f);
+                _passing[i] = slot;
             }
         }
 
@@ -553,7 +583,8 @@ namespace Proto
         /// dan daun selebar dua meter yang melayang seperti layang-layang.
         /// </param>
         Transform Spawn(string label, GameObject[] prefabs, float speed, Transform parent = null,
-            float scale = 1f, bool coverageOnly = false, float grain = 1f)
+            float scale = 1f, bool coverageOnly = false, float grain = 1f, Color? tint = null,
+            float stretch = 1f, bool cullSheets = false)
         {
             if (prefabs == null || prefabs.Length == 0) return null;
 
@@ -574,6 +605,15 @@ namespace Proto
                 foreach (var system in go.GetComponentsInChildren<ParticleSystem>(true))
                 {
                     var main = system.main;
+
+                    // Lembaran raksasa di dalam prefab debu dimatikan SEBELUM sempat menggambar.
+                    // Ambang 5 unit yang sama dengan aturan Grain: debu selalu di bawahnya,
+                    // lembaran beam selalu jauh di atasnya.
+                    if (cullSheets && main.startSize.constantMax > 5f)
+                    {
+                        system.gameObject.SetActive(false);
+                        continue;
+                    }
 
                     // WAJIB. Lihat catatan kelas: ruang lokal menyeret partikel yang sudah lahir.
                     main.simulationSpace = ParticleSystemSimulationSpace.World;
@@ -630,6 +670,50 @@ namespace Proto
                     }
                     main.simulationSpeed = Mathf.Max(0.01f, main.simulationSpeed * speed);
 
+                    // Menjulang: tinggi butiran dikali TERPISAH dari lebarnya lewat 3D start
+                    // size. Menskalakan transform membesarkan segalanya sekaligus — berkas yang
+                    // ikut MELEBAR saat ditinggikan berubah jadi tembok cahaya.
+                    if (stretch != 1f)
+                    {
+                        // Prefab beam paket SUDAH memakai 3D start size (lebar 4, tinggi 20-25)
+                        // — cukup kalikan sumbu Y-nya. Menimpa semua sumbu dari startSize lama
+                        // (jalur non-3D) justru MERUSAK proporsi yang sudah disetel pembuatnya.
+                        if (main.startSize3D)
+                        {
+                            var tall = main.startSizeY;
+                            tall.constantMin *= stretch;
+                            tall.constantMax *= stretch;
+                            main.startSizeY = tall;
+                        }
+                        else
+                        {
+                            var sizeX = main.startSize;
+                            var sizeY = main.startSize;
+                            sizeY.constantMin *= stretch;
+                            sizeY.constantMax *= stretch;
+
+                            main.startSize3D = true;
+                            main.startSizeX = sizeX;
+                            main.startSizeY = sizeY;
+                            main.startSizeZ = sizeX;
+                        }
+                    }
+
+                    // Warna pesanan — berkas matahari yang sama dipakai malam sebagai cahaya
+                    // bulan, cukup dengan mendinginkan warnanya. Mode gradien rumit ditimpa
+                    // saja: yang butuh tint memang efek satu-warna.
+                    if (tint.HasValue && tint.Value != Color.white)
+                    {
+                        var startColor = main.startColor;
+
+                        if (startColor.mode == ParticleSystemGradientMode.Color)
+                            startColor.color *= tint.Value;
+                        else
+                            startColor = tint.Value;
+
+                        main.startColor = startColor;
+                    }
+
                     // Bayangan MATI. Ribuan partikel yang melempar bayangan berarti ribuan objek
                     // tambahan di peta bayangan tiap frame, dan tidak satu pun terbaca di kamera
                     // yang menunduk.
@@ -641,9 +725,51 @@ namespace Proto
                         renderer.receiveShadows = false;
                     }
                 }
+
+                if (tint.HasValue) TintMeshes(go.transform, tint.Value);
             }
 
             return root;
+        }
+
+        static readonly int TintBaseColor = Shader.PropertyToID("_BaseColor");
+        static readonly int TintColor = Shader.PropertyToID("_Color");
+
+        /// <summary>
+        /// Pewarna untuk prefab BER-MESH (god ray buatan) — jalur partikel tidak menyentuhnya.
+        /// Lewat MaterialPropertyBlock supaya material asetnya tidak pernah kotor. "Blade 0.55"
+        /// di nama pita = pengali alpha per pita, dibaca dari nama supaya prefab bangkitan tidak
+        /// butuh komponen skrip sendiri.
+        /// </summary>
+        static void TintMeshes(Transform root, Color tint)
+        {
+            var block = new MaterialPropertyBlock();
+
+            foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+            {
+                float strength = 1f;
+                var label = renderer.gameObject.name;
+                int at = label.LastIndexOf(' ');
+
+                if (at >= 0)
+                {
+                    float parsed;
+                    if (float.TryParse(label.Substring(at + 1),
+                        System.Globalization.NumberStyles.Float,
+                        System.Globalization.CultureInfo.InvariantCulture, out parsed))
+                    {
+                        strength = parsed;
+                    }
+                }
+
+                var tone = tint;
+                tone.a *= strength;
+
+                block.Clear();
+                block.SetColor(TintBaseColor, tone);
+                block.SetColor(TintColor, tone);
+                renderer.SetPropertyBlock(block);
+            }
         }
 
         void LateUpdate()
