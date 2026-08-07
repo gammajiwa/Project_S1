@@ -20,8 +20,47 @@ namespace Proto
         public string DisplayName = "Forest";
 
         [Header("Permukaan")]
+        [Tooltip("Hanya dipakai kalau GroundMaterial kosong. Terrain punya teksturnya sendiri.")]
         public Color GroundColor = new Color(0.13f, 0.18f, 0.12f);
+
+        [Tooltip("Hanya dipakai kalau Skybox kosong.")]
         public Color HorizonColor = new Color(0.06f, 0.09f, 0.07f);
+
+        // =========================================================================
+        //  lantai
+        // =========================================================================
+        //
+        // Bidang datar berwarna dengan tekstur derau buatan sendiri tidak akan pernah menyamai
+        // lantai yang dicat tangan, seberapa pun deraunya disetel — yang hilang bukan variasinya
+        // melainkan gambarnya. Kalau paket asetnya sudah membawa tekstur tanah, pakai teksturnya,
+        // dan pakai lewat Terrain karena shader terrain-nya memang menuntut splatmap.
+
+        [Header("Lantai terrain")]
+        [Tooltip("Material terrain. Diisi = lantainya dibangun sebagai Terrain sungguhan dan " +
+                 "GroundColor berhenti berlaku. Kosong = bidang datar berwarna seperti dulu.")]
+        public Material GroundMaterial;
+
+        [Tooltip("Lapisan tanah. Yang pertama jadi dasar, sisanya dicat sebagai bercak lewat derau.")]
+        public TerrainLayer[] GroundLayers;
+
+        [Tooltip("Sisi lantai dalam unit dunia. Wajib lebih besar dari arena PLUS margin " +
+                 "kelahiran musuh — musuh yang lahir di luar tepi lantai berjalan masuk sambil " +
+                 "melayang di atas kekosongan.")]
+        public Vector2 GroundSize = new Vector2(140f, 120f);
+
+        [Tooltip("Seberapa besar bercak lapisan kedua, dalam unit dunia.")]
+        [Min(1f)] public float GroundPatchSize = 26f;
+
+        [Tooltip("Seberapa luas lantai yang tertutup lapisan kedua. 0 = dasar polos.")]
+        [Range(0f, 1f)] public float GroundPatchCoverage = 0.3f;
+
+        [Tooltip("Langit. Diisi = kamera membersihkan layar dengan skybox, bukan HorizonColor.")]
+        public Material Skybox;
+
+        [Tooltip("Gradasi warna & kabut volumetrik untuk wajah ini. Disimpan sebagai VolumeProfile " +
+                 "biasa, bukan sebagai angka-angka kabut — dengan begitu paket kabut apa pun boleh " +
+                 "dipasang atau dicopot tanpa satu baris pun kode runtime ikut berubah.")]
+        public UnityEngine.Rendering.VolumeProfile PostProcess;
 
         [Header("Cahaya")]
         public Color SunColor = new Color(1f, 0.93f, 0.72f);
@@ -100,6 +139,23 @@ namespace Proto
         };
 
         // =========================================================================
+        //  pohon bermesh
+        // =========================================================================
+        //
+        // Jumlah pohonnya TIDAK bertambah. Yang berubah cuma sebagian slot pohon diisi mesh alih-alih
+        // batang+tajuk, dan tingginya diambil dari TrunkHeightRange yang sama. Itu disengaja: kalau
+        // yang bermesh muncul lebih banyak atau lebih besar, yang dibandingkan bukan lagi bentuknya
+        // melainkan kerapatan dan ukurannya, dan pertanyaan "mana yang lebih bagus" jadi tidak bisa
+        // dijawab.
+
+        [Header("Pohon bermesh (campuran)")]
+        [Tooltip("Porsi slot pohon yang diisi mesh. 0 = semua prosedural, 1 = semua mesh, " +
+                 "0,5 = campur rata untuk dibandingkan berdampingan.")]
+        [Range(0f, 1f)] public float MeshTreeShare = 0.5f;
+
+        public MeshProp[] MeshTrees;
+
+        // =========================================================================
         //  semak & batu
         // =========================================================================
 
@@ -122,9 +178,106 @@ namespace Proto
             new Color(0.22f, 0.21f, 0.18f)
         };
 
+        [Header("Rumput & semak bermesh")]
+        [Tooltip("Porsi slot rumput yang diisi mesh. 1 = kubus prosedural tidak muncul sama sekali.")]
+        [Range(0f, 1f)] public float MeshScatterShare = 1f;
+
+        [Tooltip("LEBAR jadi di dunia, bukan pengali. Mesh sumbernya berukuran 0,9–3,4 unit dan " +
+                 "berbeda-beda; menyimpan pengali berarti tiap kali daftarnya diubah semua " +
+                 "ukurannya harus disetel ulang satu per satu.")]
+        public Vector2 MeshScatterWidth = new Vector2(0.55f, 1.35f);
+
+        public MeshProp[] MeshScatter;
+
+        // =========================================================================
+        //  rumput dari kuas
+        // =========================================================================
+        //
+        // Rumput TIDAK disebar acak seperti prop lain. Letaknya diambil dari peta detail terrain —
+        // yaitu persis apa yang dikuas dengan alat Paint Details bawaan Unity.
+        //
+        // Yang menggambarnya tetap renderer prop di sini, bukan mesin detail Unity. Mesin itu tidak
+        // menggambar apa pun di project ini: datanya tertulis, shader-nya ada, jaraknya benar, dan
+        // layarnya tetap kosong — di kamera ortografis maupun perspektif. Jadi yang dipakai cuma
+        // PETA-nya; menggambarnya lewat jalur yang sudah terbukti.
+        //
+        // Bagi hasilnya jadi jelas: kuas menentukan DI MANA, angka di bawah menentukan SEBERAPA.
+
+        [Header("Rumput (mengikuti kuas terrain)")]
+        [Tooltip("Kosong = tidak ada rumput sama sekali.")]
+        public MeshProp[] MeshGrass;
+
+        [Tooltip("Jumlah rumpun per petak 24x24 di tempat yang dikuas PENUH. Yang dikuas separuh " +
+                 "dapat separuhnya.")]
+        [Min(0)] public int GrassPerChunk = 260;
+
+        [Tooltip("LEBAR jadi tiap rumpun di dunia.")]
+        public Vector2 GrassWidth = new Vector2(0.7f, 1.3f);
+
+        [Header("Bayangan prop")]
+        [Tooltip("Bayangan pohon. Berlaku untuk yang prosedural DAN yang bermesh sekaligus — " +
+                 "menyalakannya cuma di salah satu membuat perbandingannya tidak jujur.")]
+        public bool TreeShadows;
+
         // =========================================================================
         //  awan & berkas cahaya
         // =========================================================================
+
+        // =========================================================================
+        //  kegelapan jarak
+        // =========================================================================
+        //
+        // Yang jauh dari pemain menggelap, bertepi titik-titik raster komik. Ini milik DUNIA, bukan
+        // layar: satu tempat tetap gelap sampai pemain benar-benar mendatanginya.
+
+        [Header("Asap volumetrik")]
+        [Tooltip("Kantong udara bersih yang menempel di pemain. Asapnya sendiri adalah kabut " +
+                 "global; yang ini MENGURANGI kepadatannya di sekitar pemain, jadi yang tersisa " +
+                 "lingkaran bersih yang ikut berjalan. Kosong = tidak ada kantong, dan pemain " +
+                 "berdiri di dalam asap yang sama pekatnya dengan kejauhan.")]
+        public GameObject SmokePocket;
+
+        [Header("Kegelapan jarak (raster komik)")]
+        [Tooltip("0 = mati, 1 = nyala.")]
+        [Range(0, 1)] public int GloomLayers = 1;
+
+        [Tooltip("Seberapa jauh GARIS BATASNYA berkelok, dalam unit dunia. Ini yang membuatnya " +
+                 "berhenti terbaca sebagai vignette — bukan warnanya, bukan bentuk dasarnya.")]
+        public float GloomWobble = 11f;
+
+        [Tooltip("Kepekatan tertinggi. Di bawah 1 kejauhan tetap menyisakan siluet.")]
+        [Range(0f, 1f)] public float GloomCeiling = 0.92f;
+
+        [Tooltip("Pusat bagian terangnya. Nyala = apa yang sedang disorot kamera; mati = pemain.\n\n" +
+                 "Kamera punya zona mati, jadi keduanya tidak sama: kalau pusatnya pemain, " +
+                 "lingkaran terang ikut menyimpang tiap kali pemain bergeser di dalam zona mati, " +
+                 "dan tepi layar yang berlawanan diam-diam menggelap.")]
+        public bool GloomFollowsCamera = true;
+
+        public Color GloomColor = new Color(0.012f, 0.02f, 0.045f, 1f);
+
+        [Tooltip("Jarak dari pemain tempat kegelapan MULAI. Di dalam ini lapangan bersih.")]
+        public float GloomStart = 14f;
+
+        [Tooltip("Jarak tempat kegelapan penuh.")]
+        public float GloomEnd = 30f;
+
+        [Tooltip("Lebar gumpalan tepinya dalam unit dunia.")]
+        public float GloomSize = 9f;
+
+        [Tooltip("Seberapa cepat tepinya bergolak di tempat.")]
+        public float GloomChurn = 0.12f;
+
+        [Tooltip("Seberapa cepat kegelapannya mengalir, unit per detik.")]
+        public float GloomDrift = 0.6f;
+
+        [Tooltip("Jarak antar titik raster dalam PIKSEL — titik cetak berukuran tetap, jadi ia " +
+                 "tidak ikut membesar saat kamera menjauh.")]
+        [Range(2f, 40f)] public float GloomDotSize = 16f;
+
+        [Tooltip("0 = titik komik penuh, 1 = gradasi halus tanpa titik. 0,6 menyisakan titiknya " +
+                 "sebagai tekstur di tepi tanpa membuat seluruh kegelapan jadi kisi.")]
+        [Range(0f, 1f)] public float GloomSmooth = 0.6f;
 
         [Header("Bayangan awan")]
         [Tooltip("Warna DAN kepekatannya. Alpha yang menentukan seberapa gelap bayangannya.")]
@@ -136,9 +289,12 @@ namespace Proto
         [Tooltip("Seberapa banyak langit tertutup. 0,3 = cerah berawan, 0,8 = mendung.")]
         [Range(0.05f, 0.95f)] public float CloudCoverage = 0.55f;
 
-        [Tooltip("Kecepatan hanyut. Pelan sekali — awan yang bergerak cepat terbaca sebagai " +
-                 "tekstur yang bergeser, bukan sebagai cuaca.")]
-        public float CloudSpeed = 0.012f;
+        [Tooltip("Kecepatan hanyut dalam UNIT DUNIA PER DETIK — bukan pengali.\n\n" +
+                 "Dulu ia pengali yang dikalikan CloudSize di dalam kode, dan itu menyembunyikan " +
+                 "angka sebenarnya: 0,06 terlihat wajar padahal artinya 2 unit/detik, dan satu " +
+                 "gumpalan selebar 34 unit butuh 17 detik untuk bergeser selebar dirinya sendiri. " +
+                 "Beranimasi, tapi terbaca diam.")]
+        public float CloudSpeed = 12f;
 
         [Header("Berkas cahaya")]
         [Tooltip("Warna berkasnya. Ditambahkan, bukan ditimpa, jadi warnanya langsung jadi cahaya.")]
@@ -157,6 +313,10 @@ namespace Proto
 
         public Color LampColor = new Color(1f, 0.82f, 0.55f);
 
+        [Tooltip("Warna lampu berselang-seling dengan LampColor. Hangat dan dingin bergantian — " +
+                 "satu suhu untuk semua lampu berarti tidak ada yang bisa dibandingkan.")]
+        public Color LampColorCool = new Color(0.45f, 0.65f, 1f);
+
         [Range(0f, 12f)] public float LampIntensity = 3.2f;
 
         [Tooltip("Jari-jari jangkauan. Lebar dan lembut, bukan sempit dan tajam.")]
@@ -164,6 +324,18 @@ namespace Proto
 
         [Tooltip("Tinggi lampu. Rendah = kolam cahaya kecil dan pekat; tinggi = luas dan lembut.")]
         public float LampHeight = 7f;
+
+        [Header("Lampu pemain")]
+        [Tooltip("Cahaya yang dibawa pemain. Satu-satunya lampu yang boleh mengikuti pemain — di " +
+                 "malam hari ia yang menjaga pemain tetap terbaca saat menjauh dari semua lampu " +
+                 "arena. Intensitas 0 = mati, dan itu yang benar untuk siang.")]
+        [Range(0f, 12f)] public float PlayerLightIntensity;
+
+        public Color PlayerLightColor = new Color(0.7f, 0.85f, 1f);
+
+        public float PlayerLightRange = 12f;
+
+        public float PlayerLightHeight = 2.2f;
 
         [Header("Tata letak")]
         [Tooltip("Radius kosong di tengah arena. Pemain memulai di sana; props yang menimpa titik " +

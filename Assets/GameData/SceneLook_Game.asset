@@ -16,7 +16,7 @@ MonoBehaviour:
   SunYaw: -35
   SunColor: {r: 1, g: 0.851, b: 0.627, a: 1}
   SunIntensity: 2.9
-  ShadowStrength: 0.7
+  ShadowStrength: 1
   SkyColor: {r: 0.4, g: 0.46, b: 0.58, a: 1}
   EquatorColor: {r: 0.62, g: 0.54, b: 0.44, a: 1}
   GroundBounce: {r: 0.36, g: 0.29, b: 0.23, a: 1}
@@ -29,4 +29,4 @@ MonoBehaviour:
   PropColor: {r: 0.74, g: 0.7, b: 0.62, a: 1}
   PlayerColor: {r: 0.95, g: 0.85, b: 0.5, a: 1}
   SurfaceSmoothness: 0.05
-  PostProcess: {fileID: 11400000, guid: 78f77aa10a4b1bd4693e256b74bf6af5, type: 2}
+  PostProcess: {fileID: 11400000, guid: 727e9afeee12d82489cd6d9a06dc2436, type: 2}

@@ -139,6 +139,21 @@ namespace Proto
             return new Rect(right - SpeedButtonW, top - SpeedButtonH, SpeedButtonW, SpeedButtonH);
         }
 
+        /// <summary>
+        /// Tombol siang/malam, duduk tepat di bawah deretan tombol kecepatan.
+        ///
+        /// Lebarnya seluruh deret kecepatan, bukan satu tombol: ia bukan salah satu pilihan dalam
+        /// deret itu, dan menyamakan lebarnya membuatnya terbaca sebagai "5x" yang kelima.
+        /// </summary>
+        public static Rect TimeButtonRect(int speedCount)
+        {
+            float width = speedCount * SpeedButtonW + (speedCount - 1) * 6;
+            float right = Screen.width - Margin;
+            float top = Screen.height - Margin - SpeedButtonH - 22;
+
+            return new Rect(right - width, top - SpeedButtonH, width, SpeedButtonH);
+        }
+
         public static Rect StartButtonRect()
         {
             float cx = Screen.width * 0.5f;

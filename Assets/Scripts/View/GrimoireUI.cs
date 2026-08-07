@@ -34,6 +34,9 @@ namespace Proto
         public PlayerCaster Player;
         public EnemyManager Enemies;
 
+        /// <summary>Boleh null: arena tanpa biome tetap jalan, cuma tanpa tombol siang/malam.</summary>
+        BiomeDresser _biome;
+
         ContentDatabase _db;
         GameBalance _balance;
         TooltipBuilder _tooltips;
@@ -196,10 +199,11 @@ namespace Proto
         readonly StringBuilder _sb = new StringBuilder(256);
 
         public void Init(PlayerCaster player, EnemyManager enemies, Camera cam,
-            ContentDatabase database, GameBalance balance)
+            ContentDatabase database, GameBalance balance, BiomeDresser biome = null)
         {
             Player = player;
             Enemies = enemies;
+            _biome = biome;
             _camera = cam;
             _db = database;
             _balance = balance;
@@ -669,6 +673,49 @@ namespace Proto
             MakeText("SpeedHint", new Vector2(-Margin, -Margin - SpeedButtonH - 4), new Vector2(300, 20), 12,
                 new Color(0.6f, 0.6f, 0.68f), new Vector2(1f, 1f), TextAnchor.UpperRight).text =
                 "kecepatan  (tombol 1/2/3/4)";
+
+            BuildTimeControl();
+        }
+
+        Image _timeButton;
+        Text _timeLabel;
+
+        /// <summary>
+        /// Tombol siang/malam. Alat DEBUG, dan hanya muncul kalau arenanya memang punya lebih dari
+        /// satu wajah — tombol yang tidak mengubah apa pun lebih buruk daripada tidak ada tombol.
+        /// </summary>
+        void BuildTimeControl()
+        {
+            if (_biome == null || _biome.Faces < 2) return;
+
+            float y = -(Margin + SpeedButtonH + 22);
+            float width = Speeds.Length * SpeedButtonW + (Speeds.Length - 1) * 6;
+            var pos = new Vector2(-Margin, y);
+
+            _timeButton = MakeImage("TimeToggle", pos, new Vector2(width, SpeedButtonH),
+                new Color(0.16f, 0.18f, 0.26f, 0.9f), new Vector2(1f, 1f));
+
+            _timeLabel = MakeText("TimeToggleLabel", pos + new Vector2(0, -7),
+                new Vector2(width, SpeedButtonH), 15, new Color(0.92f, 0.9f, 0.7f),
+                new Vector2(1f, 1f), TextAnchor.UpperCenter);
+
+            RefreshTimeLabel();
+        }
+
+        void RefreshTimeLabel()
+        {
+            if (_timeLabel == null || _biome == null) return;
+
+            var face = _biome.Current;
+            _timeLabel.text = (face != null ? face.DisplayName : "?") + "   (T)";
+        }
+
+        void ToggleTime()
+        {
+            if (_biome == null || _biome.Faces < 2) return;
+
+            _biome.Show(_biome.FaceIndex + 1);
+            RefreshTimeLabel();
         }
 
         Image _bossBg;
@@ -1089,6 +1136,12 @@ namespace Proto
                 return false;
             }
 
+            if (ProtoInput.CycleFaceDown)
+            {
+                ToggleTime();
+                return true;
+            }
+
             if (!ProtoInput.LeftClickDown) return false;
 
             Vector2 mouse = ProtoInput.MousePosition;
@@ -1099,6 +1152,12 @@ namespace Proto
                     SetSpeed(i);
                     return true;
                 }
+            }
+
+            if (_timeButton != null && TimeButtonRect(Speeds.Length).Contains(mouse))
+            {
+                ToggleTime();
+                return true;
             }
 
             return false;

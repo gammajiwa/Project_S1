@@ -84,9 +84,11 @@ namespace Proto
             // Lantai TIDAK ikut kamera. Arenanya berbatas lagi, dan tepi lantai itulah yang
             // membuat dindingnya terlihat — tanpa itu pemain menabrak batas tak kasat mata dan
             // yang terbaca cuma kontrol yang macet.
+            BiomeDresser dresser = null;
+
             if (_biomes != null && _biomes.Length > 0)
             {
-                var dresser = new GameObject("Biome").AddComponent<BiomeDresser>();
+                dresser = new GameObject("Biome").AddComponent<BiomeDresser>();
                 dresser.transform.SetParent(transform, false);
                 dresser.Init(_balance, _biomes, sun, cam, ground, _look, _rig);
 
@@ -100,11 +102,29 @@ namespace Proto
                 // Rentangnya diambil dari yang benar-benar terlihat, bukan dari arena: bidangnya
                 // ikut kamera, jadi yang perlu tertutup cuma seluas layar plus sedikit margin.
                 float span = cam.orthographicSize * cam.aspect * 2.6f;
-                sky.Init(_rig, _biomes[0], _biomes[0].SunYaw, span);
+                sky.Init(_rig, span);
 
                 var lamps = new GameObject("ArenaLights").AddComponent<ArenaLights>();
                 lamps.transform.SetParent(transform, false);
                 lamps.Init(_balance, _biomes[0]);
+
+                // Satu-satunya lampu yang boleh menempel ke pemain. Di malam hari pemain bisa
+                // berjalan jauh dari setiap lampu arena, dan tanpa ini ia menghilang sepenuhnya —
+                // bukan jadi siluet, tapi jadi tidak ada.
+                var carried = new GameObject("PlayerLight");
+                carried.transform.SetParent(playerGo.transform, false);
+                carried.transform.localPosition = new Vector3(0f, 2.2f, 0f);
+
+                var glow = carried.AddComponent<Light>();
+                glow.type = LightType.Point;
+                glow.shadows = LightShadows.None;
+                glow.enabled = false;
+
+                var gloom = new GameObject("Gloom").AddComponent<Gloom>();
+                gloom.transform.SetParent(transform, false);
+                gloom.Init(_rig, playerGo.transform, span);
+
+                dresser.Attach(lamps, glow, sky, gloom, playerGo.transform);
             }
 
             var audio = new GameObject("Audio").AddComponent<AudioDirector>();
@@ -149,7 +169,7 @@ namespace Proto
             var uiGo = new GameObject("GrimoireUI");
             uiGo.transform.SetParent(transform, false);
             var ui = uiGo.AddComponent<GrimoireUI>();
-            ui.Init(caster, enemies, cam, _database, _balance);
+            ui.Init(caster, enemies, cam, _database, _balance, dresser);
 
             // Diumumkan lewat banner yang sama dengan reaksi, bukan lewat widget baru: pemain
             // sudah tahu harus melihat ke mana saat sesuatu penting terjadi.
@@ -217,6 +237,30 @@ namespace Proto
 
         Renderer BuildGround()
         {
+            // Terrain yang SUDAH ADA di scene selalu menang, dan tidak disentuh sedikit pun.
+            //
+            // Lantai yang disusun tangan adalah lantai yang sudah punya pemilik: teksturnya
+            // dicat, tingginya dipahat, lapisannya dipilih. Membangun lantai sendiri di
+            // sampingnya menghasilkan dua lantai yang saling menutupi, dan yang menang adalah
+            // yang kebetulan lebih tinggi — kegagalan yang terlihat seperti pilihan.
+            var authored = Terrain.activeTerrain;
+
+            if (authored != null)
+            {
+                // null, dan itu bukan kelalaian: BiomeDresser hanya mengecat lantai kalau ada
+                // Renderer yang dititipkan padanya.
+                return null;
+            }
+
+            var biome = _biomes != null && _biomes.Length > 0 ? _biomes[0] : null;
+
+            if (biome != null && biome.GroundMaterial != null &&
+                biome.GroundLayers != null && biome.GroundLayers.Length > 0)
+            {
+                BuildTerrain(biome);
+                return null;
+            }
+
             var go = GameObject.CreatePrimitive(PrimitiveType.Plane);
             go.name = "Ground";
             go.transform.SetParent(transform, false);
@@ -238,6 +282,136 @@ namespace Proto
             r.receiveShadows = true;
             r.shadowCastingMode = ShadowCastingMode.Off;
             return r;
+        }
+
+        /// <summary>
+        /// Lantai sebagai Terrain sungguhan, DATAR.
+        ///
+        /// Datar itu keputusan, bukan keterbatasan: kamera ortografis menunduk 68 derajat, dan
+        /// bukit apa pun langsung menyembunyikan apa yang ada di baliknya — di game yang seluruh
+        /// isinya membaca dari arah mana gerombolan datang, punggung bukit adalah tempat musuh
+        /// menghilang. Yang diambil dari terrain bukan reliefnya, melainkan shader dan teksturnya.
+        ///
+        /// Urutan penyiapan TerrainData penting dan gagal tanpa error kalau dibalik:
+        /// <c>heightmapResolution</c> menyetel ulang <c>size</c>, dan <c>alphamapResolution</c>
+        /// membuang alphamap yang sudah ditulis.
+        /// </summary>
+        void BuildTerrain(BiomeDefinition biome)
+        {
+            var data = new TerrainData();
+
+            // 33 sudah lebih dari cukup untuk bidang yang seluruh titiknya bernilai nol. Resolusi
+            // heightmap di lantai datar tidak membeli apa pun selain memori.
+            data.heightmapResolution = 33;
+            data.size = new Vector3(biome.GroundSize.x, 1f, biome.GroundSize.y);
+
+            data.alphamapResolution = 256;
+            data.terrainLayers = biome.GroundLayers;
+
+            PaintGround(data, biome);
+
+            var go = Terrain.CreateTerrainGameObject(data);
+            go.name = "Ground";
+            go.transform.SetParent(transform, false);
+            go.transform.position = new Vector3(
+                -biome.GroundSize.x * 0.5f, 0f, -biome.GroundSize.y * 0.5f);
+
+            var col = go.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+
+            var terrain = go.GetComponent<Terrain>();
+            terrain.materialTemplate = biome.GroundMaterial;
+
+            // Lantai adalah tempat bayangan panjang jatuh, dan itu sebagian besar tampilannya.
+            terrain.shadowCastingMode = ShadowCastingMode.Off;
+
+            // Basemap adalah versi murah yang dipakai di kejauhan, dan di sanalah teksturnya
+            // berubah jadi bubur. Jaraknya dilewatkan seluruh lapangan supaya tidak pernah aktif.
+            terrain.basemapDistance = 1000f;
+            terrain.heightmapPixelError = 5f;
+        }
+
+        /// <summary>
+        /// Mencat lapisan kedua sebagai bercak lewat derau.
+        ///
+        /// Satu lapisan yang diubin rata di lantai seluas ini terbaca sebagai kain, bukan tanah —
+        /// polanya berulang dan mata menemukan pengulangannya dalam sedetik. Bercak berskala besar
+        /// memecah pengulangan itu sekaligus memberi lapangan tanda tempat yang bisa dipakai
+        /// mengukur bahwa kita sudah berpindah.
+        /// </summary>
+        static void PaintGround(TerrainData data, BiomeDefinition biome)
+        {
+            int size = data.alphamapResolution;
+            int layers = data.terrainLayers.Length;
+            var map = new float[size, size, layers];
+
+            // Dua lapisan pertama saja. Lapisan ketiga dan seterusnya sengaja dibiarkan nol —
+            // dipakai kalau nanti ada yang mengecat pasir atau batu di tempat tertentu.
+            if (layers < 2 || biome.GroundPatchCoverage <= 0f)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    for (int x = 0; x < size; x++) map[y, x, 0] = 1f;
+                }
+
+                data.SetAlphamaps(0, 0, map);
+                return;
+            }
+
+            float scale = Mathf.Max(1f, biome.GroundPatchSize);
+            float world = Mathf.Max(1f, biome.GroundSize.x);
+
+            var noise = new float[size * size];
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float u = x / (float)size * world / scale;
+                    float v = y / (float)size * world / scale;
+
+                    // Dua oktaf: yang besar menentukan letak bercaknya, yang halus merusak tepinya.
+                    // Satu oktaf saja menghasilkan bercak berbentuk awan yang terlalu rapi untuk
+                    // dibaca sebagai tanah terbuka.
+                    noise[y * size + x] = Mathf.PerlinNoise(u, v) * 0.75f
+                                          + Mathf.PerlinNoise(u * 3.1f, v * 3.1f) * 0.25f;
+                }
+            }
+
+            // Ambangnya dicari dari SEBARAN deraunya sendiri, bukan dipatok ke angka tetap.
+            //
+            // Percobaan pertama membandingkan derau dengan (1 − cakupan) langsung, dan hasilnya
+            // nol bercak: PerlinNoise berkerumun di sekitar 0,5 dan nyaris tidak pernah menyentuh
+            // 0,72, jadi ambang berapa pun di atas situ tidak pernah terlewati. Kegagalannya diam —
+            // lantainya tetap tergambar, cuma satu warna, dan tidak ada apa pun yang memberi tahu
+            // bahwa lapisan keduanya tidak pernah terpakai.
+            var sorted = (float[])noise.Clone();
+            System.Array.Sort(sorted);
+
+            int cut = Mathf.Clamp(
+                Mathf.RoundToInt((1f - biome.GroundPatchCoverage) * (sorted.Length - 1)),
+                0, sorted.Length - 1);
+
+            float threshold = sorted[cut];
+
+            // Lebar peralihan diambil dari sebarannya juga, supaya tepi bercaknya selalu selembut
+            // ini berapa pun cakupannya diubah.
+            float band = Mathf.Max(0.004f,
+                (sorted[sorted.Length - 1] - sorted[0]) * 0.12f);
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float patch = Mathf.SmoothStep(0f, 1f,
+                        Mathf.InverseLerp(threshold - band, threshold + band, noise[y * size + x]));
+
+                    map[y, x, 0] = 1f - patch;
+                    map[y, x, 1] = patch;
+                }
+            }
+
+            data.SetAlphamaps(0, 0, map);
         }
 
         GameObject BuildPlayer()

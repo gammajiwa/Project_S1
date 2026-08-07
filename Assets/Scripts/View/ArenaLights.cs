@@ -26,10 +26,37 @@ namespace Proto
         }
 
         Lamp[] _lamps = new Lamp[0];
+        GameBalance _balance;
+
+        public int Count => _lamps.Length;
 
         public void Init(GameBalance balance, BiomeDefinition biome)
         {
-            int count = Mathf.Clamp(biome.LampCount, 0, 8);
+            _balance = balance;
+            Apply(biome);
+        }
+
+        /// <summary>
+        /// Membangun ulang seluruh lampu untuk wajah arena yang sekarang.
+        ///
+        /// Wajib bisa dipanggil BERKALI-KALI. Versi pertama membangun lampunya sekali di awal dari
+        /// wajah pertama, dan ketika siang/malam menjadi dua aset, malam tidak pernah mendapat satu
+        /// lampu pun — wajahnya berganti, cahayanya tidak. Gagalnya diam: malam tetap tergambar,
+        /// cuma tanpa satu pun sumber hangat, dan yang terlihat adalah malam yang datar.
+        /// </summary>
+        public void Apply(BiomeDefinition biome)
+        {
+            for (int i = 0; i < _lamps.Length; i++)
+            {
+                if (_lamps[i].Source != null) Destroy(_lamps[i].Source.gameObject);
+            }
+
+            _lamps = new Lamp[0];
+
+            if (biome == null || _balance == null) return;
+
+            var balance = _balance;
+            int count = Mathf.Clamp(biome.LampCount, 0, 12);
             if (count == 0) return;
 
             _lamps = new Lamp[count];
@@ -53,7 +80,15 @@ namespace Proto
 
                 var light = go.AddComponent<Light>();
                 light.type = LightType.Point;
-                light.color = biome.LampColor;
+
+                // Bergantian hangat–dingin, bukan satu warna untuk semuanya.
+                //
+                // Malam yang seluruh lampunya sewarna cuma punya satu suhu, dan satu suhu berarti
+                // tidak ada yang bisa dibandingkan — semuanya sama birunya atau sama jingganya, dan
+                // lapangannya kembali rata seperti tanpa lampu. Yang membuat malam terbaca indah
+                // adalah kolam hangat yang duduk di tengah kegelapan BIRU, dan itu menuntut
+                // keduanya ada sekaligus.
+                light.color = i % 2 == 0 ? biome.LampColor : biome.LampColorCool;
                 light.intensity = biome.LampIntensity;
                 light.range = biome.LampRange;
 
