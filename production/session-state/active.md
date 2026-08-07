@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Ambience siang/malam + cuaca 60/20/20, drop berbintang, evo emas dikunci
-Task: Peta run ala STS (pilih portal antar wave) — sedang dikerjakan
+Feature: Peta run STS (visual baru), relokasi antar wave, kunang-kunang, god ray
+Task: Terverifikasi lewat screenshot — tinggal dinilai main tangan
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -793,8 +793,47 @@ tanpa ghost).
 System.Random (bukan stream gameplay). Rig kamera ikut pindah SEBELUM ArenaCamera dipasang
 (fokus direkam di Awake — tanpa ini run dibuka panning panjang dari titik nol).
 
-### Berikutnya di sesi ini
+### Peta run ala STS — SELESAI & terverifikasi (2026-08-07, lanjutan)
 
-- **Peta run ala STS** (pilih portal setelah wave): fight/elite/shop/event/slot/boss — WIP
-- Skill 3 + fragment (3 jalur merah/biru/kuning) + skill tree — belum
-- Slot machine VFX "dopamin" — belum
+Detail teknis: **docs/AI-HANDOFF.md §21**. Ringkas:
+
+- **`Model/RunMap.cs`** — graf act 15 lantai × 3 lajur, boss di puncak; teruji 200 peta,
+  0 node yatim / 0 buntu. **`Systems/RunDirector.cs`** — portal FISIK menetas setelah wave
+  bersih, diklik -> karakter JALAN sendiri ke portal -> isi node dieksekusi.
+- Node: Fight / **Elite** (x2,2 HP x1,25 jumlah x1,3 gigit, ATAU 40% mini-boss yang ikut
+  act) / **Boss puncak** (ular DAN kelabang sekaligus, x2,5 HP, aggro 1,6, pengawal
+  ditipiskan) / Toko / Kejadian / Slot. Semua angka di `GameBalance` (header Peta Run).
+- **Pulau rehat** = kantong di (50, 42) — scene sama, hutan hash yang sama tiap singgah;
+  PEDAGANG/BANDAR/PERTAPA + api unggun + portal LANJUT. Scene terpisah menunggu
+  persistensi run.
+- **Peta diintip** lewat M / tombol PETA: read-only, node berikut berdenyut, jejak emas,
+  `@` = posisi sekarang. Memilih tetap lewat portal di lapangan.
+- Toko pindah ke node peta (stok dikocok per singgah); tombol MULAI WAVE pensiun; boss
+  kelipatan-10 lama otomatis kalah oleh boss pesanan node.
+- Terverifikasi play mode: klik->jalan->wave->bersih->portal lagi; pulau bolak-balik utuh;
+  elite x1,25 pas; boss node HP persis rumus; act berikutnya regenerasi peta.
+
+### Putaran feedback peta & suasana (2026-08-07, lanjutan) — SELESAI
+
+Diverifikasi pakai SCREENSHOT (pertama kalinya sesi AI menilai tampilan pakai mata).
+Detail: AI-HANDOFF.md §22.
+
+- **Portal = pindah tempat**: `Relocate()` acak posisi tiap node tempur +
+  `Weather.Rescatter()` tiap wave — kupu-kupu tidak menunggu di titik lama lagi.
+- **Peta ditulis ulang** meniru `project_b RoguelikeMapUI`: kiri->kanan, bezier
+  putus-putus ber-seed, node jitter + ring status, boss besar, latar solid.
+- **Malam**: kupu-kupu fog dicopot; kunang-kunang BANGKITAN (`Fireflies.prefab`,
+  kedip via gradasi alpha) + bara. Yang menyala malam cuma kunang-kunang.
+- **God ray DIBANGUN SENDIRI** (`GodRay.prefab`, bangkitan pass): mesh shaft paket
+  memipih jadi genangan di kamera 68 derajat — stretch pun tak menolong. Tiga pita
+  menghadap kamera, 38-46 unit (layar 22), gradien nol di 85% badan: masuk dari luar
+  layar, sumber tak pernah terlihat, semi. Siang emas, malam biru bulan. `CullSheets`
+  mematikan lembaran beam UFO di prefab debu Sunlight/Moonlight — akar asli
+  "godray ngumpul di tengah".
+
+### Berikutnya
+
+- **Main dan nilai rasanya** — alur portal + pulau belum pernah dinilai tangan manusia
+- VFX slot "dopamin ala Vampire Survivors" (panel masih teks) + cerita penjaga pulau
+- Skill 3 + fragment 3 jalur (merah/biru/kuning) + skill tree bertingkat — belum disentuh
+- Event baru satu jenis; tambah variasi + formula hadiah slot yang lebih kaya

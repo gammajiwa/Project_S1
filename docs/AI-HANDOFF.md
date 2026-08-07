@@ -1400,3 +1400,143 @@ props kita 19 draw call ±0 ms (detail-renderer Terrain punya jalur sendiri yang
 
 - **Determinisme petak**: petak (3,−7) dibangkitkan dua kali → 148 matriks, **beda 0**.
 - **`Random.state` global utuh**: `0.5868507` sebelum dan sesudah membangkitkan petak.
+
+## 21. Peta run ala STS, portal fisik, pulau rehat (2026-08-07)
+
+### Arsitektur
+
+- **`Model/RunMap.cs`** — graf act: 15 lantai × 3 lajur, boss di puncak, generator menjamin
+  tiap node punya jalan masuk & keluar (teruji 200 peta: 0 yatim, 0 buntu). Murni model.
+- **`Model/WaveHash.cs`** — undian deterministik per wave. JANGAN ganti dengan
+  `new System.Random(wave * K)`: seed berjajar = sample pertama berjajar (wave 1–29 malam
+  semua). Dipakai cuaca (salt 104729) dan siang/malam (salt 3389).
+- **`Systems/RunDirector.cs`** — sutradara: spawn portal FISIK setelah wave bersih
+  (klik = layar-space, tanpa collider), `PlayerMotor.WalkTo` menjalankan karakter ke portal,
+  `Arrive` mengeksekusi node. Pulau rehat = teleport ke `IslandCentre (50, 42)` — DI DALAM
+  jangkauan lantai (±70/±60) tapi di luar elips arena; scene terpisah butuh persistensi run
+  yang belum ada.
+- **`GrimoireUI.AttachRun`** — semua akibat node dieksekusi UI (pemegang gold/papan):
+  toko dikocok per singgah, panel slot (hasil diundi SAAT klik, animasi cuma menunda),
+  panel kejadian (modal, menelan semua klik), overlay peta (M / tombol PETA; read-only,
+  memilih tetap lewat portal).
+
+### Alur
+
+`OnWaveCleared` → `RunDirector.SpawnPortals(Reachable())` → klik → `WalkTo` → `Arrive`:
+Fight `StartWave(Wave+1)`; Elite `SetNextWaveMods(2.2/1.25/1.3)` ATAU mini-boss
+(`EliteBossChance` 40%, jumlah ikut act); Boss `ForceBossNode(2+act-1, ×2.5 HP, aggro 1.6,
+allKinds)` — ular DAN kelabang; Shop/Event/Gamble → pulau. Boss puncak beres → act baru,
+peta baru. Tombol MULAI WAVE & toko kelipatan-3 pensiun selama `_run != null`
+(`CanStartWave`, `ShopEventActive`, `OnWaveCleared`).
+
+### Titik tumpang di EnemyManager (pola DebugConfig)
+
+`_nextHpMul/_nextCountMul/_nextDamageMul` + `_nextBoss*` — dikalikan di `StartWave`
+(jumlah), `SpawnOne` (HP), kontak & tembakan (damage), `SpawnBossNode` (Hatch dengan
+hpMul+aggro). **Reset di `FinishWave`**, jadi elite tidak menular. `BossSnake.Aggro`
+membagi jeda lunge/dive/spit per-EKOR — jangan tulis ke `Def` (aset bersama).
+
+### Jebakan yang ketemu saat membangun ini
+
+1. `CopySerialized(day, night)` menimpa daftar VFX malam LALU guard "masih kosong?" tidak
+   pernah menyala — kunang-kunang tidak pernah terpasang. `BuildNight` sekarang
+   menyelamatkan daftar malam sebelum menyalin.
+2. Efek ikut-kamera Weather tidak pernah dibersihkan saat ganti biome — tiap pergantian
+   siang/malam menumpuk satu set daun. Sekarang simpul `Ikut Kamera` + `_carriedFx`.
+3. `Application.targetFrameRate = 60` (bawaan GameSettings lama) = "fps 30–60".
+   Bawaan sekarang TANPA BATAS; pref `opt.framecap` lama dihapus sekali.
+4. Ghost (piece di tangan) dicari SEBELUM grup emas duduk di `FindPendingGroups` —
+   mengangkat kembaran bahan membajak pasangan emas (garis pindah, membiru). Grup emas
+   (lengkap + `CouldSeat`) sekarang dikunci paling dulu; hanya lock yang membubarkannya.
+
+### Verifikasi (programatik, play mode)
+
+Portal→jalan→wave 1→bersih→portal lagi ✔; pulau: teleport, PEDAGANG+api unggun, shop
+auto-buka, LANJUT→pulang→portal lanjutan ✔; elite total ×1,25 pas ✔; boss node: serpent
+144.990 + centipede 177.210 HP (persis rumus ×2,5), aggro 1,6 ✔; drop ★ 82,6/11,7/4,3/1,5/0
+(4000 undian) ✔; spawn acak + rig ikut ✔.
+
+### Belum (dijanjikan ke pemilik project)
+
+- VFX slot "dopamin ala Vampire Survivors" — panel slot masih teks; butuh pass VFX.
+- Penjaga pulau belum bercerita (butuh sistem dialog).
+- Skill 3 + fragment 3 jalur (merah/biru/kuning) + skill tree bertingkat.
+- Event baru satu; formula slot & event masih minimum yang layak.
+
+## 22. Putaran feedback peta & suasana (2026-08-07, lanjutan)
+
+Empat keluhan pemilik project, semuanya diverifikasi pakai SCREENSHOT (ScreenCapture ->
+baca PNG) — pertama kalinya tampilan dinilai mata di sesi AI, dan dua akar masalah baru
+ketahuan justru dari gambarnya.
+
+1. **"Masuk biome kerasa cuma refresh"** — `RunDirector.Relocate()`: tiap node
+   fight/elite/boss menteleport pemain ke titik acak arena sebelum wave mulai, dan
+   `Weather.Rescatter()` (dipanggil tiap `OnWaveStarted`) menyebar ulang semua kantong +
+   mengacak ulang jadwal burung. Portal = gerbang, bukan pintu putar.
+2. **"Peta jelek parah"** — ditulis ulang meniru `project_b RoguelikeMapUI`: KIRI->KANAN,
+   jalur bezier kubik di-sample jadi 7 segmen bercelah (control point ber-seed), node
+   ber-jitter posisi/ukuran/rotasi, ring status (emas=kamu, putih denyut=bisa diinjak,
+   hijau=terlewati, pucat=terkunci), boss 1,35x. Layout di-cache pakai signature
+   (act/At/jumlah node) — 600-an segmen tidak disusun ulang per frame. Latar SOLID:
+   alpha 0,97 membocorkan papan & banner di belakangnya.
+3. **"Kupu-kupu menyala di malam"** — kupu-kupu fog DICOPOT dari malam. Penggantinya
+   `Assets/GameData/Look/Fireflies.prefab` BANGKITAN (`BiomePass.EnsureFireflies`):
+   titik additive yang KEDIP lewat gradasi alpha bergelombang + noise wander; material
+   pinjam bara Lana. Malam = kunang-kunang + bara doang yang menyala.
+4. **"God ray kurang tinggi, kelihatan sumbernya"** — `AmbientVfxEntry.Stretch` (3D start
+   size: tinggi butiran x2,8, lebar tetap) mendorong puncak berkas keluar layar; tint
+   siang (1; 0,95; 0,8) malam (0,45; 0,6; 1) dengan ALPHA ~1 (prefab aslinya sudah 0,15 —
+   mengalikan alpha kecil dua kali membuat berkasnya lenyap, itu kejadian).
+
+### Jebakan baru: prefab debu Lana menyimpan LEMBARAN beam raksasa
+
+"Godray ngumpul di tengah" yang asli BUKAN salah penempatan — di dalam `Light/Sunlight` &
+`Light/Moonlight` ada sistem partikel lembaran ~15 unit yang di kamera atas tergambar
+sebagai balok UFO menelan pemain. `AmbientVfxEntry.CullSheets` mematikan sistem
+ber-startSize > 5 unit saat spawn (ambang yang sama dengan aturan Grain). Kedua entri
+debu memakainya; TSI shaft tidak (butirannya memang besar).
+
+### Tint partikel
+
+`AmbientVfxEntry.Tint` -> `Weather.Spawn`: mode Color = dikali, mode gradien = ditimpa.
+Ingat alpha prefab: tint.a adalah PENGALI di atas alpha asli yang sering sudah kecil.
+
+### Ralat §22 butir 4 — god ray akhirnya DIBANGUN SENDIRI
+
+Stretch pada mesh shaft TSI tetap gagal: prefab itu dirancang untuk kamera sejajar mata,
+dan dari 68 derajat ia memipih jadi GENANGAN cahaya di lantai, seberapa pun ditinggikan.
+Penggantinya `Assets/GameData/Look/GodRay.prefab` — bangkitan `BiomePass.EnsureGodRay`,
+SELALU ditulis ulang tiap pass jalan (SaveAsPrefabAsset menimpa path yang sama = GUID awet,
+rujukan aset biome tidak putus):
+
+- TIGA pita quad menghadap kamera (`Euler(68; 0; z)` — anchor: quad Gloom `Euler(90;0;0)`
+  menghadap kamera tegak lurus), z memiringkannya di bidang layar searah matahari.
+- Panjang 46/42/38 unit — layar cuma 22 unit: badan pita selalu menembus tepi atas layar.
+- Tekstur gradien bangkitan: pangkal fade-in 7% (tanpa tepi kotak), meluruh dan NOL di 85%
+  — ujungnya tidak pernah terlihat, dari mana pun kamera memotongnya.
+- Material menyalin material shaft TSI (additive yang sudah terbukti), teksturnya ditukar.
+- Warna per biome lewat `Tint` — jalur mesh di `Weather.TintMeshes` (MaterialPropertyBlock;
+  pengali alpha per pita dibaca dari NAMA "Blade 0.55" supaya prefab bangkitan tidak butuh
+  komponen skrip).
+
+Diverifikasi screenshot: pita diagonal panjang masuk dari luar layar, sumber tak terlihat,
+siang emas / malam biru bulan.
+
+### Ralat kedua §22 — god ray FINAL: prefab paket, MILIK USER
+
+Keputusan pemilik project, dua-duanya mengikat:
+
+1. God ray = `Lana .../Light/Sunlight.prefab` (siang) & `Moonlight.prefab` (malam),
+   **disetel TANGAN oleh pemilik project langsung di prefab-nya** (tinggi beam dsb).
+   KODE DILARANG menyetel bentuknya: entri biome untuk keduanya wajib polos —
+   Stretch 1, Tint putih, Scale 1, CullSheets mati. Kode hanya mengurus PENEMPATAN:
+   2 titik, jarak 14-26 (siang) / 15-28 (malam) dari pemain — "cahayanya dari
+   matahari/bulan, titik lahirnya tidak boleh masuk kamera" — dan OnlyClear.
+2. `GodRay.prefab` bangkitan + `EnsureGodRay` TIDAK dipakai lagi (percobaan yang
+   kalah oleh keputusan di atas; generatornya masih ada kalau suatu saat perlu).
+3. Grade = **profil demo UNS seutuhnya** (`AdoptSunnyGrade` mengklon
+   `UNS_Forest_Volume_Profile` ke PP_Sunny/PP_Night pada GUID tetap, ACES aktif,
+   matahari balik 2,8). Jalankan `Install Volumetric Fog` SETELAH `Generate Biomes`
+   — klon menghapus komponen kabut HAZE.
+4. `Weather.Spawn` sekarang paham `Stretch` untuk sistem yang SUDAH 3D (kalikan Y
+   saja) — tapi untuk beam paket lihat butir 1: jangan dipakai.
