@@ -43,11 +43,14 @@ namespace Proto
         Color _clearCloud;
         float _clearCoverage;
 
-        public void Init(Transform follow, Light sun, Atmosphere sky)
+        Light _playerLight;
+
+        public void Init(Transform follow, Light sun, Atmosphere sky, Light playerLight)
         {
             _follow = follow;
             _sun = sun;
             _sky = sky;
+            _playerLight = playerLight;
         }
 
         public void Apply(BiomeDefinition biome)
@@ -125,14 +128,28 @@ namespace Proto
             MoodName = mood.Name;
 
             Clear(ref _mood);
-            // Cuaca menempel di kamera dan membesar UTUH — butiran ikut, bukan cuma cakupan.
-            //
-            // Sempat dibuat cakupan saja, dan hasilnya hujan yang tidak terlihat sama sekali:
-            // tetesnya 0,09 unit, yang di kamera ini kira-kira TIGA PIKSEL, dan tiga piksel gelap
-            // di atas lapangan yang sedang mendung memang tidak akan pernah terlihat. Yang membuat
-            // pembesaran utuh aman sekarang adalah daun sudah dikeluarkan dari daftar cuaca —
-            // dulu pengali yang sama mengubahnya jadi selebar dua meter.
-            _mood = Spawn("Cuaca " + mood.Name, mood.Effects, mood.Speed, null, mood.Scale);
+            // Tiap efek disetel SENDIRI-SENDIRI, dan ini akhirnya jalan keluar dari tarik-menarik
+            // yang bolak-balik. Satu pengali untuk seluruh cuaca tidak pernah bisa benar: hujan dan
+            // angin-berdaun ada di paket yang sama, tapi tetesnya perlu membesar sementara daunnya
+            // perlu mengecil, dan daunnya perlu lahir jauh di kiri sementara hujan harus tepat di
+            // atas kepala.
+            _mood = new GameObject("Cuaca " + mood.Name).transform;
+            _mood.SetParent(transform, false);
+
+            if (mood.Effects != null)
+            {
+                foreach (var effect in mood.Effects)
+                {
+                    if (effect == null || !effect.Valid) continue;
+
+                    var node = Spawn(effect.Prefab.name, new[] { effect.Prefab }, mood.Speed,
+                        _mood, effect.Scale, effect.CoverageOnly, effect.Grain);
+
+                    if (node == null) continue;
+
+                    node.localPosition = new Vector3(effect.Offset.x, effect.Height, effect.Offset.y);
+                }
+            }
 
             // Kupu-kupu berteduh. Yang tetap beterbangan di tengah hujan adalah hal pertama yang
             // membocorkan bahwa cuacanya cuma lapisan yang ditumpuk di atas suasana, bukan sesuatu
@@ -145,7 +162,29 @@ namespace Proto
                 pocket.Node.gameObject.SetActive(!mood.Wet);
             }
 
+            Lantern(mood.Wet);
             Overcast(mood.Overcast);
+        }
+
+        /// <summary>
+        /// Menyalakan lampu pemain saat hujan.
+        ///
+        /// Di siang cerah ia mati karena tidak membeli apa pun — lantainya sudah terang merata.
+        /// Begitu mendung turun ia jadi satu-satunya sumber hangat di layar, sekaligus yang menjaga
+        /// pemain tetap terbaca saat lapangannya meredup.
+        ///
+        /// Nilai kering diambil dari biome, bukan dari lampu yang sedang menyala — membaca yang
+        /// sedang menyala berarti hujan kedua akan mengingat nilai hujan pertama sebagai "kering".
+        /// </summary>
+        void Lantern(bool wet)
+        {
+            if (_playerLight == null || _biome == null) return;
+
+            float dry = _biome.PlayerLightIntensity;
+            float on = wet ? Mathf.Max(dry, _biome.RainPlayerLight) : dry;
+
+            _playerLight.intensity = on;
+            _playerLight.enabled = on > 0f;
         }
 
         /// <summary>
@@ -159,21 +198,44 @@ namespace Proto
         {
             amount = Mathf.Clamp01(amount);
 
-            if (_sun != null) _sun.intensity = Mathf.Lerp(_clearSun, _clearSun * 0.34f, amount);
+            // Matahari diredupkan SEPARUH, bukan sepertiga. Percobaan pertama menjatuhkannya ke
+            // 0,34 dan hasilnya bukan mendung melainkan senja — dan lapangan yang segelap itu
+            // kehilangan siluet musuh, hal yang paling tidak boleh hilang.
+            // Semua angka penggelapan diambil dari ASET BIOME, bukan dipatok di kode. Tiga kali
+            // ditebak dari sini dan tiga kali meleset — yang tahu seberapa gelap itu "mendung"
+            // adalah yang sedang melihat layarnya, bukan yang sedang menulis kodenya.
+            if (_sun != null)
+                _sun.intensity = Mathf.Lerp(_clearSun, _clearSun * _biome.OvercastSun, amount);
 
-            RenderSettings.ambientSkyColor = Color.Lerp(_clearSky, _clearSky * 0.62f, amount);
-            RenderSettings.ambientEquatorColor = Color.Lerp(_clearEquator, _clearEquator * 0.6f, amount);
-            RenderSettings.ambientGroundColor = Color.Lerp(_clearGround, _clearGround * 0.6f, amount);
+            // Ambient nyaris TIDAK diturunkan, dan ini bagian yang sempat salah arah.
+            //
+            // Mendung yang sebenarnya bukan lapangan yang gelap — ia lapangan yang cahayanya datang
+            // dari SELURUH LANGIT alih-alih dari satu titik. Matahari melemah, tapi langitnya
+            // justru jadi sumber cahaya yang lebih besar. Menurunkan ambient bersama matahari
+            // menghapus justru bagian yang membuatnya terbaca sebagai siang yang mendung.
+            // Ambient justru DINAIKKAN, bukan diturunkan — dan inilah yang selama ini terbalik.
+            //
+            // Saat mendung, matahari hilang tapi seluruh kubah langit berubah jadi lampu. Cahaya
+            // total di lantai hampir tidak berkurang; yang berubah adalah ARAHNYA — dari satu titik
+            // jadi dari mana-mana, sehingga bayangan melembut dan warnanya mendingin. Menurunkan
+            // ambient bersama matahari menghapus persis bagian yang membuatnya terbaca sebagai
+            // siang, dan yang tersisa cuma malam yang kehujanan.
+            float lift = _biome.OvercastAmbient;
+
+            RenderSettings.ambientSkyColor = Color.Lerp(_clearSky, _clearSky * lift, amount);
+            RenderSettings.ambientEquatorColor = Color.Lerp(_clearEquator, _clearEquator * lift, amount);
+            RenderSettings.ambientGroundColor = Color.Lerp(_clearGround, _clearGround * lift, amount);
 
             if (_sky == null || _biome == null) return;
 
             // Awan ikut menebal dan meluas. Hujan tanpa awan yang menggelap terbaca sebagai hujan
             // di bawah langit cerah — dan mata menangkap kejanggalan itu sebelum sempat menamainya.
             var thick = _clearCloud;
-            thick.a = Mathf.Lerp(_clearCloud.a, 1f, amount);
+            thick.a = Mathf.Lerp(_clearCloud.a, _biome.OvercastCloud, amount);
 
             _biome.CloudColor = thick;
-            _biome.CloudCoverage = Mathf.Lerp(_clearCoverage, 0.82f, amount);
+            _biome.CloudCoverage = Mathf.Lerp(_clearCoverage,
+                Mathf.Max(_clearCoverage, _biome.OvercastCloud), amount);
 
             _sky.Apply(_biome);
 
@@ -221,7 +283,12 @@ namespace Proto
                     var carried = Spawn("Ikut " + entry.Prefab.name, new[] { entry.Prefab },
                         1f, transform, entry.Scale);
 
-                    if (carried != null) carried.localPosition = new Vector3(0f, entry.Height, 0f);
+                    if (carried != null)
+                    {
+                        carried.localPosition =
+                            new Vector3(entry.Offset.x, entry.Height, entry.Offset.y);
+                    }
+
                     continue;
                 }
 
@@ -352,7 +419,37 @@ namespace Proto
 
                 if (Time.time < slot.DueAt) continue;
 
-                var group = Spawn("Lewat " + slot.Entry.Prefab.name, new[] { slot.Entry.Prefab }, 1f);
+                // Digantung di simpul DIAM, bukan di simpul yang mengikuti kamera. Kawanan yang
+                // digantung di kamera akan terseret bersama pemain — ia berhenti terbang melintas
+                // dan berubah jadi hiasan yang menempel di atas kepala.
+                if (_ambient == null)
+                {
+                    _ambient = new GameObject("Ambient").transform;
+                    _ambient.SetParent(transform.parent, false);
+                }
+
+                var group = Spawn("Lewat " + slot.Entry.Prefab.name, new[] { slot.Entry.Prefab },
+                    1f, _ambient, slot.Entry.Scale);
+
+                if (group != null)
+                {
+                    // JAUH dari pemain, dan ARAHNYA acak. Versi sebelumnya menetaskannya di lokal
+                    // nol — yaitu tepat di atas pemain, menghadap arah yang sama setiap kali.
+                    // Kawanan burung yang selalu lahir di titik yang sama dan terbang ke arah yang
+                    // sama berhenti jadi kejadian pada detik kedua kalinya.
+                    float angle = Random.Range(0f, Mathf.PI * 2f);
+                    float radius = Mathf.Lerp(slot.Entry.MinDistance,
+                        Mathf.Max(slot.Entry.MinDistance + 1f, slot.Entry.Spread), Random.value);
+
+                    Vector3 at = _follow != null ? _follow.position : Vector3.zero;
+
+                    group.position = new Vector3(
+                        at.x + Mathf.Cos(angle) * radius,
+                        slot.Entry.Height,
+                        at.z + Mathf.Sin(angle) * radius);
+
+                    group.rotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+                }
 
                 slot.Live = group != null ? group.gameObject : null;
                 slot.ExpiresAt = Time.time + slot.Entry.Lifetime;
@@ -385,7 +482,7 @@ namespace Proto
         /// dan daun selebar dua meter yang melayang seperti layang-layang.
         /// </param>
         Transform Spawn(string label, GameObject[] prefabs, float speed, Transform parent = null,
-            float scale = 1f, bool coverageOnly = false)
+            float scale = 1f, bool coverageOnly = false, float grain = 1f)
         {
             if (prefabs == null || prefabs.Length == 0) return null;
 
@@ -427,6 +524,28 @@ namespace Proto
                     // jarang seiring makin lebar. Lajunya dinaikkan LINEAR terhadap skala, bukan
                     // kuadrat: mengikuti luas sebenarnya berarti 6x jadi 36x partikel, dan itu
                     // membeli kerapatan yang tidak pernah terlihat dengan harga yang terasa.
+                    // Butiran dibesarkan TERPISAH dari cakupan, dan hanya yang memang butiran.
+                    //
+                    // Prefab hujan mencampur dua hal yang ukurannya berbeda tiga ratus kali: tetes
+                    // selebar 0,09 unit, dan lembaran kabut selebar 15 unit. Satu pengali untuk
+                    // keduanya berarti memilih antara tetes yang tak terlihat atau satu billboard
+                    // kabut selebar 40 unit yang menutupi seluruh layar — dan yang kedua itulah
+                    // yang selama ini disangka "mendungnya kegelapan".
+                    if (grain != 1f)
+                    {
+                        var startSize = main.startSize;
+
+                        // Ambangnya 5 unit, bukan 1. Angin-berdaun punya butiran 0,9–1,2 — di
+                        // ambang 1 ia ikut terlewat, dan justru itu yang paling perlu dikecilkan.
+                        // Yang benar-benar harus dilindungi cuma lembaran kabut selebar 15 unit.
+                        if (startSize.constantMax <= 5f)
+                        {
+                            startSize.constantMax *= grain;
+                            startSize.constantMin *= grain;
+                            main.startSize = startSize;
+                        }
+                    }
+
                     if (coverageOnly && size > 1f)
                     {
                         var emission = system.emission;

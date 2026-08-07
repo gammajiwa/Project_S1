@@ -49,10 +49,24 @@ namespace Proto
                  "yang menunduk dari 18 unit, ukuran aslinya terbaca raksasa.")]
         [Min(0.01f)] public float Scale = 1f;
 
+        [Tooltip("Pengali ukuran BUTIRAN saja. Lembaran kabut raksasa (startSize di atas 5 unit) " +
+                 "sengaja dilewati — mengalikannya membuat satu billboard menutupi seluruh layar.")]
+        [Min(0.05f)] public float Grain = 1f;
+
+        [Tooltip("Nyala = skala hanya memperluas CAKUPAN, butirannya tetap. Mati = butiran ikut " +
+                 "membesar. Hujan butuh yang pertama; daun butuh yang kedua.")]
+        public bool CoverageOnly;
+
         [Tooltip("Ketinggian tempat efeknya LAHIR. Daun yang lahir setinggi mata tidak pernah " +
                  "terlihat jatuh — ia cuma muncul lalu mendarat. Lahir jauh di atas layar berarti " +
                  "ia sudah melayang turun sebelum masuk pandangan, dan mengecil sepanjang jalan.")]
         public float Height;
+
+        [Tooltip("Geseran mendatar titik lahirnya, relatif terhadap kamera. X negatif = ke kiri.\n\n" +
+                 "Untuk yang tertiup angin ini WAJIB tidak nol. Kalau ia lahir tepat di atas " +
+                 "pemain, angin membawanya menjauh ke satu arah saja — dan sisi yang berlawanan " +
+                 "selalu kosong, karena tidak ada satu pun daun yang pernah lahir di sana.")]
+        public Vector2 Offset;
 
         [Tooltip("Disembunyikan saat cuaca basah. Kupu-kupu yang tetap beterbangan di tengah hujan " +
                  "adalah hal pertama yang membocorkan bahwa cuacanya cuma lapisan yang ditumpuk.")]

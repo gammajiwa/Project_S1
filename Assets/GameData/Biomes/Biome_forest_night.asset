@@ -135,75 +135,229 @@ MonoBehaviour:
   GrassWidth: {x: 0.7, y: 1.3}
   TreeShadows: 1
   AmbientVfx:
-  - Prefab: {fileID: 8973330300912168040, guid: 9aa7c091dcba0854da1e0a6489480cb8, type: 3}
-    Chance: 0.85
+  - Prefab: {fileID: 885642106820311149, guid: 907a599345fcdce43a93e33092c9c23e, type: 3}
+    Chance: 0.75
     RepeatEvery: 0
     Lifetime: 14
     Count: 3
     MinDistance: 7
-    Spread: 18
-    Scale: 0.5
-    Height: 1.3
+    Spread: 17
+    Scale: 0.35
+    Grain: 1
+    CoverageOnly: 0
+    Height: 1.2
+    Offset: {x: 0, y: 0}
     HideInRain: 1
-  - Prefab: {fileID: 3828618210362263252, guid: 8f41ad0a1c80078468704eac1a277797, type: 3}
-    Chance: 0.5
+    FollowCamera: 0
+  - Prefab: {fileID: 6971241529967863841, guid: 26078ef05f29a104db9d2c3278c44332, type: 3}
+    Chance: 0.45
     RepeatEvery: 0
     Lifetime: 14
     Count: 2
     MinDistance: 9
-    Spread: 20
-    Scale: 0.45
-    Height: 1.6
+    Spread: 19
+    Scale: 0.32
+    Grain: 1
+    CoverageOnly: 0
+    Height: 1.4
+    Offset: {x: 0, y: 0}
     HideInRain: 1
-  - Prefab: {fileID: 8461968100781004250, guid: 90d119ac94f1a3e4bb7c918b865b2f39, type: 3}
-    Chance: 0.55
-    RepeatEvery: 0
-    Lifetime: 14
-    Count: 2
-    MinDistance: 6
-    Spread: 15
-    Scale: 0.5
-    Height: 0.6
-    HideInRain: 1
+    FollowCamera: 0
   - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
-    Chance: 0.5
+    Chance: 0.8
     RepeatEvery: 0
     Lifetime: 14
     Count: 1
     MinDistance: 6
     Spread: 16
-    Scale: 0.4
+    Scale: 0.1
+    Grain: 1
+    CoverageOnly: 0
     Height: 15
+    Offset: {x: -22, y: 0}
     HideInRain: 0
+    FollowCamera: 1
+  - Prefab: {fileID: 1075691852205303549, guid: ed92b7453a076ed4cbadb64dc2e8f7e5, type: 3}
+    Chance: 0.3
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 1
+    MinDistance: 6
+    Spread: 16
+    Scale: 0.09
+    Grain: 1
+    CoverageOnly: 0
+    Height: 14
+    Offset: {x: -26, y: 0}
+    HideInRain: 0
+    FollowCamera: 1
+  - Prefab: {fileID: 3105971867596470410, guid: f98910772b6a83248bd86304a7837293, type: 3}
+    Chance: 0.8
+    RepeatEvery: 45
+    Lifetime: 18
+    Count: 1
+    MinDistance: 28
+    Spread: 60
+    Scale: 0.7
+    Grain: 1
+    CoverageOnly: 0
+    Height: 14
+    Offset: {x: 0, y: 0}
+    HideInRain: 0
+    FollowCamera: 0
   WeatherMoods:
-  - Name: Sunyi
+  - Name: Cerah
     Effects: []
-    Weight: 4
+    Weight: 3.5
     Speed: 1
-    Scale: 1
     Wet: 0
     Overcast: 0
   - Name: Berangin
     Effects:
-    - {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
-    Weight: 2
-    Speed: 0.8
-    Scale: 2.5
+    - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 1.8
+      Grain: 0.2
+      CoverageOnly: 0
+      Height: 12
+      Offset: {x: -22, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    Weight: 2.5
+    Speed: 1
     Wet: 0
-    Overcast: 0
+    Overcast: 0.15
   - Name: Gerimis
     Effects:
-    - {fileID: 462285787367926183, guid: 930b1612c29db3342ac0d3b6b97d692c, type: 3}
-    Weight: 1.5
+    - Prefab: {fileID: 462285787367926183, guid: 930b1612c29db3342ac0d3b6b97d692c, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 2.4
+      Grain: 1.1
+      CoverageOnly: 1
+      Height: 0
+      Offset: {x: 0, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    - Prefab: {fileID: 161898164893142898, guid: a4cd458af09655443839cde63bed5f7b, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 1.2
+      Grain: 0.25
+      CoverageOnly: 0
+      Height: 0
+      Offset: {x: 0, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    Weight: 2
     Speed: 0.85
-    Scale: 4
     Wet: 1
-    Overcast: 0.35
+    Overcast: 0.3
+  - Name: Hujan
+    Effects:
+    - Prefab: {fileID: 1598139546896201481, guid: 8a45e81b43a1eb6489c7fd455eae937d, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 2.6
+      Grain: 1.1
+      CoverageOnly: 1
+      Height: 0
+      Offset: {x: 0, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 1.8
+      Grain: 0.2
+      CoverageOnly: 0
+      Height: 12
+      Offset: {x: -22, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    - Prefab: {fileID: 161898164893142898, guid: a4cd458af09655443839cde63bed5f7b, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 1.2
+      Grain: 0.25
+      CoverageOnly: 0
+      Height: 0
+      Offset: {x: 0, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    Weight: 1.5
+    Speed: 1
+    Wet: 1
+    Overcast: 0.5
+  - Name: Badai
+    Effects:
+    - Prefab: {fileID: 4366900416175226820, guid: c75e302e0191e4049ad0274e59a3a7b8, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 3
+      Grain: 1.2
+      CoverageOnly: 1
+      Height: 0
+      Offset: {x: 0, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    - Prefab: {fileID: 3792357185661704330, guid: 3435be00fe815dc42a8e577a7fc47bd8, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 2
+      Grain: 0.2
+      CoverageOnly: 0
+      Height: 12
+      Offset: {x: -26, y: 0}
+      HideInRain: 0
+      FollowCamera: 0
+    Weight: 0.8
+    Speed: 1.25
+    Wet: 1
+    Overcast: 0.7
+  OvercastSun: 0.85
+  OvercastAmbient: 1.3
+  OvercastCloud: 0.7
+  RainPlayerLight: 5.5
   SmokePocket: {fileID: 0}
   GloomLayers: 1
   GloomWobble: 11
   GloomCeiling: 0.92
   GloomFollowsCamera: 1
+  GloomMaterial: {fileID: 2100000, guid: 745f0fbe544115243bc98ae7480740dc, type: 2}
   GloomColor: {r: 0.012, g: 0.02, b: 0.045, a: 1}
   GloomStart: 15
   GloomEnd: 27

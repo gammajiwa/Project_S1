@@ -245,6 +245,25 @@ namespace Proto
                  "wave selalu ada sesuatu yang jatuh dari langit.")]
         public WeatherMood[] WeatherMoods;
 
+        [Header("Mendung — seberapa jauh cuaca boleh menggelapkan")]
+        [Tooltip("Pengali matahari saat mendung PENUH. 1 = tidak diredupkan sama sekali.\n\n" +
+                 "Ini rem-nya. Cuaca cuma menentukan SEBERAPA mendung (0–1); seberapa gelap " +
+                 "mendung penuh itu boleh, ditentukan di sini.")]
+        [Range(0.2f, 1f)] public float OvercastSun = 0.85f;
+
+        [Tooltip("Pengali ambient saat mendung penuh. DI ATAS 1, dan itu memang benar: saat " +
+                 "mendung, matahari hilang tapi seluruh kubah langit berubah jadi lampu.")]
+        [Range(0.5f, 2f)] public float OvercastAmbient = 1.3f;
+
+        [Tooltip("Kepekatan awan saat mendung penuh. 0 = awan tidak ikut menebal.")]
+        [Range(0f, 1f)] public float OvercastCloud = 0.75f;
+
+        [Tooltip("Intensitas lampu pemain SAAT HUJAN. Nol = tidak dinyalakan.\n\n" +
+                 "Di siang cerah lampu pemain mati karena tidak membeli apa pun. Begitu mendung " +
+                 "turun ia justru jadi satu-satunya sumber hangat di layar — dan sekaligus yang " +
+                 "menjaga pemain tetap terbaca saat lapangannya meredup.")]
+        [Range(0f, 12f)] public float RainPlayerLight = 3.5f;
+
         [Header("Asap volumetrik")]
         [Tooltip("Kantong udara bersih yang menempel di pemain. Asapnya sendiri adalah kabut " +
                  "global; yang ini MENGURANGI kepadatannya di sekitar pemain, jadi yang tersisa " +
@@ -269,6 +288,14 @@ namespace Proto
                  "dan tepi layar yang berlawanan diam-diam menggelap.")]
         public bool GloomFollowsCamera = true;
 
+        [Tooltip("Material kegelapan jarak. ASET, bukan dibuat saat bermain.\n\n" +
+                 "Versi sebelumnya membuat material baru tiap kali wajah arena dipasang, dan itu " +
+                 "berarti setiap penyetelan di Inspector hilang begitu play mode dimulai — " +
+                 "menyetel shader jadi mustahil. Karena ini aset, apa pun yang disetel di sini " +
+                 "bertahan, termasuk yang disetel SAAT sedang bermain.")]
+        public Material GloomMaterial;
+
+        [Tooltip("Dipakai hanya kalau GloomMaterial kosong.")]
         public Color GloomColor = new Color(0.012f, 0.02f, 0.045f, 1f);
 
         [Tooltip("Jarak dari pemain tempat kegelapan MULAI. Di dalam ini lapangan bersih.")]

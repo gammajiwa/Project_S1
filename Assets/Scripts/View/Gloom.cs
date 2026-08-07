@@ -39,6 +39,8 @@ namespace Proto
         Transform _player;
         Transform _plane;
         Material _material;
+        Renderer _renderer;
+        MaterialPropertyBlock _block;
         float _span;
         bool _centreOnCamera = true;
 
@@ -61,12 +63,28 @@ namespace Proto
 
             if (biome == null || _follow == null || biome.GloomLayers == 0) return;
 
-            var shader = Shader.Find("Grimoire/Gloom");
+            // Material ASET dipakai APA ADANYA — tidak disalin, tidak dibuat ulang.
+            //
+            // Versi sebelumnya memanggil `new Material(shader)` di sini, dan itu yang membuat
+            // setiap penyetelan di Inspector lenyap begitu play mode dimulai: yang disetel adalah
+            // asetnya, yang dipakai adalah salinan baru. Memakai asetnya langsung berarti apa pun
+            // yang disetel bertahan — termasuk yang disetel SAAT sedang bermain.
+            _material = biome.GloomMaterial;
 
-            if (shader == null)
+            if (_material == null)
             {
-                Debug.LogError("[Gloom] shader Grimoire/Gloom tidak ketemu.");
-                return;
+                var shader = Shader.Find("Grimoire/Gloom");
+
+                if (shader == null)
+                {
+                    Debug.LogError("[Gloom] shader Grimoire/Gloom tidak ketemu.");
+                    return;
+                }
+
+                _material = new Material(shader) { name = "Gloom (sementara)" };
+                Debug.LogWarning("[Gloom] GloomMaterial kosong di biome — dipakai material " +
+                                 "sementara, dan penyetelannya TIDAK akan tersimpan. Jalankan " +
+                                 "Tools/Grimoire/Generate Biomes untuk membuat asetnya.");
             }
 
             var go = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -84,32 +102,19 @@ namespace Proto
             // terbaca punya permukaan alih-alih sekadar warna yang ditumpuk.
             go.transform.localPosition = new Vector3(0f, 1.6f, 0f);
 
-            _material = new Material(shader) { name = "Gloom (Grimoire)" };
-
-            _material.SetColor(Tint, biome.GloomColor);
-            _material.SetFloat(Inner, biome.GloomStart);
-            _material.SetFloat(Outer, biome.GloomEnd);
-            _material.SetFloat(Scale, biome.GloomSize);
-            _material.SetFloat(Churn, biome.GloomChurn);
-            _material.SetFloat(Drift, biome.GloomDrift);
-            _material.SetFloat(Wobble, biome.GloomWobble);
-            _material.SetFloat(DotSize, biome.GloomDotSize);
-            _material.SetFloat(Smooth, biome.GloomSmooth);
-            _material.SetFloat(Ceiling, biome.GloomCeiling);
-
             _centreOnCamera = biome.GloomFollowsCamera;
 
-            var renderer = go.GetComponent<Renderer>();
-            renderer.sharedMaterial = _material;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
+            _renderer = go.GetComponent<Renderer>();
+            _renderer.sharedMaterial = _material;
+            _renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            _renderer.receiveShadows = false;
 
             _plane = go.transform;
         }
 
         void LateUpdate()
         {
-            if (_follow == null || _material == null) return;
+            if (_follow == null || _material == null || _renderer == null) return;
 
             Vector3 at = _follow.position;
             transform.position = new Vector3(at.x, 0f, at.z);
@@ -122,7 +127,16 @@ namespace Proto
             // berlawanan diam-diam menggelap — yang terbaca sebagai kegelapan yang menjalar masuk
             // tiap kali pemain bergerak, bukan sebagai tempat yang tetap.
             Vector3 heart = _centreOnCamera || _player == null ? at : _player.position;
-            _material.SetVector(Centre, new Vector4(heart.x, heart.z, 0f, 0f));
+
+            // Lewat MaterialPropertyBlock, BUKAN ke materialnya. Materialnya sekarang aset yang
+            // dipakai bersama; menulis titik pusat ke sana tiap frame akan menandai aset itu kotor
+            // enam puluh kali sedetik, dan penyetelan yang sedang dikerjakan orang bisa tertimpa
+            // di tengah jalan.
+            if (_block == null) _block = new MaterialPropertyBlock();
+
+            _renderer.GetPropertyBlock(_block);
+            _block.SetVector(Centre, new Vector4(heart.x, heart.z, 0f, 0f));
+            _renderer.SetPropertyBlock(_block);
         }
     }
 }

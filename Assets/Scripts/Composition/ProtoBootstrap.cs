@@ -126,7 +126,7 @@ namespace Proto
 
                 var weather = new GameObject("Weather").AddComponent<Weather>();
                 weather.transform.SetParent(transform, false);
-                weather.Init(_rig, sun, sky);
+                weather.Init(_rig, sun, sky, glow);
 
                 dresser.Attach(lamps, glow, sky, gloom, weather, playerGo.transform);
             }

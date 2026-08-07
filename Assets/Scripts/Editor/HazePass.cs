@@ -244,14 +244,21 @@ namespace Proto.EditorTools
             // Dikembalikan ke tipis. Sempat dinaikkan ke 22 supaya kejauhan jadi asap pekat, tapi
             // yang mengerjakan kegelapan jarak sekarang shader Gloom — dan kabut setebal itu di
             // atasnya cuma memutihkan apa yang seharusnya menggelap.
-            Set(fog.GlobalDensityMultiplier, night ? 3f : 4f);
+            // Siang DITIPISKAN ke 1,2. Kabut yang cukup tebal untuk terlihat sebagai kabut mengubah
+            // lapangan terbuka jadi pagi berkabut, dan yang dicari bukan itu — yang dicari udara
+            // yang punya isi supaya cahaya punya tempat menyebar. Begitu ia mulai terlihat sebagai
+            // lapisan, ia sudah kelewatan.
+            Set(fog.GlobalDensityMultiplier, night ? 3f : 0.55f);
             Set(fog.GlobalDensityThreshold, night ? 0.3f : 0.35f);
 
             // Warna kabut mengikuti ambient, bukan matahari: bagian yang TIDAK kena cahaya
             // seharusnya membiru, dan itu yang membuat udaranya terasa punya kedalaman.
+            // Siang DITERANGKAN. Warna ini yang dipakai kabut untuk menyala sendiri di bagian
+            // yang tidak kena matahari — kalau gelap, kabutnya berhenti jadi udara dan berubah jadi
+            // lapisan abu-abu yang menutupi lapangan.
             Set(fog.AmbientColor, night
                 ? new Color(0.07f, 0.1f, 0.2f)
-                : new Color(0.22f, 0.3f, 0.42f));
+                : new Color(0.5f, 0.6f, 0.7f));
 
             // Sumbangan cahaya utama jauh melebihi 1 dengan sengaja — di situlah sinarnya jadi
             // berkas. Bulan menyumbang jauh lebih sedikit daripada matahari.
