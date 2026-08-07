@@ -23,6 +23,23 @@ namespace Proto
         Transform _ambient;
         Transform _mood;
 
+        // Simpul untuk efek yang MENEMPEL di kamera (daun, hujan suasana). Dulu mereka ditanam
+        // langsung di transform ini dan tidak pernah ikut dibersihkan saat wajah arena berganti —
+        // tiap pergantian siang/malam menumpuk satu set daun lagi, tanpa satu pun error.
+        Transform _carried;
+
+        struct CarriedFx
+        {
+            public Transform Node;
+            public bool HideInRain;
+            public bool OnlyClear;
+        }
+
+        // Efek ikut-kamera dicatat dengan flag cuacanya sendiri. Daftar kantong tidak memuat
+        // mereka, jadi tanpa ini debu matahari terus berkedip di tengah badai.
+        readonly System.Collections.Generic.List<CarriedFx> _carriedFx =
+            new System.Collections.Generic.List<CarriedFx>();
+
         BiomeDefinition _biome;
         float[] _cumulative = System.Array.Empty<float>();
         int _current = -1;
@@ -45,12 +62,27 @@ namespace Proto
 
         Light _playerLight;
 
-        public void Init(Transform follow, Light sun, Atmosphere sky, Light playerLight)
+        // Jarak "pasti di luar layar" dari pusat kamera, dihitung dari kameranya sendiri. Nol
+        // kalau kameranya tidak dititipkan — dan saat itu MinDistance di aset yang menentukan.
+        float _offscreen;
+
+        public void Init(Transform follow, Light sun, Atmosphere sky, Light playerLight,
+            Camera cam = null)
         {
             _follow = follow;
             _sun = sun;
             _sky = sky;
             _playerLight = playerLight;
+
+            if (cam != null && cam.orthographic)
+            {
+                // Setengah diagonal layar di lantai, plus margin untuk lebar pemancarnya sendiri.
+                // Kawanan burung yang menetas DI DALAM pandangan berhenti jadi kejadian yang
+                // melintas — ia cuma muncul, dan mata menangkap kemunculannya seketika.
+                float halfW = cam.orthographicSize * cam.aspect;
+                float halfH = cam.orthographicSize;
+                _offscreen = Mathf.Sqrt(halfW * halfW + halfH * halfH) + 7f;
+            }
         }
 
         public void Apply(BiomeDefinition biome)
@@ -61,9 +93,11 @@ namespace Proto
 
             Clear(ref _ambient);
             Clear(ref _mood);
+            Clear(ref _carried);
 
             _passing.Clear();
             _pockets.Clear();
+            _carriedFx.Clear();
 
             if (biome == null || _follow == null) return;
 
@@ -101,17 +135,18 @@ namespace Proto
         /// <summary>
         /// Mengundi cuaca untuk wave ini.
         ///
-        /// Diseed dari NOMOR WAVE lewat System.Random, bukan dari UnityEngine.Random. Yang terakhir
-        /// itu urutan acak milik gameplay — jenis musuh, sebaran drop, arah semburan skill — dan
-        /// mengambil satu angka dari sana menggeser seluruh sisanya. Diseed juga berarti wave yang
-        /// sama selalu bercuaca sama, jadi "wave 7 itu yang hujan" tetap benar di setiap run.
+        /// Diturunkan dari NOMOR WAVE lewat <see cref="WaveHash"/>, bukan dari UnityEngine.Random.
+        /// Yang terakhir itu urutan acak milik gameplay — jenis musuh, sebaran drop, arah semburan
+        /// skill — dan mengambil satu angka dari sana menggeser seluruh sisanya. Deterministik juga
+        /// berarti wave yang sama selalu bercuaca sama: "wave 7 itu yang hujan" benar di setiap run.
+        /// (Kenapa bukan System.Random ber-seed wave: lihat catatan di WaveHash — seed berjajar
+        /// menghasilkan cuaca yang mengeblok berbelas wave.)
         /// </summary>
         public void Roll(int wave)
         {
             if (_biome == null || _cumulative.Length == 0) return;
 
-            var dice = new System.Random(wave * 7919 + 104729);
-            float roll = (float)dice.NextDouble();
+            float roll = WaveHash.Roll01(wave, 104729);
 
             int pick = _cumulative.Length - 1;
 
@@ -154,12 +189,28 @@ namespace Proto
             // Kupu-kupu berteduh. Yang tetap beterbangan di tengah hujan adalah hal pertama yang
             // membocorkan bahwa cuacanya cuma lapisan yang ditumpuk di atas suasana, bukan sesuatu
             // yang terjadi PADA lapangannya.
+            //
+            // "Cerah" TIDAK disimpan sebagai flag di mood — ia diturunkan: tidak basah dan tidak
+            // ada satu pun efek yang jatuh dari langit. Flag terpisah pasti lupa dicentang di
+            // salah satu mood suatu hari, dan gagalnya diam: berkas matahari di tengah badai.
+            bool clear = !mood.Wet && (mood.Effects == null || mood.Effects.Length == 0);
+
             for (int i = 0; i < _pockets.Count; i++)
             {
                 var pocket = _pockets[i];
-                if (pocket.Node == null || !pocket.HideInRain) continue;
+                if (pocket.Node == null) continue;
 
-                pocket.Node.gameObject.SetActive(!mood.Wet);
+                bool hidden = (pocket.HideInRain && mood.Wet) || (pocket.OnlyClear && !clear);
+                pocket.Node.gameObject.SetActive(!hidden);
+            }
+
+            for (int i = 0; i < _carriedFx.Count; i++)
+            {
+                var fx = _carriedFx[i];
+                if (fx.Node == null) continue;
+
+                bool hidden = (fx.HideInRain && mood.Wet) || (fx.OnlyClear && !clear);
+                fx.Node.gameObject.SetActive(!hidden);
             }
 
             Lantern(mood.Wet);
@@ -280,13 +331,27 @@ namespace Proto
                     // Menempel di kamera: yang cakupannya luas dan seragam tidak perlu dihitung di
                     // luar layar sama sekali. Itu juga sebabnya ia tidak ikut daftar kantong —
                     // tidak ada yang perlu dipindahkan, karena ia tidak pernah tertinggal.
+                    // Digantung di simpul sendiri supaya ikut dibersihkan saat wajah berganti.
+                    if (_carried == null)
+                    {
+                        _carried = new GameObject("Ikut Kamera").transform;
+                        _carried.SetParent(transform, false);
+                    }
+
                     var carried = Spawn("Ikut " + entry.Prefab.name, new[] { entry.Prefab },
-                        1f, transform, entry.Scale);
+                        1f, _carried, entry.Scale, entry.CoverageOnly, entry.Grain);
 
                     if (carried != null)
                     {
                         carried.localPosition =
                             new Vector3(entry.Offset.x, entry.Height, entry.Offset.y);
+
+                        _carriedFx.Add(new CarriedFx
+                        {
+                            Node = carried,
+                            HideInRain = entry.HideInRain,
+                            OnlyClear = entry.OnlyClear
+                        });
                     }
 
                     continue;
@@ -315,6 +380,7 @@ namespace Proto
             public float Far;
             public float Height;
             public bool HideInRain;
+            public bool OnlyClear;
         }
 
         readonly System.Collections.Generic.List<Pocket> _pockets =
@@ -353,7 +419,8 @@ namespace Proto
                     Near = entry.MinDistance,
                     Far = Mathf.Max(entry.MinDistance + 1f, entry.Spread),
                     Height = entry.Height,
-                    HideInRain = entry.HideInRain
+                    HideInRain = entry.HideInRain,
+                    OnlyClear = entry.OnlyClear
                 };
 
                 Place(pocket);
@@ -437,9 +504,13 @@ namespace Proto
                     // nol — yaitu tepat di atas pemain, menghadap arah yang sama setiap kali.
                     // Kawanan burung yang selalu lahir di titik yang sama dan terbang ke arah yang
                     // sama berhenti jadi kejadian pada detik kedua kalinya.
+                    //
+                    // Batas bawahnya DIPAKSA ke luar layar, berapa pun angka di asetnya. Yang lewat
+                    // harus DATANG dari suatu tempat — yang menetas di dalam pandangan cuma muncul.
                     float angle = Random.Range(0f, Mathf.PI * 2f);
-                    float radius = Mathf.Lerp(slot.Entry.MinDistance,
-                        Mathf.Max(slot.Entry.MinDistance + 1f, slot.Entry.Spread), Random.value);
+                    float near = Mathf.Max(slot.Entry.MinDistance, _offscreen);
+                    float radius = Mathf.Lerp(near, Mathf.Max(near + 1f, slot.Entry.Spread),
+                        Random.value);
 
                     Vector3 at = _follow != null ? _follow.position : Vector3.zero;
 

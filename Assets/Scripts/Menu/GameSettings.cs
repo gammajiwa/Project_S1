@@ -27,7 +27,11 @@ namespace Proto
         public int Width;
         public int Height;
         public bool VSync = true;
-        public int FrameCap = 60;
+
+        // TANPA BATAS, dan itu koreksi. Cap 60 sebagai bawaan membuat game yang sanggup lebih
+        // terkunci di 60 — dan tiap frame yang meleset jatuh terasa ke 30-an. Yang mau membatasi
+        // fps tetap bisa lewat menu; bawaan tidak boleh jadi pagar.
+        public int FrameCap = FrameCapUnlimited;
 
         public float MasterVolume = 1f;
 
@@ -45,7 +49,7 @@ namespace Proto
                 Width = PlayerPrefs.GetInt(KeyWidth, Screen.width),
                 Height = PlayerPrefs.GetInt(KeyHeight, Screen.height),
                 VSync = PlayerPrefs.GetInt(KeyVSync, QualitySettings.vSyncCount > 0 ? 1 : 0) == 1,
-                FrameCap = PlayerPrefs.GetInt(KeyFrameCap, 60),
+                FrameCap = PlayerPrefs.GetInt(KeyFrameCap, FrameCapUnlimited),
                 MasterVolume = PlayerPrefs.GetFloat(KeyMaster, 1f),
                 SfxVolume = PlayerPrefs.GetFloat(KeySfx, 1f),
                 MusicVolume = PlayerPrefs.GetFloat(KeyMusic, 0.7f)

@@ -100,13 +100,6 @@ namespace Proto
 
         UnityEngine.Rendering.Volume _volume;
 
-        /// <summary>
-        /// Pergantian otomatis tiap beberapa wave. MATI, dan itu keputusan lama yang masih berlaku:
-        /// wajah arena yang berganti sendiri tidak pernah sempat dikenali. Siang dan malam sekarang
-        /// dua aset, tapi yang menggantinya tombol — bukan hitungan wave.
-        /// </summary>
-        public bool AutoCycle;
-
         public BiomeDefinition Current => _current;
         public int LoadedChunks => _chunks.Count;
         public int Faces => _biomes != null ? _biomes.Length : 0;
@@ -209,23 +202,25 @@ namespace Proto
             Apply(_biomes[0]);
         }
 
-        /// <summary>Mati kecuali <see cref="AutoCycle"/> dinyalakan — lihat catatannya di sana.</summary>
+        /// <summary>
+        /// Siang atau malam, diundi per wave. Peluang malamnya <c>GameBalance.NightChance</c>,
+        /// diseed dari NOMOR WAVE — wave yang sama selalu siang/malam yang sama di setiap run,
+        /// persis aturan yang dipakai cuaca. Pengali seed-nya beda dari milik cuaca supaya
+        /// keduanya tidak sinkron: "tiap malam pasti hujan" adalah pola, dan pola terbaca.
+        /// </summary>
         public void OnWaveStarted(int wave)
         {
-            // Cuaca diundi ulang tiap wave TERLEPAS dari AutoCycle. Yang dimatikan AutoCycle adalah
-            // pergantian wajah arena — siang jadi malam sendiri — bukan cuaca. Wajah yang berganti
-            // sendiri tidak pernah sempat dikenali; cuaca yang berganti justru sebaliknya.
+            // Wajah DULU, cuaca SESUDAHNYA. Apply() menyetel ulang Weather dari nol, jadi cuaca
+            // yang diundi sebelum pergantian wajah ikut terhapus olehnya — kebalikan urutannya
+            // menghasilkan wave malam yang selalu bercuaca bawaan, tanpa satu pun error.
+            if (_biomes != null && _biomes.Length > 1 && _balance != null)
+            {
+                int index = WaveHash.Roll01(wave, 3389) < _balance.NightChance ? 1 : 0;
+
+                if (_biomes[index] != null && _biomes[index] != _current) Apply(_biomes[index]);
+            }
+
             if (_weather != null) _weather.Roll(wave);
-
-            if (!AutoCycle) return;
-            if (_biomes == null || _biomes.Length <= 1) return;
-
-            int every = Mathf.Max(1, _balance.BiomeEveryWaves);
-            int index = Mathf.Max(0, wave - 1) / every % _biomes.Length;
-
-            if (_biomes[index] == _current) return;
-
-            Apply(_biomes[index]);
         }
 
         void Apply(BiomeDefinition biome)

@@ -72,6 +72,11 @@ namespace Proto
                  "adalah hal pertama yang membocorkan bahwa cuacanya cuma lapisan yang ditumpuk.")]
         public bool HideInRain;
 
+        [Tooltip("Cuma muncul saat cuaca CERAH — bukan sekadar tidak hujan. Berkas matahari yang " +
+                 "tetap menyala di bawah langit berangin-mendung membocorkan lapisannya sama " +
+                 "seperti kupu-kupu di tengah hujan.")]
+        public bool OnlyClear;
+
         [Tooltip("Menempel di kamera alih-alih ditaruh sebagai kantong di titik dunia.\n\n" +
                  "Untuk yang CAKUPANNYA LUAS dan seragam — daun berguguran, hujan. Yang seperti itu " +
                  "seharusnya ada di mana-mana, jadi menghitungnya di luar layar cuma membayar " +

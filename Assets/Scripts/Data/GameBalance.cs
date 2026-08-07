@@ -148,8 +148,10 @@ namespace Proto
         [Tooltip("Boss muncul tiap kelipatan wave ini. 0 = tidak pernah.")]
         public int BossEveryWaves = 10;
 
-        [Tooltip("Wajah arena berganti tiap sekian wave. Cuma berlaku kalau biome-nya lebih dari satu.")]
-        [Min(1)] public int BiomeEveryWaves = 5;
+        [Tooltip("Peluang satu wave jatuh di MALAM hari. Diundi per wave dan diseed dari nomor " +
+                 "wave-nya — wave yang sama selalu siang/malam yang sama di setiap run, persis " +
+                 "aturan yang dipakai cuaca. 0 = selalu siang. Cuma berlaku kalau biome-nya dua.")]
+        [Range(0f, 1f)] public float NightChance = 0.5f;
 
         [Header("Kamera")]
         [Tooltip("Besar zona mati kamera, sebagai porsi setengah layar. Pemain boleh bergerak " +
@@ -226,6 +228,11 @@ namespace Proto
         [Range(0f, 1f)] public float KillDropChance = 0.04f;
         public int WaveClearDrops = 1;
         [Range(0f, 1f)] public float RuneShareOfDrops = 0.25f;
+
+        [Tooltip("Bobot bintang drop, indeks 0 = ★1. Dinormalkan sendiri, totalnya bebas.\n\n" +
+                 "★5 dipatok NOL dan itu aturan desain: bintang lima hanya lahir dari resep — " +
+                 "puncak menara harus dibangun, bukan dipungut. ★4 boleh jatuh tapi langka.")]
+        public float[] DropStarWeights = { 82f, 12f, 4.5f, 1.5f, 0f };
 
         [Tooltip("Batas drop dari kill yang ditahan sampai wave beres. Kelebihannya langsung jadi " +
                  "koin — tanpa ini wave besar menumpahkan dua puluh item sekaligus ke layar.")]

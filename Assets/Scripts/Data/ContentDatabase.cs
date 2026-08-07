@@ -29,6 +29,19 @@ namespace Proto
         readonly List<PieceDefinition> _runes = new List<PieceDefinition>();
         readonly List<PieceDefinition> _droppableSkills = new List<PieceDefinition>();
         readonly List<PieceDefinition> _starTwo = new List<PieceDefinition>();
+
+        // Pool drop per bintang, indeks = bintang − 1. ★5 ikut diindeks dengan sengaja: yang
+        // memutuskan ia tidak pernah jatuh adalah BOBOT di GameBalance (nol), bukan pool yang
+        // hilang — aturan desain harus tinggal di aset penyetelan, bukan tersembunyi di indeks.
+        readonly List<PieceDefinition>[] _dropRunesByStar = NewPools();
+        readonly List<PieceDefinition>[] _dropOthersByStar = NewPools();
+
+        static List<PieceDefinition>[] NewPools()
+        {
+            var pools = new List<PieceDefinition>[5];
+            for (int i = 0; i < pools.Length; i++) pools[i] = new List<PieceDefinition>();
+            return pools;
+        }
         bool _indexed;
 
         public IReadOnlyList<PieceDefinition> Pieces => _pieces;
@@ -124,6 +137,12 @@ namespace Proto
             _droppableSkills.Clear();
             _starTwo.Clear();
 
+            for (int i = 0; i < _dropRunesByStar.Length; i++)
+            {
+                _dropRunesByStar[i].Clear();
+                _dropOthersByStar[i].Clear();
+            }
+
             for (int i = 0; i < _pieces.Count; i++)
             {
                 var p = _pieces[i];
@@ -139,6 +158,9 @@ namespace Proto
                 }
                 else if (p.CanDrop) _droppableSkills.Add(p);
                 else if (p.Stars == 2) _starTwo.Add(p);
+
+                int star = Mathf.Clamp(p.Stars, 1, 5);
+                (p.IsRune ? _dropRunesByStar : _dropOthersByStar)[star - 1].Add(p);
             }
 
             _indexed = true;
@@ -150,17 +172,50 @@ namespace Proto
             return _byId.TryGetValue(id, out var piece) ? piece : null;
         }
 
-        /// <summary>Kill / wave reward. Only 1-star pieces ever drop.</summary>
-        public PieceDefinition RandomDrop(float runeShare)
+        /// <summary>
+        /// Kill / wave reward. Bintangnya diundi dari bobot (indeks 0 = ★1) — bobot nol berarti
+        /// bintang itu tidak pernah jatuh, dan ★5 memang dipatok nol di GameBalance: ia hanya
+        /// lahir dari resep. Tanpa bobot (null), hanya ★1 — perilaku lama.
+        /// </summary>
+        public PieceDefinition RandomDrop(float runeShare, float[] starWeights = null)
         {
             Index();
 
-            bool wantRune = Random.value < runeShare;
-            var pool = wantRune ? _runes : _droppableSkills;
-            if (pool.Count == 0) pool = _runes.Count > 0 ? _runes : _droppableSkills;
-            if (pool.Count == 0) return null;
+            // Bintang yang pool-nya kosong TURUN setingkat, bukan gagal senyap — undian ★4 di
+            // konten yang belum punya ★4 harus tetap menjatuhkan sesuatu.
+            for (int star = RollStar(starWeights); star >= 1; star--)
+            {
+                var runes = _dropRunesByStar[star - 1];
+                var others = _dropOthersByStar[star - 1];
 
-            return pool[Random.Range(0, pool.Count)];
+                bool wantRune = Random.value < runeShare;
+                var pool = wantRune ? runes : others;
+                if (pool.Count == 0) pool = runes.Count > 0 ? runes : others;
+                if (pool.Count == 0) continue;
+
+                return pool[Random.Range(0, pool.Count)];
+            }
+
+            return null;
+        }
+
+        static int RollStar(float[] weights)
+        {
+            if (weights == null || weights.Length == 0) return 1;
+
+            float total = 0f;
+            for (int i = 0; i < weights.Length && i < 5; i++) total += Mathf.Max(0f, weights[i]);
+            if (total <= 0f) return 1;
+
+            float roll = Random.value * total;
+
+            for (int i = 0; i < weights.Length && i < 5; i++)
+            {
+                roll -= Mathf.Max(0f, weights[i]);
+                if (roll <= 0f) return i + 1;
+            }
+
+            return 1;
         }
 
         /// <summary>One shop slot: mostly 1-star, with a small window for a 2-star hit.</summary>

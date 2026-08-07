@@ -1005,7 +1005,7 @@ namespace Proto
         {
             for (int i = 0; i < _balance.WaveClearDrops; i++)
             {
-                var bonus = _db.RandomDrop(_balance.RuneShareOfDrops);
+                var bonus = _db.RandomDrop(_balance.RuneShareOfDrops, _balance.DropStarWeights);
                 if (bonus != null) _pendingDrops.Add(bonus);
             }
 
@@ -1495,7 +1495,7 @@ namespace Proto
         {
             if (Random.value > _balance.KillDropChance) return;
 
-            var drop = _db.RandomDrop(_balance.RuneShareOfDrops);
+            var drop = _db.RandomDrop(_balance.RuneShareOfDrops, _balance.DropStarWeights);
             if (drop == null) return;
 
             if (_pendingDrops.Count < _balance.MaxDropsPerWave) _pendingDrops.Add(drop);

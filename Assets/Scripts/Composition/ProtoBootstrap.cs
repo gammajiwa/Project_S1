@@ -126,7 +126,7 @@ namespace Proto
 
                 var weather = new GameObject("Weather").AddComponent<Weather>();
                 weather.transform.SetParent(transform, false);
-                weather.Init(_rig, sun, sky, glow);
+                weather.Init(_rig, sun, sky, glow, cam);
 
                 dresser.Attach(lamps, glow, sky, gloom, weather, playerGo.transform);
             }
@@ -423,7 +423,26 @@ namespace Proto
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Player";
             go.transform.SetParent(transform, false);
-            go.transform.position = new Vector3(0f, 0.9f, 0f);
+
+            // Titik mulai DIACAK, bukan selalu pusat arena. System.Random, bukan
+            // UnityEngine.Random — yang terakhir milik gameplay, dan mengambil satu angka darinya
+            // menggeser seluruh urutan acak run. Margin menjauhkan titik lahir dari dinding:
+            // lahir menempel dinding berarti membuka wave dengan separuh arah kabur yang buntu.
+            var dice = new System.Random(System.Environment.TickCount);
+            const float margin = 9f;
+
+            float x = ((float)dice.NextDouble() * 2f - 1f)
+                      * Mathf.Max(0f, _balance.ArenaHalfX - margin);
+            float z = ((float)dice.NextDouble() * 2f - 1f)
+                      * Mathf.Max(0f, _balance.ArenaHalfZ - margin);
+
+            go.transform.position = new Vector3(x, 0.9f, z);
+
+            // Rig kamera menyusul ke titik lahir SEKARANG, sebelum ArenaCamera dipasang —
+            // komponen itu merekam fokusnya di Awake, dan rig yang masih di titik nol membuka
+            // run dengan panning panjang dari tengah arena ke pemain.
+            if (_rig != null) _rig.position = new Vector3(x, 0f, z);
+
             go.transform.localScale = new Vector3(0.9f, 0.9f, 0.9f);
 
             var col = go.GetComponent<Collider>();

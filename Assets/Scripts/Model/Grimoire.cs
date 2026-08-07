@@ -650,8 +650,41 @@ namespace Proto
             var candidates = new List<RuneInstance>();
             var group = new List<RuneInstance>();
 
+            // Grup EMAS yang sudah duduk dikunci PALING DULU, tanpa ghost. Emas adalah janji —
+            // "grup ini AKAN berevolusi" — dan piece di tangan tidak boleh mencuri anggotanya.
+            // Dulu ghost dicari lebih dulu: mengangkat kembaran salah satu bahan langsung membajak
+            // pasangan emas di papan — anggotanya ditarik ke grup kursor, garisnya berubah biru
+            // (NeedsHeldPiece), dan pemain melihat "sudah kuning kok jadi biru" tanpa menyentuh
+            // pasangannya sama sekali. Hanya lock yang boleh membubarkan grup emas.
+            //
+            // Diulang per resep sampai kering, bukan sekali — dua pasang bahan yang sama di papan
+            // adalah dua janji, dan keduanya berhak atas garisnya.
+            for (int r = 0; r < _db.Recipes.Count; r++)
+            {
+                var recipe = _db.Recipes[r];
+                if (recipe.Result == null) continue;
+
+                while (true)
+                {
+                    CollectCandidates(recipe, null, used, candidates);
+                    if (candidates.Count < recipe.Ingredients.Length) break;
+
+                    group.Clear();
+                    if (!FindClusterGroup(recipe, candidates, group, 0,
+                            recipe.Ingredients.Length, true, null)) break;
+
+                    // Cuma yang BENAR-BENAR emas (lengkap DAN hasilnya muat duduk) yang boleh
+                    // mengunci anggota. Yang lengkap tapi tidak muat tetap diurus loop utama di
+                    // bawah — birunya jujur, dan anggotanya masih boleh dipakai ghost.
+                    if (!CouldSeat(recipe.Result, group)) break;
+
+                    previews.Add(MakePreview(group, true, recipe.Result.DisplayName, ghost));
+                    for (int i = 0; i < group.Count; i++) used.Add(group[i]);
+                }
+            }
+
             // A finished recipe that uses the dragged piece is the answer the player is hunting for,
-            // so it is found first — recipe order must not bury it under someone else's partial.
+            // so it is found next — recipe order must not bury it under someone else's partial.
             if (ghost != null)
             {
                 for (int r = 0; r < _db.Recipes.Count; r++)
