@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Tampilan hutan, segel stat, kecepatan musuh, boss kelabang
-Task: Terpasang & terverifikasi programatik — belum pernah dinilai main tangan
+Feature: Ambience siang/malam + cuaca 60/20/20, drop berbintang, evo emas dikunci
+Task: Peta run ala STS (pilih portal antar wave) — sedang dikerjakan
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -723,3 +723,78 @@ panggilan yang tidak melakukan apa pun selain membacanya.
 - Teks UI in-game masih Indonesia sementara konten sudah Inggris
 - **Nol tes** — `coding-standards.md` menyebutnya BLOCKING untuk story logic
 - `design/gdd/content-plan.md` usang (target 23 skill, isi 100 piece)
+
+## Ambience & undian per-wave, drop berbintang, evo emas dikunci (2026-08-07)
+
+Umpan balik pemilik project disikat satu-satu. Semua terverifikasi programatik di play mode.
+
+### Siang/malam & cuaca — akar masalahnya dua bug diam
+
+1. **Aset malam adalah salinan mentah siang.** `BiomePass.BuildNight` memanggil
+   `CopySerialized(day, night)` LALU mengecek "daftar VFX masih kosong?" — sudah terisi
+   salinan siang, jadi guard tidak pernah menyala: kunang-kunang & embers malam tidak pernah
+   terpasang, kupu-kupu siang terbang di malam. Fix: daftar malam diselamatkan sebelum
+   CopySerialized, dikembalikan sesudahnya.
+2. **`new System.Random(wave * K + C)` menghasilkan undian MENGEBLOK.** Seed berjajar rapat
+   -> sample pertama berjajar rapat (konstruktornya cuma mengaduk linear). Terukur: undian
+   malam 50% menghasilkan wave 1-29 malam SEMUA. Pengganti: `Model/WaveHash.cs` (hash
+   avalanche), dipakai cuaca DAN biome dengan salt beda. Sesudahnya: malam 22/40, blok
+   terpanjang 9 dari 200 wave.
+
+Sebaran sekarang (permintaan user): **cerah 60% / berangin 20% / basah 20%**, siang/malam
+**50:50 per wave** (knob `GameBalance.NightChance`), diundi deterministik per nomor wave.
+Mendung dipertebal: `OvercastSun` 0,85 -> 0,72, `OvercastCloud` -> 0,8, Hujan 0,6 / Badai 0,85.
+
+### VFX suasana — siapa muncul kapan
+
+- **`AmbientVfxEntry.OnlyClear`** (flag baru): kupu-kupu, debu cahaya, berkas matahari cuma
+  muncul saat CERAH (bukan sekadar tidak hujan). "Cerah" DITURUNKAN (tidak basah && tanpa
+  efek langit), bukan flag di mood — flag terpisah pasti lupa dicentang suatu hari.
+- **Godray**: dulu `Light/Sunlight` nyangkut di paket HUJAN — satu titik debu nempel pusat
+  kamera ("godray kecil ngumpul di tengah"). Sekarang: Sunlight = debu ikut-kamera satu
+  lapis (CoverageOnly, skala 0,75) + `TSI_Sun_Shaft_01A` (ToonScapes, berkas beneran) 2
+  kantong dunia ~18 unit. Siang cerah saja.
+- **Burung lahir DI LUAR layar, dipaksa kode**: `Weather` menghitung setengah diagonal layar
+  dari kameranya (+7 margin) dan memakai `max(MinDistance, offscreen)` — angka aset tidak
+  bisa lagi menaruh burung di dalam pandangan. Burung kedua (`Birds_spin`) ditambah.
+- **Malam**: kunang-kunang (`Butterflies_*_fog`) 4+3 kantong + `Embers_calm` 3 kantong.
+- **Leak dibereskan**: efek ikut-kamera dulu ditanam langsung di transform Weather dan tidak
+  pernah dibersihkan saat wajah berganti — tiap pergantian siang/malam menumpuk satu set
+  daun. Sekarang di simpul `Ikut Kamera` yang ikut di-Clear, plus daftar `_carriedFx` supaya
+  debu ikut aturan cerah (dulu kantong doang yang dicek).
+
+### FPS "30-60"
+
+Akarnya bukan beban render: **`GameSettings.FrameCap` bawaan = 60** (dan pref lama menyimpan
+60). Cap 60 + frame meleset = kejeblos ke 30-an. Bawaan jadi TANPA BATAS, pref `opt.framecap`
+lama dihapus sekali. Terukur editor: 71 musuh + hujan = ~15 ms (67 fps) unlocked; HAZE cuma
+0,5 ms. Menu options tetap bisa nge-cap.
+
+### Drop berbintang
+
+`ContentDatabase.RandomDrop` sekarang mengundi bintang dari `GameBalance.DropStarWeights`
+(82/12/4,5/1,5/0). **Bintang 5 nol = aturan desain: hanya lahir dari resep.** Pool per
+bintang; bintang kosong turun setingkat, bukan gagal senyap. Terukur 4000 undian:
+82,6/11,7/4,3/1,5/0,0%.
+
+### Evo emas dikunci (bug "kuning kok jadi biru")
+
+Akar: di `Grimoire.FindPendingGroups`, grup GHOST (piece di tangan) dicari SEBELUM grup
+yang sudah duduk — mengangkat kembaran bahan membajak anggota pasangan emas, garis pindah
+ke kursor dan jadi biru. Fix: **grup emas (lengkap + hasil muat duduk) dikunci paling dulu,
+ghost cuma boleh pakai sisa; hanya lock yang membubarkan grup emas.** Diulang per resep
+sampai kering (dua pasang = dua janji). Diverifikasi: pasangan emas tetap emas saat kembaran
+dipegang, garis bidik ghost tetap muncul untuk piece bebas. Tas tidak kena (Preview-nya
+tanpa ghost).
+
+### Spawn player acak
+
+`ProtoBootstrap.BuildPlayer`: titik lahir diacak dalam arena (margin 9 dari dinding),
+System.Random (bukan stream gameplay). Rig kamera ikut pindah SEBELUM ArenaCamera dipasang
+(fokus direkam di Awake — tanpa ini run dibuka panning panjang dari titik nol).
+
+### Berikutnya di sesi ini
+
+- **Peta run ala STS** (pilih portal setelah wave): fight/elite/shop/event/slot/boss — WIP
+- Skill 3 + fragment (3 jalur merah/biru/kuning) + skill tree — belum
+- Slot machine VFX "dopamin" — belum
