@@ -1019,6 +1019,36 @@ dan dua screenshot.
   `KEPASANG - TERKUNCI, nggak ikut evolusi`. **Aturan mainnya belum diubah** — menunggu
   keputusan pemilik project.
 
+## Mata di sampul grimoire, pendar UI, aura buku (2026-08-09)
+
+Detail teknis: **docs/AI-HANDOFF.md §28**. Art matanya milik pemilik project; yang dibuat
+di sini nyawanya.
+
+- **`GrimoireEye`** — mengikuti kursor HANYA kalau kursor masuk `WakeRadius` (300 px, tepi
+  lembut 120). Di luar itu **celingukan**: pindah pandangan tiap 0,9–2,6 detik, 30% ke
+  tengah, 22% menunduk, sisanya bebas. Dicampur lewat `interest`, bukan ditukar mendadak.
+  Mengikuti = halus, celingukan = MENYENTAK. Kedip 0,13 s lewat squash Y. Jepitan ELIPS
+  (per-sumbu bikin juling di diagonal). `unscaledDeltaTime` — ada tombol kecepatan 5x.
+- **`Grimoire/UiGlow`** — bloom URP tidak akan pernah mengenai kanvas Overlay, jadi
+  pendarnya digambar sendiri: gradien radial additive, tanpa sprite. `EyeGlow` sengaja
+  SIBLING dari mata, bukan anaknya — sebagai anak ia terpotong Mask.
+- **`UiGloomRect`** — aura hitam memakai ulang shader `GloomEdge`. Sibling index 0, 40 px
+  lebih besar per sisi dari sampul. Putaran 1 (70 px, ceiling 0,85) jadi noda hitam besar.
+- **Judul papan**: `ShowTitle` dimatikan (mata menindihnya, tempatnya buat ornamen) +
+  `TitleArea` buat memindahkannya. **Catatan:** baris itu juga penanda "TERKUNCI - wave
+  lagi jalan"; sekarang penanda itu tidak terlihat di mana pun.
+
+Diverifikasi: kompilasi bersih; celingukan terbukti (pupil berpindah antar sampling);
+kursor 317 px di luar radius 300 → pupil balik ke tengah; screenshot aura + pendar.
+**Belum diverifikasi mata-ke-mata:** pupil mengunci arah kursor saat kursor betul-betul
+dekat — paling gampang dirasakan pemilik project sambil main.
+
+### Belum dikerjakan
+
+- `SpriteMask` bawaan di objek `eye` tidak berfungsi di Canvas (itu komponen SpriteRenderer
+  2D). Yang bekerja `Mask` UGUI. Aman dihapus, dibiarkan karena itu punya user.
+- Ornamen pengganti judul GRIMOIRE belum ada.
+
 ### Berikutnya
 
 - **Dengar catatan rasa user setelah main** — kunang-kunang baru & gloom peta yang

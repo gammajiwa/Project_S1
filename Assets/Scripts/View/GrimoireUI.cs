@@ -521,10 +521,22 @@ namespace Proto
                 }
             }
 
-            _gridTitle = MakeText("GridTitle", new Vector2(GridX, GridTop() + 8), new Vector2(400, 24), 17,
+            // Tempat bawaannya pojok kiri tepat di atas petak — benar selama papan masih polos,
+            // dan langsung salah begitu prefabnya menaruh hiasan di sana.
+            var titleAt = new Vector2(GridX, GridTop() + 8);
+
+            if (_gridRig != null && _gridRig.TitleArea != null)
+                titleAt = CanvasRectOf(_gridRig.TitleArea).min;
+
+            _gridTitle = MakeText("GridTitle", titleAt, new Vector2(400, 24), 17,
                 _theme != null ? _theme.GridTitleInk : new Color(0.85f, 0.82f, 0.95f),
                 Vector2.zero, TextAnchor.LowerLeft);
             _gridTitle.text = "GRIMOIRE";
+
+            // Prefab yang sudah membawa ornamen judulnya sendiri mematikan tulisan bawaan.
+            // Objeknya tetap DIBUAT, cuma tidak digambar: UpdateHud menulis ke sini tiap frame,
+            // dan membiarkannya null berarti menyebar pemeriksaan null ke seluruh pemakainya.
+            if (_gridRig != null && !_gridRig.ShowTitle) _gridTitle.enabled = false;
 
             // Below the three icon strips, which now own the band straight under the mana bar.
             _heldText = MakeText("HeldInfo", new Vector2(Margin, StripAilmentY - 34f),
@@ -542,6 +554,13 @@ namespace Proto
         /// dalam. Keduanya opsional — tanpa <see cref="UiTheme"/> atau tanpa sprite, papan
         /// kembali jadi petak polos persis seperti sebelum art masuk.
         /// </summary>
+        /// <summary>
+        /// Penanda dari prefab papan yang sedang berlaku, disimpan karena judul dibangun SESUDAH
+        /// bingkainya dan butuh membaca setelan yang sama. Null = tidak ada prefab, atau prefabnya
+        /// tidak membawa penanda.
+        /// </summary>
+        GrimoireGridArea _gridRig;
+
         void BuildGridFrames()
         {
             // Dikosongkan lebih dulu, SELALU. Play mode tanpa domain reload mempertahankan nilai
@@ -549,6 +568,7 @@ namespace Proto
             // milik run sebelumnya kalau baris ini tidak ada.
             GridOverride = null;
             GridGapOverride = null;
+            _gridRig = null;
 
             if (_theme == null) return;
 
@@ -571,7 +591,11 @@ namespace Proto
                 var area = marker != null ? marker.transform as RectTransform
                                           : FindGridArea(go.transform);
 
-                if (marker != null) GridGapOverride = marker.Gap;
+                if (marker != null)
+                {
+                    _gridRig = marker;
+                    GridGapOverride = marker.Gap;
+                }
 
                 if (area != null)
                 {

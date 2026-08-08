@@ -29,6 +29,20 @@ namespace Proto
                  "papan yang renggang, bukan papan yang lebih besar.")]
         [Min(0f)] public float Gap = 3f;
 
+        [Header("Judul papan")]
+        [Tooltip("Gambar tulisan \"GRIMOIRE\" di atas petak. MATIKAN kalau prefabnya sudah " +
+                 "membawa ornamen judulnya sendiri — tulisan bawaan akan menindih ornamen itu, " +
+                 "dan keduanya sama-sama jadi tidak terbaca.\n\n" +
+                 "Yang ikut hilang bukan cuma namanya: baris itu juga yang memberi tahu papan " +
+                 "sedang bisa disusun atau sedang terkunci karena wave berjalan.")]
+        public bool ShowTitle = true;
+
+        [Tooltip("Kotak tempat judul didudukkan, kalau mau dipindah dari tempat bawaannya " +
+                 "(pojok kiri di atas petak). Kosong = pakai tempat bawaan.\n\n" +
+                 "Isi dengan anak RectTransform mana pun di dalam prefab ini; yang dipakai " +
+                 "pojok kiri-bawahnya.")]
+        public RectTransform TitleArea;
+
         [Header("Bantuan menata (editor saja)")]
         [Tooltip("Gambar kotak dan petak 7x7 di Scene view. Tidak berpengaruh apa pun saat main.")]
         public bool ShowGuide = true;

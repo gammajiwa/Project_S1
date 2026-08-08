@@ -1873,6 +1873,83 @@ yang sudah kepasang diberi tahu bahwa ia belum berdiri di atas rune. Diganti `St
 > **Aturan mainnya belum diubah** — kalau yang diinginkan gembok cuma melindungi dari jual/buang
 > tanpa memblokir evolusi, itu keputusan desain dan harus diputuskan pemilik project dulu.
 
+## 28. Mata di sampul grimoire, pendar UI, dan aura buku (2026-08-09)
+
+Art pemilik project: `eye_1` (mata) dengan anak `pupil` (`eye_0`), ditaruh sendiri di
+`GrimoirePanel.prefab`. Yang ditambahkan di sini cuma nyawanya.
+
+### `GrimoireEye` — mata yang MEMILIH untuk melihat
+
+Rancangan awalnya timer: mengawasi kursor beberapa detik, lalu melepas pandangan. Diganti
+atas usul pemilik project dengan yang lebih baik — **jarak**:
+
+- Kursor masuk `WakeRadius` (300 px, tepi lembut 120 px) → matanya mengikuti.
+- Di luar itu → **celingukan sendiri**: pindah pandangan tiap 0,9–2,6 detik, dengan peluang
+  30% lurus ke tengah, 22% menunduk ke halamannya, sisanya arah bebas.
+- Keduanya **DICAMPUR** lewat `interest`, bukan ditukar di satu garis jarak — bertukar
+  mendadak terbaca sebagai patah.
+- Kecepatannya ikut dicampur: mengikuti kursor itu HALUS (`Follow` 7), berpindah saat
+  celingukan itu **MENYENTAK** (`GlanceSnap` 16). Mata sungguhan melirik dengan sentakan lalu
+  diam; meluncur pelan terbaca sebagai benda yang digeser.
+- Undian arah bebas pakai **akar** dari angka acak — tanpa itu titiknya menggerombol di pusat
+  elips dan semua lirikannya jadi kecil.
+
+Detail yang menentukan:
+
+- **Jepitan ELIPS, bukan per sumbu.** Menjepit tiap sumbu sendiri membiarkan lirikan diagonal
+  menampung simpangan penuh di kedua sumbu sekaligus — bola matanya menonjol lebih jauh saat
+  melirik ke pojok daripada saat melirik lurus, dan itu terbaca sebagai juling.
+- **`Time.unscaledDeltaTime`.** Permainan punya tombol kecepatan 1x–5x; mata yang ikut skala
+  akan melirik dengan kecepatan konyol di 5x dan membeku saat dijeda.
+- **Kedip** = squash sumbu Y lewat `sin`, 0,13 detik, turun-naik tanpa jeda di titik terpejam
+  (jeda di sana terbaca sebagai mengantuk). Pendarnya ikut padam — mata terpejam yang tetap
+  bercahaya membatalkan seluruh kedipannya.
+- **`Mask` UGUI** dipasang di matanya dengan `showMaskGraphic = true`. Tanpa flag itu Mask
+  menyembunyikan grafis yang dipakainya, dan yang tersisa cuma bola mata melayang tanpa mata.
+- Undian pakai `System.Random` sendiri, BUKAN `UnityEngine.Random` — yang di sana urutan acak
+  milik gameplay, dan mengambil satu angka untuk hiasan menggeser seluruh sisanya.
+
+> **Catatan:** objek `eye` juga membawa `SpriteMask` bawaan pemilik project. Komponen itu untuk
+> SpriteRenderer 2D dan **tidak melakukan apa pun di Canvas** — yang bekerja `Mask` UGUI.
+> Aman dihapus.
+
+### `Grimoire/UiGlow` — pendar untuk kanvas
+
+Bloom URP **tidak akan pernah** menyentuh kanvas ini: `ScreenSpaceOverlay` digambar sesudah
+seluruh rantai post-processing selesai. Menukarnya ke `ScreenSpaceCamera` membuka jalan itu tapi
+ikut menyeret urutan gambar, penskalaan, dan raycast seluruh UI — harga yang jauh terlalu mahal
+untuk satu mata yang menyala.
+
+Yang dikerjakan shader ini bagian bloom yang benar-benar terlihat: gradien radial yang
+**MENAMBAH** (`Blend SrcAlpha One`). Tidak butuh sprite — pendarnya dihitung, jadi tidak ada
+tekstur baru dan tidak ada tepi kotak yang bisa ketahuan. Materialnya
+`Assets/Art/UI/Materials/UiGlow_Eye.mat`.
+
+`EyeGlow` sengaja **SIBLING** dari mata, bukan anaknya: sebagai anak ia ikut terpotong `Mask`
+dan pendarnya berhenti tepat di garis mata — yang justru kebalikan dari gunanya.
+
+### `UiGloomRect` — aura hitam di buku
+
+Memakai ulang `Grimoire/GloomEdge` (§26–27) karena persoalannya sama persis. Yang belum ada cuma
+cara memakainya di luar peta: `_RectSize` **wajib** diisi dari C#, dan tanpa itu shadernya
+memakai 1920x1080 bawaan lalu menggambar pita gelap berukuran salah.
+
+Ditaruh sebagai `Aura`, **sibling index 0** (paling belakang) dan **lebih besar 40 px per sisi**
+dari sampul — pita gelapnya lalu jatuh di LUAR buku alih-alih menggelapkan tepi bukunya sendiri.
+Putaran pertama dibuat 70 px per sisi dengan `Ceiling 0,85` dan hasilnya berhenti jadi aura lalu
+jadi noda hitam besar; sekarang 40 px, `Inset 55`, `Ceiling 0,6`.
+
+### Judul papan bisa dimatikan
+
+Mata menindih tulisan "GRIMOIRE" bawaan. `GrimoireGridArea` dapat dua knob: **`ShowTitle`**
+(dimatikan di prefab, tempatnya sekarang milik ornamen) dan **`TitleArea`** (RectTransform
+mana pun di dalam prefab — judulnya pindah ke pojok kiri-bawah kotak itu).
+
+> **Yang ikut hilang saat `ShowTitle` mati bukan cuma namanya:** baris itu juga yang memberi
+> tahu papan sedang bisa disusun atau sedang **TERKUNCI karena wave berjalan**. Kalau nanti ada
+> pemain yang bingung kenapa grimoire tak bisa diutak-atik, ini penyebabnya — pindahkan lewat
+> `TitleArea` alih-alih mematikannya.
+
 Terpasang: Storm Cell←Tornado_sand, Snowstorm←Tornado_snow, Ion Storm←Orb_lightning,
 Ashfall←Rockfall. Terverifikasi play mode: 2 zone, 119 partikel, pusaran terlihat.
 
