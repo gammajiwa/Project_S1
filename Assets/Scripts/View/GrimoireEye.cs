@@ -56,8 +56,11 @@ namespace Proto
         [Tooltip("Matikan kalau maunya diam memandang lurus ke depan saat tidak ada kursor dekat.")]
         public bool Wander = true;
 
-        [Tooltip("Jarak antar pindah pandangan, dalam detik (acak).")]
-        public Vector2 GlanceEvery = new Vector2(0.9f, 2.6f);
+        [Tooltip("Jarak antar pindah pandangan, dalam detik (acak).\n\n" +
+                 "Sengaja panjang. Angka pertama (0,9-2,6 detik) membuatnya gelisah — mata yang " +
+                 "berpindah pandang tiap satu-dua detik terbaca sebagai gugup, bukan sebagai " +
+                 "sesuatu yang mengamati. Diamnya yang lama itu justru yang bikin merinding.")]
+        public Vector2 GlanceEvery = new Vector2(3f, 7.5f);
 
         [Tooltip("Peluang satu lirikan jatuh ke TENGAH — memandang lurus ke depan.")]
         [Range(0f, 1f)] public float GlanceCentre = 0.3f;
@@ -75,7 +78,7 @@ namespace Proto
         public bool Blink = true;
 
         [Tooltip("Jarak antar kedipan, dalam detik (acak).")]
-        public Vector2 BlinkEvery = new Vector2(2.4f, 6.5f);
+        public Vector2 BlinkEvery = new Vector2(4f, 11f);
 
         [Tooltip("Lama satu kedipan penuh, turun DAN naik. Kedip sungguhan itu cepat — " +
                  "di atas ~0,25 detik ia berhenti terbaca sebagai kedip dan mulai terbaca " +

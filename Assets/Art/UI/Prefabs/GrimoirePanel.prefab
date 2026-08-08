@@ -171,12 +171,12 @@ MonoBehaviour:
   WakeRadius: 300
   WakeFeather: 120
   Wander: 1
-  GlanceEvery: {x: 0.9, y: 2.6}
+  GlanceEvery: {x: 3, y: 7.5}
   GlanceCentre: 0.3
   GlanceDown: 0.22
   GlanceSnap: 16
   Blink: 1
-  BlinkEvery: {x: 2.4, y: 6.5}
+  BlinkEvery: {x: 4, y: 11}
   BlinkSeconds: 0.13
   BlinkSquash: 0.06
   Glow: {fileID: 6553887676801724737}
@@ -217,7 +217,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: -0.7}
   m_SizeDelta: {x: 52.578, y: 52.578}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8287857305801969960
@@ -293,8 +293,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: -70.6, y: -21.9}
-  m_SizeDelta: {x: 380.22, y: 404.7}
+  m_AnchoredPosition: {x: -58.8, y: -12.8}
+  m_SizeDelta: {x: 363.5, y: 384.7}
   m_Pivot: {x: 0, y: 0}
 --- !u!222 &2933702531532722890
 CanvasRenderer:
@@ -347,18 +347,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Proto.UiGloomRect
   Tint: {r: 0, g: 0, b: 0, a: 1}
-  Ceiling: 0.756
-  Inset: 49.1
-  Wobble: 45
-  Scale: 140
-  Churn: 0.3
-  Drift: 36
-  TearDepth: 26
-  TearScale: 48
-  TearFray: 0.667
-  TearSoft: 4.29
-  TearWarp: 1.89
-  TearDrift: 7.55
+  Ceiling: 0.482
+  Inset: 121
+  Wobble: 16.8
+  Scale: 40.5
+  Churn: 0.35
+  Drift: 0.57
+  TearDepth: 20.52
+  TearScale: 25
+  TearFray: 0
+  TearSoft: 4.61
+  TearWarp: 0.5
+  TearDrift: 2.79
 --- !u!1 &3305365764335801293
 GameObject:
   m_ObjectHideFlags: 0
@@ -393,8 +393,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.8999939, y: -1.8}
-  m_SizeDelta: {x: 75.1, y: 87.9}
+  m_AnchoredPosition: {x: 1.2, y: -1.5}
+  m_SizeDelta: {x: 86.23, y: 64.4}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1813304868743297208
 CanvasRenderer:
@@ -417,7 +417,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 2100000, guid: 3a094073a686dfb47ae82a62f540ec90, type: 2}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.7}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
