@@ -81,13 +81,16 @@ MonoBehaviour:
   RerollCostStart: 20
   RerollCostIncrement: 15
   ShopHighRollChance: 0.18
-  MapFloorsPerAct: 15
-  MapLanes: 3
+  MapFloorsPerAct: 34
+  MapLanes: 5
   MapEliteChance: 0.15
-  MapShopChance: 0.12
-  MapEventChance: 0.1
-  MapGambleChance: 0.08
+  MapShopChance: 0.1
+  MapEventChance: 0.07
+  MapGambleChance: 0.05
   MapEliteMinFloor: 3
+  MapFadeClose: 1.1
+  MapFadeOpen: 1.4
+  MapMarkerTravel: 0.8
   EliteHpMul: 2.2
   EliteCountMul: 1.25
   EliteDamageMul: 1.3

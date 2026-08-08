@@ -270,6 +270,17 @@ namespace Proto
                  "pilihan melainkan tembok.")]
         public int MapEliteMinFloor = 3;
 
+        [Header("Transisi peta (gloom)")]
+        [Tooltip("Lama kegelapan MENUTUP sebelum peta terbuka, detik. Gloom mengecil dari " +
+                 "nilai standarnya sampai menelan seluruh layar.")]
+        [Min(0.1f)] public float MapFadeClose = 1.1f;
+
+        [Tooltip("Lama kegelapan MEMBUKA kembali ke nilai standar setelah node dieksekusi.")]
+        [Min(0.1f)] public float MapFadeOpen = 1.4f;
+
+        [Tooltip("Lama penanda pemain berjalan di peta menuju node yang dipilih.")]
+        [Min(0.1f)] public float MapMarkerTravel = 0.8f;
+
         [Header("Elite & boss puncak")]
         [Tooltip("Pengali wave ELITE: keras lewat nyawa, jumlah, dan gigitan — bukan lewat " +
                  "kecepatan, karena kecepatan mengubah rasa kontrol, bukan tingkat bahaya.")]

@@ -96,7 +96,9 @@ namespace Proto.EditorTools
             // suhu — tidak ada bagian yang lebih hangat, tidak ada yang lebih dingin, jadi tidak
             // ada yang terasa seperti sore. Rig low-poly ini memakai matahari kuning-jingga dan
             // ambient BIRU, jadi tiap benda punya sisi hangat dan sisi dingin sekaligus.
-            forest.SunColor = new Color(1f, 0.9f, 0.68f);
+            // Digeser lebih putih — "day-nya jangan merah-merah": oranye di matahari ikut
+            // mewarnai seluruh lantai.
+            forest.SunColor = new Color(1f, 0.94f, 0.78f);
             forest.SunPitch = 35f;
             forest.SunYaw = 147f;
 
@@ -110,7 +112,7 @@ namespace Proto.EditorTools
             //
             // 2,4 — look siang yang lama, yang dipilih pemilik project setelah membandingkan
             // langsung dengan grade demo. Grade demo tidak dibuang: ia jadi wajah SENJA.
-            forest.SunIntensity = 2.4f;
+            forest.SunIntensity = 2.6f;
 
             // Ambient BIRU LANGIT, bukan putih. Di gaya ilustrasi, bagian yang tidak kena matahari
             // tidak boleh gelap — ia harus tetap BERWARNA, dan warnanya harus warna langit.
@@ -273,8 +275,9 @@ namespace Proto.EditorTools
                 // BUKAN OnlyClear lagi: cerah cuma 10% sekarang — god ray yang cuma hidup di
                 // situ praktis tidak pernah terlihat. Ia tampil juga saat berangin, tetap
                 // ngumpet saat hujan.
-                Ambient("Light/Sunlight", 1f, spread: 3, near: 12f, far: 30f,
-                    scale: 1f, height: 0f, hideInRain: true),
+                // Beam Sunlight TIDAK ADA di siang — final, setelah tiga putaran keluhan:
+                // beam hangat sebesar apa pun mengecat siang jadi sore. Rumahnya wajah SENJA
+                // (BuildSore menambahkannya); siang harus bersih dan cerah.
 
                 // Daun berguguran hampir SELALU ada — dan "hampir" itu yang penting. Sesuatu yang
                 // tidak pernah absen berhenti diperhatikan.
@@ -622,16 +625,17 @@ namespace Proto.EditorTools
             night.SunColor = new Color(0.6f, 0.72f, 1f);
             night.SunPitch = 58f;
             night.SunYaw = 300f;
-            night.SunIntensity = 0.55f;
+            night.SunIntensity = 0.6f;
 
             // Dinaikkan dari (0,14; 0,19; 0,32) — "jangan gelap gulita". Malam yang terbaca
             // bukan malam yang hitam, melainkan malam yang cahayanya PUNYA TEMPAT.
-            night.AmbientSky = new Color(0.17f, 0.22f, 0.36f);
-            night.AmbientEquator = new Color(0.13f, 0.17f, 0.28f);
-            night.AmbientGround = new Color(0.07f, 0.09f, 0.15f);
+            // BIRU dan tidak pelit — "malam banyak birunya, jangan gelap gulita".
+            night.AmbientSky = new Color(0.16f, 0.23f, 0.44f);
+            night.AmbientEquator = new Color(0.12f, 0.17f, 0.33f);
+            night.AmbientGround = new Color(0.06f, 0.09f, 0.18f);
 
             night.FogEnabled = true;
-            night.FogColor = new Color(0.09f, 0.13f, 0.22f);
+            night.FogColor = new Color(0.1f, 0.15f, 0.3f);
             night.FogStart = 25f;
             night.FogEnd = 110f;
 
@@ -647,12 +651,14 @@ namespace Proto.EditorTools
             // "Cahaya internal": SEDIKIT titik tapi KUAT dan lebar — beberapa bagian lapangan
             // benar-benar terang, sisanya remang. Sepuluh lampu lemah menghasilkan remang merata
             // yang tidak menerangi apa pun; tujuh lampu kuat menghasilkan TEMPAT.
-            night.LampCount = 7;
+            // Kolam cahaya LEMBUT: agak banyak, lebar, tidak menyilaukan — "cahaya di
+            // beberapa bagian dan soft".
+            night.LampCount = 8;
             night.LampColor = new Color(1f, 0.72f, 0.36f);
             night.LampColorCool = new Color(0.36f, 0.58f, 1f);
-            night.LampIntensity = 5.5f;
-            night.LampRange = 24f;
-            night.LampHeight = 5f;
+            night.LampIntensity = 4.2f;
+            night.LampRange = 28f;
+            night.LampHeight = 5.5f;
 
             // Lampu yang dibawa pemain. Dingin, supaya ia terbaca sebagai cahaya sihir yang
             // dibawa — bukan sebagai obor, yang akan menyaingi lampu hangat di lapangan.
@@ -820,6 +826,24 @@ namespace Proto.EditorTools
             // Tuning penyetel menang; wajah yang belum pernah disetel mewarisi milik siang.
             if (keptVfx != null && keptVfx.Length > 0) sore.AmbientVfx = keptVfx;
             if (keptMoods != null && keptMoods.Length > 0) sore.WeatherMoods = keptMoods;
+
+            // Senja WAJIB punya beam Sunlight — siang sudah tidak membawanya (beam hangat
+            // mengecat siang jadi sore; di senja justru itulah temanya).
+            bool hasBeam = false;
+
+            foreach (var entry in sore.AmbientVfx)
+            {
+                if (entry != null && entry.Prefab != null && entry.Prefab.name == "Sunlight")
+                    hasBeam = true;
+            }
+
+            if (!hasBeam)
+            {
+                var list = new System.Collections.Generic.List<AmbientVfxEntry>(sore.AmbientVfx);
+                list.Add(Ambient("Light/Sunlight", 1f, spread: 2, near: 12f, far: 28f,
+                    scale: 1f, height: 0f, hideInRain: true));
+                sore.AmbientVfx = list.ToArray();
+            }
 
             sore.name = "Biome_forest_sore";
             sore.Id = "forest_sore";
@@ -1247,6 +1271,17 @@ namespace Proto.EditorTools
         /// punya kunang-kunang — varian _fog kupu-kupu sempat dipakai dan tetap terbaca sebagai
         /// kupu-kupu yang menyala. Yang membuat kunang-kunang terbaca adalah KEDIPNYA, dan kedip
         /// itu dikerjakan gradasi alpha bergelombang di Color over Lifetime.
+        ///
+        /// PERHATIAN — yang ada di disk sekarang BUKAN hasil fungsi ini.
+        ///
+        /// Titik bangkitan di bawah terbaca murah: butiran 0,07-0,14 unit dengan material pinjaman
+        /// dari bara. Atas permintaan pemilik project ("pakai aset yang ada"), Fireflies.prefab
+        /// ditulis ulang dari anak <c>sparks</c> milik MagicField_blue — percikan yang sudah
+        /// disetel tangan oleh pembuat paketnya (texture sheet, size over lifetime, glow additive),
+        /// lalu diberi umur panjang, noise pengembara, dan warna kuning-hijau kunang-kunang.
+        ///
+        /// Fungsi ini tinggal jaring: ia hanya jalan kalau asetnya HILANG, dan yang dihasilkannya
+        /// versi lama yang lebih miskin. Kalau sampai perlu jalan, tulis ulang lagi dari sparks.
         /// </summary>
         static void EnsureFireflies()
         {

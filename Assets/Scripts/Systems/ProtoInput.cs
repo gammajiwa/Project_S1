@@ -98,6 +98,41 @@ namespace Proto
             }
         }
 
+        /// <summary>
+        /// Putaran roda mouse frame ini, dalam GERIGI (±1 per klik roda). Positif = ke atas.
+        ///
+        /// Dinormalisasi di sini karena backend-nya tidak sepakat: Input System lama memberi
+        /// ±120 per gerigi ala Windows, versi baru menormalkan ke ±1 — dan pemakai yang menebak
+        /// salah satunya berakhir dengan scroll yang "mati" (bergerak kurang dari sepiksel).
+        /// </summary>
+        public static float ScrollY
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                var mouse = UnityEngine.InputSystem.Mouse.current;
+                float raw = mouse != null ? mouse.scroll.ReadValue().y : 0f;
+                return Mathf.Abs(raw) > 10f ? raw / 120f : raw;
+#else
+                return Input.mouseScrollDelta.y;
+#endif
+            }
+        }
+
+        /// <summary>Tombol kiri mouse sedang DITAHAN — dipakai drag-menggeser peta.</summary>
+        public static bool LeftHeld
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                var mouse = UnityEngine.InputSystem.Mouse.current;
+                return mouse != null && mouse.leftButton.isPressed;
+#else
+                return Input.GetMouseButton(0);
+#endif
+            }
+        }
+
         /// <summary>Back out of a menu page, or leave a run for the main menu.</summary>
         public static bool BackDown
         {

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9124054e357cc9459cad5d3b433f6cb, type: 3}
+  m_Name: UiTheme
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.UiTheme
+  MapPaper: {fileID: 21300000, guid: b997f644670c7b040a65f899ad7baa66, type: 3}
+  GrimoirePanelPrefab: {fileID: 4725670757830398596, guid: 9e613509076f1824bb2986daeac17b35, type: 3}
+  GrimoireFrame: {fileID: 21300000, guid: 8e93eba3dd21c6548b82dc8a2404e10f, type: 3}
+  GridFrame: {fileID: 0}
+  GrimoirePad: {x: 63, y: 8, z: 13, w: 8}
+  GridPad: {x: 16, y: 16, z: 16, w: 16}
+  GridCellIdle: {r: 0.24, g: 0.15, b: 0.06, a: 0.42}
+  GridCellShown: {r: 0.24, g: 0.15, b: 0.06, a: 0.62}
+  GloomTint: {r: 0.16, g: 0.1, b: 0.05, a: 1}
+  GloomCeiling: 0.55
+  GloomInset: 190
+  GloomWobble: 90
+  GloomScale: 210
+  GloomInsetSmallMul: 0.45
+  MapTitleInk: {r: 0.24, g: 0.13, b: 0.05, a: 1}
+  MapLegendInk: {r: 0.36, g: 0.24, b: 0.13, a: 1}
+  MapPathInk: {r: 0.42, g: 0.3, b: 0.18, a: 0.85}
+  MapYouInk: {r: 0.45, g: 0.2, b: 0.03, a: 1}
+  MapRingInk: {r: 0.28, g: 0.17, b: 0.07, a: 1}
+  PeekScreenFraction: {x: 0.56, y: 0.78}

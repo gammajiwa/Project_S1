@@ -44,6 +44,19 @@ namespace Proto
         float _span;
         bool _centreOnCamera = true;
 
+        /// <summary>
+        /// 0 = nilai standar dari aset materialnya, 1 = kegelapan menelan seluruh layar.
+        ///
+        /// Dipakai transisi peta: kegelapan yang sama yang sehari-hari melingkari pemain
+        /// dirapatkan sampai menutup segalanya, lalu dibuka lagi. Nilainya TIDAK pernah ditulis
+        /// ke aset — aset itu nilai standar yang disetel tangan, dan transisi hanya meminjamnya
+        /// lewat MaterialPropertyBlock.
+        /// </summary>
+        public float Shut { get; set; }
+
+        /// <summary>Benar kalau ada bidang gloom yang bisa dipakai transisi.</summary>
+        public bool CanShut => _material != null && _renderer != null;
+
         public void Init(Transform follow, Transform player, float span)
         {
             _follow = follow;
@@ -136,6 +149,23 @@ namespace Proto
 
             _renderer.GetPropertyBlock(_block);
             _block.SetVector(Centre, new Vector4(heart.x, heart.z, 0f, 0f));
+
+            // Transisi tutup-buka. Selalu ditulis, bukan hanya saat Shut > 0: pada Shut = 0 hasil
+            // lerp-nya identik dengan nilai material, jadi penyetelan live di Inspector tetap
+            // terlihat — dan blok yang pernah terisi tidak perlu dibersihkan.
+            //
+            // Sasaran Inner MINUS: smoothstep dengan ambang di bawah nol membuat jarak nol pun
+            // gelap penuh — lubang terangnya benar-benar menutup, bukan menyisakan titik di pemain.
+            float shut = Mathf.Clamp01(Shut);
+            _block.SetFloat(Inner, Mathf.Lerp(_material.GetFloat(Inner), -3f, shut));
+            _block.SetFloat(Outer, Mathf.Lerp(_material.GetFloat(Outer), -2.5f, shut));
+            _block.SetFloat(Wobble, Mathf.Lerp(_material.GetFloat(Wobble), 0f, shut));
+            _block.SetFloat(Ceiling, Mathf.Lerp(_material.GetFloat(Ceiling), 1f, shut));
+
+            Color tint = _material.GetColor(Tint);
+            tint.a = Mathf.Lerp(tint.a, 1f, shut);
+            _block.SetColor(Tint, tint);
+
             _renderer.SetPropertyBlock(_block);
         }
     }

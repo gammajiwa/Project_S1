@@ -314,7 +314,10 @@ namespace Proto.EditorTools
 
             // Malam dijatuhkan sedikit exposure-nya di sini, bukan lewat cahaya. Meredupkan lampu
             // menghapus kolam cahayanya sekaligus; meredupkan exposure menyisakannya.
-            if (night && profile.TryGet<ColorAdjustments>(out var color))
+            //
+            // HANYA profil malam BIASA. PP_Midnight punya exposure-nya sendiri (−1) — menimpanya
+            // dari sini membuat tengah malam seterang malam, dan itu persis yang pernah terjadi.
+            if (night && path == NightGrade && profile.TryGet<ColorAdjustments>(out var color))
             {
                 color.postExposure.overrideState = true;
                 color.postExposure.value = -0.55f;

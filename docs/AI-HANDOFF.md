@@ -1569,3 +1569,273 @@ belum ada). BuildSore/BuildMidnight menyalin siang/malam dengan guard daftar-tun
 yang sama seperti BuildNight; sore/tengah-malam mewarisi suasana induknya (termasuk
 beam god ray setelan tangan). `HazePass` meng-configure EMPAT profil; urutan tetap:
 Generate Biomes dulu, Install Volumetric Fog sesudahnya.
+
+## 24. Portal DIHAPUS: peta pemilih fullscreen + transisi Gloom + pulau Suaka (2026-08-09)
+
+Permintaan pemilik project, diverifikasi screenshot DAN dimainkan tangan sendiri
+(4+ wave beruntun lewat alur baru saat sesi masih berjalan).
+
+### Alur baru (menggantikan portal fisik seluruhnya)
+
+`OnWaveCleared` → stage **Ready** (grimoire terbuka, tombol **LANJUT (SPACE)** di
+tempat bekas MULAI WAVE) → `RunDirector.Depart()` → **Closing**: `Gloom.Shut` 0→1
+selama `GameBalance.MapFadeClose` — kegelapan yang sehari-hari melingkari pemain
+MERAPAT sampai menelan layar → `OnMapChoose` → UI membuka **peta satu layar penuh
+mode MEMILIH** → klik node berdenyut → penanda berlian emas BERJALAN menyusuri
+bezier jalur (seed sama dengan yang tergambar) → tirai hitam naik → **`PickNode`
+dieksekusi SELAGI GELAP** (Relocate / EnterRest / StartWave — teleport dan ganti
+wajah tidak pernah terlihat prosesnya) → **Opening**: Shut 1→0 selama `MapFadeOpen`
+ke nilai standar.
+
+- **Nilai standar material Gloom TIDAK PERNAH ditulis.** `Gloom.Shut` me-lerp nilai
+  yang DIBACA LIVE dari aset lewat MaterialPropertyBlock (Inner→−3, Outer→−2,5,
+  Wobble→0, Ceiling→1, alpha→1). Inner MINUS itu disengaja: smoothstep berambang
+  negatif membuat jarak nol pun gelap penuh — lubang terangnya menutup betul, bukan
+  menyisakan titik di pemain. Menyetel aset SAAT play tetap terlihat (Shut=0 = lerp
+  identitas).
+- **Gelap TOTAL dijahit dua lapis** (permintaan: "bener-bener gelap"): gloom untuk
+  penjalarannya, plus `_fadeCover` (Image hitam fullscreen) menumpang 45% terakhir
+  `RunDirector.Fade` — ujung transisi hitam murni, HUD pun tertelan.
+- **Urutan tumpukan**: semua elemen peta hidup di `_mapRoot` (satu induk).
+  Saat peta terbuka `_mapRoot` diangkat DI ATAS tirai (peta tampil di layar hitam);
+  saat tirai naik menelan pilihan, peta dibiarkan di bawahnya.
+- Gerbang lama tetap: `CanEmbark` (≥1 skill) dicek di `Depart`, bukan per node.
+
+### Peta: fullscreen, tegak ala STS, bisa scroll & drag
+
+- `GrimoireLayout.MapPanelRect()` = seluruh layar. `MapNodePos`: lajur = kolom,
+  lantai menumpuk BAWAH→ATAS dengan jarak TETAP (`MapFloorGap` 110 px) — bukan
+  dipadatkan supaya muat.
+- **Lebar pita node = `panel.width * 0.34` (cap 700), BUKAN piksel tetap.** Angka
+  mati 320 px membuat seluruh act menggumpal di tengah dan dua pertiga monitor
+  kosong (keluhan user). Geser-lantai & jitter ikut diukur dari `colW`
+  (×0,5 dan ×0,35) — kalau tetap piksel, pita lebar membuat jalurnya lurus lagi.
+  Hasil akhirnya dijepit `panel.xMin/xMax ± 44` supaya lajur terluar tidak
+  terpotong di resolusi mana pun.
+- **Layout organik (putaran feedback ke-3, dibandingkan peta referensi user):**
+  geser acak PER LANTAI ±40 px (garis antar lantai selalu menyerong — kolom lurus
+  terbaca tabel, bukan jalan) + jitter per node ±28/±19 px, dua-duanya ber-seed.
+  `MapLanes` di GameBalance dinaikkan 3→4 dan generator mengisi 2–4 node per
+  lantai (60% +1, 30% +1) — peta terasa PENUH pilihan.
+- **`ProtoInput.ScrollY` dinormalisasi ke GERIGI (±1)** — Input System baru memang
+  memberi ±1, yang lama ±120 (dibagi 120 di wrapper). JEBAKAN yang sudah kejadian:
+  menebak ±120 membuat scroll bergerak <1 px = terlihat mati total.
+  Satu gerigi = 90 px ≈ satu lantai.
+- **Drag-pan** (`ProtoInput.LeftHeld` baru): klik yang tidak kena node = pegangan;
+  peta nempel di kursor. Berlaku di mode memilih DAN intip. `MapScrollMax`
+  menjepit; buka pertama auto-scroll menjemput posisi pemain; saat penanda
+  berjalan keluar jendela, peta menggulung menjemputnya sendiri.
+- **KARAKTER pemain tampil di peta** (permintaan user): token BULAT kuning warna
+  kapsul pemain + label KAMU — berdiri di RUANG TUNGGU di bawah lantai pertama
+  sebelum langkah pertama act (ruangnya disediakan `bottom = yMin+150`), lalu
+  berjalan menyusuri jalur saat node dipilih. Bulatnya `CircleSprite()` buatan
+  sendiri 32 px — `GetBuiltinResource("UI/Skin/Knob.psd")` GAGAL di runtime,
+  jangan dicoba lagi.
+
+### Putaran feedback ke-4 (coretan user di screenshot)
+
+- **Pemain = simpul pertama peta**: saat `Map.At < 0`, jalur EMAS digambar dari
+  ruang tunggu (`MapEntryPos`) ke SEMUA node lantai pertama (`EntrySeed` per node),
+  dan travel pembuka menyusuri bezier yang sama — bukan garis lurus diam-diam.
+- **Lantai pertama 3–5 node** (generator: `3 + 50% + 35%`), lantai lain 2–4;
+  `MapLanes` dinaikkan lagi 4→**5** (aset). Kesan "cuma 3 arah" mati.
+- **Boss DIKUNCI MATI di tengah**: `MapNodePos` mengembalikan `panel.center.x`
+  tanpa geser lantai / jitter untuk lantai puncak — tujuan act tidak boleh mencong.
+- **Jalur dikalemkan**: `TrailControls` satu arah lengkung per ruas, amplitudo
+  `length * 0.06` (dulu 0.3 dua arah = huruf S meliuk "tidak seirama") —
+  nyaris lurus ala peta STS rujukan.
+- **Spawn tidak di tengah kamera = jepitan arena**: titik lahir/`Relocate` kini
+  dijepit juga oleh kotak-tengah kamera (`ArenaCamera.LimitX/LimitZ` baru;
+  bootstrap memakai rumus yang sama sebelum ArenaCamera lahir) — pemain selalu
+  lahir TERTENGAHKAN, tidak menepi sejak frame pertama.
+- **Culling `MapInView`**: node/segmen yang tergulung keluar jendela disembunyikan,
+  tidak digambar menimpa judul/legenda. Signature layout ditambah scroll
+  (dibulatkan) — menggulung = relayout, diam = tidak.
+- **JANGAN simpan titik asal penanda saat travel** — peta bisa digulung di tengah
+  perjalanan; `DrawMapMarker` menghitung ulang asal tiap frame dari `Map.At`.
+- Peta intip (M / tombol PETA) tetap ada, tetap kaca — cuma sekarang juga satu
+  layar penuh. Mode MEMILIH menelan M dan semua klik di luar node: memilih wajib.
+
+### Pulau rehat = tempat LAIN betulan (`Biome_sanctum.asset`)
+
+- `EnterRest` memasang **wajah Suaka** lewat `BiomeDresser.ShowBiome()` SELAGI
+  GELAP: ungu berkabut rapat (fog 14–62), bulan ungu redup, hutan siluet 55%,
+  kunang-kunang + bara saja, SATU WeatherMood kosong (tidak pernah hujan di suaka).
+- Aset = duplikat malam yang di-tweak **via MCP, BUKAN BiomePass** — pass mana pun
+  TIDAK meregenerasinya; dari sini dia MILIK USER untuk dituning tangan.
+  Rujukannya `ProtoBootstrap._restBiome` (scene Proto); kosong = pulau memakai
+  wajah wave seperti dulu.
+- Wajah normal kembali SENDIRI: node tempur berikutnya memicu `OnWaveStarted` →
+  undian wajah biasa. Rest beruntun cukup memasang Suaka lagi.
+- `LeaveRest` terjadi di `PickNode` dalam gelap (bongkar pulau tak pernah terlihat);
+  `_returnPos` dan portal LANJUT pensiun — pulang selalu lewat peta.
+
+### Sisa & jebakan
+
+- `PlayerMotor.WalkTo` tidak dipakai lagi (masih ada, tidak dihapus).
+  `RunDirector.ClickBlocked` DIHAPUS — tidak ada lagi klik dunia yang perlu diblok.
+- Knob transisi di `GameBalance` header "Transisi peta (gloom)":
+  `MapFadeClose` 1,1 / `MapFadeOpen` 1,4 / `MapMarkerTravel` 0,8.
+- `ScreenCapture.CaptureScreenshot` dari `execute_code` memicu error
+  "PlayerLoop internal function has been called recursively" — artefak alat ukur,
+  bukan bug game. Abaikan.
+- "There are no audio listeners in the scene" sudah ada SEBELUM sesi ini — belum
+  disentuh, kandidat kerjaan kecil berikutnya.
+
+## 25. Folder aset, VFX diadopsi, dan slot VFX skill (2026-08-09)
+
+Daftar aset lengkap + speknya: **docs/ASSET-LIST.md**.
+
+### Struktur folder baru
+
+`Assets/Art/{UI,Icons,Map,VFX,Characters,Props}` + `Assets/Audio/{Music,SFX,Ambience}`.
+Tiap folder daun berisi `.gitkeep` (Unity mengabaikan berkas berawalan titik, jadi
+tidak ada .meta yatim). Aturan letak cuma dua: PNG yang SUDAH dirujuk aset piece
+tetap di `GameData/Icons` (ganti art = TIMPA filenya), sisanya di `Art/`/`Audio/`.
+
+### 23 prefab VFX diadopsi keluar dari paket Lana
+
+`Assets/Art/VFX/Prefabs/{Light,Ambient,Weather,Skill}` — dipisah per PEKERJAAN,
+bukan per paket asal. Dipindah dengan `AssetDatabase.MoveAsset` (GUID awet, rujukan
+biome utuh).
+
+**Alasannya bukan kerapian saja:** `Sunlight`/`Moonlight` disetel tangan pemilik
+project (§22). Selama masih di dalam paket, reimport/update paket menimpanya tanpa
+peringatan. Sisa paket tidak disentuh; ~33 prefab masih nganggur di sana (Snow,
+Sandstorm, Bubbles, dll) — kandidat biome salju/rawa.
+
+### Slot VFX skill: `PieceDefinition.ZoneVfx`
+
+Skill selama ini menggambar FX-nya dari primitif di `PlayerCaster`. Sekarang
+`Kind = Zone` bisa membawa prefab sendiri:
+
+- `ZoneVfx` (prefab) + `ZoneVfxScale`. Skala akhir = `ZoneVfxScale × max(0,35;
+  radius/3)` — efek ikut membesar saat area di-buff, kalau tidak skill yang sudah
+  diperbesar terlihat persis sama dengan yang belum.
+- `PlayerCaster.AttachZoneVfx` dipanggil TIAP kubangan lahir dan membandingkan
+  `VfxSource` dengan prefab yang diminta — **zone diambil dari pool**, dan pemilik
+  sebelumnya bisa skill lain. Tanpa perbandingan itu efek lama ikut terbawa.
+- Efeknya digantung di `_fxRoot`, **BUKAN** jadi anak cakramnya: cakram itu
+  dipipihkan (skala Y 0,03) jadi genangan, dan anak apa pun ikut gepeng.
+- Zone habis → efek di-SetActive(false), bukan dihancurkan (dipakai lagi).
+  Zone yang mengembara (`ZoneDrift`) membawa efeknya ikut pindah.
+- Cakramnya ditipiskan (alpha ×0,3) kalau ada `ZoneVfx` — tugasnya berubah jadi
+  penanda jangkauan, bukan efeknya sendiri.
+
+## 26. Art UI masuk: perkamen peta, gloom tepi, papan grimoire (2026-08-09)
+
+Catatan penuh ada di `production/session-state/active.md`. Yang wajib diingat:
+
+- **`UiTheme` SO** (`Assets/GameData/UiTheme.asset`) — kertas, bingkai, warna tinta,
+  knob gloom. Boleh null: tanpa tema, UI balik jadi kotak warna datar.
+- **Shader `Grimoire/GloomEdge`** — saudara KANVAS dari `Grimoire/Gloom`. Shader lama
+  tidak bisa dipakai di UI (`positionWS` + pass `UniversalForward`). Yang dipinjam cuma
+  keputusannya: **derau menggoyang GARIS BATAS, bukan kepekatan**. Jarak dihitung dalam
+  PIKSEL (`_RectSize` dari C#) supaya peta besar dan peta intip terlihat sebahan.
+- `_PaperMode = 1` → gambar spritenya sendiri + **SOBEK** tepinya. Yang membedakan sobek
+  dari pudar bukan seberapa jauh alpha turun melainkan seberapa CEPAT.
+- **Lapisan gloom WAJIB memakai potongan sobek yang sama** — kalau tidak, muncul kotak
+  gelap membayangi kertas yang sudah tercabik.
+- **`GrimoirePanel.prefab`** (`Assets/Art/UI/Prefabs/`) — lihat §27, sekarang prefabnya
+  yang menentukan letak petak.
+
+## 27. Magenta di pulau rehat, LANJUT yang tak bisa dipencet, gloom beku, petak dari prefab (2026-08-09)
+
+Empat keluhan dari satu screenshot pemilik project. Tiga di antaranya bug diam — tidak
+satu pun melempar error yang menyebut dirinya.
+
+### Magenta menutupi setengah layar di pulau rehat
+
+**Akar: `MagicField_pink.prefab`, anak `fog`, materialnya `{fileID: 0}`.** Renderer
+bermaterial kosong di URP digambar dengan warna error, dan partikel kabut selebar
+19,6 unit itu menutupi sebagian besar layar. Biome Suaka memanggilnya dengan
+`Chance: 1, Count: 2` — persis dua yang muncul.
+
+Bukan referensi yang putus saat prefab diadopsi: slotnya memang tercatat kosong dari
+vendornya. Saudaranya yang sehat, `MagicField_blue`, memakai **`Additive_soft`** di anak
+yang sama — itu yang dipasang, ditiru bukan ditebak.
+
+**Empat prefab lain punya lubang yang sama** (`Tornado_sand`, `Tornado_snow`, `Rockfall`,
+`SpeedBoost_front` — semuanya di renderer ROOT). Tiga aman karena renderer root-nya mati;
+**`SpeedBoost_front` tidak** (renderer hidup, emisi 50/detik) dan sudah diisi `Additive`.
+
+> **Cara mencarinya lagi:** scan `Renderer` saja TIDAK cukup — `Terrain` bukan `Renderer`,
+> dan objek yang dibangun runtime tidak ada di scene saat edit mode. Yang menemukannya:
+> masuk play mode, paksa `RunDirector.EnterRest` lewat refleksi, lalu daftar semua renderer
+> aktif yang `sharedMaterial == null || !shader.isSupported`.
+
+### Tombol LANJUT tidak bisa diklik di toko
+
+`HandlePanelClick` dipanggil SEBELUM pengecekan tombol start, dan barisan terakhirnya
+menelan setiap klik yang jatuh di dalam `PanelRect()` (`return true`). Di pulau rehat
+panel toko **tumpang tindih** dengan tombolnya — terverifikasi:
+`PanelRect (644,354,632,372)` memuat titik tengah `StartButtonRect (820,632,280,56)`.
+Jadi satu-satunya tombol untuk pergi dari toko dimakan diam-diam, tanpa tanda apa pun.
+
+Perbaikannya satu baris, dan **letaknya yang penting**: guard ditaruh SESUDAH blok peta,
+kejadian, dan slot (ketiganya modal sungguhan yang memang harus menelan segalanya) tapi
+SEBELUM blok toko — toko bukan modal, klik di luarnya saja sudah menutupnya.
+
+### Gloom peta tidak bergerak
+
+`Tune()` mengirim `_Scale`, `_Wobble`, dan knob sobek, tapi **tidak pernah mengirim
+`_Churn` dan `_Drift`**. Materialnya dibuat runtime dari shader, jadi keduanya jatuh ke
+bawaan shader: `Drift 6 / Scale 210` = **0,029 gumpalan per detik** — beranimasi kalau
+diukur, beku kalau dilihat.
+
+`UiTheme.GloomChurn` (0,3) dan `GloomDrift` (42) baru, disamakan dengan `Gloom.mat` milik
+kegelapan arena (`Churn 0,3`, `Drift 0,6` pada `Scale 3` = 0,2 gumpalan/detik) yang sudah
+dinilai bergerak benar. Terukur sesudahnya: **0,200**, tujuh kali lebih cepat.
+
+### Petak grimoire diatur dari prefab
+
+Dulu prefab papan cuma DIDUDUKKAN kode di pojok petak hitungan; letak petaknya sendiri
+konstanta. Sekarang dibalik.
+
+- Anak bernama **`GridArea`** di dalam prefab menentukan letak DAN ukuran petak 7x7.
+  Dicari lewat nama, bukan komponen penanda — menata papan tidak boleh menuntut kode.
+- `GrimoireLayout.GridOverride` (`Rect?`) menampungnya. `CellSize`/`CellGap`/
+  `LooseCellSize` berhenti jadi `const` dan jadi property; `GridX`/`GridY` membaca
+  override kalau ada. **Null = perilaku lama persis** — prefab tanpa `GridArea`, atau
+  tanpa prefab sama sekali, tetap dapat petak yang benar.
+- Ditulis ulang di SETIAP pembangunan UI termasuk dikembalikan ke null: play mode tanpa
+  domain reload akan mewarisi kotak milik run sebelumnya.
+- **Celah ditambahkan sebelum dibagi** (`(width + gap) / 7`): petak 7x7 memakai tujuh sel
+  tapi hanya enam celah. Membagi lebar mentah membayar celah yang tidak ada dan petaknya
+  berhenti 3 px sebelum tepi kanan kotak.
+- Sel dijaga persegi lewat `Mathf.Min` — kotak yang tidak sebangun menyisakan ruang di
+  sisi panjangnya, jauh lebih baik daripada petak gepeng.
+- Letak lama (`Margin + GridInset` = 76, `Margin + 8` = 28) dipindahkan KE DALAM prefab,
+  jadi papan tidak bergeser sedikit pun setelah perubahan ini. Terukur: `GridRect()` =
+  `(76, 28, 298, 298)`, `CellSize` 40, `CellGap` 3 — identik dengan sebelumnya.
+
+### Kunang-kunang dibangun ulang dari aset paket
+
+Yang lama: partikel bangkitan `BiomePass.EnsureFireflies`, butiran 0,07–0,14 unit dengan
+material pinjaman dari bara — terbaca murah. Sekarang `Fireflies.prefab` diturunkan dari
+anak **`sparks` milik `MagicField_blue`** (texture sheet, size-over-lifetime, glow additive
+— semua sudah disetel pembuat paketnya), lalu diberi umur 5–9 detik, noise pengembara,
+warna kuning-hijau, dan gradasi kedip yang sama seperti versi lama.
+
+> **Jebakan:** `EnsureFireflies` masih ada dan masih membangun versi LAMA yang lebih miskin.
+> Ia hanya jalan kalau asetnya hilang. Kalau sampai jalan, tulis ulang lagi dari `sparks`.
+
+Terpasang: Storm Cell←Tornado_sand, Snowstorm←Tornado_snow, Ion Storm←Orb_lightning,
+Ashfall←Rockfall. Terverifikasi play mode: 2 zone, 119 partikel, pusaran terlihat.
+
+### JEBAKAN: efek cuaca MENGABAIKAN RepeatEvery
+
+`Weather.BuildAmbient` (penjadwal "lewat lalu pergi") hanya membaca
+`BiomeDefinition.AmbientVfx`. `WeatherMood.Effects` di-spawn permanen selama mood
+itu aktif — `RepeatEvery`, `Lifetime`, `MinDistance`, `Count` **tidak berlaku**
+di sana. Tornado sempat dipasang di mood "Berangin" dan akan berdiri diam
+sepanjang wave; dicopot, dipindah ke skill. Kalau suatu saat butuh kejadian yang
+LEWAT saat cuaca tertentu, jalurnya harus dibuat dulu — belum ada.
+
+### Peta run: angka final setelah putaran feedback
+
+`MapFloorsPerAct` **34**, `MapLanes` **5**, gap antar lantai **170 px**, pita node
+`lebar layar × 0,26` (cap 560), ruang tunggu 310 px dari tepi bawah, satu gerigi
+roda = satu lantai. Toko/kejadian/slot diturunkan (0,10 / 0,07 / 0,05) supaya
+jalur tidak penuh rehat. **Terukur 400 run simulasi: 27,7 wave rata-rata
+(min 21, maks 34), 6,3 node rehat** — permintaan pemilik project 25–30 wave.

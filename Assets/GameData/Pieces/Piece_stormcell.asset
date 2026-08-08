@@ -33,6 +33,8 @@ MonoBehaviour:
   ZoneDuration: 5
   ZoneTickInterval: 0.5
   ZoneDrift: 0
+  CastVfx: {fileID: 0}
+  CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10

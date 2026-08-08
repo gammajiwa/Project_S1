@@ -24,6 +24,8 @@ namespace Proto
         static readonly string[] SpeedLabels = { "1x", "2x", "3x", "5x" };
 
         // Grid lines stay hidden until you are holding something.
+        // Warna petak SEBELUM art masuk: abu-abu terang tipis, benar di atas papan gelap.
+        // Di atas kertas terang ia lenyap — makanya tema boleh menimpanya dengan tinta gelap.
         static readonly Color HiddenCell = new Color(0.5f, 0.5f, 0.6f, 0.05f);
         static readonly Color ShownCell = new Color(0.5f, 0.5f, 0.6f, 0.16f);
         static readonly Color HiddenBagCell = new Color(0.7f, 0.6f, 0.45f, 0.08f);
@@ -100,6 +102,66 @@ namespace Proto
         Text[] _mapGlyphs = System.Array.Empty<Text>();
         Text _mapYou;
         int _mapSig = -1;
+
+        // Bahan tampilan: kertas, bingkai, warna tinta. Boleh null — tiap pemakainya wajib jatuh
+        // kembali ke kotak warna datar, supaya art yang belum ada tidak pernah memblokir tes.
+        UiTheme _theme;
+
+        // Dua lapis bingkai di belakang papan grimoire. Disimpan supaya bisa disembunyikan
+        // bersama papannya nanti; sekarang keduanya hidup selama run berjalan.
+        Image _grimoireFrame;
+        Image _gridFrame;
+
+        // Warna petak yang BERLAKU. Begitu ADA tema, latarnya kertas terang — dan di atas kertas
+        // terang yang harus dipakai tinta gelap, bukan abu-abu terang yang benar di papan gelap.
+        Color CellIdle => _theme != null ? _theme.GridCellIdle : HiddenCell;
+        Color CellShown => _theme != null ? _theme.GridCellShown : ShownCell;
+
+        // Kegelapan yang menggerogoti tepi panel peta. Material sendiri (bukan aset di disk)
+        // karena ukurannya harus diberitahu ke shader tiap kali panelnya berubah bentuk, dan
+        // dua panel berbeda ukuran tidak boleh saling menimpa nilai itu.
+        Image _mapGloom;
+        Material _mapGloomMat;
+
+        // Material KEDUA dari shader yang sama, dipasang di perkamennya sendiri: ia yang
+        // memakan alpha di pita terluar. Tanpa itu peta tetap berakhir sebagai potongan
+        // persegi — menggelapkan tepi saja cuma menghasilkan persegi yang gelap.
+        Material _mapPaperMat;
+        Vector2 _mapGloomSize = new Vector2(-1f, -1f);
+
+        // ---------- mode MEMILIH di peta (pengganti portal fisik) ----------
+        //
+        // Peta yang sama punya dua wajah: diintip lewat M (kaca, murni baca) dan mode memilih
+        // (dibuka RunDirector begitu layar gelap penuh — klik node = berangkat). Penandanya
+        // berjalan dulu di peta, baru tirai menutup dan node dieksekusi dalam gelap.
+        bool _mapChoose;
+        Image _mapMark;
+        int _mapTravelTo = -1;
+        float _mapTravelT;
+
+        // Induk semua elemen peta. Satu transform yang bisa diangkat ke atas tirai (peta tampil
+        // di layar yang sudah hitam) atau dibiarkan di bawahnya (tirai menelan peta saat node
+        // dieksekusi) — tanpa memindahkan enam ratus segmen satu-satu.
+        RectTransform _mapRoot;
+
+        // Peta tegak ala STS: lantai menumpuk ke atas dengan jarak TETAP, bukan dipadatkan
+        // supaya muat — act yang tidak muat di panel diintip lewat roda mouse ATAU drag.
+        float _mapScroll;
+        bool _mapDragging;
+        Vector2 _mapDragLast;
+
+        // Jarak antar lantai. Renggang itu keputusan, bukan sisa ruang: node yang berdempetan
+        // membuat jalur antar lantai jadi garis pendek yang tak terbaca arahnya, dan seluruh
+        // act terlihat bantet walau isinya banyak.
+        const float MapFloorGap = 170f;
+
+        // Tirai hitam di atas SEGALANYA: menutup pergantian dari peta ke tempat baru.
+        Image _fadeCover;
+        float _coverT;
+        bool _coverRising;
+
+        const float CoverInSeconds = 0.35f;
+        const float CoverOutSeconds = 0.45f;
 
         // Segmen pendek per sambungan — jalur bezier putus-putus ala peta referensi.
         const int MapSegsPerEdge = 7;
@@ -239,7 +301,8 @@ namespace Proto
         readonly StringBuilder _sb = new StringBuilder(256);
 
         public void Init(PlayerCaster player, EnemyManager enemies, Camera cam,
-            ContentDatabase database, GameBalance balance, BiomeDresser biome = null)
+            ContentDatabase database, GameBalance balance, BiomeDresser biome = null,
+            UiTheme theme = null)
         {
             Player = player;
             Enemies = enemies;
@@ -247,6 +310,7 @@ namespace Proto
             _camera = cam;
             _db = database;
             _balance = balance;
+            _theme = theme;
             _tooltips = new TooltipBuilder(balance);
             _rerollCost = balance.RerollCostStart;
 
@@ -434,6 +498,11 @@ namespace Proto
             _baseCells = new Image[count];
             _skillCells = new Image[count];
 
+            // Bingkai DULU, petak belakangan: di kanvas ini urutan bikin adalah urutan gambar,
+            // jadi apa pun yang dibuat setelah ini duduk di atasnya. Dua lapis, dari luar ke
+            // dalam — sampul buku memeluk seluruh papan, bingkai emas memeluk petaknya saja.
+            BuildGridFrames();
+
             for (int y = 0; y < Grimoire.Height; y++)
             {
                 for (int x = 0; x < Grimoire.Width; x++)
@@ -442,7 +511,7 @@ namespace Proto
                     var pos = CellAnchor(x, y);
 
                     _baseCells[i] = MakeImage($"Base_{x}_{y}", pos,
-                        new Vector2(CellSize, CellSize), HiddenCell, Vector2.zero);
+                        new Vector2(CellSize, CellSize), CellIdle, Vector2.zero);
 
                     _skillCells[i] = MakeImage($"Skill_{x}_{y}",
                         pos + new Vector2(SkillInset, SkillInset),
@@ -452,8 +521,9 @@ namespace Proto
                 }
             }
 
-            _gridTitle = MakeText("GridTitle", new Vector2(Margin, GridTop() + 8), new Vector2(400, 24), 17,
-                new Color(0.85f, 0.82f, 0.95f), Vector2.zero, TextAnchor.LowerLeft);
+            _gridTitle = MakeText("GridTitle", new Vector2(GridX, GridTop() + 8), new Vector2(400, 24), 17,
+                _theme != null ? _theme.GridTitleInk : new Color(0.85f, 0.82f, 0.95f),
+                Vector2.zero, TextAnchor.LowerLeft);
             _gridTitle.text = "GRIMOIRE";
 
             // Below the three icon strips, which now own the band straight under the mana bar.
@@ -465,6 +535,137 @@ namespace Proto
                 new Vector2(880, 22), 14, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
                 TextAnchor.UpperLeft);
             _evolveText.text = "";
+        }
+
+        /// <summary>
+        /// Dua lapis bingkai di belakang petak grimoire: sampul buku di luar, bingkai emas di
+        /// dalam. Keduanya opsional — tanpa <see cref="UiTheme"/> atau tanpa sprite, papan
+        /// kembali jadi petak polos persis seperti sebelum art masuk.
+        /// </summary>
+        void BuildGridFrames()
+        {
+            // Dikosongkan lebih dulu, SELALU. Play mode tanpa domain reload mempertahankan nilai
+            // static, dan papan yang kali ini tidak punya prefab akan diam-diam memakai kotak
+            // milik run sebelumnya kalau baris ini tidak ada.
+            GridOverride = null;
+
+            if (_theme == null) return;
+
+            var grid = GridRect();
+
+            // --- jalur utama: PREFAB, dan kode tidak boleh ikut campur isinya ---
+            //
+            // Yang ditentukan kode cuma satu: di mana pojok kiri-bawah papan berada, karena itu
+            // yang harus sejajar dengan petak 7x7. Selebihnya — ukuran, anchor, hiasan, urutan
+            // anak — milik prefab. Begitu kode ikut menyetel sizeDelta, tiap perubahan di
+            // prefab akan tertimpa diam-diam saat run, dan yang mengubahnya tidak akan pernah
+            // tahu kenapa.
+            if (_theme.GrimoirePanelPrefab != null)
+            {
+                var go = Instantiate(_theme.GrimoirePanelPrefab, _canvas.transform, false);
+                go.name = "GrimoirePanel";
+
+                var rt = go.transform as RectTransform;
+                var area = FindGridArea(go.transform);
+
+                if (area != null)
+                {
+                    // Prefab yang membawa GridArea memegang kendali PENUH: letak papan, ukuran
+                    // papan, dan sekarang juga letak & ukuran petaknya. Kode berhenti menghitung
+                    // pojok papan — menggeser papan di prefab menggeser petak 7x7 bersamanya,
+                    // yang memang seluruh alasan papan ini dijadikan prefab.
+                    GridOverride = CanvasRectOf(area);
+                }
+                else if (rt != null)
+                {
+                    // Prefab tanpa GridArea: papan tetap didudukkan sejajar petak hitungan lama,
+                    // persis seperti sebelumnya. Ukuran dan anak-anaknya tetap tidak disentuh.
+                    rt.anchorMin = rt.anchorMax = Vector2.zero;
+                    rt.anchoredPosition = new Vector2(grid.xMin, grid.yMin);
+                }
+
+                _grimoireFrame = go.GetComponent<Image>();
+                return;
+            }
+
+            // --- jalur lama: satu sprite dipelarkan ke kotak hitungan ---
+            if (_theme.GrimoireFrame != null)
+            {
+                _grimoireFrame = MakeFrame("GrimoireFrame", _theme.GrimoireFrame,
+                    Expand(grid, _theme.GrimoirePad));
+            }
+        }
+
+        /// <summary>
+        /// Anak bernama <c>GridArea</c> di dalam prefab papan — kotak tempat petak 7x7 duduk.
+        ///
+        /// Dicari lewat NAMA, bukan lewat komponen penanda. Alasannya praktis: yang menata papan
+        /// bekerja di jendela prefab, dan menambah satu RectTransform kosong lalu menamainya bisa
+        /// dilakukan tanpa menyentuh kode sama sekali. Tidak ketemu = papan kembali ke perilaku
+        /// lama, bukan error.
+        /// </summary>
+        static RectTransform FindGridArea(Transform root)
+        {
+            var all = root.GetComponentsInChildren<RectTransform>(true);
+
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].name == "GridArea") return all[i];
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Kotak sebuah RectTransform dalam koordinat yang dipakai seluruh UI ini: piksel dari
+        /// pojok KIRI-BAWAH layar.
+        ///
+        /// Sudutnya diambil di ruang dunia lalu dikembalikan ke ruang kanvas, bukan dibaca dari
+        /// <c>anchoredPosition</c>: kotaknya boleh bersarang beberapa lapis di dalam prefab, dan
+        /// posisi berjangkar hanya berarti relatif terhadap induk terdekatnya. Titik nol digeser
+        /// pakai <c>rect.min</c> milik kanvas — bukan setengah ukurannya — supaya kanvas berpivot
+        /// tidak-di-tengah tidak menggeser seluruh papan.
+        /// </summary>
+        Rect CanvasRectOf(RectTransform area)
+        {
+            var canvasRt = _canvas.transform as RectTransform;
+
+            var corners = new Vector3[4];
+            area.GetWorldCorners(corners);
+
+            if (canvasRt == null)
+                return new Rect(corners[0].x, corners[0].y,
+                                corners[2].x - corners[0].x, corners[2].y - corners[0].y);
+
+            Vector2 min = canvasRt.InverseTransformPoint(corners[0]);
+            Vector2 max = canvasRt.InverseTransformPoint(corners[2]);
+
+            // Kanvas yang baru dibuat di frame ini bisa belum punya rect terhitung; layar adalah
+            // jawaban yang benar untuk Overlay dengan scaleFactor 1, yaitu persis kanvas ini.
+            Vector2 origin = canvasRt.rect.size.x < 1f || canvasRt.rect.size.y < 1f
+                ? new Vector2(-Screen.width * 0.5f, -Screen.height * 0.5f)
+                : canvasRt.rect.min;
+
+            return new Rect(min - origin, max - min);
+        }
+
+        /// <summary>
+        /// Satu gambar bingkai yang didudukkan di kotak layar tertentu.
+        ///
+        /// <c>Image.Type.Simple</c>, bukan <c>Sliced</c>: sembilan-irisan butuh
+        /// <c>spriteBorder</c> yang disetel di import, dan bingkai berhias seperti ini punya
+        /// sudut yang tidak boleh melar sama sekali. Selama kotak tujuannya sebangun dengan
+        /// gambarnya, melarnya tidak terbaca; begitu <c>spriteBorder</c> diisi nanti, tinggal
+        /// tukar satu baris ini.
+        /// </summary>
+        Image MakeFrame(string name, Sprite sprite, Rect rect)
+        {
+            var img = MakeImage(name, new Vector2(rect.xMin, rect.yMin), rect.size,
+                Color.white, Vector2.zero);
+            img.sprite = sprite;
+            img.type = Image.Type.Simple;
+            img.preserveAspect = false;
+            return img;
         }
 
         /// <summary>One radial cooldown dial per active skill, drawn on top of its cells.</summary>
@@ -1218,9 +1419,14 @@ namespace Proto
             }
         }
 
-        // Dengan sutradara run terpasang, tombol MULAI WAVE pensiun — portal yang memberangkatkan.
+        // Dengan sutradara run terpasang, tombol MULAI WAVE pensiun — LANJUT yang memberangkatkan.
         bool CanStartWave() =>
             _run == null && Player.Alive && !Enemies.WaveActive && Book.Spells.Count > 0;
+
+        /// <summary>Tombol LANJUT: membuka peta pemilih lewat transisi gelap.</summary>
+        bool CanDepart() =>
+            _run != null && _run.ReadyToDepart && Player.Alive && !Enemies.WaveActive &&
+            Book.Spells.Count > 0;
 
         void StartNextWave()
         {
@@ -1232,9 +1438,10 @@ namespace Proto
 
         void HandleBanner()
         {
-            bool showStart = CanStartWave();
+            bool showStart = CanStartWave() || CanDepart();
             _startBg.enabled = showStart;
             _startLabel.enabled = showStart;
+            _startLabel.text = _run != null ? "LANJUT   (SPACE)" : "MULAI WAVE   (SPACE)";
 
             if (!Player.Alive)
             {
@@ -1255,19 +1462,31 @@ namespace Proto
 
                 if (_run != null)
                 {
+                    // Transisi gelap / peta pemilih sedang aktif — biarkan layarnya yang bicara.
+                    if (!_run.ReadyToDepart)
+                    {
+                        _bannerText.text = "";
+                        return;
+                    }
+
                     if (_run.Resting)
                         _bannerText.text = "PULAU REHAT — " + RunDirector.KindLabel(_run.RestKind) +
-                                           "\nklik portal LANJUT kalau sudah";
+                                           "\nklik LANJUT kalau sudah";
                     else if (Enemies.Wave == 0)
-                        _bannerText.text = "SUSUN GRIMOIRE-MU\nlalu klik PORTAL buat berangkat   -   M = peta";
+                        _bannerText.text = "SUSUN GRIMOIRE-MU\nlalu klik LANJUT buat milih tujuan" +
+                                           " di peta   -   M = intip peta";
                     else
                         _bannerText.text = "WAVE " + Enemies.Wave +
-                                           " BERES\nklik PORTAL berikutnya   -   M = peta";
+                                           " BERES\nklik LANJUT — pilih node di peta   -   M = intip peta";
 
                     if (Book.Spells.Count == 0)
                     {
                         _bannerText.color = new Color(1f, 0.75f, 0.4f);
                         _bannerText.text += "\n\npasang minimal 1 SKILL di atas rune dulu";
+                    }
+                    else if (ProtoInput.RestartDown && _inputLock <= 0f && CanDepart())
+                    {
+                        _run.Depart();
                     }
 
                     return;
@@ -1300,7 +1519,8 @@ namespace Proto
         void HandleInput()
         {
             // Peta boleh diintip kapan pun, termasuk saat wave berjalan — ia murni baca.
-            if (_run != null && ProtoInput.MapDown) _mapOpen = !_mapOpen;
+            // Kecuali sedang mode MEMILIH: peta itu wajib dijawab, M tidak boleh menutupnya.
+            if (_run != null && ProtoInput.MapDown && !_mapChoose) _mapOpen = !_mapOpen;
 
             if (!Player.Alive || _inputLock > 0f) return;
 
@@ -1352,9 +1572,11 @@ namespace Proto
 
             if (HandlePanelClick(mouse)) return;
 
-            if (CanStartWave() && StartButtonRect().Contains(mouse))
+            if ((CanStartWave() || CanDepart()) && StartButtonRect().Contains(mouse))
             {
-                StartNextWave();
+                if (_run != null) _run.Depart();
+                else StartNextWave();
+
                 return;
             }
 
@@ -1472,6 +1694,34 @@ namespace Proto
 
         bool HandlePanelClick(Vector2 mouse)
         {
+            // Tirai sedang di layar — tidak ada satu pun klik yang boleh tembus.
+            if (_coverT > 0f) return true;
+
+            if (_mapChoose)
+            {
+                // Penanda sedang berjalan: pilihannya sudah jatuh, sisanya animasi.
+                if (_mapTravelTo >= 0) return true;
+
+                var map = _run.Map;
+                var panel = MapView();
+                var reachable = map.Reachable();
+
+                for (int i = 0; i < reachable.Count; i++)
+                {
+                    Vector2 at = MapNodePos(reachable[i], panel, map.Floors, map.Lanes);
+                    if (Vector2.Distance(mouse, at) > 34f) continue;
+
+                    BeginMapTravel(reachable[i]);
+                    return true;
+                }
+
+                // Klik di luar node = pegangan buat MENGGESER peta. Menutup tetap tidak bisa —
+                // memilih itu wajib.
+                _mapDragging = true;
+                _mapDragLast = mouse;
+                return true;
+            }
+
             if (_run != null && MapButtonRect().Contains(mouse))
             {
                 _mapOpen = !_mapOpen;
@@ -1480,9 +1730,10 @@ namespace Proto
 
             if (_mapOpen)
             {
-                // Peta itu kaca: klik di luar menutupnya, klik di dalam tidak memilih apa-apa —
-                // memilih tetap urusan portal di lapangan.
-                _mapOpen = MapPanelRect().Contains(mouse);
+                // Peta yang diintip itu kaca: tidak memilih apa-apa — tapi boleh DIGESER.
+                // Menutupnya lewat M / tombol PETA.
+                _mapDragging = true;
+                _mapDragLast = mouse;
                 return true;
             }
 
@@ -1541,6 +1792,18 @@ namespace Proto
 
                 return true;
             }
+
+            // Tombol LANJUT lolos dari toko, dan itu bukan kemewahan.
+            //
+            // Panel toko TUMPANG TINDIH dengan tombolnya di pulau rehat, dan dua baris di bawah
+            // sini menelan setiap klik yang jatuh di dalam panel ("return true" di ujung) —
+            // termasuk klik ke tombol yang sedang terlihat menyala hijau di atasnya. Yang
+            // dirasakan pemain: tombol satu-satunya untuk pergi dari toko tidak bisa dipencet,
+            // tanpa satu pun tanda kenapa.
+            //
+            // Ditaruh SESUDAH peta, kejadian, dan slot: ketiganya modal sungguhan yang memang
+            // harus menelan segalanya. Toko bukan modal — klik di luarnya saja sudah menutupnya.
+            if ((CanStartWave() || CanDepart()) && StartButtonRect().Contains(mouse)) return false;
 
             if (ShopEventActive && ShopButtonRect().Contains(mouse))
             {
@@ -1799,8 +2062,8 @@ namespace Proto
         static Vector2 GridPoint(Vector2 cell)
         {
             float step = CellSize + CellGap;
-            return new Vector2(Margin + cell.x * step + CellSize * 0.5f,
-                               Margin + cell.y * step + CellSize * 0.5f);
+            return new Vector2(GridX + cell.x * step + CellSize * 0.5f,
+                               GridY + cell.y * step + CellSize * 0.5f);
         }
 
         /// <summary>Same, for the backpack — different origin and a smaller cell.</summary>
@@ -1849,7 +2112,20 @@ namespace Proto
 
             run.OnRestEntered = OnRestEntered;
             run.OnAnnounce = (message, color) => Announce(message, color);
-            run.ClickBlocked = () => _mapOpen || _shopOpen || _gambleOpen || _eventOpen;
+
+            // Layar sudah gelap penuh: panel apa pun yang tersisa ditutup, peta mengambil alih
+            // sebagai PEMILIH — klik node = berangkat, bukan sekadar mengintip.
+            run.OnMapChoose = () =>
+            {
+                _shopOpen = false;
+                _gambleOpen = false;
+                _eventOpen = false;
+
+                _mapOpen = true;
+                _mapChoose = true;
+                _mapSig = -1;
+                _mapTravelTo = -1;
+            };
 
             BuildRunPanels();
         }
@@ -1885,14 +2161,48 @@ namespace Proto
         {
             int nodeCap = Mathf.Max(1, _balance.MapFloorsPerAct * _balance.MapLanes);
 
+            // Wadah peta: rect kosong di titik nol dengan anchor bawah-kiri — koordinat anak
+            // tetap koordinat layar, cuma induknya sekarang satu dan bisa diurutkan ulang.
+            var rootGo = new GameObject("MapRoot", typeof(RectTransform));
+            _mapRoot = rootGo.GetComponent<RectTransform>();
+            _mapRoot.SetParent(_canvas.transform, false);
+            _mapRoot.anchorMin = Vector2.zero;
+            _mapRoot.anchorMax = Vector2.zero;
+            _mapRoot.pivot = Vector2.zero;
+            _mapRoot.anchoredPosition = Vector2.zero;
+            _mapRoot.sizeDelta = Vector2.zero;
+
             // PEKAT penuh, bukan 0,97 — di bawahnya ada papan grimoire dan teks banner, dan
-            // keduanya membayang tembus di alpha berapa pun selain satu.
+            // keduanya membayang tembus di alpha berapa pun selain satu. Berlaku untuk kedua
+            // wajah: perkamen pun harus buram, kalau tidak papan grimoire membayang di baliknya.
+            var paper = _theme != null ? _theme.MapPaper : null;
+
             _mapBg = MakeImage("MapBg", Vector2.zero, Vector2.zero,
-                new Color(0.045f, 0.055f, 0.1f, 1f), Vector2.zero);
-            _mapTitle = MakeText("MapTitle", Vector2.zero, new Vector2(320f, 30f), 22,
-                new Color(1f, 0.9f, 0.6f), Vector2.zero, TextAnchor.MiddleCenter);
-            _mapLegend = MakeText("MapLegend", Vector2.zero, new Vector2(460f, 24f), 13,
-                new Color(0.8f, 0.85f, 0.9f), Vector2.zero, TextAnchor.MiddleCenter);
+                paper != null ? Color.white : new Color(0.045f, 0.055f, 0.1f, 1f), Vector2.zero);
+            _mapBg.transform.SetParent(_mapRoot, false);
+
+            if (paper != null)
+            {
+                _mapBg.sprite = paper;
+
+                // Simple, bukan Sliced/Tiled: perkamennya noda tak beraturan, bukan bingkai.
+                // Ditarik melar dari potret ke lanskap memang mengubah bentuk nodanya — dan
+                // justru itu yang tidak kelihatan, karena tidak ada bentuk yang dijanjikan.
+                _mapBg.type = Image.Type.Simple;
+                _mapBg.preserveAspect = false;
+            }
+
+            // Tinta di atas perkamen. Krem dan biru-muda yang lama dipilih untuk latar
+            // biru-gelap; di atas kertas terang keduanya lenyap.
+            _mapTitle = MakeText("MapTitle", Vector2.zero, new Vector2(480f, 30f), 22,
+                _theme != null ? _theme.MapTitleInk : new Color(1f, 0.9f, 0.6f),
+                Vector2.zero, TextAnchor.MiddleCenter);
+            _mapLegend = MakeText("MapLegend", Vector2.zero, new Vector2(620f, 40f), 13,
+                _theme != null ? _theme.MapLegendInk : new Color(0.8f, 0.85f, 0.9f),
+                Vector2.zero, TextAnchor.MiddleCenter);
+
+            _mapTitle.transform.SetParent(_mapRoot, false);
+            _mapLegend.transform.SetParent(_mapRoot, false);
 
             Centre(_mapBg.rectTransform);
             Centre(_mapTitle.rectTransform);
@@ -1907,6 +2217,7 @@ namespace Proto
             {
                 _mapEdges[i] = MakeImage("MapSeg" + i, Vector2.zero, new Vector2(10f, 5f),
                     Color.gray, Vector2.zero);
+                _mapEdges[i].transform.SetParent(_mapRoot, false);
                 Centre(_mapEdges[i].rectTransform);
                 _mapEdges[i].enabled = false;
             }
@@ -1919,25 +2230,58 @@ namespace Proto
             {
                 _mapRings[i] = MakeImage("MapRing" + i, Vector2.zero, new Vector2(42f, 42f),
                     Color.white, Vector2.zero);
+                _mapRings[i].transform.SetParent(_mapRoot, false);
                 Centre(_mapRings[i].rectTransform);
                 _mapRings[i].enabled = false;
 
                 _mapNodes[i] = MakeImage("MapNode" + i, Vector2.zero, new Vector2(34f, 34f),
                     Color.white, Vector2.zero);
+                _mapNodes[i].transform.SetParent(_mapRoot, false);
                 Centre(_mapNodes[i].rectTransform);
                 _mapNodes[i].enabled = false;
 
                 _mapGlyphs[i] = MakeText("MapGlyph" + i, Vector2.zero, new Vector2(36f, 30f), 16,
                     Color.black, Vector2.zero, TextAnchor.MiddleCenter);
+                _mapGlyphs[i].transform.SetParent(_mapRoot, false);
                 Centre(_mapGlyphs[i].rectTransform);
                 _mapGlyphs[i].enabled = false;
             }
 
             _mapYou = MakeText("MapYou", Vector2.zero, new Vector2(120f, 24f), 15,
-                new Color(1f, 0.85f, 0.4f), Vector2.zero, TextAnchor.MiddleCenter);
+                _theme != null ? _theme.MapYouInk : new Color(1f, 0.85f, 0.4f),
+                Vector2.zero, TextAnchor.MiddleCenter);
+            _mapYou.transform.SetParent(_mapRoot, false);
             Centre(_mapYou.rectTransform);
             _mapYou.text = "KAMU";
             _mapYou.enabled = false;
+
+            // KARAKTER pemain di peta: token bulat kuning — warna yang sama dengan kapsul
+            // pemain di lapangan, supaya "itu gw" terbaca tanpa dijelaskan. Bulatnya memakai
+            // `_circle` yang sudah dibuat BuildSkillWidgets (jalan lebih dulu, lihat Init);
+            // sprite bulat bawaan Unity TIDAK bisa dipakai — GetBuiltinResource("UI/Skin/
+            // Knob.psd") gagal saat runtime.
+            _mapMark = MakeImage("MapMark", Vector2.zero, new Vector2(26f, 26f),
+                new Color(1f, 0.8f, 0.25f, 1f), Vector2.zero);
+            _mapMark.transform.SetParent(_mapRoot, false);
+            Centre(_mapMark.rectTransform);
+            _mapMark.sprite = _circle;
+            _mapMark.enabled = false;
+
+            // Gloom tepi — dibuat TERAKHIR karena di kanvas ini urutan bikin adalah urutan
+            // gambar, dan ia harus jatuh di atas SEMUA isi peta. Ditaruh di bawah node, yang
+            // terjadi adalah kertas menghitam sementara node di tepi tetap menyala penuh —
+            // dua bahan yang tidak saling kenal. Di atas, seluruh tepi peta surut bersama.
+            BuildMapGloom();
+
+            // Tirai hitam satu layar penuh. Dibentangkan lewat anchor, bukan ukuran — resolusi
+            // berapa pun tertutup. SetAsLastSibling saat dipakai yang menjaganya tetap teratas.
+            _fadeCover = MakeImage("FadeCover", Vector2.zero, Vector2.zero,
+                Color.black, Vector2.zero);
+            _fadeCover.rectTransform.anchorMin = Vector2.zero;
+            _fadeCover.rectTransform.anchorMax = Vector2.one;
+            _fadeCover.rectTransform.offsetMin = Vector2.zero;
+            _fadeCover.rectTransform.offsetMax = Vector2.zero;
+            _fadeCover.enabled = false;
 
             _mapBg.enabled = false;
             _mapTitle.enabled = false;
@@ -2048,10 +2392,214 @@ namespace Proto
                 }
             }
 
+            UpdateMapTransition(dt);
             DrawMapOverlay();
             DrawGamble(dt);
             DrawEvent();
         }
+
+        /// <summary>
+        /// Klik node di mode memilih: penanda mulai berjalan dari node sekarang (atau dari tepi
+        /// kiri peta di awal act) menuju node terpilih, menyusuri bezier yang SAMA dengan jalur
+        /// yang tergambar — seed-nya seed jalur itu juga.
+        /// </summary>
+        void BeginMapTravel(RunNode node)
+        {
+            // Titik asalnya TIDAK disimpan — dihitung ulang tiap frame di DrawMapMarker, supaya
+            // peta yang digulung di tengah perjalanan tidak meninggalkan penandanya di belakang.
+            _mapTravelTo = node.Index;
+            _mapTravelT = 0f;
+        }
+
+        /// <summary>
+        /// Dua animasi kecil yang menjahit peta ke dunia: penanda yang berjalan, lalu tirai
+        /// hitam yang menutup sebelum node dieksekusi dan terangkat setelahnya. Gloom yang
+        /// membuka kembali diurus RunDirector — tirai ini cuma menyembunyikan pergantian UI.
+        /// </summary>
+        void UpdateMapTransition(float dt)
+        {
+            if (_run == null) return;
+
+            if (_mapTravelTo >= 0 && !_coverRising)
+            {
+                _mapTravelT += dt / Mathf.Max(0.1f, _balance.MapMarkerTravel);
+
+                if (_mapTravelT >= 1f)
+                {
+                    _mapTravelT = 1f;
+                    _coverRising = true;
+                }
+            }
+
+            if (_coverRising)
+            {
+                _coverT = Mathf.MoveTowards(_coverT, 1f, dt / CoverInSeconds);
+
+                if (_coverT >= 1f)
+                {
+                    // Gelap total: BARU sekarang node dieksekusi — teleport, ganti wajah,
+                    // dan bongkar-pasang pulau tidak pernah terlihat prosesnya.
+                    var node = _run.Map.Nodes[_mapTravelTo];
+
+                    _mapTravelTo = -1;
+                    _mapChoose = false;
+                    _mapOpen = false;
+                    _coverRising = false;
+
+                    _run.PickNode(node);
+                }
+            }
+            else if (_coverT > 0f)
+            {
+                _coverT = Mathf.MoveTowards(_coverT, 0f, dt / CoverOutSeconds);
+            }
+
+            if (_fadeCover != null)
+            {
+                // Tirai menumpang fase gloom di 45% terakhirnya: penutupan gloom-nya sendiri
+                // tetap terlihat menjalar, tapi ujung transisi HITAM TOTAL — bukan "gloom yang
+                // sangat gelap" yang masih meloloskan HUD dan siluet pohon.
+                float fromFade = _run != null
+                    ? Mathf.Clamp01((_run.Fade - 0.55f) / 0.45f)
+                    : 0f;
+
+                float alpha = Mathf.Max(_coverT, fromFade);
+
+                _fadeCover.enabled = alpha > 0f;
+
+                if (alpha > 0f)
+                {
+                    _fadeCover.color = new Color(0f, 0f, 0f, alpha);
+                    _fadeCover.rectTransform.SetAsLastSibling();
+
+                    // DrawMapOverlay jalan SESUDAH ini dan mengangkat peta ke atas tirai —
+                    // kecuali tirai sedang naik menelan pilihan yang barusan jatuh.
+                }
+            }
+        }
+
+        /// <summary>
+        /// Bidang kegelapan yang menggerogoti tepi panel peta, memakai shader UI
+        /// <c>Grimoire/GloomEdge</c>. Diam saja kalau shadernya tidak ketemu — peta tanpa gloom
+        /// masih peta, dan mematikan seluruh layar peta gara-gara hiasan itu pertukaran yang salah.
+        /// </summary>
+        void BuildMapGloom()
+        {
+            var shader = Shader.Find("Grimoire/GloomEdge");
+
+            if (shader == null)
+            {
+                Debug.LogWarning("[GrimoireUI] shader Grimoire/GloomEdge tidak ketemu — " +
+                                 "peta jalan tanpa gloom tepi.");
+                return;
+            }
+
+            _mapGloomMat = new Material(shader) { name = "GloomEdge (lapisan peta)" };
+            Tune(_mapGloomMat);
+            _mapGloomMat.SetFloat("_PaperMode", 0f);
+
+            // Perkamennya dipasangi material dari shader yang SAMA, dengan nilai derau yang sama.
+            // Kalau keduanya diberi setelan berbeda, lekuk larutnya dan lekuk gelapnya berjalan
+            // sendiri-sendiri, dan yang terbaca dua tepi — bukan satu tepi yang menghitam.
+            if (_mapBg != null && _mapBg.sprite != null)
+            {
+                _mapPaperMat = new Material(shader) { name = "GloomEdge (perkamen peta)" };
+                Tune(_mapPaperMat);
+                _mapPaperMat.SetFloat("_PaperMode", 1f);
+
+                var r = _mapBg.sprite.rect;
+                _mapPaperMat.SetFloat("_TexAspect", r.width / Mathf.Max(1f, r.height));
+
+                _mapBg.material = _mapPaperMat;
+            }
+
+            _mapGloom = MakeImage("MapGloom", Vector2.zero, Vector2.zero, Color.white, Vector2.zero);
+            _mapGloom.transform.SetParent(_mapRoot, false);
+            Centre(_mapGloom.rectTransform);
+            _mapGloom.material = _mapGloomMat;
+            _mapGloom.enabled = false;
+        }
+
+        /// <summary>Setelan bersama kedua material gloom peta — satu tempat, supaya tidak bisa beda.</summary>
+        void Tune(Material m)
+        {
+            if (_theme == null) return;
+            m.SetColor("_Color", _theme.GloomTint);
+            m.SetFloat("_Ceiling", _theme.GloomCeiling);
+            m.SetFloat("_Scale", _theme.GloomScale);
+            m.SetFloat("_Wobble", _theme.GloomWobble);
+
+            // Kecepatan WAJIB ikut dikirim. Materialnya dibuat runtime dari shader, jadi yang
+            // tidak disetel di sini jatuh ke nilai bawaan shader — dan bawaannya lambat sekali
+            // sampai tepinya terbaca sebagai gambar diam, bukan sebagai kegelapan yang hidup.
+            m.SetFloat("_Churn", _theme.GloomChurn);
+            m.SetFloat("_Drift", _theme.GloomDrift);
+            m.SetFloat("_TearScale", _theme.TearScale);
+            m.SetFloat("_TearFray", _theme.TearFray);
+            m.SetFloat("_TearSoft", _theme.TearSoft);
+        }
+
+        /// <summary>
+        /// Menyetel gloom mengikuti panel yang sedang berlaku. Ukurannya dikirim ke shader dalam
+        /// PIKSEL: itu yang membuat pita gelap peta besar dan peta kecil terlihat berasal dari
+        /// satu bahan alih-alih satu melar dan satu gepeng.
+        ///
+        /// Jangkauannya — bukan kepekatannya — yang diperkecil untuk panel intip. Menurunkan
+        /// kepekatan akan mengubah warnanya; memendekkan jangkauan menjaga bahannya tetap sama.
+        /// </summary>
+        void LayoutMapGloom(Rect panel)
+        {
+            if (_mapGloom == null) return;
+
+            _mapGloom.rectTransform.sizeDelta = panel.size;
+            _mapGloom.rectTransform.anchoredPosition = panel.center;
+
+            if (_mapGloomSize == panel.size) return;
+            _mapGloomSize = panel.size;
+
+            float inset = _theme != null ? _theme.GloomInset : 190f;
+            float tearDepth = _theme != null ? _theme.TearDepth : 64f;
+
+            if (!_mapChoose && _theme != null)
+            {
+                // Jangkauannya yang mengecil untuk panel intip, bukan kepekatannya — menurunkan
+                // kepekatan mengubah warnanya, memendekkan jangkauan menjaga bahannya sama.
+                inset *= _theme.GloomInsetSmallMul;
+
+                // Gigitan sobek TIDAK ikut diperkecil sekuat itu. Ukuran robekan adalah sifat
+                // KERTASNYA, bukan sifat panelnya — kertas yang sama disobek dua kali tidak
+                // menghasilkan gigitan yang mengecil mengikuti potongannya.
+                tearDepth *= Mathf.Lerp(1f, _theme.GloomInsetSmallMul, 0.4f);
+            }
+
+            // Dijepit ke seperempat sisi terpendek: kalau tidak, panel sempit bisa membuat kedua
+            // sisinya bertemu di tengah dan seluruh peta tertutup gelap.
+            inset = Mathf.Min(inset, Mathf.Min(panel.width, panel.height) * 0.25f);
+
+            var size = new Vector4(panel.width, panel.height, 0f, 0f);
+
+            // Gigitan sobek dikirim ke KEDUA material dengan nilai identik — lapisan gelap yang
+            // memakai kedalaman berbeda dari kertasnya akan menyisakan tepi gelap menggantung
+            // di luar kertas, atau memotong kertas yang masih utuh.
+            _mapGloomMat.SetVector("_RectSize", size);
+            _mapGloomMat.SetFloat("_Inset", inset);
+            _mapGloomMat.SetFloat("_TearDepth", tearDepth);
+
+            if (_mapPaperMat == null) return;
+            _mapPaperMat.SetVector("_RectSize", size);
+            _mapPaperMat.SetFloat("_Inset", inset);
+            _mapPaperMat.SetFloat("_TearDepth", tearDepth);
+        }
+
+        /// <summary>
+        /// Kotak peta yang BERLAKU SEKARANG. Peta punya dua ukuran, dan seluruh tata letaknya —
+        /// lebar pita node, jepitan tepi, batas scroll, uji terlihat-atau-tidak — diturunkan dari
+        /// sini. Satu sumber, supaya peta kecil tidak pernah dihitung dengan angka peta besar.
+        /// </summary>
+        Rect MapView() =>
+            _mapChoose || _theme == null
+                ? MapPanelRect()
+                : MapPeekRect(_theme.PeekScreenFraction);
 
         void DrawMapOverlay()
         {
@@ -2062,12 +2610,14 @@ namespace Proto
                 _mapBg.enabled = open;
                 _mapTitle.enabled = open;
                 _mapLegend.enabled = open;
-                if (_mapYou != null) _mapYou.enabled = open && _run != null && _run.Map.At >= 0;
+                if (_mapGloom != null) _mapGloom.enabled = open;
             }
 
             if (!open)
             {
                 _mapSig = -1;
+                if (_mapYou != null) _mapYou.enabled = false;
+                if (_mapMark != null) _mapMark.enabled = false;
 
                 for (int i = 0; i < _mapNodes.Length; i++)
                 {
@@ -2085,12 +2635,62 @@ namespace Proto
                 return;
             }
 
+            // Peta selalu lapisan teratas selama terbuka — di atas tirai hitam (layarnya memang
+            // dia) dan di atas panel apa pun. Saat tirai sedang NAIK menelan pilihan, peta
+            // dibiarkan di bawahnya supaya ikut tertelan.
+            if (_mapRoot != null && !_coverRising) _mapRoot.SetAsLastSibling();
+
             var map = _run.Map;
             var reachable = map.Reachable();
+            var view = MapView();
+
+            // Buka pertama: scroll menjemput posisi pemain — lantai yang sedang dipijak duduk
+            // di sepertiga bawah panel, dan sisanya diintip lewat roda mouse.
+            if (_mapSig == -1)
+            {
+                int floor = map.At >= 0 ? map.Nodes[map.At].Floor : 0;
+                _mapScroll = Mathf.Clamp(floor * MapFloorGap - (view.height - 220f) * 0.35f,
+                    0f, MapScrollMax(map, view));
+            }
+
+            // Roda: satu gerigi ≈ satu lantai. Drag: peta nempel di kursor — ditarik ke bawah
+            // berarti mengintip ke atas, persis menggeser kertas.
+            float wheel = ProtoInput.ScrollY;
+
+            if (wheel != 0f)
+            {
+                // Satu gerigi = satu lantai. Act panjang butuh langkah scroll yang sepadan;
+                // langkah piksel tetap membuat peta 30-an lantai terasa digulung selamanya.
+                _mapScroll = Mathf.Clamp(_mapScroll + wheel * MapFloorGap,
+                    0f, MapScrollMax(map, view));
+            }
+
+            if (_mapDragging)
+            {
+                if (!ProtoInput.LeftHeld)
+                {
+                    _mapDragging = false;
+                }
+                else
+                {
+                    Vector2 now = ProtoInput.MousePosition;
+                    _mapScroll = Mathf.Clamp(_mapScroll - (now.y - _mapDragLast.y),
+                        0f, MapScrollMax(map, view));
+                    _mapDragLast = now;
+                }
+            }
 
             // Tata letak cuma dihitung saat ada yang berubah — enam ratus segmen yang disusun
-            // ulang enam puluh kali sedetik adalah harga tanpa barang.
+            // ulang enam puluh kali sedetik adalah harga tanpa barang. Scroll ikut ditandatangani:
+            // menggulung = berubah, diam = tidak dihitung ulang.
             int sig = _run.Act * 100000 + (map.At + 2) * 100 + map.Nodes.Count;
+            sig = sig * 8191 + Mathf.RoundToInt(_mapScroll);
+
+            // UKURAN panel ikut ditandatangani. Tanpa ini, berpindah antara peta besar dan peta
+            // intip — atau sekadar mengubah ukuran jendela — meninggalkan tata letak lama yang
+            // dihitung untuk kotak yang sudah tidak ada.
+            sig = sig * 31 + Mathf.RoundToInt(view.width) * 7 + Mathf.RoundToInt(view.height);
+            sig = sig * 2 + (_mapChoose ? 1 : 0);
 
             if (sig != _mapSig)
             {
@@ -2110,48 +2710,176 @@ namespace Proto
                     var tone = RunDirector.KindColor(n.Kind);
                     tone.a = pulse;
                     _mapNodes[i].color = tone;
-                    _mapRings[i].color = new Color(1f, 1f, 1f, pulse);
+                    var ringInk = _theme != null ? _theme.MapRingInk : Color.white;
+                    ringInk.a = pulse;
+                    _mapRings[i].color = ringInk;
                 }
                 else if (map.At == n.Index)
                 {
                     _mapRings[i].color = new Color(1f, 0.85f, 0.4f, 0.6f + 0.4f * pulse);
                 }
             }
+
+            DrawMapMarker(map);
         }
 
-        /// <summary>Posisi layar satu node — KIRI ke KANAN seperti peta referensi (lantai jadi
-        /// kolom, lajur jadi baris), plus jitter ber-seed supaya berhenti terbaca sebagai kisi.
-        /// Seed membuatnya diam: peta yang bergoyang tiap frame bukan peta.</summary>
+        /// <summary>
+        /// KARAKTER pemain di peta: token kuning yang berdiri di node sekarang — atau di ruang
+        /// tunggu bawah peta sebelum langkah pertama act — dan BERJALAN menyusuri jalur begitu
+        /// node berikutnya dipilih. Label KAMU menempel di atasnya.
+        /// </summary>
+        void DrawMapMarker(RunMap map)
+        {
+            if (_mapMark == null) return;
+
+            bool travelling = _mapTravelTo >= 0;
+
+            var panel = MapView();
+            Vector2 entry = MapEntryPos(panel);
+            Vector2 at;
+
+            if (travelling)
+            {
+                Vector2 to = MapNodePos(map.Nodes[_mapTravelTo], panel, map.Floors, map.Lanes);
+                float t = Mathf.SmoothStep(0f, 1f, _mapTravelT);
+
+                if (map.At >= 0)
+                {
+                    Vector2 from = MapNodePos(map.Nodes[map.At], panel, map.Floors, map.Lanes);
+
+                    // Bezier yang sama dengan jalur yang tergambar — seed-nya pun sama.
+                    TrailControls(from, to, map.At * 31 + _mapTravelTo * 7,
+                        out Vector2 p1, out Vector2 p2);
+
+                    float u = 1f - t;
+                    at = u * u * u * from + 3f * u * u * t * p1
+                         + 3f * u * t * t * p2 + t * t * t * to;
+                }
+                else
+                {
+                    // Awal act: mendaki dari ruang tunggu, menyusuri jalur emas yang SAMA
+                    // dengan yang tergambar — seed-nya seed jalur itu juga.
+                    TrailControls(entry, to, EntrySeed(_mapTravelTo),
+                        out Vector2 p1, out Vector2 p2);
+
+                    float u = 1f - t;
+                    at = u * u * u * entry + 3f * u * u * t * p1
+                         + 3f * u * t * t * p2 + t * t * t * to;
+                }
+
+                // Peta ikut menjemput: kalau tujuannya di luar jendela, gulung secukupnya
+                // supaya penanda tidak pernah berjalan keluar layar.
+                float roomTop = panel.yMax - 150f;
+                if (to.y > roomTop)
+                    _mapScroll = Mathf.Clamp(_mapScroll + (to.y - roomTop) * 0.12f,
+                        0f, MapScrollMax(map, panel));
+            }
+            else
+            {
+                // Diam: di node yang dipijak, atau di ruang tunggu kalau belum melangkah.
+                at = map.At >= 0
+                    ? MapNodePos(map.Nodes[map.At], panel, map.Floors, map.Lanes)
+                    : entry;
+            }
+
+            bool visible = at.y > panel.yMin + 30f && at.y < panel.yMax - 44f;
+            _mapMark.enabled = visible;
+            _mapMark.rectTransform.anchoredPosition = at;
+
+            if (_mapYou != null)
+            {
+                _mapYou.enabled = visible;
+                _mapYou.rectTransform.anchoredPosition = at + new Vector2(0f, 34f);
+            }
+        }
+
+        /// <summary>Posisi layar satu node — BAWAH ke ATAS ala Slay the Spire (lajur jadi kolom,
+        /// lantai menumpuk dengan jarak tetap), plus jitter ber-seed supaya berhenti terbaca
+        /// sebagai kisi. Seed membuatnya diam: peta yang bergoyang tiap frame bukan peta.
+        /// Sudah dikurangi <see cref="_mapScroll"/> — semua pemakainya otomatis ikut scroll.</summary>
         Vector2 MapNodePos(RunNode n, Rect panel, int floors, int lanes)
         {
-            float left = panel.xMin + 64f;
-            float right = panel.xMax - 64f;
-            float bottom = panel.yMin + 70f;
-            float top = panel.yMax - 84f;
+            // Lebar pita node diambil dari LEBAR LAYAR, bukan dari angka piksel mati: pita
+            // sempit di layar lebar membuat seluruh act menggumpal di tengah dan dua pertiga
+            // monitor kosong. Batas atasnya menjaga layar ultra-lebar tetap terbaca sebagai
+            // jalur, bukan sebagai titik-titik yang berjauhan.
+            float half = Mathf.Min(panel.width * 0.26f, 560f);
+            float left = panel.center.x - half;
+            float right = panel.center.x + half;
 
-            float colW = (right - left) / Mathf.Max(1, floors - 1);
-            float rowH = (top - bottom) / Mathf.Max(1, lanes - 1);
+            // Ruang kosong di bawah lantai pertama itu disengaja: karakter pemain berdiri di
+            // sana sebelum langkah pertamanya — dan jaraknya SATU lantai lebih, supaya langkah
+            // pembuka terbaca sebagai perjalanan, bukan lompatan sebelah kaki. Angkanya juga
+            // yang menjauhkan seluruh peta dari tepi bawah layar.
+            float bottom = panel.yMin + 310f;
+
+            float colW = (right - left) / Mathf.Max(1, lanes - 1);
+
+            // BOSS dikunci MATI di tengah, tanpa geser dan tanpa jitter — dia tujuan seluruh
+            // act, dan tujuan yang mencong terbaca sebagai kesalahan layout, bukan aksen.
+            if (n.Floor == floors - 1)
+                return new Vector2(panel.center.x,
+                    bottom + n.Floor * MapFloorGap - _mapScroll);
+
+            // Dua lapis ketidakrapian, dua alasan: geser PER LANTAI membuat garis antar lantai
+            // selalu miring (kolom yang lurus vertikal terbaca sebagai tabel, bukan jalan),
+            // jitter PER NODE memecah sisa keteraturannya. Dua-duanya ber-seed — peta diam.
+            //
+            // Keduanya diukur dari JARAK ANTAR LAJUR, bukan piksel tetap: dengan pita yang
+            // ikut lebar layar, geser ±40 px yang dulu terasa miring berubah jadi nyaris lurus.
+            uint fh = (uint)((n.Floor + 1) * 2246822519u);
+            float floorShift = ((fh & 0xFF) / 255f - 0.5f) * colW * 0.5f;
 
             uint h = (uint)((n.Index + 1) * 2654435761u);
-            float jx = ((h & 0xFF) / 255f - 0.5f) * 16f;
-            float jy = (((h >> 8) & 0xFF) / 255f - 0.5f) * 30f;
+            float jx = ((h & 0xFF) / 255f - 0.5f) * colW * 0.35f;
+            float jy = (((h >> 8) & 0xFF) / 255f - 0.5f) * 38f;
 
-            return new Vector2(left + n.Floor * colW + jx, bottom + n.Lane * rowH + jy);
+            // Geser + jitter bisa melempar lajur terluar melewati tepi layar; dijepit di sini
+            // supaya node paling pinggir tidak pernah terpotong, resolusi berapa pun.
+            float x = Mathf.Clamp(left + n.Lane * colW + floorShift + jx,
+                panel.xMin + 44f, panel.xMax - 44f);
+
+            return new Vector2(x, bottom + n.Floor * MapFloorGap + jy - _mapScroll);
         }
+
+        /// <summary>Ruang tunggu pemain di bawah lantai pertama — ikut tergulung bersama peta.</summary>
+        Vector2 MapEntryPos(Rect panel) =>
+            new Vector2(panel.center.x, panel.yMin + 165f - _mapScroll);
+
+        /// <summary>Seed jalur dari ruang tunggu ke node lantai pertama — stabil per node.</summary>
+        static int EntrySeed(int nodeIndex) => 1000003 + nodeIndex * 13;
+
+
+        /// <summary>Batas atas scroll: sisa tinggi act yang tidak muat di panel.
+        /// Konstantanya = ruang tunggu bawah (310) + kepala boss (70) + jendela atas (60).</summary>
+        float MapScrollMax(RunMap map, Rect panel) =>
+            Mathf.Max(0f, (map.Floors - 1) * MapFloorGap - (panel.height - 440f));
+
+        /// <summary>Jendela vertikal tempat node boleh tergambar — di luarnya disembunyikan,
+        /// supaya peta yang di-scroll tidak menimpa judul dan legenda.</summary>
+        bool MapInView(Vector2 at, Rect panel) =>
+            at.y > panel.yMin + 46f && at.y < panel.yMax - 60f;
 
         void LayoutMap(RunMap map, List<RunNode> reachable)
         {
-            var panel = MapPanelRect();
+            var panel = MapView();
 
             _mapBg.rectTransform.sizeDelta = panel.size;
             _mapBg.rectTransform.anchoredPosition = panel.center;
 
-            _mapTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 30f);
-            _mapTitle.text = "PETA RUN  -  ACT " + _run.Act;
+            LayoutMapGloom(panel);
 
-            _mapLegend.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMin + 22f);
-            _mapLegend.text =
-                "W wave    E elite    T toko    ? kejadian    S slot    B boss        M = tutup";
+            _mapTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 30f);
+            _mapTitle.text = _mapChoose
+                ? "ACT " + _run.Act + "  -  PILIH TUJUANMU"
+                : "PETA RUN  -  ACT " + _run.Act;
+
+            _mapLegend.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMin + 52f);
+            _mapLegend.text = _mapChoose
+                ? "klik node yang BERDENYUT   -   tarik / scroll buat geser peta\n" +
+                  "W wave    E elite    T toko    ? kejadian    S slot    B boss"
+                : "W wave    E elite    T toko    ? kejadian    S slot    B boss\n" +
+                  "tarik / scroll buat geser peta        M = tutup";
 
             int seg = 0;
 
@@ -2168,9 +2896,26 @@ namespace Proto
 
                     Color tone = walked ? new Color(0.55f, 0.85f, 0.55f, 0.85f)
                         : offered ? new Color(1f, 0.85f, 0.3f, 0.95f)
+                        : _theme != null ? _theme.MapPathInk
                         : new Color(0.55f, 0.58f, 0.66f, 0.38f);
 
                     seg = DrawTrail(a, b, n.Index * 31 + nextIndex * 7, tone, seg);
+                }
+            }
+
+            // Pemain adalah simpul pertama peta: sebelum langkah pertama act, jalur EMAS
+            // terbentang dari ruang tunggunya ke SEMUA pilihan lantai pertama — persis
+            // coretan pemilik project di screenshot-nya.
+            if (map.At < 0)
+            {
+                Vector2 entry = MapEntryPos(panel);
+
+                foreach (var n in map.Nodes)
+                {
+                    if (n.Floor != 0) continue;
+
+                    seg = DrawTrail(entry, MapNodePos(n, panel, map.Floors, map.Lanes),
+                        EntrySeed(n.Index), new Color(1f, 0.85f, 0.3f, 0.95f), seg);
                 }
             }
 
@@ -2181,13 +2926,16 @@ namespace Proto
                 bool live = i < map.Nodes.Count;
                 if (_mapNodes[i] == null) continue;
 
-                _mapNodes[i].enabled = live;
-                _mapRings[i].enabled = live;
-                _mapGlyphs[i].enabled = live;
-                if (!live) continue;
+                RunNode n = live ? map.Nodes[i] : null;
+                Vector2 pos = live ? MapNodePos(n, panel, map.Floors, map.Lanes) : Vector2.zero;
 
-                var n = map.Nodes[i];
-                var pos = MapNodePos(n, panel, map.Floors, map.Lanes);
+                // Yang tergulung keluar jendela disembunyikan — bukan digambar menimpa judul.
+                bool show = live && MapInView(pos, panel);
+
+                _mapNodes[i].enabled = show;
+                _mapRings[i].enabled = show;
+                _mapGlyphs[i].enabled = show;
+                if (!show) continue;
 
                 bool now = map.At == n.Index;
                 bool next = reachable.Contains(n);
@@ -2208,7 +2956,8 @@ namespace Proto
                 Color ring;
 
                 if (now) ring = new Color(1f, 0.85f, 0.4f, 1f);
-                else if (next) ring = Color.white;
+                // Putih lenyap di perkamen — cincin "berikutnya" harus jadi tinta, bukan sorotan.
+                else if (next) ring = _theme != null ? _theme.MapRingInk : Color.white;
                 else if (walked)
                 {
                     ring = new Color(0.55f, 0.85f, 0.55f, 0.7f);
@@ -2250,20 +2999,34 @@ namespace Proto
         /// jalan setapak, bukan kabel. Control point diacak ber-seed dari indeks node, jadi
         /// kelokannya sama setiap kali peta dibuka.
         /// </summary>
+        /// <summary>
+        /// Control point bezier satu sambungan. Dipisah dari DrawTrail supaya penanda yang
+        /// berjalan bisa menyusuri kurva yang PERSIS sama dengan jalur yang tergambar.
+        /// </summary>
+        static void TrailControls(Vector2 from, Vector2 to, int seed,
+            out Vector2 p1, out Vector2 p2)
+        {
+            Vector2 span = to - from;
+            float length = span.magnitude;
+            Vector2 perp = length > 0.001f ? new Vector2(-span.y, span.x) / length : Vector2.zero;
+
+            // NYARIS lurus, satu arah lengkung per garis. Amplitudo besar dengan dua kontrol
+            // acak terpisah menghasilkan huruf S yang meliuk beda-beda tiap ruas — "terlalu
+            // belok-belok dan tidak seirama" kata pemilik project, dan peta STS rujukannya
+            // memang berjalur hampir lurus. Lengkung tipis cukup untuk terasa digambar tangan.
+            var rng = new System.Random(seed);
+            float bend = (float)(rng.NextDouble() * 2.0 - 1.0) * length * 0.06f;
+            p1 = from + span * 0.33f + perp * bend;
+            p2 = from + span * 0.67f + perp * (bend * 0.6f);
+        }
+
         int DrawTrail(Vector2 from, Vector2 to, int seed, Color tone, int seg)
         {
             Vector2 span = to - from;
             float length = span.magnitude;
             if (length < 1f) return seg;
 
-            Vector2 perp = new Vector2(-span.y, span.x) / length;
-
-            var rng = new System.Random(seed);
-            float curve = length * 0.3f;
-            Vector2 p1 = from + span * 0.33f
-                         + perp * ((float)(rng.NextDouble() * 2.0 - 1.0) * curve);
-            Vector2 p2 = from + span * 0.67f
-                         + perp * ((float)(rng.NextDouble() * 2.0 - 1.0) * curve);
+            TrailControls(from, to, seed, out Vector2 p1, out Vector2 p2);
 
             Vector2 prev = from;
 
@@ -2280,6 +3043,14 @@ namespace Proto
                 Vector2 centre = (prev + point) * 0.5f;
                 Vector2 dir = point - prev;
                 float len = dir.magnitude * 0.7f;
+
+                // Segmen yang tergulung keluar jendela ikut disembunyikan seperti nodenya.
+                if (!MapInView(centre, MapView()))
+                {
+                    _mapEdges[seg++].enabled = false;
+                    prev = point;
+                    continue;
+                }
 
                 var img = _mapEdges[seg++];
                 img.enabled = true;
@@ -2477,7 +3248,7 @@ namespace Proto
 
         void DrawGrid()
         {
-            var emptyColor = _held != null ? ShownCell : HiddenCell;
+            var emptyColor = _held != null ? CellShown : CellIdle;
 
             for (int y = 0; y < Grimoire.Height; y++)
             {

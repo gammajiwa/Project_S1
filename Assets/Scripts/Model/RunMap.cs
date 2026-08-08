@@ -64,9 +64,19 @@ namespace Proto
             {
                 byFloor[f] = new List<RunNode>();
 
-                // Puncak selalu SATU node boss. Lantai lain 2–3 node — dua sudah cukup untuk
-                // terasa sebagai pilihan, empat cuma menambah jarak antar tombol.
-                int count = f == floors - 1 ? 1 : 2 + (dice.NextDouble() < 0.45 ? 1 : 0);
+                // Puncak selalu SATU node boss. Lantai PERTAMA 3–5: langkah pembuka adalah
+                // pilihan terlebar di seluruh act (permintaan pemilik project — "jangan
+                // terkesan cuma 3 arah"). Lantai lain 2–4: petanya harus terasa PENUH, dan
+                // lajur yang dipakai berganti-ganti tiap lantai, jadi jalurnya menyerong
+                // sendiri tanpa diatur.
+                int count;
+
+                if (f == floors - 1) count = 1;
+                else if (f == 0) count = 3 + (dice.NextDouble() < 0.5 ? 1 : 0)
+                                          + (dice.NextDouble() < 0.35 ? 1 : 0);
+                else count = 2 + (dice.NextDouble() < 0.6 ? 1 : 0)
+                             + (dice.NextDouble() < 0.35 ? 1 : 0);
+
                 count = System.Math.Min(count, lanes);
 
                 var open = new List<int>();

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Proto
 {
@@ -68,6 +69,24 @@ namespace Proto
         [Tooltip("Unit per detik kubangan ini MENGEMBARA. 0 = diam di tempat. Kubangan yang " +
                  "bergerak memaksa pemain membaca lapangan tiap saat, bukan sekali di awal.")]
         public float ZoneDrift;
+
+        [Header("VFX skill")]
+        [Tooltip("Prefab efek yang hidup selama skill ini berdiri di lapangan. Dipakai oleh " +
+                 "Kind = Zone (kubangan) DAN Kind = Vortex (puting beliung). Kosong = bentuk " +
+                 "primitif warna seperti sebelumnya.\n\n" +
+                 "Bentuk primitifnya TIDAK dihapus saat prefab dipasang — ia yang menandai " +
+                 "jangkauan sesungguhnya, dan efek partikel hampir tidak pernah seukuran radius " +
+                 "damage-nya. Yang dibeli prefab ini kemegahan, bukan informasi.")]
+        // Dulu bernama ZoneVfx, waktu slot ini cuma milik Kind = Zone. Tanpa baris ini
+        // keempat aset yang sudah terisi (Storm Cell, Snowstorm, Ion Storm, Ashfall)
+        // kehilangan prefabnya TANPA error — Unity cuma diam saja saat nama tak dikenal.
+        [FormerlySerializedAs("ZoneVfx")]
+        public GameObject CastVfx;
+
+        [Tooltip("Pengali ukuran prefab di atas skala yang sudah diturunkan dari radius " +
+                 "(radius 3 unit = skala 1).")]
+        [FormerlySerializedAs("ZoneVfxScale")]
+        [Min(0.05f)] public float CastVfxScale = 1f;
 
         [Header("Pemicu")]
         [Tooltip("Cooldown = nembak sendiri. StatusThreshold = nunggu poin ailment di musuh cukup.")]

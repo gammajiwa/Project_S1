@@ -62,6 +62,11 @@ namespace Proto
 
         Light _playerLight;
 
+        // Pengocok urutan cuaca per run — alasan yang sama dengan BiomeDresser: urutan hash
+        // global kebetulan membuat wave 1-8 kering semua, dan pemain menyimpulkan hujannya
+        // tidak pernah ada. Konsisten di dalam run, berbeda antar run.
+        readonly int _shuffle = System.Environment.TickCount;
+
         // Jarak "pasti di luar layar" dari pusat kamera, dihitung dari kameranya sendiri. Nol
         // kalau kameranya tidak dititipkan — dan saat itu MinDistance di aset yang menentukan.
         float _offscreen;
@@ -146,7 +151,7 @@ namespace Proto
         {
             if (_biome == null || _cumulative.Length == 0) return;
 
-            float roll = WaveHash.Roll01(wave, 104729);
+            float roll = WaveHash.Roll01(wave + _shuffle, 104729);
 
             int pick = _cumulative.Length - 1;
 

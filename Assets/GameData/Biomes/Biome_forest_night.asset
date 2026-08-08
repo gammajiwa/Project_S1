@@ -26,12 +26,12 @@ MonoBehaviour:
   SunColor: {r: 0.6, g: 0.72, b: 1, a: 1}
   SunPitch: 58
   SunYaw: 300
-  SunIntensity: 0.55
-  AmbientSky: {r: 0.17, g: 0.22, b: 0.36, a: 1}
-  AmbientEquator: {r: 0.13, g: 0.17, b: 0.28, a: 1}
-  AmbientGround: {r: 0.07, g: 0.09, b: 0.15, a: 1}
+  SunIntensity: 0.6
+  AmbientSky: {r: 0.16, g: 0.23, b: 0.44, a: 1}
+  AmbientEquator: {r: 0.12, g: 0.17, b: 0.33, a: 1}
+  AmbientGround: {r: 0.06, g: 0.09, b: 0.18, a: 1}
   FogEnabled: 1
-  FogColor: {r: 0.09, g: 0.13, b: 0.22, a: 1}
+  FogColor: {r: 0.1, g: 0.15, b: 0.3, a: 1}
   FogStart: 25
   FogEnd: 110
   TreeCount: 55
@@ -329,12 +329,12 @@ MonoBehaviour:
   RayColor: {r: 0.55, g: 0.68, b: 1, a: 0}
   RaySize: 34
   RayCoverage: 0.4
-  LampCount: 7
+  LampCount: 8
   LampColor: {r: 1, g: 0.72, b: 0.36, a: 1}
   LampColorCool: {r: 0.36, g: 0.58, b: 1, a: 1}
-  LampIntensity: 5.5
-  LampRange: 24
-  LampHeight: 5
+  LampIntensity: 4.2
+  LampRange: 28
+  LampHeight: 5.5
   PlayerLightIntensity: 5
   PlayerLightColor: {r: 0.62, g: 0.8, b: 1, a: 1}
   PlayerLightRange: 14

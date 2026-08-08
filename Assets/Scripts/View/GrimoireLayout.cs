@@ -12,10 +12,63 @@ namespace Proto
     public static class GrimoireLayout
     {
         // ---------- grimoire grid ----------
-        public const int CellSize = 40;
-        public const int CellGap = 3;
+
+        /// <summary>
+        /// Kotak layar tempat petak 7x7 harus duduk, DIPAKSAKAN dari luar — diisi oleh anak
+        /// bernama <c>GridArea</c> di dalam prefab papan grimoire.
+        ///
+        /// Null = hitung sendiri dari tepi layar, persis seperti sebelum ada prefab. Itu bukan
+        /// jalur usang melainkan jaring: papan tanpa prefab, atau prefab yang lupa membawa
+        /// <c>GridArea</c>, tetap dapat petak yang benar alih-alih petak seukuran nol.
+        ///
+        /// Static karena seluruh berkas ini static, dan ditulis ulang di SETIAP pembangunan UI
+        /// (termasuk dikembalikan ke null) — play mode tanpa domain reload tidak boleh mewarisi
+        /// kotak milik sesi sebelumnya.
+        /// </summary>
+        public static Rect? GridOverride;
+
+        // Ukuran bawaan, dipakai selama tidak ada prefab yang mengambil alih.
+        public const int CellSizeDefault = 40;
+        public const int CellGapDefault = 3;
+
+        /// <summary>
+        /// Jarak antar pangkal petak: sisi sel PLUS celahnya.
+        ///
+        /// Celah DITAMBAHKAN ke lebar kotak sebelum dibagi, dan itu bukan kelebihan satu piksel.
+        /// Petak 7x7 memakai tujuh sel tapi hanya enam celah — yang ketujuh menggantung di ujung
+        /// dan tidak pernah digambar. Membagi lebar mentah dengan tujuh membayar celah yang tidak
+        /// ada, dan petaknya berhenti satu celah sebelum tepi kanan kotak yang digambar di prefab.
+        /// </summary>
+        static float Step => GridOverride.HasValue
+            ? Mathf.Min((GridOverride.Value.width + CellGapDefault) / Grimoire.Width,
+                        (GridOverride.Value.height + CellGapDefault) / Grimoire.Height)
+            : CellSizeDefault + CellGapDefault;
+
+        // Celahnya tetap: yang diregangkan mengikuti kotak prefab adalah SELNYA. Celah yang ikut
+        // membesar terbaca sebagai papan yang renggang, bukan sebagai papan yang lebih besar.
+        public static float CellGap => CellGapDefault;
+
+        // Sel dijaga persegi lewat Mathf.Min di Step — kotak prefab yang tidak sebangun menyisakan
+        // ruang di sisi panjangnya, dan itu jauh lebih baik daripada petak yang gepeng.
+        public static float CellSize => Step - CellGapDefault;
+
         public const int Margin = 20;
         public const int SkillInset = 8;
+
+        /// <summary>
+        /// Dorongan tambahan untuk PAPAN GRIMOIRE saja, di atas <see cref="Margin"/>.
+        ///
+        /// Ada karena sampul buku yang membingkai papan punya PUNGGUNG di sisi kiri, dan
+        /// punggung itu butuh ruang di luar petak. Menaikkan <see cref="Margin"/> tidak bisa
+        /// dipakai: angka yang sama juga menjarak-tepikan bar HP, panel spell, dan tombol
+        /// kecepatan di seberang layar — bingkai buku tidak ada urusannya dengan mereka.
+        ///
+        /// Nol = papan kembali menempel di pojok seperti sebelum ada bingkai.
+        /// </summary>
+        public const int GridInset = 56;
+
+        public static float GridX => GridOverride?.xMin ?? Margin + GridInset;
+        public static float GridY => GridOverride?.yMin ?? Margin + 8;
 
         // ---------- right-hand column ----------
         public const int BagCell = 34;
@@ -44,8 +97,8 @@ namespace Proto
         public const int StartButtonH = 56;
 
         // Loose pieces draw at the exact grid scale so nothing resizes when placed.
-        public const int LooseCellSize = CellSize;
-        public const int LooseCellGap = CellGap;
+        public static float LooseCellSize => CellSize;
+        public static float LooseCellGap => CellGap;
 
         // ---------- shop / recipe panel ----------
         public const int ShopSlotW = 196;
@@ -88,11 +141,29 @@ namespace Proto
         // ---------- grid & bag ----------
 
         public static Vector2 CellAnchor(int x, int y) =>
-            new Vector2(Margin + x * (CellSize + CellGap), Margin + y * (CellSize + CellGap));
+            new Vector2(GridX + x * (CellSize + CellGap), GridY + y * (CellSize + CellGap));
 
-        public static float GridTop() => Margin + Grimoire.Height * (CellSize + CellGap);
+        public static float GridTop() => GridY + Grimoire.Height * (CellSize + CellGap);
 
-        public static float RightX() => Margin + Grimoire.Width * (CellSize + CellGap) + 12;
+        /// <summary>
+        /// Kotak yang PERSIS memeluk petak 7x7 — dari tepi kiri petak (0,0) sampai tepi kanan-atas
+        /// petak terakhir, tanpa celah yang menggantung di ujung. Dipakai untuk mendudukkan alas
+        /// dan bingkai; menghitungnya sendiri di pemakainya adalah cara termudah membuat bingkai
+        /// meleset satu <c>CellGap</c> tanpa ada yang menyadarinya.
+        /// </summary>
+        public static Rect GridRect()
+        {
+            float w = Grimoire.Width * (CellSize + CellGap) - CellGap;
+            float h = Grimoire.Height * (CellSize + CellGap) - CellGap;
+            return new Rect(GridX, GridY, w, h);
+        }
+
+        /// <summary>Kotak yang sama, dilebarkan per sisi (x kiri, y bawah, z kanan, w atas).</summary>
+        public static Rect Expand(Rect r, Vector4 pad) =>
+            new Rect(r.xMin - pad.x, r.yMin - pad.y,
+                     r.width + pad.x + pad.z, r.height + pad.y + pad.w);
+
+        public static float RightX() => GridX + Grimoire.Width * (CellSize + CellGap) + 12;
 
         public static Vector2 BagAnchor(int x, int y) =>
             new Vector2(RightX() + x * (BagCell + BagGap), BagY + y * (BagCell + BagGap));
@@ -102,14 +173,14 @@ namespace Proto
         public static Vector2Int ScreenToCell(Vector2 mouse)
         {
             float step = CellSize + CellGap;
-            int x = Mathf.FloorToInt((mouse.x - Margin) / step);
-            int y = Mathf.FloorToInt((mouse.y - Margin) / step);
+            int x = Mathf.FloorToInt((mouse.x - GridX) / step);
+            int y = Mathf.FloorToInt((mouse.y - GridY) / step);
 
             if (x < 0 || x >= Grimoire.Width || y < 0 || y >= Grimoire.Height) return new Vector2Int(-1, -1);
 
             // Reject the gap between cells, so a click on the seam does not snap to a neighbour.
-            float offX = (mouse.x - Margin) - x * step;
-            float offY = (mouse.y - Margin) - y * step;
+            float offX = (mouse.x - GridX) - x * step;
+            float offY = (mouse.y - GridY) - y * step;
             if (offX > CellSize || offY > CellSize) return new Vector2Int(-1, -1);
 
             return new Vector2Int(x, y);
@@ -187,13 +258,31 @@ namespace Proto
 
         public static Rect MapButtonRect() => new Rect(RightX() + 188, SellY + SellH + 8, 88, 32);
 
-        /// <summary>Panel peta run: MELEBAR, kiri ke kanan seperti peta referensi — 15 lantai
-        /// jadi 15 kolom, dan layar lebar memang punya ruangnya di sumbu itu.</summary>
-        public static Rect MapPanelRect()
+        /// <summary>Panel peta run saat MEMILIH: satu layar penuh, tegak ala Slay the Spire —
+        /// lantai menumpuk dari bawah ke atas dengan jarak tetap, sisanya diintip lewat scroll.
+        /// Saat memilih, peta bukan jendela di atas HUD; dialah layarnya.</summary>
+        public static Rect MapPanelRect() => new Rect(0f, 0f, Screen.width, Screen.height);
+
+        /// <summary>
+        /// Panel peta saat MENGINTIP (M): kotak melayang di tengah, bukan satu layar penuh.
+        ///
+        /// Bedanya disengaja dan bukan sekadar hemat ruang — ukuran itu yang memberi tahu pemain
+        /// apakah ia sedang mengambil keputusan atau cuma melirik. Layar penuh menuntut jawaban;
+        /// kotak melayang boleh ditutup lagi tanpa memutuskan apa pun. Lapangan yang masih
+        /// kelihatan di sekelilingnya bagian dari pesan itu.
+        /// </summary>
+        public static Rect MapPeekRect(Vector2 fraction)
         {
-            float w = Mathf.Min(1560f, Screen.width - 120f);
-            float h = Mathf.Min(540f, Screen.height - 140f);
-            return new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
+            float w = Screen.width * Mathf.Clamp(fraction.x, 0.3f, 0.95f);
+            float h = Screen.height * Mathf.Clamp(fraction.y, 0.3f, 0.95f);
+
+            // Dibulatkan ke piksel bulat: panel yang mendarat di setengah piksel membuat perkamen
+            // dan bingkainya tersaring buram di tepi.
+            w = Mathf.Round(w);
+            h = Mathf.Round(h);
+
+            return new Rect(Mathf.Round((Screen.width - w) * 0.5f),
+                            Mathf.Round((Screen.height - h) * 0.5f), w, h);
         }
 
         // ---------- loose drops ----------

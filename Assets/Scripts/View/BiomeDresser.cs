@@ -92,6 +92,13 @@ namespace Proto
         readonly List<Vector2Int> _expired = new List<Vector2Int>();
 
         BiomeDefinition _current;
+
+        // Pengocok URUTAN per run. Hash per-wave itu deterministik — dan urutan globalnya
+        // kebetulan menaruh siang-kering di wave 1-8, persis wave yang paling sering dilihat
+        // pemain. Persentasenya benar, pengalamannya bohong. Digeser per run: tiap run dapat
+        // giliran berbeda, di dalam satu run tetap konsisten.
+        readonly int _shuffle = System.Environment.TickCount;
+
         int _frame;
         Vector2Int _centre = new Vector2Int(int.MinValue, int.MinValue);
 
@@ -117,6 +124,16 @@ namespace Proto
 
                 return 0;
             }
+        }
+
+        /// <summary>
+        /// Memasang biome APA PUN sekarang juga — termasuk yang di luar daftar wajah.
+        /// Dipakai pulau rehat: selama singgah, arenanya memakai wajah khusus; wave berikutnya
+        /// mengembalikannya sendiri lewat undian wajah di <see cref="OnWaveStarted"/>.
+        /// </summary>
+        public void ShowBiome(BiomeDefinition biome)
+        {
+            if (biome != null && biome != _current) Apply(biome);
         }
 
         /// <summary>Mengganti wajah arena sekarang juga. Nama wajahnya dikembalikan.</summary>
@@ -218,18 +235,17 @@ namespace Proto
                 // Dua undian terpisah: siang-atau-malam dulu, lalu RASA-nya. Urutan array wajib
                 // [siang, malam, senja, tengah-malam] — dua slot pertama dipertahankan supaya
                 // scene lama yang cuma punya dua wajah tetap jalan tanpa disentuh.
-                bool night = WaveHash.Roll01(wave, 3389) < _balance.NightChance;
-                float flavour = WaveHash.Roll01(wave, 7717);
+                bool night = WaveHash.Roll01(wave + _shuffle, 3389) < _balance.NightChance;
+                float flavour = WaveHash.Roll01(wave + _shuffle, 7717);
 
                 int index = night
                     ? (flavour < _balance.MidnightChance && _biomes.Length > 3 ? 3 : 1)
                     : (flavour < _balance.DuskChance && _biomes.Length > 2 ? 2 : 0);
 
-                // Dua wave pertama SELALU siang. Urutan hash kebetulan membuka tiap run dengan
-                // malam lalu TENGAH MALAM — dan pemain yang sering mengulang run mengalami
-                // pembukaan itu berkali-kali, sampai terbaca "gelap melulu" padahal sebarannya
-                // benar. Pembukaan harus terbaca; kegelapan biar datang belakangan.
-                if (wave <= 2) index = 0;
+                // Wave PERTAMA selalu siang — pembukaan run harus terbaca. Cukup satu:
+                // memaksa dua wave sempat dicoba dan pemain yang bolak-balik restart di wave
+                // awal malah menyimpulkan malamnya hilang.
+                if (wave == 1) index = 0;
 
                 index = Mathf.Min(index, _biomes.Length - 1);
 

@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Peta run STS (visual baru), relokasi antar wave, kunang-kunang, god ray
-Task: Terverifikasi lewat screenshot — tinggal dinilai main tangan
+Feature: Portal dihapus — peta pemilih fullscreen ala STS + transisi Gloom + pulau Suaka
+Task: User main langsung di sesi — feedback live sudah dua putaran, alur terbukti jalan
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -833,7 +833,184 @@ Detail: AI-HANDOFF.md §22.
 
 ### Berikutnya
 
-- **Main dan nilai rasanya** — alur portal + pulau belum pernah dinilai tangan manusia
 - VFX slot "dopamin ala Vampire Survivors" (panel masih teks) + cerita penjaga pulau
 - Skill 3 + fragment 3 jalur (merah/biru/kuning) + skill tree bertingkat — belum disentuh
 - Event baru satu jenis; tambah variasi + formula hadiah slot yang lebih kaya
+
+## Portal DIHAPUS: peta pemilih fullscreen + transisi Gloom + pulau Suaka (2026-08-09)
+
+Detail teknis: **docs/AI-HANDOFF.md §24**. Tiga permintaan user, semuanya masuk:
+
+- **Portal fisik pensiun.** Wave bersih → susun grimoire → tombol **LANJUT (SPACE)**
+  → Gloom (VFX kegelapan buatan sendiri) MERAPAT sampai menelan layar — nilai standar
+  materialnya TIDAK disentuh, transisi cuma meminjam lewat MaterialPropertyBlock —
+  → peta terbuka, posisi dilingkari → klik node → penanda emas BERJALAN di jalur →
+  tirai hitam → node dieksekusi DALAM GELAP (teleport + ganti wajah tak terlihat) →
+  Gloom membuka kembali ke nilai standar di tempat baru.
+- **Feedback putaran 1** ("kurang gelap; peta harus nutup semua layar"): tirai hitam
+  UI menumpang 45% terakhir fade — ujungnya HITAM TOTAL, HUD pun tertelan; peta jadi
+  SATU LAYAR PENUH.
+- **Feedback putaran 2**: peta ditegakkan **ala STS bawah→atas**, jarak antar lantai
+  TETAP 110 px (tidak dipadatkan), **scroll roda mouse** buat ngintip ke atas +
+  auto-scroll menjemput posisi & penanda.
+- **Pulau rehat = tempat lain betulan**: wajah arena ditukar ke `Biome_sanctum.asset`
+  (Suaka — ungu berkabut, siluet, kunang-kunang saja) selama singgah; node tempur
+  berikutnya memulihkan wajah lewat undian biasa. Aset ini MILIK USER — tidak ada
+  pass yang meregenerasinya.
+- M / tombol PETA tetap intip read-only. `MapFadeClose/Open`, `MapMarkerTravel` di
+  GameBalance.
+- Diverifikasi: programatik + screenshot + **user main sendiri beberapa wave di sesi
+  ini** (wave 4, 130 kill, muka senja, lancar).
+
+### Feedback putaran 3 (SS user vs peta referensi) — SELESAI
+
+- **Scroll "mati" = BUG beneran**: Input System baru memberi scroll ±1/gerigi,
+  kode menebak ±120 → gerakan <1 px. `ProtoInput.ScrollY` kini ternormalisasi ke
+  gerigi; 1 gerigi = 90 px. Plus **drag-pan** (`LeftHeld` baru): klik di luar node
+  = pegangan, peta nempel di kursor — di mode memilih maupun intip.
+- **Karakter pemain tampil di peta**: token kuning (warna kapsul pemain) + KAMU,
+  berdiri di ruang tunggu bawah sebelum langkah pertama, berjalan saat memilih.
+- **"Terlalu rapi berjejer"**: geser acak per lantai ±40 px + jitter node ±28 px
+  (ber-seed) — garis selalu menyerong; `MapLanes` 3→4 (aset) + generator 2–4
+  node/lantai — penuh pilihan ala referensi. Verifikasi screenshot: cocok.
+
+### Feedback putaran 4 (coretan user) — SELESAI
+
+- **Pemain = simpul pertama peta**: jalur EMAS dari token KAMU (bulat, sprite
+  buatan 32 px) ke SEMUA node lantai pertama; travel pembuka menyusuri jalur itu.
+- **Pilihan awal 3–5 node** (bukan "3 arah"), `MapLanes` 4→5, lantai lain 2–4.
+- **Boss dikunci mati di tengah** — tanpa geser/jitter di lantai puncak.
+- **Jalur dikalemkan** — satu arah lengkung tipis per ruas (0.06, dulu 0.3 dua
+  arah), nyaris lurus ala STS rujukan.
+- **BUG spawn "gak di tengah kamera"**: titik lahir/Relocate melebihi jepitan
+  kamera → rig tertahan, pemain menepi. Kini dijepit `ArenaCamera.LimitX/LimitZ`.
+- Verifikasi screenshot: garis emas + 4 pilihan ✔, boss center di puncak ✔.
+
+### Feedback putaran 5 — SELESAI
+
+- Jarak ruang tunggu → lantai pertama dijauhkan (240 px) — langkah pembuka
+  terbaca perjalanan, bukan lompatan.
+- **MapFloorsPerAct 15 → 20** (aset): jalur act ≈ **14–15 wave** tanpa
+  toko/event/slot (dulu ≈ 11). Alasan user: building grimoire butuh waktu.
+
+### Feedback putaran 6 — SELESAI
+
+Peta **melebar**: pita node bukan lagi 320 px tetap melainkan `lebar layar × 0,34`
+(cap 700) — dulu seluruh act menggumpal di tengah, dua pertiga monitor kosong.
+Geser-lantai & jitter ikut diukur dari jarak antar lajur, jadi kemiringannya tidak
+hilang; hasil akhir dijepit tepi panel supaya lajur terluar tidak terpotong.
+
+### Feedback putaran 7 — SELESAI
+
+- **Peta**: pita dipersempit (`lebar × 0,26`), bawah dikasih napas (310 px),
+  jarak antar lantai **110 → 170** ("bantet"), satu gerigi roda = satu lantai.
+- **Wave per act 12 → 27,7** (`MapFloorsPerAct` 34, rehat diturunkan). Terukur
+  400 simulasi: min 21, maks 34, rehat 6,3.
+
+### Aset — folder & VFX (2026-08-09)
+
+Detail: **docs/ASSET-LIST.md** (daftar + spek + prioritas) dan **AI-HANDOFF §25**.
+
+- `Assets/Art/{UI,Icons,Map,VFX,Characters,Props}` + `Assets/Audio/*` dibuat,
+  tiap daun ber-`.gitkeep`.
+- **23 prefab VFX diadopsi** keluar dari paket Lana ke
+  `Art/VFX/Prefabs/{Light,Ambient,Weather,Skill}`. Alasan utama: Sunlight/Moonlight
+  setelan tangan bisa ketimpa kalau paketnya di-reimport.
+- **Slot VFX skill baru**: `PieceDefinition.ZoneVfx` + `ZoneVfxScale`.
+  Terpasang di 4 skill (Storm Cell←Tornado, Snowstorm, Ion Storm, Ashfall).
+  Terverifikasi play mode.
+- **Jebakan ketemu**: `WeatherMood.Effects` mengabaikan `RepeatEvery` — efek cuaca
+  selalu permanen. Tornado sempat salah pasang di sana, sudah dicopot.
+
+## VFX skill nyantol di piece yang SALAH — dibenerin (2026-08-09)
+
+Rename `ZoneVfx` -> `CastVfx` (biar slotnya kepakai `Kind = Vortex`, bukan cuma `Zone`)
+selesai di kode tapi **aset belum ikut** — 4 `.asset` masih nulis `ZoneVfx:`, dan Unity
+DIAM saja saat nama tak dikenal. Ion Storm & Ashfall tinggal selangkah dari kosong permanen.
+
+- `[FormerlySerializedAs("ZoneVfx")]` dipasang sebagai jaring; semua aset di disk sekarang
+  sudah `CastVfx:`. **Catatan penting:** domain reload TIDAK membaca ulang YAML, jadi aset
+  yang terlanjur dimuat dengan script baru tetap null sampai di-set ulang lewat kode.
+- Prefab tornado ternyata dipasang di **Storm Cell (★1)** & **Snowstorm (★2)** — dua-duanya
+  `Kind = Zone`, kubangan DIAM. Dipindah ke skill Vortex asli:
+  **Tornado_snow -> Maelstrom ★5**, **Tornado_sand -> Tornado ★4**. Whirlwind ★3 masih kosong.
+- Perilaku "jalan-jalan + kena musuh terbang" sudah ada di kode dari awal
+  (`ZoneDrift` + `Lift(radius x 0,7)`, naik dari 0,45) — yang salah cuma pemasangannya.
+
+## Art UI masuk: perkamen peta, gloom tepi, papan grimoire (2026-08-09)
+
+- **`UiTheme` SO baru** (`Assets/GameData/UiTheme.asset`) — kertas, bingkai, warna tinta,
+  knob gloom. Boleh null: tanpa tema, UI balik jadi kotak warna datar. Dipasang lewat
+  `ProtoBootstrap._uiTheme`.
+- **Shader baru `Grimoire/GloomEdge`** (`Assets/Shaders/GloomEdge.shader`) — saudara kanvas
+  dari `Grimoire/Gloom`. Shader lama TIDAK bisa dipakai di UI (`positionWS` +
+  `UniversalForward`). Yang dipinjam cuma keputusannya: **derau menggoyang GARIS BATAS,
+  bukan kepekatan**. Jarak dihitung dalam PIKSEL (`_RectSize` dari C#) supaya peta besar &
+  peta kecil terlihat sebahan.
+  - `_PaperMode = 1` -> gambar spritenya sendiri + **SOBEK** tepinya.
+    **Putaran 1 salah**: dibuat memudar halus (gradien puluhan piksel). User menolak —
+    yang diminta **compang-camping**. Bedanya bukan seberapa jauh alpha turun melainkan
+    seberapa CEPAT: gradien lebar selalu terbaca sebagai kabut di depan kertas dan bentuk
+    perseginya masih kelihatan; potongan yang hampir tegak memindahkan seluruh
+    ketakberaturan ke GARIS potongnya, dan garis berkelok itu yang dibaca sebagai sobek.
+    Knob: `TearDepth/TearScale/TearFray/TearSoft` di UiTheme.
+  - **Lapisan gloom WAJIB memakai potongan sobek yang sama.** Sempat tidak, dan hasilnya
+    kotak gelap membayang mengelilingi kertas yang sudah tercabik — bentuk yang justru
+    sedang dihapus. `_TearDepth` dikirim ke KEDUA material dengan nilai identik.
+  - `TearDepth` peta kecil TIDAK diperkecil sepenuhnya mengikuti panel: ukuran robekan
+    sifat KERTASNYA, bukan sifat panelnya.
+  - `_TexAspect` -> ISI-lalu-POTONG di UV, bukan melar. Mask tidak dipakai karena tepi yang
+    dibaca shader jadi tepi GAMBAR (di luar layar) dan pita larutnya ikut hilang ke sana.
+- **Peta punya DUA ukuran sekarang**: `MapPanelRect()` (memilih, satu layar penuh) dan
+  `MapPeekRect()` (intip lewat M, kotak melayang `PeekScreenFraction`). Dipilih `MapView()`.
+  Ukuran panel ikut ditandatangani di `_mapSig` — tanpa itu ganti mode meninggalkan tata
+  letak lama.
+- **Perkamen memaksa tinta gelap**: judul, legenda, jalur, cincin, label KAMU, judul
+  GRIMOIRE — semua warna lama dipilih untuk latar gelap dan LENYAP di kertas terang.
+- **`GridInset = 56`** (baru): papan grimoire digeser sendiri, TIDAK lewat `Margin` —
+  angka yang sama menjarak-tepikan bar HP & panel spell di seberang layar.
+- **`GrimoirePanel.prefab`** (`Assets/Art/UI/Prefabs/`) — atas permintaan user. Kode HANYA
+  menempelkan + menaruh di pojok kiri-bawah petak; ukuran/anchor/anak TIDAK disentuh.
+  Menyetel `sizeDelta` dari kode akan menimpa editan prefab diam-diam saat run.
+- **Ditolak user**: `gridgrimoireUI.png` sebagai alas petak (jadi bingkai bersarang).
+  "Grid" yang dimaksud sejak awal = petak 7x7-nya sendiri; warnanya dipertebal jadi tinta.
+
+## Empat keluhan dari satu screenshot — SELESAI & terverifikasi (2026-08-09)
+
+Detail teknis: **docs/AI-HANDOFF.md §27**. Semuanya bug diam — tidak satu pun melempar
+error yang menyebut dirinya.
+
+- **Magenta menutupi setengah layar di toko** = `MagicField_pink.prefab` anak `fog`
+  materialnya KOSONG; renderer bermaterial null di URP digambar warna error, dan kabut
+  selebar 19,6 unit itu menutupi layar. Suaka memanggilnya `Chance 1, Count 2` — persis
+  dua yang muncul. Dipasangi `Additive_soft`, ditiru dari `MagicField_blue` yang sehat.
+  **Empat prefab lain punya lubang sama**; `SpeedBoost_front` satu-satunya yang berbahaya
+  (renderer hidup) dan sudah diisi.
+- **LANJUT tak bisa dipencet di toko**: `HandlePanelClick` jalan lebih dulu dan menelan
+  semua klik di dalam `PanelRect()` — yang TUMPANG TINDIH dengan tombolnya. Guard ditaruh
+  sesudah modal sungguhan (peta/kejadian/slot), sebelum blok toko.
+- **Gloom peta beku**: `Tune()` tidak pernah mengirim `_Churn`/`_Drift`, jadi jatuh ke
+  bawaan shader = 0,029 gumpalan/detik. Knob baru di `UiTheme`, disamakan dengan gloom
+  arena → terukur 0,200.
+- **Petak grimoire kini diatur dari prefab**: anak `GridArea` menentukan letak & ukuran
+  petak 7x7. `GridOverride` null = perilaku lama persis. Terukur `(76, 28, 298, 298)`,
+  `CellSize` 40 — papan tidak bergeser sedikit pun.
+- **Kunang-kunang** dibangun ulang dari anak `sparks` milik `MagicField_blue` (permintaan
+  user: "pakai aset yang ada"), bukan partikel bangkitan lagi.
+
+Diverifikasi: kompilasi bersih (0 error/warning), play mode 0 renderer bermasalah,
+`HandlePanelClick(tengah tombol)` = False sementara klik badan panel tetap True,
+dan dua screenshot.
+
+### Berikutnya
+
+- **Dengar catatan rasa user setelah main** — kunang-kunang baru & gloom peta yang
+  sekarang bergerak belum pernah dinilai dengan mata oleh pemilik project
+- Font in-game masih Arial bawaan
+- VFX skill non-Zone (Projectile/Nova/Chain/Line) masih primitif — pola `CastVfx`
+  tinggal ditiru
+- Penjaga pulau masih kapsul (dan kapsulnya pakai Default-Material bawaan
+  `CreatePrimitive` — belum magenta karena `SetPropertyBlock`, tapi rapuh)
+- Spam warning "no audio listeners" masih ada
+- Spam error `Property <noninit> already exists in the property sheet` saat play —
+  belum dilacak; kandidat: `Gloom.LateUpdate` menulis property block tiap frame

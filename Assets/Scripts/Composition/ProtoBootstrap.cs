@@ -21,6 +21,16 @@ namespace Proto
         [Tooltip("Wajah arena, dipakai bergantian tiap beberapa wave. Kosong = lantai polos.")]
         [SerializeField] BiomeDefinition[] _biomes;
 
+        [Tooltip("Wajah KHUSUS pulau rehat (toko/kejadian/slot). Selama singgah, arena memakai " +
+                 "wajah ini supaya tempat rehat terasa tempat lain — wave berikutnya " +
+                 "mengembalikan wajah biasa lewat undian. Kosong = pulau memakai wajah wave.")]
+        [SerializeField] BiomeDefinition _restBiome;
+
+        [Tooltip("Kertas, bingkai, dan warna tinta UI. Kosong = UI kembali jadi kotak warna " +
+                 "datar seperti sebelum art masuk — sengaja tidak wajib, supaya art yang belum " +
+                 "jadi tidak pernah memblokir tes gameplay.")]
+        [SerializeField] UiTheme _uiTheme;
+
         [Header("Debug")]
         [Tooltip("Saklar curang buat rekaman & tes. Boleh dikosongkan — dan aset ini pun tidak " +
                  "berefek apa pun sampai gerbang 'Enabled' di dalamnya dinyalakan.")]
@@ -48,7 +58,7 @@ namespace Proto
             var sun = BuildLight();
             var ground = BuildGround();
 
-            var playerGo = BuildPlayer();
+            var playerGo = BuildPlayer(cam);
 
             var managerGo = new GameObject("EnemyManager");
             managerGo.transform.SetParent(transform, false);
@@ -86,6 +96,7 @@ namespace Proto
             // membuat dindingnya terlihat — tanpa itu pemain menabrak batas tak kasat mata dan
             // yang terbaca cuma kontrol yang macet.
             BiomeDresser dresser = null;
+            Gloom gloom = null;
 
             if (_biomes != null && _biomes.Length > 0)
             {
@@ -121,7 +132,7 @@ namespace Proto
                 glow.shadows = LightShadows.None;
                 glow.enabled = false;
 
-                var gloom = new GameObject("Gloom").AddComponent<Gloom>();
+                gloom = new GameObject("Gloom").AddComponent<Gloom>();
                 gloom.transform.SetParent(transform, false);
                 gloom.Init(_rig, playerGo.transform, span);
 
@@ -174,13 +185,14 @@ namespace Proto
             var uiGo = new GameObject("GrimoireUI");
             uiGo.transform.SetParent(transform, false);
             var ui = uiGo.AddComponent<GrimoireUI>();
-            ui.Init(caster, enemies, cam, _database, _balance, dresser);
+            ui.Init(caster, enemies, cam, _database, _balance, dresser, _uiTheme);
 
             // Sutradara run: peta act, portal antar wave, pulau rehat. Dipasang SETELAH UI —
             // ia mengecek WaveActive saat lahir, dan saklar curang OpeningWave hidup di ui.Init.
             var run = new GameObject("RunDirector").AddComponent<RunDirector>();
             run.transform.SetParent(transform, false);
-            run.Init(enemies, motor, arenaCam, cam, _balance, _database, playerGo.transform, _rig);
+            run.Init(enemies, motor, arenaCam, cam, _balance, _database, playerGo.transform, _rig,
+                gloom, dresser, _restBiome);
             ui.AttachRun(run);
 
             // Diumumkan lewat banner yang sama dengan reaksi, bukan lewat widget baru: pemain
@@ -426,7 +438,7 @@ namespace Proto
             data.SetAlphamaps(0, 0, map);
         }
 
-        GameObject BuildPlayer()
+        GameObject BuildPlayer(Camera cam)
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             go.name = "Player";
@@ -436,13 +448,24 @@ namespace Proto
             // UnityEngine.Random — yang terakhir milik gameplay, dan mengambil satu angka darinya
             // menggeser seluruh urutan acak run. Margin menjauhkan titik lahir dari dinding:
             // lahir menempel dinding berarti membuka wave dengan separuh arah kabur yang buntu.
+            //
+            // Dijepit juga oleh kotak-tengah kamera (rumus yang sama dengan ArenaCamera.Init):
+            // titik yang lebih pinggir membuat rig tertahan jepitan arena, dan pemain muncul
+            // MENEPI di layar sejak frame pertama run.
             var dice = new System.Random(System.Environment.TickCount);
             const float margin = 9f;
 
-            float x = ((float)dice.NextDouble() * 2f - 1f)
-                      * Mathf.Max(0f, _balance.ArenaHalfX - margin);
-            float z = ((float)dice.NextDouble() * 2f - 1f)
-                      * Mathf.Max(0f, _balance.ArenaHalfZ - margin);
+            float halfWidth = cam.orthographicSize * cam.aspect;
+            float halfDepth = cam.orthographicSize /
+                              Mathf.Sin(Mathf.Max(15f, cam.transform.eulerAngles.x) * Mathf.Deg2Rad);
+
+            float rx = Mathf.Min(Mathf.Max(0f, _balance.ArenaHalfX - margin),
+                Mathf.Max(0f, _balance.ArenaHalfX - halfWidth));
+            float rz = Mathf.Min(Mathf.Max(0f, _balance.ArenaHalfZ - margin),
+                Mathf.Max(0f, _balance.ArenaHalfZ - halfDepth));
+
+            float x = ((float)dice.NextDouble() * 2f - 1f) * rx;
+            float z = ((float)dice.NextDouble() * 2f - 1f) * rz;
 
             go.transform.position = new Vector3(x, 0.9f, z);
 

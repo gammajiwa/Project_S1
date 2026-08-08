@@ -1133,6 +1133,18 @@ namespace Proto
             public float Heading;
 
             public bool Active;
+
+            /// <summary>
+            /// Efek partikel milik skill ini, kalau ada. Disimpan bersama PREFAB SUMBERNYA karena
+            /// zone-nya dipakai ulang dari pool: kubangan yang barusan milik Tornado bisa dipakai
+            /// lagi oleh skill lain, dan tanpa membandingkan sumbernya efek lama akan ikut terbawa.
+            ///
+            /// Digantung di root FX, BUKAN di cakramnya — cakram itu dipipihkan
+            /// (skala Y 0,03) untuk jadi genangan, dan apa pun yang jadi anaknya ikut gepeng.
+            /// </summary>
+            public Transform Vfx;
+
+            public GameObject VfxSource;
         }
 
         readonly List<Zone> _zones = new List<Zone>(8);
@@ -1163,7 +1175,13 @@ namespace Proto
                 _zones.Add(z);
             }
 
-            _mpb.SetColor(BaseColorId, def.Color);
+            // Cakram ditipiskan kalau skill ini punya efek partikelnya sendiri: tugasnya berubah
+            // dari MENJADI efeknya menjadi sekadar menandai jangkauan damage. Dibiarkan pekat,
+            // ia menelan efek yang barusan dipasang di atasnya.
+            var tone = def.Color;
+            if (def.CastVfx != null) tone.a *= 0.3f;
+
+            _mpb.SetColor(BaseColorId, tone);
             z.T.GetComponent<Renderer>().SetPropertyBlock(_mpb);
 
             z.Pos = new Vector3(at.x, 0.06f, at.z);
@@ -1183,6 +1201,40 @@ namespace Proto
             z.T.position = z.Pos;
             z.T.localScale = new Vector3(z.Radius * 2f, 0.03f, z.Radius * 2f);
             z.T.gameObject.SetActive(true);
+
+            AttachCastVfx(z, def);
+        }
+
+        /// <summary>
+        /// Memasang (atau menukar) efek partikel milik skill di sebuah kubangan. Dipanggil tiap
+        /// kubangan lahir — termasuk yang diambil dari pool, karena pemilik sebelumnya bisa
+        /// skill lain.
+        /// </summary>
+        void AttachCastVfx(Zone z, PieceDefinition def)
+        {
+            if (z.VfxSource != def.CastVfx)
+            {
+                if (z.Vfx != null) Destroy(z.Vfx.gameObject);
+                z.Vfx = null;
+                z.VfxSource = def.CastVfx;
+
+                if (def.CastVfx != null)
+                {
+                    var go = Instantiate(def.CastVfx, _fxRoot);
+                    go.name = "CastVfx " + def.DisplayName;
+                    z.Vfx = go.transform;
+                }
+            }
+
+            if (z.Vfx == null) return;
+
+            // Radius 3 unit = skala 1. Efek yang ukurannya tidak ikut jangkauan membuat skill
+            // yang sudah dibuffed area-nya terlihat persis sama dengan yang belum.
+            float scale = def.CastVfxScale * Mathf.Max(0.35f, z.Radius / 3f);
+
+            z.Vfx.localScale = Vector3.one * scale;
+            z.Vfx.position = z.Pos;
+            z.Vfx.gameObject.SetActive(true);
         }
 
         void TickZones(float dt)
@@ -1197,6 +1249,10 @@ namespace Proto
                 {
                     z.Active = false;
                     z.T.gameObject.SetActive(false);
+
+                    // Dimatikan, bukan dihancurkan: kubangan berikutnya dari skill yang sama
+                    // memakainya lagi tanpa membayar Instantiate.
+                    if (z.Vfx != null) z.Vfx.gameObject.SetActive(false);
                     continue;
                 }
 
@@ -1210,6 +1266,11 @@ namespace Proto
                     z.Pos.x += Mathf.Cos(z.Heading) * z.Drift * dt;
                     z.Pos.z += Mathf.Sin(z.Heading) * z.Drift * dt;
                     z.T.position = z.Pos;
+
+                    // Efeknya ikut mengembara. Kalau tidak, tornado berdiri diam sementara
+                    // kubangan damage-nya berjalan pergi — dan yang terbaca adalah dua hal
+                    // berbeda, bukan satu.
+                    if (z.Vfx != null) z.Vfx.position = z.Pos;
                 }
 
                 z.TickTimer -= dt;

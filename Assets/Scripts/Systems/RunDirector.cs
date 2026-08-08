@@ -4,20 +4,22 @@ using UnityEngine;
 namespace Proto
 {
     /// <summary>
-    /// Sutradara run: peta act ala Slay the Spire, portal FISIK di lapangan, dan pulau rehat.
+    /// Sutradara run: peta act ala Slay the Spire, dipilih LANGSUNG DI PETA, dan pulau rehat.
     ///
-    /// Alurnya menggantikan tombol "MULAI WAVE": begitu lapangan bersih, dua-tiga portal menetas
-    /// di dekat pemain — satu per cabang peta yang bisa diinjak. Pemain MENGKLIK portal, karakter
-    /// berjalan sendiri ke sana, dan isi portalnya yang menentukan wave berikutnya: pertarungan,
-    /// elite, boss puncak, atau pulau rehat (toko / kejadian / mesin slot).
+    /// Portal fisik pensiun. Alurnya sekarang: lapangan bersih → pemain menyusun grimoire →
+    /// tombol LANJUT → kegelapan Gloom MERAPAT sampai menelan layar (nilai standar materialnya
+    /// tidak disentuh — cuma dipinjam lewat MaterialPropertyBlock) → peta act terbuka dengan
+    /// posisi pemain dilingkari → pemain mengklik node → penanda berjalan di peta → layar
+    /// menggelap penuh → isi node dieksekusi dalam gelap (pindah tempat, ganti wajah arena) →
+    /// kegelapan MEMBUKA kembali ke nilai standar di tempat yang baru.
     ///
-    /// Portal dibuat dari primitif + lampu, bukan prefab paket — komposisi runtime di sini tidak
-    /// bisa menunjuk aset tanpa pass editor, dan cincin yang berputar sudah cukup terbaca sebagai
-    /// gerbang. VFX yang lebih heboh menyusul lewat pass, bukan lewat kode.
+    /// Yang dibeli dari transisi gelap: perpindahan tempat tidak pernah terlihat prosesnya.
+    /// Teleport, ganti biome, dan penyebaran ulang suasana semuanya terjadi di balik tirai.
     ///
     /// Pulau rehat = KANTONG di scene yang sama, jauh di luar arena tapi masih di atas lantai.
-    /// Scene terpisah butuh seluruh state run ikut pindah, dan persistensi run belum ada — begitu
-    /// ada, pulau ini tinggal ditukar tanpa menyentuh alur peta.
+    /// Scene terpisah butuh seluruh state run ikut pindah, dan persistensi run belum ada.
+    /// Supaya tetap terasa TEMPAT LAIN, selama rehat wajah arena ditukar ke biome khusus
+    /// (rest biome) — dan wajah wave berikutnya mengembalikannya lewat undian biasa.
     /// </summary>
     public class RunDirector : MonoBehaviour
     {
@@ -25,6 +27,24 @@ namespace Proto
         // rapat di luar dinding jadi latar pulaunya, dan petak hash yang sama berarti pulau yang
         // SAMA setiap kali singgah. Tempat rehat harus bisa dikenali.
         static readonly Vector3 IslandCentre = new Vector3(50f, 0f, 42f);
+
+        enum Stage
+        {
+            /// <summary>Wave berjalan — sutradara diam.</summary>
+            Fighting,
+
+            /// <summary>Lapangan bersih / sedang rehat: grimoire terbuka, tombol LANJUT hidup.</summary>
+            Ready,
+
+            /// <summary>Gloom sedang merapat menuju gelap penuh.</summary>
+            Closing,
+
+            /// <summary>Gelap penuh, peta terpampang — menunggu PickNode dari UI.</summary>
+            Choosing,
+
+            /// <summary>Node sudah dieksekusi, gloom sedang membuka ke nilai standar.</summary>
+            Opening
+        }
 
         EnemyManager _enemies;
         PlayerMotor _motor;
@@ -35,14 +55,27 @@ namespace Proto
         Transform _player;
         Transform _rig;
         Font _font;
+        Gloom _gloom;
+        BiomeDresser _dresser;
+        BiomeDefinition _restBiome;
 
         System.Random _dice;
+
+        Stage _stage = Stage.Fighting;
+        float _fade;
 
         public RunMap Map { get; private set; }
         public int Act { get; private set; } = 1;
 
-        /// <summary>Portal sedang terpampang, menunggu dipilih.</summary>
-        public bool Choosing { get; private set; }
+        /// <summary>Peta pemilih sedang terpampang, menunggu node dipilih.</summary>
+        public bool Choosing => _stage == Stage.Choosing;
+
+        /// <summary>Fase transisi gelap 0..1 — UI menumpangkan tirai hitamnya di sini supaya
+        /// ujung transisi benar-benar HITAM TOTAL, bukan sekadar gloom yang sangat gelap.</summary>
+        public float Fade => _fade;
+
+        /// <summary>Tombol LANJUT boleh ditampilkan: lapangan bersih atau sedang rehat.</summary>
+        public bool ReadyToDepart => _stage == Stage.Ready;
 
         /// <summary>Sedang di pulau rehat.</summary>
         public bool Resting { get; private set; }
@@ -58,29 +91,19 @@ namespace Proto
         /// <summary>UI membuka panel toko / kejadian / slot begitu pemain mendarat di pulau.</summary>
         public System.Action<RunNodeKind> OnRestEntered;
 
+        /// <summary>Layar sudah gelap penuh — UI membuka peta dalam mode MEMILIH.</summary>
+        public System.Action OnMapChoose;
+
         public System.Action<string, Color> OnAnnounce;
 
-        /// <summary>Gerbang dari UI: boleh berangkat bertarung? (minimal satu skill terpasang).</summary>
+        /// <summary>Gerbang dari UI: boleh berangkat? (minimal satu skill terpasang).</summary>
         public System.Func<bool> CanEmbark;
 
-        /// <summary>Benar selama sebuah panel UI terbuka — klik peta/toko tidak boleh tembus
-        /// ke portal yang kebetulan berdiri di belakangnya.</summary>
-        public System.Func<bool> ClickBlocked;
-
-        class Portal
-        {
-            public RunNode Node;
-            public Transform Root;
-            public Transform Ring;
-            public bool IsReturn;
-        }
-
-        readonly List<Portal> _portals = new List<Portal>();
         readonly List<GameObject> _islandProps = new List<GameObject>();
-        Vector3 _returnPos;
 
         public void Init(EnemyManager enemies, PlayerMotor motor, ArenaCamera camera, Camera lens,
-            GameBalance balance, ContentDatabase db, Transform player, Transform rig)
+            GameBalance balance, ContentDatabase db, Transform player, Transform rig,
+            Gloom gloom, BiomeDresser dresser, BiomeDefinition restBiome)
         {
             _enemies = enemies;
             _motor = motor;
@@ -90,6 +113,9 @@ namespace Proto
             _db = db;
             _player = player;
             _rig = rig;
+            _gloom = gloom;
+            _dresser = dresser;
+            _restBiome = restBiome;
 
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
@@ -101,9 +127,9 @@ namespace Proto
 
             _enemies.OnWaveCleared += OnWaveCleared;
 
-            // Wave pertama pun lewat portal. Kecuali saklar curang sudah telanjur memulai wave —
-            // saat itu portal menunggu giliran lewat OnWaveCleared seperti biasa.
-            if (!_enemies.WaveActive) SpawnPortals();
+            // Wave pertama pun lewat peta. Kecuali saklar curang sudah telanjur memulai wave —
+            // saat itu giliran menunggu lewat OnWaveCleared seperti biasa.
+            if (!_enemies.WaveActive) _stage = Stage.Ready;
         }
 
         RunMap GenerateMap()
@@ -119,251 +145,72 @@ namespace Proto
 
             if (Map.AtBoss)
             {
-                NextAct();
-                return;
+                Act++;
+                Map = GenerateMap();
+                Trail.Clear();
+                OnAnnounce?.Invoke("ACT " + Act, new Color(1f, 0.84f, 0.32f));
             }
 
-            SpawnPortals();
-        }
-
-        void NextAct()
-        {
-            Act++;
-            Map = GenerateMap();
-            Trail.Clear();
-
-            OnAnnounce?.Invoke("ACT " + Act, new Color(1f, 0.84f, 0.32f));
-            SpawnPortals();
+            // Bukan langsung ke peta: drop baru tumpah dan grimoire baru terbuka. Pemain
+            // menyusun dulu — peta menunggu di belakang tombol LANJUT.
+            _stage = Stage.Ready;
         }
 
         // ==================================================================
-        //  portal
+        //  transisi
         // ==================================================================
-
-        void SpawnPortals()
-        {
-            ClearPortals();
-
-            var choices = Map.Reachable();
-            if (choices.Count == 0) return;
-
-            // Kipas menghadap UTARA layar (+Z), terurut lajur kiri-ke-kanan supaya susunan
-            // portalnya menggemakan susunan peta — portal kiri memang cabang kiri.
-            choices.Sort((a, b) => a.Lane.CompareTo(b.Lane));
-
-            for (int i = 0; i < choices.Count; i++)
-            {
-                float angle = (90f + (i - (choices.Count - 1) * 0.5f) * -42f) * Mathf.Deg2Rad;
-                Vector3 at = _player.position;
-                at.y = 0f;
-                at += new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * 6.5f;
-                at = PullInsideArena(at);
-
-                _portals.Add(BuildPortal(choices[i], at, false));
-            }
-
-            Choosing = true;
-        }
 
         /// <summary>
-        /// Portal yang menetas terlalu dekat dinding ditarik masuk. Pemain yang menutup wave di
-        /// pojok arena tetap harus bisa melihat dan mencapai ketiga portalnya.
+        /// Dipanggil UI dari tombol LANJUT. Menutup layar dengan gloom; begitu gelap penuh,
+        /// <see cref="OnMapChoose"/> menyala dan peta mengambil alih.
         /// </summary>
-        Vector3 PullInsideArena(Vector3 at)
+        public void Depart()
         {
-            float nx = at.x / (_balance.ArenaHalfX - 3f);
-            float nz = at.z / (_balance.ArenaHalfZ - 3f);
-            float outside = nx * nx + nz * nz;
+            if (_stage != Stage.Ready) return;
 
-            if (outside <= 1f) return at;
-
-            float scale = 1f / Mathf.Sqrt(outside);
-            at.x *= scale;
-            at.z *= scale;
-            return at;
-        }
-
-        static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
-
-        Portal BuildPortal(RunNode node, Vector3 at, bool isReturn)
-        {
-            var kind = isReturn ? RunNodeKind.Fight : node.Kind;
-
-            var root = new GameObject("Portal " + (isReturn ? "LANJUT" : kind.ToString())).transform;
-            root.SetParent(transform, false);
-            root.position = at;
-
-            Color tone = KindColor(kind);
-
-            // Cincin bola kecil yang berputar. Bentuk paling murah yang tetap terbaca "gerbang" —
-            // dan karena berputar, ia tidak pernah disangka prop hutan.
-            var ring = new GameObject("Ring").transform;
-            ring.SetParent(root, false);
-
-            var block = new MaterialPropertyBlock();
-            block.SetColor(BaseColorId, tone);
-
-            for (int i = 0; i < 8; i++)
-            {
-                var bead = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                bead.name = "Bead";
-
-                var collider = bead.GetComponent<Collider>();
-                if (collider != null) Destroy(collider);
-
-                float a = i / 8f * Mathf.PI * 2f;
-                bead.transform.SetParent(ring, false);
-                bead.transform.localPosition =
-                    new Vector3(Mathf.Cos(a) * 1.15f, 1.1f + Mathf.Sin(a) * 1.15f, 0f);
-                bead.transform.localScale = Vector3.one * 0.34f;
-
-                var renderer = bead.GetComponent<Renderer>();
-                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                renderer.SetPropertyBlock(block);
-            }
-
-            var glowGo = new GameObject("Glow");
-            glowGo.transform.SetParent(root, false);
-            glowGo.transform.localPosition = new Vector3(0f, 1.1f, 0f);
-
-            var glow = glowGo.AddComponent<Light>();
-            glow.type = LightType.Point;
-            glow.color = tone;
-            glow.intensity = 5f;
-            glow.range = 7f;
-            glow.shadows = LightShadows.None;
-
-            var labelGo = new GameObject("Label");
-            labelGo.transform.SetParent(root, false);
-            labelGo.transform.localPosition = new Vector3(0f, 2.9f, 0f);
-
-            // Dimiringkan sejajar kamera (menunduk 68°) supaya hurufnya menghadap lensa,
-            // bukan rebah di tanah. Kamera tidak pernah berputar, jadi satu rotasi tetap cukup.
-            labelGo.transform.rotation = Quaternion.Euler(68f, 0f, 0f);
-
-            var label = labelGo.AddComponent<TextMesh>();
-            label.text = isReturn ? "LANJUT" : KindLabel(kind);
-            label.font = _font;
-            label.fontSize = 44;
-            label.characterSize = 0.055f;
-            label.anchor = TextAnchor.MiddleCenter;
-            label.color = tone;
-
-            var meshRenderer = labelGo.GetComponent<MeshRenderer>();
-            if (meshRenderer != null && _font != null) meshRenderer.sharedMaterial = _font.material;
-
-            return new Portal { Node = node, Root = root, Ring = ring, IsReturn = isReturn };
-        }
-
-        public static Color KindColor(RunNodeKind kind)
-        {
-            switch (kind)
-            {
-                case RunNodeKind.Elite: return new Color(1f, 0.42f, 0.25f);
-                case RunNodeKind.Shop: return new Color(1f, 0.84f, 0.32f);
-                case RunNodeKind.Event: return new Color(0.75f, 0.5f, 1f);
-                case RunNodeKind.Gamble: return new Color(1f, 0.45f, 0.85f);
-                case RunNodeKind.Boss: return new Color(1f, 0.2f, 0.2f);
-                default: return new Color(0.45f, 0.9f, 1f);
-            }
-        }
-
-        public static string KindLabel(RunNodeKind kind)
-        {
-            switch (kind)
-            {
-                case RunNodeKind.Elite: return "ELITE";
-                case RunNodeKind.Shop: return "TOKO";
-                case RunNodeKind.Event: return "???";
-                case RunNodeKind.Gamble: return "SLOT";
-                case RunNodeKind.Boss: return "BOSS";
-                default: return "WAVE";
-            }
-        }
-
-        void ClearPortals()
-        {
-            for (int i = 0; i < _portals.Count; i++)
-            {
-                if (_portals[i].Root != null) Destroy(_portals[i].Root.gameObject);
-            }
-
-            _portals.Clear();
-            Choosing = false;
-        }
-
-        void Update()
-        {
-            // Cincin berputar pelan — satu-satunya animasi yang dibutuhkan gerbang untuk hidup.
-            for (int i = 0; i < _portals.Count; i++)
-            {
-                if (_portals[i].Ring != null)
-                    _portals[i].Ring.Rotate(0f, 0f, 55f * Time.deltaTime, Space.Self);
-            }
-
-            if (!Choosing || !ProtoInput.LeftClickDown) return;
-            if (ClickBlocked != null && ClickBlocked()) return;
-
-            // Klik dicocokkan di RUANG LAYAR, bukan lewat physics — project ini tidak punya satu
-            // pun collider yang hidup, dan menambahkannya cuma untuk klik portal berarti membayar
-            // simulasi fisika untuk satu raycast.
-            Vector2 mouse = ProtoInput.MousePosition;
-
-            for (int i = 0; i < _portals.Count; i++)
-            {
-                var portal = _portals[i];
-                if (portal.Root == null) continue;
-
-                Vector3 screen = _lens.WorldToScreenPoint(portal.Root.position + Vector3.up * 1.1f);
-                if (screen.z < 0f) continue;
-
-                if (Vector2.Distance(mouse, new Vector2(screen.x, screen.y)) > 52f) continue;
-
-                Choose(portal);
-                return;
-            }
-        }
-
-        void Choose(Portal portal)
-        {
-            bool fights = portal.IsReturn == false &&
-                          (portal.Node.Kind == RunNodeKind.Fight ||
-                           portal.Node.Kind == RunNodeKind.Elite ||
-                           portal.Node.Kind == RunNodeKind.Boss);
-
-            if (fights && CanEmbark != null && !CanEmbark())
+            if (CanEmbark != null && !CanEmbark())
             {
                 OnAnnounce?.Invoke("PASANG MINIMAL 1 SKILL DULU", new Color(1f, 0.75f, 0.4f));
                 return;
             }
 
-            Choosing = false;
-
-            // Portal lain padam; yang dipilih tetap menyala sebagai tujuan berjalan.
-            for (int i = 0; i < _portals.Count; i++)
-            {
-                if (_portals[i] != portal && _portals[i].Root != null)
-                    Destroy(_portals[i].Root.gameObject);
-            }
-
-            _portals.Clear();
-            _portals.Add(portal);
-
-            _motor.WalkTo(portal.Root.position, () => Arrive(portal));
+            _stage = Stage.Closing;
+            _fade = _gloom != null && _gloom.CanShut ? 0f : 1f;
         }
 
-        void Arrive(Portal portal)
+        void Update()
         {
-            var node = portal.Node;
-            bool isReturn = portal.IsReturn;
-
-            ClearPortals();
-
-            if (isReturn)
+            if (_stage == Stage.Closing)
             {
-                LeaveRest();
-                return;
+                _fade = Mathf.MoveTowards(_fade, 1f, Time.deltaTime / _balance.MapFadeClose);
+                if (_gloom != null) _gloom.Shut = _fade;
+
+                if (_fade >= 1f)
+                {
+                    _stage = Stage.Choosing;
+                    OnMapChoose?.Invoke();
+                }
             }
+            else if (_stage == Stage.Opening)
+            {
+                _fade = Mathf.MoveTowards(_fade, 0f, Time.deltaTime / _balance.MapFadeOpen);
+                if (_gloom != null) _gloom.Shut = _fade;
+
+                if (_fade <= 0f) _stage = Resting ? Stage.Ready : Stage.Fighting;
+            }
+        }
+
+        /// <summary>
+        /// Dipanggil UI setelah penanda selesai berjalan dan tirai menutup: node dieksekusi
+        /// SEKARANG, selagi layar masih gelap — teleport dan pergantian wajah tidak pernah
+        /// terlihat prosesnya.
+        /// </summary>
+        public void PickNode(RunNode node)
+        {
+            if (_stage != Stage.Choosing || node == null) return;
+            if (!Map.Reachable().Contains(node)) return;
+
+            if (Resting) LeaveRest();
 
             Map.At = node.Index;
             Trail.Add(node.Index);
@@ -414,12 +261,40 @@ namespace Proto
                     EnterRest(node.Kind);
                     break;
             }
+
+            _stage = Stage.Opening;
+        }
+
+        public static Color KindColor(RunNodeKind kind)
+        {
+            switch (kind)
+            {
+                case RunNodeKind.Elite: return new Color(1f, 0.42f, 0.25f);
+                case RunNodeKind.Shop: return new Color(1f, 0.84f, 0.32f);
+                case RunNodeKind.Event: return new Color(0.75f, 0.5f, 1f);
+                case RunNodeKind.Gamble: return new Color(1f, 0.45f, 0.85f);
+                case RunNodeKind.Boss: return new Color(1f, 0.2f, 0.2f);
+                default: return new Color(0.45f, 0.9f, 1f);
+            }
+        }
+
+        public static string KindLabel(RunNodeKind kind)
+        {
+            switch (kind)
+            {
+                case RunNodeKind.Elite: return "ELITE";
+                case RunNodeKind.Shop: return "TOKO";
+                case RunNodeKind.Event: return "???";
+                case RunNodeKind.Gamble: return "SLOT";
+                case RunNodeKind.Boss: return "BOSS";
+                default: return "WAVE";
+            }
         }
 
         void Embark() => OnEmbark?.Invoke();
 
         /// <summary>
-        /// Portal itu GERBANG, bukan pintu putar: keluar di titik acak arena, bukan meneruskan
+        /// Peta itu GERBANG, bukan pintu putar: keluar di titik acak arena, bukan meneruskan
         /// posisi lama. Tanpa ini tiap wave terasa seperti kode yang di-refresh — pemain masih
         /// berdiri di rumput yang sama, memandang sudut yang sama, ditemani kupu-kupu yang sama.
         /// </summary>
@@ -427,10 +302,13 @@ namespace Proto
         {
             const float margin = 9f;
 
-            float x = ((float)_dice.NextDouble() * 2f - 1f)
-                      * Mathf.Max(0f, _balance.ArenaHalfX - margin);
-            float z = ((float)_dice.NextDouble() * 2f - 1f)
-                      * Mathf.Max(0f, _balance.ArenaHalfZ - margin);
+            // Dijepit juga oleh kotak-tengah kamera: titik yang lebih pinggir dari itu membuat
+            // rig tertahan jepitan arena dan pemain lahir MENEPI di layar, bukan di tengah.
+            float rx = Mathf.Min(Mathf.Max(0f, _balance.ArenaHalfX - margin), _camera.LimitX);
+            float rz = Mathf.Min(Mathf.Max(0f, _balance.ArenaHalfZ - margin), _camera.LimitZ);
+
+            float x = ((float)_dice.NextDouble() * 2f - 1f) * rx;
+            float z = ((float)_dice.NextDouble() * 2f - 1f) * rz;
 
             _player.position = new Vector3(x, 0.9f, z);
             _camera.Teleport(new Vector3(x, 0f, z));
@@ -444,7 +322,6 @@ namespace Proto
         {
             Resting = true;
             RestKind = kind;
-            _returnPos = _player.position;
 
             _motor.SetRoam(true);
             _camera.Roam = true;
@@ -452,11 +329,17 @@ namespace Proto
             _player.position = IslandCentre + new Vector3(0f, 0.9f, -2f);
             _camera.Teleport(IslandCentre);
 
+            // Wajah arena ditukar SELAGI GELAP — begitu tirai terbuka, tempatnya memang lain.
+            // Wave berikutnya mengembalikannya sendiri lewat undian wajah di OnWaveStarted.
+            if (_dresser != null && _restBiome != null) _dresser.ShowBiome(_restBiome);
+
             BuildIsland(kind);
 
             OnRestEntered?.Invoke(kind);
             OnAnnounce?.Invoke("PULAU REHAT — " + KindLabel(kind), KindColor(kind));
         }
+
+        static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
 
         void BuildIsland(RunNodeKind kind)
         {
@@ -510,10 +393,6 @@ namespace Proto
             var hostText = hostLabelGo.GetComponent<MeshRenderer>();
             if (hostText != null && _font != null) hostText.sharedMaterial = _font.material;
             _islandProps.Add(hostLabelGo);
-
-            // Portal pulang, sedikit menjauh dari perapian.
-            _portals.Add(BuildPortal(null, IslandCentre + new Vector3(4.2f, 0f, -1.6f), true));
-            Choosing = true;
         }
 
         void ClearIsland()
@@ -526,6 +405,11 @@ namespace Proto
             _islandProps.Clear();
         }
 
+        /// <summary>
+        /// Dipanggil dari PickNode SELAGI GELAP: pulau dibereskan tanpa pernah terlihat kosong.
+        /// Posisi pemain tidak perlu dikembalikan — node tempur me-Relocate sendiri, dan node
+        /// rehat beruntun menata pulau lagi lewat EnterRest.
+        /// </summary>
         void LeaveRest()
         {
             ClearIsland();
@@ -533,11 +417,6 @@ namespace Proto
             Resting = false;
             _motor.SetRoam(false);
             _camera.Roam = false;
-
-            _player.position = new Vector3(_returnPos.x, 0.9f, _returnPos.z);
-            _camera.Teleport(_returnPos);
-
-            SpawnPortals();
         }
     }
 }

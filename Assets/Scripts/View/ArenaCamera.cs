@@ -62,6 +62,15 @@ namespace Proto
         }
 
         /// <summary>
+        /// Kotak tempat kamera masih bisa MENENGAHKAN sasarannya. Titik lahir/teleport pemain
+        /// harus di dalam kotak ini — di luarnya jepitan arena menahan rig, dan pemain muncul
+        /// menepi di layar sejak detik pertama.
+        /// </summary>
+        public float LimitX => _limitX;
+
+        public float LimitZ => _limitZ;
+
+        /// <summary>
         /// Titik yang dituju kamera, disimpan TERPISAH dari posisi kamera itu sendiri.
         ///
         /// Ini bukan kerapian, ini perbaikan bug. Dulu sasarannya dihitung dari

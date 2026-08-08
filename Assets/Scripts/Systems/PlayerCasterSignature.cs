@@ -103,6 +103,18 @@ namespace Proto
             public float Heading;
             public float Drift;
             public bool Active;
+
+            /// <summary>
+            /// Efek partikel milik skill, kalau ada. Disimpan bersama PREFAB SUMBERNYA karena
+            /// puting beliung diambil dari pool: yang barusan milik Tornado bisa dipakai lagi
+            /// oleh Maelstrom, dan tanpa membandingkan sumbernya efek lama ikut terbawa.
+            ///
+            /// Digantung terpisah dari <see cref="T"/> — badan primitifnya diberi skala tidak
+            /// seragam (lebar × 2,4 tinggi), dan anak apa pun ikut terpelintir bersamanya.
+            /// </summary>
+            public Transform Vfx;
+
+            public GameObject VfxSource;
         }
 
         readonly List<Orb> _orbs = new List<Orb>();
@@ -335,11 +347,47 @@ namespace Proto
             t.Heading = Random.Range(0f, Mathf.PI * 2f);
             t.Active = true;
 
-            Paint(t.T, def.Color);
+            // Badan primitifnya ditipiskan saat ada prefab: tugasnya berubah dari MENJADI puting
+            // beliung menjadi penanda jangkauan seret. Dibiarkan pekat, ia menelan efeknya.
+            var tone = def.Color;
+            if (def.CastVfx != null) tone.a *= 0.22f;
+
+            Paint(t.T, tone);
             t.T.position = t.Pos + Vector3.up * 1.2f;
             t.T.localScale = new Vector3(t.Radius * 1.1f, 2.4f, t.Radius * 1.1f);
             t.T.gameObject.SetActive(true);
+
+            AttachTwisterVfx(t, def);
             return true;
+        }
+
+        /// <summary>
+        /// Memasang (atau menukar) efek partikel milik skill pada satu puting beliung. Dipanggil
+        /// TIAP cast — termasuk yang mengambil badan dari pool, karena pemilik sebelumnya bisa
+        /// skill lain.
+        /// </summary>
+        void AttachTwisterVfx(Twister t, PieceDefinition def)
+        {
+            if (t.VfxSource != def.CastVfx)
+            {
+                if (t.Vfx != null) Destroy(t.Vfx.gameObject);
+                t.Vfx = null;
+                t.VfxSource = def.CastVfx;
+
+                if (def.CastVfx != null)
+                {
+                    var go = Instantiate(def.CastVfx, _fxRoot);
+                    go.name = "CastVfx " + def.DisplayName;
+                    t.Vfx = go.transform;
+                }
+            }
+
+            if (t.Vfx == null) return;
+
+            // Radius 3 unit = skala 1, aturan yang sama dengan kubangan Zone.
+            t.Vfx.localScale = Vector3.one * (def.CastVfxScale * Mathf.Max(0.35f, t.Radius / 3f));
+            t.Vfx.position = t.Pos;
+            t.Vfx.gameObject.SetActive(true);
         }
 
         /// <summary>Membuka ruang. Damage-nya ada tapi bukan itu yang dibeli.</summary>
@@ -519,6 +567,10 @@ namespace Proto
                 {
                     t.Active = false;
                     t.T.gameObject.SetActive(false);
+
+                    // Dimatikan, bukan dihancurkan: cast berikutnya dari skill yang sama
+                    // memakainya lagi tanpa membayar Instantiate.
+                    if (t.Vfx != null) t.Vfx.gameObject.SetActive(false);
                     continue;
                 }
 
@@ -532,6 +584,10 @@ namespace Proto
                 t.T.position = t.Pos + Vector3.up * 1.2f;
                 t.T.Rotate(Vector3.up, 900f * dt, Space.World);
 
+                // Efeknya ikut berjalan. Kalau tidak, puting beliungnya berdiri diam sementara
+                // seretan dan angkatannya berjalan pergi — dan yang terbaca dua hal berbeda.
+                if (t.Vfx != null) t.Vfx.position = t.Pos;
+
                 t.TickTimer -= dt;
                 if (t.TickTimer > 0f) continue;
 
@@ -541,9 +597,13 @@ namespace Proto
                 // dan membaliknya jauh lebih jujur daripada menyalin seluruh loop itu lagi.
                 _enemies.Push(t.Pos, t.Radius, -t.Pull);
 
-                // Hanya yang benar-benar sampai ke mata yang terangkat. Kalau seluruh radius diangkat,
-                // satu cast mematikan seisi layar dan tidak ada lagi yang tersisa untuk dilawan.
-                _enemies.Lift(t.Pos, t.Radius * 0.45f, t.LiftDuration);
+                // Yang DILEWATI ikut terangkat, bukan cuma yang persis di titik matanya —
+                // permintaan pemilik project, dan memang itu yang membuatnya terbaca sebagai
+                // puting beliung alih-alih sebagai lingkaran damage yang kebetulan berjalan.
+                //
+                // Tetap TIDAK seluruh radius: bagian luar hanya menyeret. Kalau semuanya ikut
+                // terangkat, satu cast mematikan seisi layar dan tidak ada lagi yang dilawan.
+                _enemies.Lift(t.Pos, t.Radius * 0.7f, t.LiftDuration);
 
                 _enemies.DamageArea(t.Pos, t.Radius, t.Damage,
                     t.Status, t.StatusDuration, t.Points, true, t.SourceName);

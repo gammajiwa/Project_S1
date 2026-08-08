@@ -23,10 +23,10 @@ MonoBehaviour:
   GroundPatchCoverage: 0.28
   Skybox: {fileID: 2100000, guid: 0abb308d27287d24c8430daeffdc8e46, type: 2}
   PostProcess: {fileID: 11400000, guid: 727e9afeee12d82489cd6d9a06dc2436, type: 2}
-  SunColor: {r: 1, g: 0.9, b: 0.68, a: 1}
+  SunColor: {r: 1, g: 0.94, b: 0.78, a: 1}
   SunPitch: 35
   SunYaw: 147
-  SunIntensity: 2.4
+  SunIntensity: 2.6
   AmbientSky: {r: 0.42, g: 0.55, b: 0.68, a: 1}
   AmbientEquator: {r: 0.33, g: 0.45, b: 0.54, a: 1}
   AmbientGround: {r: 0.2, g: 0.25, b: 0.28, a: 1}
@@ -167,24 +167,6 @@ MonoBehaviour:
     Offset: {x: 0, y: 0}
     HideInRain: 1
     OnlyClear: 1
-    Tint: {r: 1, g: 1, b: 1, a: 1}
-    CullSheets: 0
-    Stretch: 1
-    FollowCamera: 0
-  - Prefab: {fileID: 161898164893142898, guid: a4cd458af09655443839cde63bed5f7b, type: 3}
-    Chance: 1
-    RepeatEvery: 0
-    Lifetime: 14
-    Count: 3
-    MinDistance: 12
-    Spread: 30
-    Scale: 1
-    Grain: 1
-    CoverageOnly: 0
-    Height: 0
-    Offset: {x: 0, y: 0}
-    HideInRain: 1
-    OnlyClear: 0
     Tint: {r: 1, g: 1, b: 1, a: 1}
     CullSheets: 0
     Stretch: 1
@@ -425,20 +407,20 @@ MonoBehaviour:
   SmokePocket: {fileID: 0}
   GloomLayers: 1
   GloomWobble: 11
-  GloomCeiling: 0.92
+  GloomCeiling: 0.5
   GloomFollowsCamera: 1
   GloomMaterial: {fileID: 2100000, guid: 745f0fbe544115243bc98ae7480740dc, type: 2}
   GloomColor: {r: 0.012, g: 0.02, b: 0.045, a: 1}
-  GloomStart: 15
-  GloomEnd: 27
+  GloomStart: 18
+  GloomEnd: 36
   GloomSize: 11
   GloomChurn: 0.11
   GloomDrift: 0.5
   GloomDotSize: 16
   GloomSmooth: 0.6
-  CloudColor: {r: 0.05, g: 0.07, b: 0.13, a: 1}
+  CloudColor: {r: 0.05, g: 0.07, b: 0.13, a: 0.5}
   CloudSize: 16
-  CloudCoverage: 0.42
+  CloudCoverage: 0.26
   CloudSpeed: 7
   RayColor: {r: 1, g: 0.97, b: 0.82, a: 0}
   RaySize: 34
