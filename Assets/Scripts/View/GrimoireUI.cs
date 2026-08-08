@@ -548,6 +548,7 @@ namespace Proto
             // static, dan papan yang kali ini tidak punya prefab akan diam-diam memakai kotak
             // milik run sebelumnya kalau baris ini tidak ada.
             GridOverride = null;
+            GridGapOverride = null;
 
             if (_theme == null) return;
 
@@ -566,7 +567,11 @@ namespace Proto
                 go.name = "GrimoirePanel";
 
                 var rt = go.transform as RectTransform;
-                var area = FindGridArea(go.transform);
+                var marker = go.GetComponentInChildren<GrimoireGridArea>(true);
+                var area = marker != null ? marker.transform as RectTransform
+                                          : FindGridArea(go.transform);
+
+                if (marker != null) GridGapOverride = marker.Gap;
 
                 if (area != null)
                 {
@@ -597,12 +602,13 @@ namespace Proto
         }
 
         /// <summary>
-        /// Anak bernama <c>GridArea</c> di dalam prefab papan — kotak tempat petak 7x7 duduk.
+        /// Cadangan pencari kotak petak: anak yang cuma BERNAMA <c>GridArea</c>, tanpa komponen.
         ///
-        /// Dicari lewat NAMA, bukan lewat komponen penanda. Alasannya praktis: yang menata papan
-        /// bekerja di jendela prefab, dan menambah satu RectTransform kosong lalu menamainya bisa
-        /// dilakukan tanpa menyentuh kode sama sekali. Tidak ketemu = papan kembali ke perilaku
-        /// lama, bukan error.
+        /// Jalur utamanya <see cref="GrimoireGridArea"/> — komponen itu menggambar petaknya di
+        /// Scene view, jadi papan bisa ditata sambil dilihat alih-alih ditebak lalu diuji di play
+        /// mode. Pencarian lewat nama dipertahankan supaya prefab yang terlanjur dibuat sebelum
+        /// komponennya ada tetap jalan. Dua-duanya tidak ketemu = papan kembali ke petak hitungan
+        /// lama, bukan error dan bukan petak seukuran nol.
         /// </summary>
         static RectTransform FindGridArea(Transform root)
         {
@@ -2537,6 +2543,8 @@ namespace Proto
             m.SetFloat("_TearScale", _theme.TearScale);
             m.SetFloat("_TearFray", _theme.TearFray);
             m.SetFloat("_TearSoft", _theme.TearSoft);
+            m.SetFloat("_TearWarp", _theme.TearWarp);
+            m.SetFloat("_TearDrift", _theme.TearDrift);
         }
 
         /// <summary>
@@ -3441,7 +3449,13 @@ namespace Proto
                         if (inst != null)
                         {
                             hovered = inst.Def;
-                            origin = inst.Locked ? "KEPASANG - TERKUNCI" : "KEPASANG";
+                            // Akibat gemboknya ikut ditulis. "TERKUNCI" saja terbaca sebagai
+                            // "aman, tidak akan hilang" — padahal artinya resep BUTA terhadap
+                            // piece ini, jadi evolusi yang ditunggu tidak akan pernah jalan
+                            // selama gemboknya terpasang.
+                            origin = inst.Locked
+                                ? "KEPASANG - TERKUNCI, nggak ikut evolusi"
+                                : "KEPASANG";
                             spell = FindSpell(inst);
                         }
                     }

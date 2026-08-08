@@ -121,6 +121,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4453452897465324196}
+  - component: {fileID: 6377488227730751793}
   m_Layer: 0
   m_Name: GridArea
   m_TagString: Untagged
@@ -147,3 +148,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 298, y: 298}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &6377488227730751793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8541595411155676124}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9278527eee36d454a8d747f157941b8b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.GrimoireGridArea
+  Gap: 3
+  ShowGuide: 1
+  GuideInk: {r: 1, g: 0.82, b: 0.35, a: 1}

@@ -1787,13 +1787,46 @@ diukur, beku kalau dilihat.
 kegelapan arena (`Churn 0,3`, `Drift 0,6` pada `Scale 3` = 0,2 gumpalan/detik) yang sudah
 dinilai bergerak benar. Terukur sesudahnya: **0,200**, tujuh kali lebih cepat.
 
+#### Putaran 2 — ternyata itu belum menggerakkan apa pun yang dilihat mata
+
+Pemilik project melapor lagi: tepinya MASIH beku. Benar, dan perbaikan di atas memang tidak
+bisa memperbaikinya.
+
+Yang digerakkan `_Churn`/`_Drift` cuma **noda gloom**. **Garis sobeknya** dihitung dari
+`tp = pixel / _TearScale` — koordinat piksel murni, **tanpa satu pun suku waktu di dalamnya**.
+Dan yang dibaca mata sebagai "tepi peta" adalah garis potong itu, bukan nodanya. Jadi noda
+boleh mengalir secepat apa pun di belakang garis yang bentuknya tidak pernah berubah.
+
+Perbaikannya di shader: `tp` sekarang digeser oleh medan warp gloom (`_TearWarp`) dan hanyut
+pelan (`_TearDrift`). Medan warpnya **DIPINJAM**, bukan disampel ulang — dua Fbm lagi per
+piksel tidak sepadan, dan meminjamnya membuat noda dan robekan menggeliat sebagai satu bahan
+alih-alih dua tepi yang berdenyut sendiri-sendiri.
+
+Ambang early-out ikut dinaikkan `+_TearWarp * _TearScale`: warp memperlebar jangkauan gigitan,
+dan gigitan yang terpotong optimasi muncul sebagai garis lurus mendadak di tengah tepi robek.
+
+Geliat sengaja dibuat dominan atas hanyut — tepi yang hanyut satu arah terus terbaca sebagai
+tekstur yang jalan di belakang lubang, bukan kertas yang tepinya digerogoti.
+
+> **Cara mengukurnya:** membandingkan piksel mentah dua screenshot TIDAK bekerja — hutan di
+> belakang peta ikut bergerak, dan dua percobaan pertama malah menghasilkan angka terbalik
+> (salah satunya karena petanya belum sempat terbuka saat ditangkap). Yang menjawab: dua
+> tangkapan berjarak 23 detik dengan node dan posisi peta IDENTIK, lalu bandingkan bentuk
+> tepinya — sudut kiri-atas bergeser 450 → 478 px, tonjolan tepi kiri berubah bentuk.
+
 ### Petak grimoire diatur dari prefab
 
 Dulu prefab papan cuma DIDUDUKKAN kode di pojok petak hitungan; letak petaknya sendiri
 konstanta. Sekarang dibalik.
 
 - Anak bernama **`GridArea`** di dalam prefab menentukan letak DAN ukuran petak 7x7.
-  Dicari lewat nama, bukan komponen penanda — menata papan tidak boleh menuntut kode.
+- **Komponen `GrimoireGridArea`** dipasang di kotak itu, dan ini koreksi atas putaran pertama:
+  RectTransform kosong **tidak menggambar apa pun**, jadi di jendela prefab kotaknya benar-benar
+  tak terlihat — pemilik project membukanya dan menyimpulkan grid-nya belum disetel sama sekali.
+  Komponennya menggambar kotak + petak 7x7 sebagai gizmo memakai **rumus yang sama persis**
+  dengan yang membangunnya saat main (`Measure()`), jadi garis bantunya tidak bisa berbohong.
+  Ia juga membawa `Gap` yang bisa disetel tangan → `GrimoireLayout.GridGapOverride`.
+  Pencarian lewat nama dipertahankan sebagai cadangan untuk prefab yang dibuat sebelum ini.
 - `GrimoireLayout.GridOverride` (`Rect?`) menampungnya. `CellSize`/`CellGap`/
   `LooseCellSize` berhenti jadi `const` dan jadi property; `GridX`/`GridY` membaca
   override kalau ada. **Null = perilaku lama persis** — prefab tanpa `GridArea`, atau
@@ -1819,6 +1852,26 @@ warna kuning-hijau, dan gradasi kedip yang sama seperti versi lama.
 
 > **Jebakan:** `EnsureFireflies` masih ada dan masih membangun versi LAMA yang lebih miskin.
 > Ia hanya jalan kalau asetnya hilang. Kalau sampai jalan, tulis ulang lagi dari `sparks`.
+
+### "Skill di-lock tapi nggak mau evolusi" — BUKAN bug
+
+Dilaporkan sebagai bug; ternyata gembok bekerja persis seperti rancangannya. Lock membuat
+piece **tidak terlihat oleh resep mana pun** — konsisten di lima tempat, dan dinyatakan
+paling jelas di `RecipeResolver.cs`:
+
+> *Locked pieces are invisible to every recipe. That is the whole contract of the lock:
+> it is not consumed, and nothing is ever drawn pointing at it.*
+
+Jadi mengunci skill justru MENCEGAH evolusinya. Yang salah labelnya: tooltip cuma menulis
+`[KEPASANG - TERKUNCI]`, dan "terkunci" sendirian terbaca sebagai "aman, tidak akan hilang" —
+bukan sebagai "resep buta terhadap piece ini". Sekarang: **`KEPASANG - TERKUNCI, nggak ikut
+evolusi`**.
+
+Ikut kena: `TooltipBuilder` membandingkan `origin == "KEPASANG"` PERSIS, jadi segel terkunci
+yang sudah kepasang diberi tahu bahwa ia belum berdiri di atas rune. Diganti `StartsWith`.
+
+> **Aturan mainnya belum diubah** — kalau yang diinginkan gembok cuma melindungi dari jual/buang
+> tanpa memblokir evolusi, itu keputusan desain dan harus diputuskan pemilik project dulu.
 
 Terpasang: Storm Cell←Tornado_sand, Snowstorm←Tornado_snow, Ion Storm←Orb_lightning,
 Ashfall←Rockfall. Terverifikasi play mode: 2 zone, 119 partikel, pusaran terlihat.

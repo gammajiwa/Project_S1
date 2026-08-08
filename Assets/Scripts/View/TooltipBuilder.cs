@@ -84,7 +84,10 @@ namespace Proto
             // array, and this panel silently went blank for every one of them until it followed.
             AppendStats(def);
 
-            _sb.Append(spell == null && origin == "KEPASANG"
+            // Diperiksa lewat awalannya, bukan disamakan persis: labelnya membawa keterangan
+            // tambahan saat piece-nya terkunci, dan perbandingan persis membuat segel terkunci
+            // yang SUDAH kepasang diberi tahu bahwa ia belum berdiri di atas rune.
+            _sb.Append(spell == null && origin != null && origin.StartsWith("KEPASANG")
                 ? "aktif\n"
                 : "harus berdiri di atas rune biar aktif\n");
         }

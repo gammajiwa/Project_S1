@@ -27,6 +27,9 @@ namespace Proto
         /// </summary>
         public static Rect? GridOverride;
 
+        /// <summary>Celah antar petak yang dipaksakan prefab. Null = pakai <see cref="CellGapDefault"/>.</summary>
+        public static float? GridGapOverride;
+
         // Ukuran bawaan, dipakai selama tidak ada prefab yang mengambil alih.
         public const int CellSizeDefault = 40;
         public const int CellGapDefault = 3;
@@ -40,17 +43,18 @@ namespace Proto
         /// ada, dan petaknya berhenti satu celah sebelum tepi kanan kotak yang digambar di prefab.
         /// </summary>
         static float Step => GridOverride.HasValue
-            ? Mathf.Min((GridOverride.Value.width + CellGapDefault) / Grimoire.Width,
-                        (GridOverride.Value.height + CellGapDefault) / Grimoire.Height)
+            ? Mathf.Min((GridOverride.Value.width + CellGap) / Grimoire.Width,
+                        (GridOverride.Value.height + CellGap) / Grimoire.Height)
             : CellSizeDefault + CellGapDefault;
 
-        // Celahnya tetap: yang diregangkan mengikuti kotak prefab adalah SELNYA. Celah yang ikut
-        // membesar terbaca sebagai papan yang renggang, bukan sebagai papan yang lebih besar.
-        public static float CellGap => CellGapDefault;
+        // Celahnya TIDAK ikut diregangkan mengikuti kotak — yang membesar adalah selnya. Celah
+        // yang ikut membesar terbaca sebagai papan yang renggang, bukan papan yang lebih besar.
+        // Yang boleh mengubahnya cuma angka yang disetel tangan di prefab.
+        public static float CellGap => GridGapOverride ?? CellGapDefault;
 
         // Sel dijaga persegi lewat Mathf.Min di Step — kotak prefab yang tidak sebangun menyisakan
         // ruang di sisi panjangnya, dan itu jauh lebih baik daripada petak yang gepeng.
-        public static float CellSize => Step - CellGapDefault;
+        public static float CellSize => Mathf.Max(1f, Step - CellGap);
 
         public const int Margin = 20;
         public const int SkillInset = 8;

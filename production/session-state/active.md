@@ -1002,6 +1002,23 @@ Diverifikasi: kompilasi bersih (0 error/warning), play mode 0 renderer bermasala
 `HandlePanelClick(tengah tombol)` = False sementara klik badan panel tetap True,
 dan dua screenshot.
 
+### Putaran lanjutan hari yang sama — SELESAI
+
+- **Tepi peta MASIH beku** sesudah perbaikan gloom, dan itu benar: `_Churn`/`_Drift` cuma
+  menggerakkan NODA. Garis SOBEKNYA dihitung dari `tp = pixel / _TearScale` — tanpa suku
+  waktu sama sekali — dan garis potong itulah yang dibaca mata sebagai "tepi peta".
+  Sekarang `tp` digeser medan warp gloom (`TearWarp`) + hanyut pelan (`TearDrift`);
+  warpnya DIPINJAM dari gloom, bukan disampel ulang. Diverifikasi dua tangkapan berjarak
+  23 detik: node & posisi peta identik, sudut kiri-atas bergeser 450 → 478 px.
+- **`GrimoireGridArea`** komponen baru. RectTransform kosong tidak menggambar apa pun, jadi
+  `GridArea` tak terlihat di jendela prefab dan user menyimpulkan gridnya belum disetel.
+  Komponennya menggambar gizmo kotak + petak 7x7 pakai rumus yang SAMA dengan pembangunnya,
+  plus knob `Gap`. Terpasang di prefab; terukur `GridGapOverride = 3`, `GridRect()` 298x298.
+- **"Skill di-lock tapi nggak evolusi" BUKAN bug** — lock memang membuat piece tak terlihat
+  oleh resep (`RecipeResolver.cs:115`). Labelnya yang menyesatkan, diperjelas jadi
+  `KEPASANG - TERKUNCI, nggak ikut evolusi`. **Aturan mainnya belum diubah** — menunggu
+  keputusan pemilik project.
+
 ### Berikutnya
 
 - **Dengar catatan rasa user setelah main** — kunang-kunang baru & gloom peta yang

@@ -120,6 +120,20 @@ namespace Proto
                  "terlihat bergerigi piksel; di atas ~3 ia kembali jadi pudar, bukan sobek.")]
         [Range(0.5f, 8f)] public float TearSoft = 1.5f;
 
+        // Yang dibaca mata sebagai "tepi peta" adalah GARIS POTONGNYA, bukan nodanya. Selama dua
+        // knob di bawah nol, tepinya beku berapa pun GloomChurn/GloomDrift disetel — noda boleh
+        // mengalir di belakang garis yang tidak pernah berubah bentuk.
+
+        [Tooltip("Seberapa jauh garis sobek MENGGELIAT di tempat. Ini knob gerak yang utama — " +
+                 "kecepatannya ikut GloomChurn, karena medan deraunya memang dipinjam dari sana. " +
+                 "Nol = tepi robek beku seperti gambar diam.")]
+        [Range(0f, 3f)] public float TearWarp = 0.8f;
+
+        [Tooltip("Hanyut garis sobek dalam piksel per detik. Sengaja kecil: tepi yang hanyut " +
+                 "satu arah terus terbaca sebagai tekstur yang jalan di belakang lubang, bukan " +
+                 "sebagai kertas yang tepinya digerogoti.")]
+        [Min(0f)] public float TearDrift = 5f;
+
         [Tooltip("Pengali gloom untuk peta KECIL (intip). Panel kecil dengan pita gelap setebal " +
                  "peta besar akan tertutup separuhnya — jangkauannya diperkecil, bukan " +
                  "kepekatannya, supaya bahannya tetap terbaca sama.")]

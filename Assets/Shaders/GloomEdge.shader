@@ -53,6 +53,16 @@ Shader "Grimoire/GloomEdge"
         _TearFray ("Serat halus", Range(0, 1)) = 0.45
         _TearSoft ("Kelembutan potongan (piksel)", Range(0.5, 8)) = 1.5
 
+        // Robekan yang HIDUP. Tanpa dua knob ini garis potongnya beku selamanya: `tp` di bawah
+        // dihitung murni dari koordinat piksel, dan tidak ada kecepatan gloom yang bisa
+        // menggerakkan sesuatu yang tidak punya waktu di dalam rumusnya.
+        //
+        // Geliat dikerjakan _TearWarp (bentuknya berubah DI TEMPAT), hanyut oleh _TearDrift.
+        // Yang dominan sengaja geliatnya: tepi yang hanyut satu arah terus terbaca sebagai
+        // tekstur yang jalan di belakang lubang, bukan sebagai kertas yang tepinya digerogoti.
+        _TearWarp ("Geliat robekan", Range(0, 3)) = 0.8
+        _TearDrift ("Hanyut robekan (piksel per detik)", Float) = 5
+
         // Perbandingan lebar:tinggi gambar aslinya, diisi dari C#. Dipakai untuk MENGISI kotak
         // panel tanpa memelarkan gambarnya — kelebihannya dipotong, bukan diperas.
         //
@@ -129,6 +139,8 @@ Shader "Grimoire/GloomEdge"
             float _TearScale;
             float _TearFray;
             float _TearSoft;
+            float _TearWarp;
+            float _TearDrift;
             float _TexAspect;
             float _Inset;
             float _Feather;
@@ -232,7 +244,11 @@ Shader "Grimoire/GloomEdge"
                 // optimasi ini — dan gigitan yang terpotong akan tampil sebagai garis lurus
                 // mendadak di tengah tepi yang sedang robek.
                 float nearest = min(toEdge.x, toEdge.y);
-                if (nearest > max(_Inset + _Wobble, _TearDepth * 2.0))
+                // _TearWarp menggeser koordinat sobeknya sejauh-jauhnya selebar satu gumpalan
+                // sobek, jadi jangkauan gigitan ikut melebar segitu. Tanpa dijumlahkan di sini,
+                // gigitan terjauh terpotong rata oleh optimasi ini — dan potongan rata itu
+                // muncul sebagai garis lurus mendadak di tengah tepi yang sedang robek.
+                if (nearest > max(_Inset + _Wobble, _TearDepth * 2.0 + _TearWarp * _TearScale))
                     return _PaperMode > 0.5 ? paper : fixed4(_Color.rgb, 0);
 
                 // Derau dibaca dari koordinat piksel panel, jadi gumpalannya berukuran tetap
@@ -270,6 +286,18 @@ Shader "Grimoire/GloomEdge"
                 // adalah kotak gelap membayang di sekeliling kertas robek, yaitu bentuk yang
                 // justru sedang dihapus.
                 float2 tp = pixel / max(1.0, _TearScale);
+
+                // Robekannya IKUT HIDUP, dan ini bagian yang sempat terlewat: menggerakkan noda
+                // gloom tidak pernah bisa menggerakkan garis potongnya, karena `tp` di atas murni
+                // koordinat piksel — tidak ada waktu di dalamnya sama sekali. Yang dibaca mata
+                // sebagai "tepi peta" adalah garis potong itu, bukan nodanya.
+                //
+                // Medan warp DIPINJAM dari gloom alih-alih disampel ulang: dua Fbm lagi per
+                // piksel untuk gerak serupa tidak sepadan, dan meminjamnya membuat noda dan
+                // robekan menggeliat sebagai satu bahan — bukan dua lapisan yang berdenyut
+                // sendiri-sendiri, yang justru akan terbaca sebagai dua tepi.
+                tp += warp * _TearWarp;
+                tp -= float2(_Time.y, _Time.y * 0.35) * _TearDrift / max(1.0, _TearScale);
 
                 float bite = Fbm(tp) - 0.5;
                 float fray = Fbm(tp * 4.7 + 31.7) - 0.5;
