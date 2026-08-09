@@ -1969,3 +1969,238 @@ LEWAT saat cuaca tertentu, jalurnya harus dibuat dulu — belum ada.
 roda = satu lantai. Toko/kejadian/slot diturunkan (0,10 / 0,07 / 0,05) supaya
 jalur tidak penuh rehat. **Terukur 400 run simulasi: 27,7 wave rata-rata
 (min 21, maks 34), 6,3 node rehat** — permintaan pemilik project 25–30 wave.
+
+## 29. Animasi musuh dipanggang jadi tekstur (VAT) (2026-08-09)
+
+Menjawab "animasi di-bake pakai material biar gak mahal". Musuh di game ini **tidak punya
+GameObject** — seluruh gerombolan keluar sebagai beberapa panggilan instanced, dan instancing
+menutup pintu untuk `Animator` dan `SkinnedMeshRenderer` sekaligus. Memanggang memindahkan
+animasinya ke TEKSTUR, yang bisa dibaca ribuan instance dari satu material. `MaxAliveEnemies`
+tetap 500, batching tidak berubah, dan **ECS tidak diperlukan**: yang mahal dari 500 musuh
+berkarakter itu rendering, bukan logikanya — dan logika musuhnya sudah array-based sejak awal.
+
+### Bagiannya
+
+- **`VatClipSet`** (`Data/`) — mesh statis + tekstur posisi + daftar **PERAN** (Idle/Walk/Run/
+  Attack). Peran, bukan nama klip: aset yang dibeli menamai animasinya sesuka pembuatnya.
+- **`VatBaker`** (`Editor/`, menu `Tools/Grimoire/Bake Enemy VAT`) — menebak peran dari nama
+  klip, memanggang 30 fps. `VatRole.Attack` dikenali dari `attack/shoot/cast/spell` dan
+  diperiksa **paling dulu**, karena "Attack01_InPlace" mengandung potongan kata yang bisa
+  tertangkap aturan lain.
+- **`Grimoire/EnemyVat`** (`Shaders/EnemyVat.shader`) — dua pass; **shadow caster ikut
+  menggeser vertexnya**, kalau tidak bayangan berpose netral jatuh di bawah musuh yang berlari.
+
+### Jebakan yang GAGAL DALAM DIAM — `AnimationRootFor`
+
+Kurva animasi menyimpan jalur relatif seperti `"root"`. Prefab Monster menyelipkan satu tingkat
+pembungkus, jadi tulangnya sebenarnya di `"Monster38/root"`. `SampleAnimation` tidak menemukan
+jalurnya, **tidak mengubah apa pun, dan tidak mengeluh** — yang keluar tekstur berisi pose netral
+berulang ratusan kali. Keenam monster terpanggang beku dan itu **baru ketahuan lewat pengukuran,
+bukan lewat error**. Sekarang pangkalnya dicari dengan mencocokkan: objek pertama yang benar-benar
+punya jalur itu di bawahnya. Terverifikasi — simpangan Idle vs Run 0,377..0,693 di keenam monster.
+
+Jebakan sejenis, semuanya diam:
+
+- **Animator harus DIMATIKAN sebelum sampling.** Kalau tidak, ia menimpa pose yang barusan
+  disampling sebelum `BakeMesh` membacanya, dan seluruh tekstur keluar berisi pose beku.
+- **Bounds mesh dipaksa selebar SELURUH gerakan.** Bounds pose netral membuat Unity membuang
+  musuh dari layar tepat saat ia mengayunkan tangan keluar kotak.
+- **Posisi disimpan MENTAH sebagai half**, tidak dinormalkan ke bounding box. Presisinya
+  ~0,001 unit — jauh di bawah satu piksel — dan menyimpan mentah menghapus seluruh kelas bug
+  "membongkarnya dengan bounds yang salah".
+- **Batas 90 frame per klip.** Ukuran tekstur = vertex x TOTAL frame; satu Idle 6,7 detik
+  sendirian memakan 201 baris. Yang dipotong kecepatan samplingnya, **bukan durasinya** —
+  memotong durasi mematahkan putarannya.
+- **`SkinOf` mengenali `_BaseColor` selain `_BaseMap`/`_MainTex`.** Tiga paket, tiga konvensi;
+  di shader Feyloom nama itu justru slot tekstur — kebalikan artinya di URP Lit.
+- **Model tanpa animasi sama sekali dipanggang sebagai satu pose diam, bukan ditolak.**
+  Necromancer memang tidak membawa satu pun klip, dan penyihir yang berdiri diam sambil menembak
+  tetap musuh yang sah.
+- **Parameter `clipFolder`**: enam monster punya rig identik 60 tulang tapi hanya dua yang
+  membawa folder animasi. Empat sisanya meminjam dari saudaranya.
+
+### Menyambung ke gerombolan (`EnemyRenderer`)
+
+- `VatClipSet` **opsional**. Null = kapsul persis seperti dulu. Itu bukan jalur usang melainkan
+  jaring: panggangan yang hilang harus menyisakan gerombolan yang tetap bisa dimainkan.
+- **Data animasi ditulis di slot yang SAMA dengan matriksnya.** Pengurutan ember mengacak urutan
+  musuh; data yang tetap memakai urutan masuk akan memasangkan kerangka dengan pose milik
+  kerangka lain.
+- **Potongan per draw disalin ke penyangga berukuran TETAP 1023 lalu dikirim utuh.**
+  `MaterialPropertyBlock` mengunci panjang array pada pengiriman pertama — potongan lebih pendek
+  berikutnya tidak berpengaruh, dan sisanya tergambar memakai pose dari draw sebelumnya.
+- **Peran dipilih dari KECEPATAN**, bukan dari mesin keadaan — musuh di sini tidak punya satu pun,
+  dan kecepatan selalu benar tanpa perlu ada yang mengingat memperbaruinya. Ketiga klipnya dicari
+  sekali di konstruktor, bukan per musuh per frame.
+- **Fase per musuh jadi geseran awal animasi.** Tanpa itu lima ratus kerangka melangkah dengan
+  kaki yang sama di frame yang sama, dan barisan serempak terbaca sebagai satu benda.
+- **Bob squash-stretch dimatikan otomatis** begitu ada animasi sungguhan — membiarkannya berarti
+  dua animasi berjalan di atas satu sama lain.
+- **Skala diturunkan dari tinggi model sebenarnya** (1,72 unit -> bodyScale 0,639), bukan
+  dikira-kira di inspector.
+
+Terverifikasi play mode: 25 musuh -> **3 draw call**. Peran terpilih sendiri (Run 21, Walk 1,
+Idle 3). Wave 15: 500 musuh, 5 draw call, 59 fps.
+
+Catatan setelan: `RunSpeed` 3,2 membuat hampir semua pengejar jatuh ke Run. Naikkan kalau mau
+lebih banyak yang berjalan.
+
+### Ukuran & bayangan
+
+- `BodyHeight` 1,1 -> **2,2** (permintaan pemilik project). Murni ukuran GAMBAR — jangkauan gigit
+  dan tabrakan tidak diturunkan dari sini. Kapsul cadangan ikut digandakan lewat rumus yang sama,
+  supaya mematikan panggangan tidak diam-diam mengecilkan seluruh gerombolan jadi separuhnya.
+- **Bayangan gerombolan dinyalakan**, keputusannya dari pengukuran: pada 249 musuh, nyala
+  14,53 ms (69 fps) melawan mati 14,71 ms (68 fps) — di dalam noise, harganya nol. Hanya untuk
+  model panggangan; kapsul tidak punya siluet yang layak dibayar. **Menerima** bayangan tetap
+  mati — musuh setinggi belasan piksel yang dilewati bayangan pohon cuma berkedip gelap-terang,
+  dan kedipan itu membuatnya lebih sulit diikuti.
+- Aset musuh **463 -> 97 MB**: `ProjectMini` dipindah ke `_RawAssets/` (di luar `Assets/`),
+  tekstur mentah dikecilkan ke 512 **dan ditulis ulang** — import setting saja tidak cukup,
+  itu cuma mengubah hasil impor di Library sementara git meng-commit berkas sumbernya.
+  **Ekstensi dipertahankan supaya GUID tidak berubah** — GUID baru berarti setiap material
+  kehilangan rujukan teksturnya. Yang asli diarsipkan ke `_RawAssets/textures-4k/` sebelum
+  ditimpa; 14 klip tak terpakai ikut diarsipkan.
+
+> **BELUM:** ketujuh musuh terpanggang belum dipasang jadi musuh yang sungguhan.
+> `EnemyRenderer` masih memegang **satu** model untuk seluruh gerombolan, jadi archetype
+> api/es/penembak dan perilaku menembak dari jauh menyusul di langkah berikutnya.
+
+## 30. Bar vitals dari prefab, hover angkanya, dan strip yang turun (2026-08-09)
+
+### `VitalsRig` — kode menyentuh TEPAT tiga hal
+
+`fillAmount`, warna kilat, dan isi teks. Letak, ukuran, sprite, dan **arah isian** semuanya
+milik prefab (`Assets/Art/UI/Prefabs/VitalsPanel.prefab`). Batas ini pernah dibayar mahal di
+papan grimoire: begitu kode ikut menyetel ukuran, tiap editan prefab tertimpa diam-diam saat run
+dan yang mengubahnya tidak akan pernah tahu kenapa.
+
+- **Slot mana pun boleh kosong kecuali `HpFill`.** Bola tanpa serpihan, tanpa latar, dan tanpa
+  angka tetap bola yang sah — seluruh pemakainya diberi pemeriksaan null.
+- **Warna dasar kedua bar dicatat SEKALI saat dibangun.** Kilat kena-pukul dan cerah mana-penuh
+  dua-duanya menulis ke `Image.color` tiap frame; tanpa titik pulang tersimpan keduanya harus
+  bertolak dari warna tetap di kode, dan itu membuang pewarnaan prefab pada kilat pertama —
+  selamanya.
+- **Jalur bar kotak bawaan dipertahankan utuh** untuk tema tanpa prefab, dan dibungkus kondisi
+  alih-alih dilewati lewat `return`: tooltip dibangun sesudahnya di fungsi yang sama, dan keluar
+  lebih awal akan menghapusnya tanpa jejak.
+- Bola terisi dari BAWAH ke atas — bola itu wadah, dan wadah terisi seperti cairan. Radial akan
+  terbaca sebagai meteran, bukan sebagai darah yang tersisa. Isian digambar di belakang bingkai
+  supaya tepi bingkai menutupi batas bola.
+
+### "Mana nggak pernah turun" — BUKAN bug UI
+
+Dilaporkan pemilik project. Diukur: mana dipaksa ke 42/120 saat play mode, `ManaFill.fillAmount`
+ikut ke **0,35** persis; perekam mencatat `manaMin` dan `fillMin` **identik sampai 7 desimal**.
+Kabelnya bersih. Yang salah **ekonominya**: `BaseManaRegen` **13**/detik mengisi ulang kolam 120
+dalam 9 detik, sementara mayoritas piece berharga 1–10 (34 piece malah 0). Bolanya diam di penuh
+karena memang penuh terus. Dikembalikan ke **5** (nilai default kode; 13 dipasang di aset,
+kemungkinan buat tes).
+
+> **Pelajaran yang mahal:** "bar tidak bergerak" hampir selalu dibaca sebagai bug tampilan, dan
+> waktu bisa hilang di prefab sebelum ada yang menanyakan angka sumbernya. Ukur nilai sumbernya
+> DULU, baru kabelnya.
+
+### Hover angka HP & mana
+
+Bola tidak membawa angka — bar kotak lama menempelkan "87 / 120" di badannya, bola berbingkai
+tidak punya tempat untuk itu tanpa mengotori artnya. Angkanya pindah ke hover, **sama seperti
+tiap ikon strip di bawahnya — satu kebiasaan, bukan dua**.
+
+- Kotak hover jatuh balik ke rect isiannya sendiri. Slot `HpHover`/`ManaHover` disediakan di
+  `VitalsRig` untuk memperlebarnya, tapi **sengaja dibiarkan kosong**: bingkai 189 px kedua bola
+  saling menimpa 106 px, jadi hover mana akan ketelan HP. Rect isian tidak tumpang tindih
+  (HP x 36..145, mana x 179..288).
+- Kanvasnya Overlay, jadi `RectangleContainsScreenPoint` diberi kamera **null**.
+- Angka dibulatkan ke ATAS: 1 HP tersisa yang ditampilkan "0" terbaca sebagai sudah mati.
+- Baris regen hanya muncul kalau regennya > 0 — "pulih 0/dtk" itu janji palsu.
+
+### `StatusStripRig` — tiga strip ikon punya prefab penempat
+
+`Assets/Art/UI/Prefabs/StatusStrips.prefab`. Isinya **cuma tiga kotak kosong**; ikonnya tetap
+dibangun dan digambar kode, dan tetap menempel di kanvas (bukan di dalam prefab) supaya urutan
+gambarnya tidak bergantung pada susunan anak yang ditata orang lain.
+
+Sebabnya konkret: letak ketiga strip dulu tiga angka tetap (−96/−128/−160) yang dipilih waktu bar
+HP masih **kotak setinggi 18 px**. Bola berbingkai berakhir di **y −170**, jadi ketiganya mendarat
+tepat di atas bolanya — dan itu tidak bisa dibetulkan dari editor karena angkanya hidup di kode.
+
+- Sekarang **−190 / −222 / −254**, tiap kotak bisa digeser sendiri; yang dikosongkan kembali ke
+  angka lamanya di `GrimoireLayout`.
+- **Dua baris keterangan (piece di tangan & janji evolusi) IKUT** kotak ailment (−34 / −56 dari
+  situ). Kalau tidak, mereka tertinggal menggantung di bekas tempat strip, dan yang menggeser
+  strip tidak akan menduga keduanya terlibat.
+- Pangkal dibaca dari **sudut dunia** (`corners[1]`), bukan `anchoredPosition` — anchor dan pivot
+  apa pun di prefab tetap menghasilkan jawaban yang sama. Wajib `Canvas.ForceUpdateCanvases()`
+  dulu: prefab yang baru ditempel di frame yang sama masih memakai rect bawaannya, dan pangkal
+  yang dibaca dari situ meleset sampai setengah layar.
+- Komponennya menggambar **gizmo kotak + titik pangkal**. RectTransform kosong tidak menggambar
+  apa pun — pelajaran yang sama dari `GridArea` di §27.
+
+## 31. Layar pilih starter grimoire (2026-08-09)
+
+Alur baru: **menu -> PLAY -> pilih starter -> MULAI RUN -> peta langsung terbuka**.
+
+Separuh fondasinya sudah ada sejak lama: `HeroLoadout` sudah menyimpan piece + koordinat petak +
+rotasi + piece tercecer + nama/blurb, dan `GrimoireUI.ApplyLoadout` sudah mendudukkannya (rune
+dulu, baru skill). Yang dipakai cuma `DefaultHero` = elemen pertama daftar.
+
+### Yang ditambahkan
+
+- **`HeroLoadout`**: stat awal (`MaxHp`/`MaxMana`/`ManaRegen`/`HpRegen`/`MoveSpeed`) sebagai
+  **override opsional**, `Portrait`, `Accent`.
+  **−1 = ikut `GameBalance`.** Sentinel, bukan bool per angka: nol itu nilai yang SAH untuk
+  regen, jadi nol tidak bisa dipakai sebagai penanda.
+- **`HeroChoice`** (`Data/`) — jembatan menu->game lewat **`PlayerPrefs`, bukan field static**.
+  Static kelihatan lebih bersih dan salah di sini karena dua hal: scene game bisa dimuat ulang
+  sendiri (mati -> ulangi run) tanpa lewat menu lagi, dan editor membuang seluruh domain saat
+  script direkompilasi. Keduanya menghapus static diam-diam, dan yang tersisa run yang tiba-tiba
+  memakai starter pertama — tanpa error, tanpa petunjuk. Yang disimpan **ID**, bukan rujukan aset.
+- **`StarterSelectPanel`** (`Menu/`) — carousel. Yang besar di tengah **papan pembukanya**, bukan
+  portrait: susunan petak satu-satunya bagian kartu yang benar-benar memberi tahu apa yang akan
+  dimainkan, dan **jarak antar piece di situ adalah keputusan desain yang sedang dipamerkan** —
+  dua skill yang bersentuhan melebur di akhir wave pertama. Petaknya digambar sendiri di panel,
+  bukan lewat cetakan di scene.
+- **`ProtoInput.CarouselStepDown`** — panah DAN A/D, karena tangan yang di WASD mencoba A/D dan
+  tangan yang di mouse mencoba panah.
+- **`GameBalance.MapOpensRun`** (default true) — peta langsung terbuka di awal run. Memakai
+  `RunDirector.Depart()` **yang sama persis dengan tombol LANJUT**, bukan jalur pintas: transisi
+  gloom, pemeriksaan "minimal satu skill", dan perpindahan tahap semuanya sudah benar di sana,
+  dan jalur kedua yang melewatinya akan jadi tempat bug bersembunyi. Dilewati kalau
+  `DebugConfig.OpeningWave > 0` — yang menyalakannya sedang menguji pertempuran.
+
+### Urutan yang menentukan
+
+`ApplyLoadoutStats` dipanggil **SESUDAH** papan tersusun. Langkah itu mengisi HP & mana sampai
+penuh, dan "penuh" memakai maksimum yang **termasuk bonus rune** — rune baru menyumbang setelah
+ia duduk. Dijalankan lebih dulu, pemain membuka run dengan bola yang tidak pernah penuh.
+
+`BaseMoveSpeed` **pindah dari `GameBalance` ke `PlayerCaster`**. `GameBalance` itu aset yang
+dipakai bersama; menimpa angkanya saat run berarti **menulis permanen ke file di disk** —
+starter cepat yang dimainkan sekali akan mempercepat setiap run sesudahnya, termasuk yang
+memilih starter lain. `PlayerMotor` sekarang membaca `_caster.BaseMoveSpeed`.
+
+### Bug lama ketemu di `HeroPass.Describe`
+
+Pemeriksa "skill pembuka bersentuhan?" membandingkan sel-sel dari piece yang **SAMA**. Skill
+lebih dari satu petak selalu dilaporkan bersentuhan — sel-selnya sendiri memang bertetangga.
+Tidak pernah kelihatan selama semua skill pembuka masih satu petak; muncul begitu Stormcaller
+memakai Lightning Slash (3 petak). Sekarang tiap sel ditandai **nomor SEAT** — bukan aset
+piece-nya, karena starter yang membuka dengan dua Fireball memegang aset yang sama dua kali.
+
+### Starter yang ada
+
+| Id | HP | Mana | Regen mana | Laju |
+|---|---|---|---|---|
+| `emberwright` | −1 (100) | −1 (120) | −1 (5) | −1 (2,8) |
+| `frostwarden` | 140 | 90 | 3,5 | 2,4 |
+| `stormcaller` | 78 | 150 | 7 | 3,4 |
+
+Emberwright sengaja memakai angka bawaan seluruhnya — ia acuan: starter yang setiap statnya
+ditimpa tidak bisa dipakai membaca apakah angka di `GameBalance` sendiri sudah benar.
+**Angka Frostwarden & Stormcaller PLACEHOLDER** — dipilih supaya perbedaannya kelihatan waktu
+diadu, bukan supaya seimbang.
+
+Terverifikasi ujung ke ujung: menu -> halaman starter (3 kartu, 59/61/62 Image petak sesuai
+jumlah selnya) -> MULAI RUN -> `PlayerPrefs = 'stormcaller'` -> Hp 78/78, Mana 150/150, laju 3,4,
+regen 7+3 dari rune = 10 -> `Wave 1`, `Map.At 1` (peta memang terbuka lebih dulu dan node dipilih).

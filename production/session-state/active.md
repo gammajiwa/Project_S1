@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Portal dihapus — peta pemilih fullscreen ala STS + transisi Gloom + pulau Suaka
-Task: User main langsung di sesi — feedback live sudah dua putaran, alur terbukti jalan
+Feature: Layar pilih starter grimoire + musuh terpanggang (VAT)
+Task: Alur menu→starter→peta terverifikasi; angka tiga starter menunggu balancing
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -1049,8 +1049,40 @@ dekat — paling gampang dirasakan pemilik project sambil main.
   2D). Yang bekerja `Mask` UGUI. Aman dihapus, dibiarkan karena itu punya user.
 - Ornamen pengganti judul GRIMOIRE belum ada.
 
+## Musuh terpanggang (VAT), bar vitals, strip, dan layar pilih starter (2026-08-09)
+
+Detail teknis: **docs/AI-HANDOFF.md §29–§31**.
+
+**Musuh terpanggang (§29).** Animasi musuh pindah ke TEKSTUR — nol `Animator`, batching utuh.
+25 musuh = 3 draw call; wave 15 = 500 musuh, 5 draw call, 59 fps. Tujuh musuh dipanggang,
+aset musuh 463 → 97 MB. Jebakan termahalnya `AnimationRootFor`: prefab yang menyelipkan satu
+tingkat pembungkus membuat `SampleAnimation` **gagal tanpa error**, dan keenam monster keluar
+beku — ketahuan lewat pengukuran, bukan lewat error.
+
+**Bar vitals & strip (§30).**
+- `VitalsRig`: kode cuma menyentuh `fillAmount`, warna kilat, dan teks. Sisanya milik prefab.
+- **"Mana nggak pernah turun" ternyata BUKAN bug UI** — `fillAmount` mana terbukti mengikuti
+  nilai mana sampai 7 desimal. Yang salah `BaseManaRegen` **13**/detik terhadap skill seharga
+  1–10. Dikembalikan ke **5**.
+- **Hover bola HP & mana** memunculkan angka (`87 / 120`, persen, regen) — bola tidak punya
+  tempat menempelkan angka tanpa mengotori artnya.
+- **Tiga strip ikon turun** ke −190/−222/−254 lewat prefab `StatusStrips.prefab` — tempat
+  lamanya dipilih waktu bar HP masih kotak 18 px, dan bola berbingkai 190 px menelan ketiganya.
+
+**Layar pilih starter (§31).** Menu → PLAY → pilih starter → MULAI RUN → **peta langsung
+terbuka** (`GameBalance.MapOpensRun`). Tiga starter: `emberwright` (acuan, semua −1),
+`frostwarden` (tebal, lambat), `stormcaller` (rapuh, cepat). Semuanya dari SO — piece,
+koordinat petak, stat awal, nama, blurb, warna aksen.
+
+> **Angka Frostwarden & Stormcaller PLACEHOLDER.** Dipilih supaya perbedaannya kelihatan
+> waktu diadu, bukan supaya seimbang. Itu pekerjaan pemilik project.
+
 ### Berikutnya
 
+- **Balancing tiga starter** — angkanya belum pernah diadu sungguhan
+- **Tujuh musuh terpanggang belum jadi musuh sungguhan** — `EnemyRenderer` masih memegang
+  satu model untuk seluruh gerombolan; archetype api/es/penembak menyusul
+- Starter belum punya `Portrait` — kartunya sekarang cuma papan + teks
 - **Dengar catatan rasa user setelah main** — kunang-kunang baru & gloom peta yang
   sekarang bergerak belum pernah dinilai dengan mata oleh pemilik project
 - Font in-game masih Arial bawaan
