@@ -396,6 +396,29 @@ namespace Proto
             return null;
         }
 
+        /// <summary>
+        /// Animasi panggangan untuk gerombolan. Dipasang SEBELUM <see cref="Init"/>, seperti
+        /// <see cref="Cheats"/> — renderernya dibangun di sana dan tidak pernah dibangun ulang.
+        ///
+        /// Null = kapsul seperti dulu. Itu bukan jalur usang melainkan jaring: panggangan yang
+        /// gagal, hilang, atau belum dibuat harus menyisakan gerombolan yang tetap bisa
+        /// dimainkan, bukan lapangan kosong tanpa satu pun musuh terlihat.
+        /// </summary>
+        public VatClipSet Vat;
+
+        /// <summary>
+        /// Tinggi musuh biasa dalam unit dunia. Kapsul lama tingginya 2 unit dikali 0,55, dan
+        /// angka itulah yang seluruh permainan sudah disetel di sekelilingnya — jangkauan skill,
+        /// jarak gigit, seberapa besar gerombolan terasa. Model apa pun yang masuk diskalakan
+        /// untuk MENYAMAI tinggi ini, bukan dibiarkan membawa tingginya sendiri.
+        /// </summary>
+        const float BodyHeight = 1.1f;
+
+        /// <summary>
+        /// Kecepatan yang dianggap lari penuh, dipakai memilih antara animasi jalan dan lari.
+        /// </summary>
+        const float RunSpeed = 3.2f;
+
         public void Init(Transform player, PlayerCaster caster, GameBalance balance, ContentDatabase database)
         {
             _player = player;
@@ -404,8 +427,17 @@ namespace Proto
             _db = database;
             _statusCounts = new int[Mathf.Max(1, _db.Statuses.Count)];
 
+            bool baked = Vat != null && Vat.Mesh != null && Vat.Positions != null;
+
+            // Skala diturunkan dari tinggi model yang sebenarnya, bukan dikira-kira di inspector.
+            // Model yang diganti dengan yang lebih jangkung tidak boleh diam-diam mengubah
+            // seberapa besar musuh terasa di layar.
+            float body = baked && Vat.Height > 0.01f
+                ? BodyHeight / Vat.Height
+                : 0.55f;
+
             _renderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Capsule),
-                BuildPalette(), Capacity, 0.55f, true);
+                BuildPalette(), Capacity, body, true, Vat);
 
             _shotRenderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Sphere),
                 BuildShotPalette(), MaxShots, 0.3f, false);
@@ -1449,7 +1481,10 @@ namespace Proto
                 // yang terlihat adalah kelabang yang berenang di dalam tanah kaca.
                 if (e.Boss != null && e.Pos.y < BuriedDepth) continue;
 
-                _renderer.Add(e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale);
+                // Kecepatannya ikut dikirim: itu yang memilih antara diam, jalan, dan lari di
+                // animasi panggangan. Renderer kapsul mengabaikannya.
+                _renderer.Add(e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale,
+                    Mathf.Clamp01(e.Speed / RunSpeed));
             }
 
             _renderer.Draw(Time.time);

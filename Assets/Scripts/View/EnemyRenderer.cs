@@ -29,6 +29,8 @@ namespace Proto
         /// <summary>Hard ceiling of Graphics.RenderMeshInstanced. Bigger buckets are split.</summary>
         const int MaxPerDraw = 1023;
 
+        static readonly int VatClipId = Shader.PropertyToID("_VatClip");
+
         readonly float _bodyScale;
         readonly bool _animate;
 
@@ -41,6 +43,28 @@ namespace Proto
         readonly float[] _stagePhase;
         readonly Vector3[] _stageScale;
         readonly int[] _stageTint;
+
+        // ---- animasi panggangan; semuanya null kalau renderer ini tidak memakai VAT ----
+
+        readonly VatClipSet _vat;
+
+        /// <summary>Per instance: x = baris awal klip, y = jumlah baris, z = maju 0..1.</summary>
+        readonly Vector4[] _vatArgs;
+
+        /// <summary>
+        /// Potongan yang benar-benar dikirim per draw. Panjangnya TETAP <see cref="MaxPerDraw"/>
+        /// dan tidak pernah berubah: MaterialPropertyBlock mengunci ukuran array pada pengiriman
+        /// pertama, dan mengirim panjang yang berbeda di draw berikutnya diam-diam tidak
+        /// berpengaruh — instance-nya tergambar memakai data draw sebelumnya.
+        /// </summary>
+        readonly Vector4[] _vatChunk;
+
+        readonly MaterialPropertyBlock _vatBlock;
+        readonly float[] _stageSpeed;
+
+        VatClip _clipIdle;
+        VatClip _clipWalk;
+        VatClip _clipRun;
 
         readonly Matrix4x4[] _instances;
         readonly int[] _bucketCount;
@@ -55,13 +79,24 @@ namespace Proto
         /// Same batching for enemies and for the shots they fire — different mesh, different
         /// palette, different size, and shots do not breathe.
         /// </summary>
-        public EnemyRenderer(Mesh mesh, Color[] palette, int capacity, float bodyScale, bool animate)
+        public EnemyRenderer(Mesh mesh, Color[] palette, int capacity, float bodyScale, bool animate,
+            VatClipSet vat = null)
         {
-            _mesh = mesh;
-            _bodyScale = bodyScale;
-            _animate = animate;
+            _vat = vat != null && vat.Mesh != null && vat.Positions != null ? vat : null;
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            // Mesh panggangan menggantikan kapsulnya. Bentuknya pose netral — vertexnya digeser
+            // shader — jadi yang dikirim ke sini tetap satu mesh statis seperti sebelumnya, dan
+            // seluruh jalur batching di bawah tidak tahu bedanya.
+            _mesh = _vat != null ? _vat.Mesh : mesh;
+            _bodyScale = bodyScale;
+
+            // Bob squash-stretch dimatikan begitu ada animasi sungguhan. Membiarkannya berarti
+            // dua animasi berjalan di atas satu sama lain: kerangka yang melangkah sekaligus
+            // memuai-mengempis seperti balon.
+            _animate = animate && _vat == null;
+
+            var shader = _vat != null ? Shader.Find("Grimoire/EnemyVat") : null;
+            if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("Standard");
 
             _materials = new Material[palette.Length];
@@ -72,6 +107,17 @@ namespace Proto
                 _materials[i] = new Material(shader) { enableInstancing = true };
                 _materials[i].SetColor("_BaseColor", palette[i]);
                 _materials[i].SetColor("_Color", palette[i]);
+
+                if (_vat != null)
+                {
+                    _materials[i].SetTexture("_VatTex", _vat.Positions);
+                    _materials[i].SetFloat("_VatRows", Mathf.Max(1, _vat.TotalRows));
+
+                    // Tekstur warna diambil dari material asli asetnya. Tanpa ini kerangkanya
+                    // tergambar polos, dan seluruh gunanya memakai model 3D hilang.
+                    var skin = SkinOf(_vat.SourceMaterial);
+                    if (skin != null) _materials[i].SetTexture("_BaseMap", skin);
+                }
 
                 // Matte, disetel eksplisit. URP/Lit lahir dengan smoothness 0,5 — material yang
                 // dibuat lewat kode tanpa menyentuhnya akan mengkilap seperti plastik basah.
@@ -108,6 +154,30 @@ namespace Proto
             _bucketCount = new int[palette.Length];
             _bucketStart = new int[palette.Length];
             _bucketCursor = new int[palette.Length];
+
+            if (_vat == null) return;
+
+            _stageSpeed = new float[capacity];
+            _vatArgs = new Vector4[capacity];
+            _vatChunk = new Vector4[MaxPerDraw];
+            _vatBlock = new MaterialPropertyBlock();
+
+            // Ketiga peran dicari SEKALI di sini, bukan per musuh per frame. Pencariannya
+            // memang cuma menyusuri tiga elemen, tapi lima ratus musuh enam puluh kali sedetik
+            // membuat "cuma tiga elemen" jadi sembilan puluh ribu perbandingan string-kelas
+            // per detik untuk jawaban yang tidak pernah berubah.
+            _vat.TryGet(VatRole.Idle, out _clipIdle);
+            _vat.TryGet(VatRole.Walk, out _clipWalk);
+            _vat.TryGet(VatRole.Run, out _clipRun);
+        }
+
+        /// <summary>Tekstur warna sebuah material, dari nama properti mana pun yang dipakainya.</summary>
+        static Texture SkinOf(Material source)
+        {
+            if (source == null) return null;
+            if (source.HasProperty("_BaseMap")) return source.GetTexture("_BaseMap");
+            if (source.HasProperty("_MainTex")) return source.GetTexture("_MainTex");
+            return null;
         }
 
         /// <summary>Steals the built-in mesh off a throwaway primitive, then drops the primitive.</summary>
@@ -121,9 +191,10 @@ namespace Proto
 
         public void Begin() => _pending = 0;
 
-        public void Add(Vector3 position, float yaw, float phase, int tint, float scale)
+        public void Add(Vector3 position, float yaw, float phase, int tint, float scale,
+            float speed01 = 0f)
         {
-            Add(position, yaw, phase, tint, Vector3.one * (scale <= 0f ? 1f : scale));
+            Add(position, yaw, phase, tint, Vector3.one * (scale <= 0f ? 1f : scale), speed01);
         }
 
         /// <summary>
@@ -131,7 +202,8 @@ namespace Proto
         /// tidak pernah proporsional: batang pohon itu tinggi-kurus dan tajuk itu lebar-pipih, dan
         /// keduanya mustahil dari satu angka skala.
         /// </summary>
-        public void Add(Vector3 position, float yaw, float phase, int tint, Vector3 scale)
+        public void Add(Vector3 position, float yaw, float phase, int tint, Vector3 scale,
+            float speed01 = 0f)
         {
             if (_pending >= _stagePos.Length) return;
             if (tint < 0 || tint >= _materials.Length) tint = 0;
@@ -141,6 +213,7 @@ namespace Proto
             _stagePhase[_pending] = phase;
             _stageScale[_pending] = scale;
             _stageTint[_pending] = tint;
+            if (_stageSpeed != null) _stageSpeed[_pending] = speed01;
             _pending++;
         }
 
@@ -170,6 +243,11 @@ namespace Proto
                 int slot = _bucketCursor[_stageTint[i]]++;
                 _instances[slot] = Compose(_stagePos[i], _stageYaw[i], _stagePhase[i],
                     _stageScale[i], _animate ? time : 0f, _bodyScale, _animate);
+
+                // Ditulis di slot yang SAMA dengan matriksnya. Pengurutan ember mengacak urutan
+                // musuh, dan data animasi yang tetap memakai urutan masuk akan memasangkan
+                // kerangka dengan pose milik kerangka lain.
+                if (_vatArgs != null) _vatArgs[slot] = ClipArgs(_stageSpeed[i], _stagePhase[i], time);
             }
 
             for (int b = 0; b < _bucketCount.Length; b++)
@@ -180,6 +258,18 @@ namespace Proto
                 while (remaining > 0)
                 {
                     int chunk = Mathf.Min(remaining, MaxPerDraw);
+
+                    if (_vatArgs != null)
+                    {
+                        // Disalin ke penyangga berukuran tetap, lalu dikirim UTUH. Panjang array
+                        // di MaterialPropertyBlock terkunci pada pengiriman pertama; mengirim
+                        // potongan yang lebih pendek berikutnya tidak berpengaruh, dan sisanya
+                        // tergambar memakai pose dari draw sebelumnya.
+                        System.Array.Copy(_vatArgs, start, _vatChunk, 0, chunk);
+                        _vatBlock.SetVectorArray(VatClipId, _vatChunk);
+                        _params[b].matProps = _vatBlock;
+                    }
+
                     Graphics.RenderMeshInstanced(_params[b], _mesh, 0, _instances, chunk, start);
                     Batches++;
 
@@ -187,6 +277,31 @@ namespace Proto
                     remaining -= chunk;
                 }
             }
+        }
+
+        /// <summary>
+        /// Peran mana yang diputar musuh ini, dan sudah sejauh mana.
+        ///
+        /// Dipilih dari KECEPATAN, bukan dari keadaan yang dikirim gameplay. Musuh di sini tidak
+        /// punya mesin keadaan — yang ada cuma posisi yang berpindah — dan kecepatan adalah satu
+        /// hal yang selalu benar tanpa perlu ada yang mengingat untuk memperbaruinya.
+        /// </summary>
+        Vector4 ClipArgs(float speed01, float phase, float time)
+        {
+            VatClip clip = speed01 < 0.05f ? _clipIdle
+                         : speed01 < 0.6f ? _clipWalk
+                         : _clipRun;
+
+            if (clip.Rows <= 0) clip = _clipIdle;
+            if (clip.Rows <= 0) return Vector4.zero;
+
+            // Fase dipakai sebagai geseran awal, bukan cuma untuk bob: tanpa itu lima ratus
+            // kerangka melangkah dengan kaki yang sama persis di frame yang sama, dan gerombolan
+            // yang berbaris serempak terbaca sebagai satu benda, bukan sebagai kerumunan.
+            float seconds = clip.Seconds > 0.01f ? clip.Seconds : 1f;
+            float progress = time / seconds + phase * 0.159f;
+
+            return new Vector4(clip.FirstRow, clip.Rows, progress, 0f);
         }
 
         /// <summary>

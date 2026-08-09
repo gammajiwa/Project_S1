@@ -31,6 +31,12 @@ namespace Proto
                  "jadi tidak pernah memblokir tes gameplay.")]
         [SerializeField] UiTheme _uiTheme;
 
+        [Tooltip("Animasi gerombolan yang sudah dipanggang jadi tekstur (Tools/Grimoire/Bake " +
+                 "Enemy VAT). Kosong = musuh kembali jadi kapsul — bukan jalur usang, tapi " +
+                 "jaring: panggangan yang hilang harus menyisakan gerombolan yang tetap bisa " +
+                 "dimainkan, bukan lapangan tanpa musuh terlihat.")]
+        [SerializeField] VatClipSet _enemyVat;
+
         [Header("Debug")]
         [Tooltip("Saklar curang buat rekaman & tes. Boleh dikosongkan — dan aset ini pun tidak " +
                  "berefek apa pun sampai gerbang 'Enabled' di dalamnya dinyalakan.")]
@@ -71,6 +77,10 @@ namespace Proto
             // belakangan berarti wave pertama sudah lewat sebelum curangnya berlaku.
             enemies.Cheats = _cheats;
             caster.Cheats = _cheats;
+
+            // Alasan yang sama: renderernya dibangun di dalam Init dan tidak pernah dibangun
+            // ulang, jadi panggangan yang dipasang belakangan tidak akan pernah terpakai.
+            enemies.Vat = _enemyVat;
 
             enemies.Init(playerGo.transform, caster, _balance, _database);
             caster.Init(enemies, _database, _balance);

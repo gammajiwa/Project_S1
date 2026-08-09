@@ -158,6 +158,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 128f4f15a02757d42ab7b2288c502749, type: 2}
   _restBiome: {fileID: 11400000, guid: 178c655f2ae39df40ae5c1b0f04cf39f, type: 2}
   _uiTheme: {fileID: 11400000, guid: d4cb4486fcf10c645a7e3509badfe802, type: 2}
+  _enemyVat: {fileID: 11400000, guid: 5fb199d5acbc08d4cbf0de7302027150, type: 2}
   _cheats: {fileID: 11400000, guid: e38904ef8c695ea46b7f3a938296f413, type: 2}
 --- !u!4 &982952184
 Transform:
