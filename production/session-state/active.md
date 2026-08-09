@@ -1077,7 +1077,38 @@ koordinat petak, stat awal, nama, blurb, warna aksen.
 > **Angka Frostwarden & Stormcaller PLACEHOLDER.** Dipilih supaya perbedaannya kelihatan
 > waktu diadu, bukan supaya seimbang. Itu pekerjaan pemilik project.
 
-### DIMINTA USER, BELUM DIKERJAKAN — toko/kejadian/slot jadi scene sendiri
+### SELESAI: toko/kejadian/slot jadi scene sendiri (2026-08-09, commit aea1559)
+
+`RoomLoader` pramuat `Room_Shop`/`Room_Event`/`Room_Slot` additive di awal run, nyala-mati
+root per node, kamera arena mati hanya kalau ruangan membawa kamera hidup. Panel UI-nya
+TIDAK pindah — yang berganti latarnya. `RoomSceneBuilder` membangun ruangan polos; menghias
+= pekerjaan tangan di editor, dan menu buildernya MENIMPA jadi jangan dijalankan ulang untuk
+ruangan yang sudah dihias.
+
+### SELESAI: sustain + panen + ekspansi rune (fable, commit cda9cb5) & mati terbakar (ecbae3f)
+
+Konten: 7 segel sustain (semua lebih pelit per-petak dari yang lama - findability naik
+lewat jumlah, bukan angka), panen kill-restore di 7 skill *3+ (agregat, terverifikasi
+8 kill x 0.5 = +4.0), 4 rune baru termasuk runeinti *5 Dot (HANYA resep 3 segel *3).
+Pass `Tools/Grimoire/Generate Sustain & Runes`, idempotent terbukti.
+
+Mati terbakar: teknik SSU diport ke Grimoire/EnemyVat (instanced, _VatClip.w), bangkai
+ring buffer 160 di EnemyManager, bayangan ikut tergerogoti. SEKALIAN ketemu: pass
+ShadowCaster VAT tidak pernah terkompilasi sejak lahir (ApplyShadowBias float3 ->
+positionCS float4). Sudah dibetulkan - bayangan VAT MENYALA PERTAMA KALINYA, harga
+bayangan sebenarnya belum pernah terukur; kalau fps turun, knob pertama EnemyShadows.
+
+BELUM: pemain mati belum terbakar (masih perlu material SSU di kapsul pemain); efek
+visual burn belum dinilai mata pemilik project (baru screenshot slow-mo); Flame SSU
+buat VFX skill belum disentuh.
+
+Permintaan user (2026-08-09): item ManaRegen/HpRegen diperbanyak (sekarang cuma 4/2 dari
+107 piece); skill ★3+ dapat efek "membunuh memulihkan mana/HP"; rune diperbanyak — ★5
+bentuk Dot efek raksasa (lewat resep, ★5 tidak pernah jatuh), ≥2 rune ★4, rune 5-sel
+(WAJIB muat 3x3 — batas keras codex/tas/pool). Output: `SustainPass.cs` + edit runtime
+minimal. Belum diverifikasi/di-commit — cek hasil agent dulu.
+
+### Arsip: rencana scene ruangan (sudah dieksekusi)
 
 Permintaan tepatnya: *"si shop si event si slot itu taro di scene berbeda tapi buat dia
 multiple scene biar gak loading lama"*, dan saat ditanya bentuknya user memilih
