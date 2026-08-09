@@ -171,6 +171,11 @@ namespace Proto
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Rendered(_look.HorizonColor);
 
+            // Sama seperti scene game: tanpa ini console dibanjiri "no audio listeners" dan
+            // berhenti berguna. Menu adalah layar pertama yang dilihat, jadi ia juga yang pertama
+            // membanjirinya.
+            camGo.AddComponent<AudioListener>();
+
             var urp = camGo.AddComponent<UniversalAdditionalCameraData>();
             urp.renderPostProcessing = true;
 

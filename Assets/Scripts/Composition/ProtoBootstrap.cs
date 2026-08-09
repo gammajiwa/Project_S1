@@ -242,6 +242,16 @@ namespace Proto
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = RenderColor.Of(_look.HorizonColor);
 
+            // Telinga scene. Tanpa ini Unity memperingatkan "no audio listeners" tiap kali ada
+            // yang berbunyi, dan peringatan itu membanjiri console sampai kesalahan sungguhan
+            // tenggelam di dalamnya — biaya sebenarnya bukan bisunya, tapi hilangnya console
+            // sebagai alat.
+            //
+            // Menumpang di kamera, bukan di pemain: suara dicampur dari sudut pandang PENONTON,
+            // dan kamera menunduk dari jauh. Ditaruh di pemain, seluruh gerombolan yang mengepung
+            // akan terdengar tepat di telinga.
+            go.AddComponent<AudioListener>();
+
             var urp = go.AddComponent<UniversalAdditionalCameraData>();
             urp.renderPostProcessing = true;
             return cam;
