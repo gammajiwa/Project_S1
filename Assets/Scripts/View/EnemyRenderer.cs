@@ -80,7 +80,7 @@ namespace Proto
         /// palette, different size, and shots do not breathe.
         /// </summary>
         public EnemyRenderer(Mesh mesh, Color[] palette, int capacity, float bodyScale, bool animate,
-            VatClipSet vat = null)
+            VatClipSet vat = null, bool castShadows = false)
         {
             _vat = vat != null && vat.Mesh != null && vat.Positions != null ? vat : null;
 
@@ -129,9 +129,20 @@ namespace Proto
 
                 _params[i] = new RenderParams(_materials[i])
                 {
-                    // Enemies are the one thing on screen there are hundreds of; shadows for them
-                    // were already off before this, and stay off.
-                    shadowCastingMode = ShadowCastingMode.Off,
+                    // Musuh satu-satunya yang jumlahnya ratusan, jadi bayangannya dimatikan sejak
+                    // awal. Sekarang bisa dipilih: tanpa bayangan, sosok di kamera yang menunduk
+                    // kehilangan satu-satunya petunjuk bahwa ia MENYENTUH tanah, dan gerombolan
+                    // terbaca melayang beberapa senti di atas rumput.
+                    //
+                    // Harganya nyata: pass bayangan menggambar seluruh gerombolan SEKALI LAGI.
+                    // Diukur, bukan ditebak — lihat catatan di EnemyManager.
+                    shadowCastingMode = castShadows
+                        ? ShadowCastingMode.On
+                        : ShadowCastingMode.Off,
+
+                    // Menerima bayangan tetap mati. Musuh setinggi belasan piksel yang
+                    // dilewati bayangan pohon cuma berkedip gelap-terang, dan kedipan itu
+                    // membuatnya lebih sulit diikuti, bukan lebih menyatu.
                     receiveShadows = false,
 
                     // Set explicitly: an unset bounds can cull the whole batch away, and the swarm

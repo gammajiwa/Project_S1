@@ -407,12 +407,31 @@ namespace Proto
         public VatClipSet Vat;
 
         /// <summary>
-        /// Tinggi musuh biasa dalam unit dunia. Kapsul lama tingginya 2 unit dikali 0,55, dan
-        /// angka itulah yang seluruh permainan sudah disetel di sekelilingnya — jangkauan skill,
-        /// jarak gigit, seberapa besar gerombolan terasa. Model apa pun yang masuk diskalakan
-        /// untuk MENYAMAI tinggi ini, bukan dibiarkan membawa tingginya sendiri.
+        /// Gerombolan menjatuhkan bayangan. Dipasang sebelum <see cref="Init"/>.
+        ///
+        /// Tanpa bayangan, sosok di kamera yang menunduk kehilangan satu-satunya petunjuk bahwa
+        /// ia MENYENTUH tanah — gerombolan terbaca melayang beberapa senti di atas rumput. Itu
+        /// tidak terlihat waktu musuhnya kapsul, karena kapsul tidak pernah terbaca sebagai
+        /// sesuatu yang berdiri.
+        ///
+        /// Harganya: pass bayangan menggambar seluruh gerombolan sekali lagi.
         /// </summary>
-        const float BodyHeight = 1.1f;
+        public bool EnemyShadows = true;
+
+        /// <summary>
+        /// Tinggi musuh biasa dalam unit dunia. Model apa pun yang masuk diskalakan untuk
+        /// MENYAMAI tinggi ini, bukan dibiarkan membawa tingginya sendiri — mengganti model
+        /// dengan yang lebih jangkung tidak boleh diam-diam mengubah seberapa besar musuh terasa.
+        ///
+        /// Digandakan dari 1,1 (tinggi kapsul lama) jadi 2,2 atas permintaan pemilik project:
+        /// kerangka setinggi kapsul terbaca kekecilan, karena kapsul mengisi seluruh siluetnya
+        /// sementara sosok manusia menghabiskan sebagian tingginya untuk celah antar anggota
+        /// badan. Dua benda setinggi sama tidak terbaca sebesar sama.
+        ///
+        /// Ini murni UKURAN GAMBAR. Jangkauan gigit dan tabrakan tidak diturunkan dari sini,
+        /// jadi keduanya tetap seperti dulu.
+        /// </summary>
+        const float BodyHeight = 2.2f;
 
         /// <summary>
         /// Kecepatan yang dianggap lari penuh, dipakai memilih antara animasi jalan dan lari.
@@ -432,12 +451,18 @@ namespace Proto
             // Skala diturunkan dari tinggi model yang sebenarnya, bukan dikira-kira di inspector.
             // Model yang diganti dengan yang lebih jangkung tidak boleh diam-diam mengubah
             // seberapa besar musuh terasa di layar.
+            // Kapsul cadangan ikut digandakan. Mesh kapsul bawaan tingginya 2 unit, jadi
+            // pengalinya setengah dari tinggi yang diminta — kalau tidak, mematikan panggangan
+            // akan diam-diam mengecilkan seluruh gerombolan jadi separuhnya.
             float body = baked && Vat.Height > 0.01f
                 ? BodyHeight / Vat.Height
-                : 0.55f;
+                : BodyHeight * 0.5f;
 
+            // Bayangan cuma untuk model panggangan. Kapsul yang menjatuhkan bayangan kapsul
+            // tidak menambah apa pun selain biaya — yang dibayar mahal itu justru siluetnya,
+            // dan kapsul tidak punya siluet yang layak dibayar.
             _renderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Capsule),
-                BuildPalette(), Capacity, body, true, Vat);
+                BuildPalette(), Capacity, body, true, Vat, EnemyShadows && baked);
 
             _shotRenderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Sphere),
                 BuildShotPalette(), MaxShots, 0.3f, false);
