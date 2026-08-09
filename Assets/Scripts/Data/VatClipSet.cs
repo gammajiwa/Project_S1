@@ -71,6 +71,13 @@ namespace Proto
                  "material VAT dibuat.")]
         public Material SourceMaterial;
 
+        [Tooltip("Noise untuk efek mati terbakar — piksel tubuh digerogoti mengikuti nilai " +
+                 "tekstur ini, tepinya membara. Dibagikan dari paket Sprite Shaders Ultimate " +
+                 "(SSU_Noise_1K), bukan disalin.\n\n" +
+                 "Boleh kosong: terbakarnya jadi serempak sekujur badan alih-alih menggerogoti — " +
+                 "jelek, tapi tidak menghentikan apa pun.")]
+        public Texture2D BurnNoise;
+
         [Tooltip("Berapa vertex yang dipanggang. Sama dengan lebar tekstur.")]
         public int VertexCount;
 

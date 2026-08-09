@@ -25,6 +25,22 @@ Shader "Grimoire/EnemyVat"
         _VatRows ("Total baris tekstur", Float) = 1
 
         _Ambient ("Cahaya dasar", Range(0, 1)) = 0.35
+
+        // ---- mati terbakar ----
+        // Teknik dipinjam dari paket Sprite Shaders Ultimate milik pemilik project (fitur Burn
+        // + Full Glow Dissolve), DIPORT ke sini alih-alih memakai shadernya langsung: shader
+        // paket itu untuk objek satuan, sedangkan musuh digambar instanced — satu material per
+        // musuh yang mati akan membunuh batching yang jadi alasan seluruh jalur VAT ini ada.
+        //
+        // Kemajuannya per-instance lewat _VatClip.w (0 = hidup, 1 = habis). Noise menggerogoti
+        // piksel dari ambang ke atas; pita tepat di ambang menyala warna api, pita yang lebih
+        // lebar menggosong dulu sebelum lenyap.
+        [NoScaleOffset] _BurnTex ("Noise terbakar", 2D) = "white" {}
+        _BurnNoiseScale ("Skala noise", Float) = 1.6
+        [HDR] _BurnEdgeColor ("Warna bara di tepi", Color) = (6.0, 1.6, 0.15, 1)
+        _BurnCharColor ("Warna gosong", Color) = (0.06, 0.04, 0.03, 1)
+        _BurnEdgeWidth ("Lebar bara", Range(0.005, 0.2)) = 0.05
+        _BurnCharWidth ("Lebar gosong", Range(0.01, 0.4)) = 0.16
     }
 
     SubShader
@@ -52,16 +68,22 @@ Shader "Grimoire/EnemyVat"
 
             TEXTURE2D(_BaseMap);      SAMPLER(sampler_BaseMap);
             TEXTURE2D(_VatTex);       SAMPLER(sampler_VatTex);
+            TEXTURE2D(_BurnTex);      SAMPLER(sampler_BurnTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 float4 _BaseColor;
                 float  _VatRows;
                 float  _Ambient;
+                float  _BurnNoiseScale;
+                float4 _BurnEdgeColor;
+                float4 _BurnCharColor;
+                float  _BurnEdgeWidth;
+                float  _BurnCharWidth;
             CBUFFER_END
 
             // Satu-satunya data per instance. x = baris awal klip, y = jumlah baris klip,
-            // z = maju 0..1 di dalam klip itu.
+            // z = maju 0..1 di dalam klip itu, w = kemajuan terbakar 0..1 (0 = hidup).
             UNITY_INSTANCING_BUFFER_START(Props)
                 UNITY_DEFINE_INSTANCED_PROP(float4, _VatClip)
             UNITY_INSTANCING_BUFFER_END(Props)
@@ -150,6 +172,34 @@ Shader "Grimoire/EnemyVat"
                 float ndl = saturate(dot(n, main.direction)) * 0.5 + 0.5;
 
                 float3 lit = albedo.rgb * (main.color * ndl + _Ambient);
+
+                // ---- mati terbakar, branchless (aturan shader project: step/lerp, bukan if).
+                //
+                // burn = 0 membuat ambangnya -0.2: clip selalu lolos, kedua pita berbobot nol,
+                // dan seluruh blok ini jadi identitas — musuh hidup membayar satu sampel noise
+                // dan tidak berubah sepiksel pun.
+                float burn = UNITY_ACCESS_INSTANCED_PROP(Props, _VatClip).w;
+
+                float noise = SAMPLE_TEXTURE2D(_BurnTex, sampler_BurnTex,
+                    input.uv * _BurnNoiseScale).r;
+
+                // Ambang naik MELEWATI 1: piksel dengan noise tertinggi pun harus sudah lenyap
+                // sebelum kemajuannya selesai, atau bangkai terakhirnya menggantung selamanya.
+                float threshold = burn * (1.0 + _BurnCharWidth + 0.05) - 0.2;
+
+                clip(noise - threshold);
+
+                // Dua pita diukur dari sisa jarak ke ambang. Gosong dulu (lebar), lalu bara
+                // (sempit, HDR) tepat sebelum pikselnya lenyap — urutan yang sama dengan kayu.
+                float toEdge = noise - threshold;
+                float charBand = 1.0 - smoothstep(_BurnEdgeWidth, _BurnCharWidth, toEdge);
+                float edgeBand = 1.0 - smoothstep(0.0, _BurnEdgeWidth, toEdge);
+
+                // charBand memudarkan warna asli ke gosong; edgeBand MENAMBAH bara di atasnya.
+                // Additive untuk baranya disengaja: bara adalah cahaya, bukan cat.
+                lit = lerp(lit, _BurnCharColor.rgb, charBand * step(0.001, burn));
+                lit += _BurnEdgeColor.rgb * (edgeBand * step(0.001, burn));
+
                 return half4(lit, albedo.a);
             }
             ENDHLSL
@@ -177,12 +227,18 @@ Shader "Grimoire/EnemyVat"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
             TEXTURE2D(_VatTex);   SAMPLER(sampler_VatTex);
+            TEXTURE2D(_BurnTex);  SAMPLER(sampler_BurnTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseMap_ST;
                 float4 _BaseColor;
                 float  _VatRows;
                 float  _Ambient;
+                float  _BurnNoiseScale;
+                float4 _BurnEdgeColor;
+                float4 _BurnCharColor;
+                float  _BurnEdgeWidth;
+                float  _BurnCharWidth;
             CBUFFER_END
 
             UNITY_INSTANCING_BUFFER_START(Props)
@@ -195,13 +251,19 @@ Shader "Grimoire/EnemyVat"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
                 float2 vatUv      : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
+            // Bayangan ikut TERGEROGOTI. Tanpa uv + ambang yang sama dengan pass warna,
+            // sosoknya lenyap tapi bayangannya tertinggal utuh di rumput — dan bayangan tanpa
+            // pemilik lebih mengganggu daripada tidak ada bayangan.
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv         : TEXCOORD0;
+                float  burn       : TEXCOORD1;
             };
 
             float3 SampleVatShadow(float column, float row)
@@ -218,6 +280,9 @@ Shader "Grimoire/EnemyVat"
                 float4 clip = UNITY_ACCESS_INSTANCED_PROP(Props, _VatClip);
                 float3 posOS = input.positionOS.xyz;
 
+                output.uv = input.uv;
+                output.burn = clip.w;
+
                 if (clip.y >= 1.0)
                 {
                     float frames = clip.y;
@@ -232,7 +297,13 @@ Shader "Grimoire/EnemyVat"
                 float3 positionWS = TransformObjectToWorld(posOS);
                 float3 normalWS = TransformObjectToWorldNormal(input.normalOS);
 
-                output.positionCS = ApplyShadowBias(positionWS, normalWS, _LightDirection);
+                // ApplyShadowBias memulangkan posisi DUNIA yang sudah digeser — ia masih harus
+                // diproyeksikan ke clip. Baris lama menugaskannya langsung, dan HLSL menolak
+                // float3->float4 secara implisit: SELURUH pass bayangan tidak pernah terkompilasi,
+                // gagal dalam diam, dan angka "bayangan nol biaya" di pengukuran kemarin adalah
+                // biaya pass yang memang tidak pernah jalan.
+                output.positionCS = TransformWorldToHClip(
+                    ApplyShadowBias(positionWS, normalWS, _LightDirection));
 
             #if UNITY_REVERSED_Z
                 output.positionCS.z = min(output.positionCS.z, UNITY_NEAR_CLIP_VALUE);
@@ -243,7 +314,16 @@ Shader "Grimoire/EnemyVat"
                 return output;
             }
 
-            half4 ShadowFragment(Varyings input) : SV_Target => 0;
+            half4 ShadowFragment(Varyings input) : SV_Target
+            {
+                // Rumus ambang HARUS identik dengan pass warna. Selisih sekecil apa pun
+                // membuat bayangan lenyap lebih cepat atau lebih lambat dari pemiliknya.
+                float noise = SAMPLE_TEXTURE2D(_BurnTex, sampler_BurnTex,
+                    input.uv * _BurnNoiseScale).r;
+
+                clip(noise - (input.burn * (1.0 + _BurnCharWidth + 0.05) - 0.2));
+                return 0;
+            }
             ENDHLSL
         }
     }

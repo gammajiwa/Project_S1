@@ -62,6 +62,9 @@ namespace Proto
         readonly MaterialPropertyBlock _vatBlock;
         readonly float[] _stageSpeed;
 
+        /// <summary>Kemajuan terbakar per musuh yang di-stage frame ini. Null tanpa VAT.</summary>
+        readonly float[] _stageBurn;
+
         VatClip _clipIdle;
         VatClip _clipWalk;
         VatClip _clipRun;
@@ -169,9 +172,23 @@ namespace Proto
             if (_vat == null) return;
 
             _stageSpeed = new float[capacity];
+            _stageBurn = new float[capacity];
             _vatArgs = new Vector4[capacity];
             _vatChunk = new Vector4[MaxPerDraw];
             _vatBlock = new MaterialPropertyBlock();
+
+            // Tekstur noise terbakar ikut aset panggangan, dipasang sekali ke semua material
+            // ember. Lewat aset dan bukan pencarian path saat run: AssetDatabase tidak ada di
+            // build, dan Resources.Load menuntut menyalin tekstur yang sudah dimiliki paket SSU.
+            // Null aman — shader memakai putih, terbakarnya jadi serempak alih-alih menggerogoti,
+            // jelek tapi tidak pernah menghentikan permainan.
+            if (_vat.BurnNoise != null)
+            {
+                for (int i = 0; i < _materials.Length; i++)
+                {
+                    _materials[i].SetTexture("_BurnTex", _vat.BurnNoise);
+                }
+            }
 
             // Ketiga peran dicari SEKALI di sini, bukan per musuh per frame. Pencariannya
             // memang cuma menyusuri tiga elemen, tapi lima ratus musuh enam puluh kali sedetik
@@ -222,9 +239,9 @@ namespace Proto
         public void Begin() => _pending = 0;
 
         public void Add(Vector3 position, float yaw, float phase, int tint, float scale,
-            float speed01 = 0f)
+            float speed01 = 0f, float burn01 = 0f)
         {
-            Add(position, yaw, phase, tint, Vector3.one * (scale <= 0f ? 1f : scale), speed01);
+            Add(position, yaw, phase, tint, Vector3.one * (scale <= 0f ? 1f : scale), speed01, burn01);
         }
 
         /// <summary>
@@ -232,8 +249,13 @@ namespace Proto
         /// tidak pernah proporsional: batang pohon itu tinggi-kurus dan tajuk itu lebar-pipih, dan
         /// keduanya mustahil dari satu angka skala.
         /// </summary>
+        /// <param name="burn01">
+        /// Kemajuan mati terbakar, 0 = hidup. Dikirim per instance lewat slot w yang sama dengan
+        /// data animasinya — musuh yang terbakar tetap satu batch dengan yang hidup, karena wave
+        /// besar membunuh puluhan per detik dan tiap bangkai yang keluar batch adalah draw call.
+        /// </param>
         public void Add(Vector3 position, float yaw, float phase, int tint, Vector3 scale,
-            float speed01 = 0f)
+            float speed01 = 0f, float burn01 = 0f)
         {
             if (_pending >= _stagePos.Length) return;
             if (tint < 0 || tint >= _materials.Length) tint = 0;
@@ -244,6 +266,7 @@ namespace Proto
             _stageScale[_pending] = scale;
             _stageTint[_pending] = tint;
             if (_stageSpeed != null) _stageSpeed[_pending] = speed01;
+            if (_stageBurn != null) _stageBurn[_pending] = burn01;
             _pending++;
         }
 
@@ -277,7 +300,12 @@ namespace Proto
                 // Ditulis di slot yang SAMA dengan matriksnya. Pengurutan ember mengacak urutan
                 // musuh, dan data animasi yang tetap memakai urutan masuk akan memasangkan
                 // kerangka dengan pose milik kerangka lain.
-                if (_vatArgs != null) _vatArgs[slot] = ClipArgs(_stageSpeed[i], _stagePhase[i], time);
+                if (_vatArgs != null)
+                {
+                    var args = ClipArgs(_stageSpeed[i], _stagePhase[i], time);
+                    args.w = _stageBurn[i];
+                    _vatArgs[slot] = args;
+                }
             }
 
             for (int b = 0; b < _bucketCount.Length; b++)

@@ -877,6 +877,7 @@ namespace Proto
 
                 // Ruas yang lepas tetap memercik. Badan yang menyusut diam-diam tidak terbaca
                 // sebagai kemajuan; percikannya yang memberi tahu pemain bahwa ia sedang menang.
+                StartBurn(gone);
                 OnKill?.Invoke(gone.Pos);
             }
 
@@ -937,6 +938,7 @@ namespace Proto
             {
                 segments[i].Alive = false;
                 segments[i].Boss = null;
+                StartBurn(segments[i]);
                 OnKill?.Invoke(segments[i].Pos);
             }
 
@@ -1576,6 +1578,11 @@ namespace Proto
                     Mathf.Clamp01(e.Speed / RunSpeed));
             }
 
+            // Bangkai ikut di batch yang sama. deltaTime biasa, bukan unscaled: tombol kecepatan
+            // 5x juga mempercepat kematian, dan bangkai yang terbakar dalam waktu nyata terlihat
+            // bergerak lambat aneh di antara gerombolan yang dipercepat.
+            DrawBurningCorpses(Time.deltaTime);
+
             // Renderer yang tidak kebagian satu pun musuh keluar lebih awal tanpa menggambar,
             // jadi model yang belum muncul di wave ini tidak membayar apa-apa.
             for (int r = 0; r < _renderers.Length; r++) _renderers[r].Draw(Time.time);
@@ -1835,7 +1842,88 @@ namespace Proto
         {
             e.Alive = false;
             Kills++;
+            StartBurn(e);
             OnKill?.Invoke(e.Pos);
+        }
+
+        // ---------- mati terbakar ----------
+
+        /// <summary>
+        /// Bangkai yang sedang terbakar habis. Data GAMBAR saja — logika, tabrakan, dan hash
+        /// spasial sudah melepasnya di detik ia mati; yang tersisa cuma beberapa frame di layar
+        /// supaya "mati" terbaca sebagai peristiwa, bukan sebagai lenyap.
+        /// </summary>
+        struct BurningCorpse
+        {
+            public Vector3 Pos;
+            public float Yaw;
+            public float Phase;
+            public int Tint;
+            public float Scale;
+            public float Speed01;
+            public EnemyArchetype Kind;
+            public float Age;
+        }
+
+        /// <summary>
+        /// Ring buffer, bukan List yang tumbuh: wave besar membunuh puluhan per detik, dan yang
+        /// paling tua boleh hilang lebih cepat — mata tidak menghitung bangkai, ia cuma butuh
+        /// TIAP kematian sempat menyala sebentar.
+        /// </summary>
+        readonly BurningCorpse[] _corpses = new BurningCorpse[160];
+
+        int _corpseHead;
+        int _corpseCount;
+
+        /// <summary>Lama satu bangkai menyala sebelum habis, detik.</summary>
+        const float BurnSeconds = 0.55f;
+
+        void StartBurn(Enemy e)
+        {
+            // Kecepatan DIBEKUKAN di nilai saat mati: animasinya terus berjalan selagi tubuhnya
+            // digerogoti, jadi pelari mati sebagai pelari. Menukar ke pose diam membuat tiap
+            // kematian diawali sentakan pose — persis yang membuat kematian instanced murahan.
+            _corpses[(_corpseHead + _corpseCount) % _corpses.Length] = new BurningCorpse
+            {
+                Pos = e.Pos,
+                Yaw = e.Yaw,
+                Phase = e.Phase,
+                Tint = e.Tint,
+                Scale = e.Scale,
+                Speed01 = Mathf.Clamp01(e.Speed / RunSpeed),
+                Kind = e.Kind
+            };
+
+            if (_corpseCount < _corpses.Length) _corpseCount++;
+            else _corpseHead = (_corpseHead + 1) % _corpses.Length;
+        }
+
+        /// <summary>
+        /// Menggambar bangkai dan menggugurkan yang sudah habis. Dipanggil dari LateUpdate di
+        /// antara musuh hidup dan Draw — bangkai memakai renderer & batch yang SAMA, jadi
+        /// lima puluh kematian sedetik tidak menambah satu pun draw call.
+        /// </summary>
+        void DrawBurningCorpses(float dt)
+        {
+            int alive = 0;
+
+            for (int i = 0; i < _corpseCount; i++)
+            {
+                int at = (_corpseHead + i) % _corpses.Length;
+                var c = _corpses[at];
+
+                c.Age += dt;
+                if (c.Age >= BurnSeconds) continue;
+
+                // Dipadatkan ke depan supaya yang gugur tidak meninggalkan lubang di ring.
+                _corpses[(_corpseHead + alive) % _corpses.Length] = c;
+                alive++;
+
+                _renderers[ModelOf(c.Kind)].Add(c.Pos, c.Yaw, c.Phase, c.Tint, c.Scale,
+                    c.Speed01, c.Age / BurnSeconds);
+            }
+
+            _corpseCount = alive;
         }
 
         // ---------- damage API ----------

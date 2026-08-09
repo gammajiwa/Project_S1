@@ -61,6 +61,7 @@ MonoBehaviour:
   Mesh: {fileID: 5051620151845956130}
   Positions: {fileID: -5359931050433932327}
   SourceMaterial: {fileID: 2100000, guid: ed7156f742a6479458c1215eecd029bc, type: 2}
+  BurnNoise: {fileID: 2800000, guid: b8d18cd117976254d94a812a0bfc336e, type: 3}
   VertexCount: 3726
   TotalRows: 207
   BoundsMin: {x: -0.8401526, y: -0.044232257, z: -0.7412586}
