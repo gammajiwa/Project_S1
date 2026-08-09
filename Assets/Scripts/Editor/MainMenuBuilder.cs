@@ -1026,21 +1026,32 @@ namespace Proto
             return default;
         }
 
+        /// <summary>
+        /// MENAMBAHKAN menu & scene game ke Build Settings — tidak pernah menulis ulang daftarnya.
+        ///
+        /// Versi lama mengganti seluruh daftar dengan {menu, game}, dan itu bug yang baru
+        /// kelihatan begitu ada scene ketiga: tiap rebuild menu menyapu scene ruangan
+        /// toko/kejadian/slot dari daftar, dan RoomLoader menolaknya saat run — panel singgah
+        /// jatuh balik ke atas arena tanpa error, cuma "kok nggak pindah". Daftar Build Settings
+        /// itu milik BERSAMA; builder boleh menjamin barisnya sendiri ada, bukan menghapus
+        /// baris orang lain.
+        /// </summary>
         static void RegisterBuildSettings()
         {
-            var scenes = new List<EditorBuildSettingsScene>
-            {
-                new EditorBuildSettingsScene(ScenePath, true)
-            };
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
 
-            if (File.Exists(GameScenePath))
-            {
-                scenes.Add(new EditorBuildSettingsScene(GameScenePath, true));
-            }
-            else
+            // Menu selalu indeks 0 — scene pertama adalah yang dimuat build saat boot.
+            scenes.RemoveAll(s => s.path == ScenePath);
+            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+
+            if (!File.Exists(GameScenePath))
             {
                 Debug.LogWarning("[MainMenuBuilder] " + GameScenePath +
                                  " tidak ketemu — MULAI bakal gagal load scene.");
+            }
+            else if (!scenes.Exists(s => s.path == GameScenePath))
+            {
+                scenes.Add(new EditorBuildSettingsScene(GameScenePath, true));
             }
 
             EditorBuildSettings.scenes = scenes.ToArray();
