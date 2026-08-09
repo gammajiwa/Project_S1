@@ -831,7 +831,16 @@ Detail: AI-HANDOFF.md §22.
   mematikan lembaran beam UFO di prefab debu Sunlight/Moonlight — akar asli
   "godray ngumpul di tengah".
 
-### TERTULIS DI KODE, MENUNGGU KOMPILASI (play mode user menahan compile)
+### SELESAI (commit e6ec21d..e748be8): gelombang perbaikan live-QA
+
+Semua yang tadi antre sudah terkompilasi, terverifikasi, dan masuk: fix drag belanjaan
+toko; Build Settings merge (ruangan tidak tersapu lagi - TERBUKTI termuat 4 scene + latar
+toko tampil menggantikan arena); papan starter terpusat (3 kartu lolos cek bersentuhan);
+Necromancer bob napas; ShopRig + ShopPanel.prefab (panel/slot/reroll/LANJUT ditata tangan,
+LANJUT default pojok kanan bawah); ruangan dipindah ke kavling 3000 supaya tidak menumpuk
+dengan arena.
+
+### ARSIP investigasi (menunggu kompilasi - sudah tidak berlaku)
 
 Empat edit sudah di disk, belum terkompilasi/terverifikasi/ter-commit:
 
