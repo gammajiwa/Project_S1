@@ -72,6 +72,11 @@ Shader "Grimoire/GloomEdge"
         // dan tepi panel tetap satu benda.
         _TexAspect ("Rasio gambar (lebar/tinggi)", Float) = 1
 
+        // Geser sampel perkamen, dalam satuan PANEL (1 = setinggi panel). Dipakai supaya latar
+        // ikut bergerak saat peta di-scroll: latar yang diam sementara nodenya bergeser terbaca
+        // sebagai node yang melayang di atas kaca, bukan sebagai peta yang digeser.
+        _PaperScroll ("Geser perkamen (satuan panel)", Vector) = (0,0,0,0)
+
         [Header(Jangkauan dari tepi)]
         _Inset ("Mulai gelap (piksel dari tepi)", Float) = 190
         _Feather ("Gelap penuh (piksel dari tepi)", Float) = 8
@@ -150,6 +155,7 @@ Shader "Grimoire/GloomEdge"
             float _TearWarp;
             float _TearDrift;
             float _TexAspect;
+            float4 _PaperScroll;
             float _Inset;
             float _Feather;
             float _Invert;
@@ -238,11 +244,33 @@ Shader "Grimoire/GloomEdge"
                 float texAspect = max(0.001, _TexAspect);
 
                 float2 uv = input.uv - 0.5;
-                if (panelAspect > texAspect) uv.y *= texAspect / panelAspect;
-                else                         uv.x *= panelAspect / texAspect;
-                uv += 0.5;
+                float2 scroll = _PaperScroll;
 
-                fixed4 paper = tex2D(_MainTex, uv) * input.color;
+                // Geserannya diberi perlakuan yang SAMA dengan uv-nya. Kalau tidak, perkamen
+                // bergerak lebih cepat atau lebih lambat dari node yang berdiri di atasnya —
+                // dan latar yang menyeret sendiri terbaca lebih salah daripada latar yang diam.
+                if (panelAspect > texAspect)
+                {
+                    uv.y *= texAspect / panelAspect;
+                    scroll.y *= texAspect / panelAspect;
+                }
+                else
+                {
+                    uv.x *= panelAspect / texAspect;
+                    scroll.x *= panelAspect / texAspect;
+                }
+
+                uv += 0.5 + scroll;
+
+                // Diulang lewat frac, bukan lewat wrap mode tekstur: sprite yang dipak ke atlas
+                // tidak punya wrap sendiri, dan menyetel wrapMode dari kode akan mengubah aset
+                // impornya untuk SEMUA yang memakainya.
+                //
+                // Gradiennya diambil dari uv yang BELUM dibungkus. frac melompat dari 1 ke 0 di
+                // garis sambungan, dan turunan lompatan itu raksasa — GPU akan menyimpulkan
+                // "sangat mengecil di sini" lalu menarik mip paling kabur, meninggalkan garis
+                // buram tepat di sambungan yang justru sedang disembunyikan.
+                fixed4 paper = tex2Dgrad(_MainTex, frac(uv), ddx(uv), ddy(uv)) * input.color;
 
                 // Potong lebih awal: bagian tengah panel tidak pernah membayar biaya derau.
                 // Ambang paling longgar yang mungkin = _Inset + _Wobble, jadi apa pun yang lebih

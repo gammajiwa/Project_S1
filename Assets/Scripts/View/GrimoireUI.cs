@@ -97,6 +97,12 @@ namespace Proto
         Image _mapBtnBg;
         Text _mapBtnLabel;
         Image[] _mapEdges = System.Array.Empty<Image>();
+
+        // Penyangga pengukur lengkung, dipakai ulang tiap ruas. Dialokasikan sekali: peta penuh
+        // menggambar puluhan ruas per frame, dan dua array baru per ruas adalah sampah yang
+        // dihasilkan enam puluh kali sedetik untuk hasil yang dibuang seketika.
+        readonly Vector2[] _arcPoints = new Vector2[MapArcSamples + 1];
+        readonly float[] _arcLengths = new float[MapArcSamples + 1];
         Image[] _mapNodes = System.Array.Empty<Image>();
         Image[] _mapRings = System.Array.Empty<Image>();
         Text[] _mapGlyphs = System.Array.Empty<Text>();
@@ -163,8 +169,24 @@ namespace Proto
         const float CoverInSeconds = 0.35f;
         const float CoverOutSeconds = 0.45f;
 
-        // Segmen pendek per sambungan — jalur bezier putus-putus ala peta referensi.
-        const int MapSegsPerEdge = 7;
+        // Jalur bezier putus-putus ala peta referensi.
+        //
+        // Dulu tiap ruas dibagi menjadi JUMLAH segmen yang sama (7), dan itu keliru: ruas panjang
+        // keluar dengan garis panjang, ruas pendek dengan garis pendek, dan mata membaca
+        // perbedaan itu sebagai peta yang digambar asal-asalan. Yang harus tetap sama panjang
+        // GARISNYA, bukan berapa banyak.
+        //
+        // Sekarang jumlahnya diturunkan dari panjang lengkungnya. Panjang garis tetap; yang
+        // sedikit menyesuaikan jarak antar garis, supaya tiap ruas berakhir pas di nodenya alih-alih
+        // meninggalkan potongan tanggung.
+        const float MapDashLength = 17f;
+        const float MapDashPitch = 27f;
+
+        /// <summary>Atap segmen per ruas — ini yang menentukan besar kolam Image, bukan jumlah pastinya.</summary>
+        const int MapSegsPerEdge = 26;
+
+        /// <summary>Titik pencuplikan bezier untuk mengukur panjang lengkungnya.</summary>
+        const int MapArcSamples = 24;
 
         bool _gambleOpen;
         float _spinLeft;
@@ -262,6 +284,13 @@ namespace Proto
         StatusStrip _debuffStrip;
         StatusStrip _ailmentStrip;
 
+        // Pojok kiri-atas tiap strip, dihitung SEKALI saat dibangun. Kotak penempatnya tidak
+        // bergerak saat main, jadi menanyakan sudut dunianya tiap frame cuma menambah kerja untuk
+        // jawaban yang sama.
+        Vector2 _buffOrigin;
+        Vector2 _debuffOrigin;
+        Vector2 _ailmentOrigin;
+
         Text _hudText;
         Image _hpBg;
         Image _hpChip;
@@ -282,6 +311,16 @@ namespace Proto
         Image _manaBg;
         Image _manaFill;
         Text _manaLabel;
+
+        // Kotak yang menyalakan kartu keterangan HP/mana. Boleh sama dengan isiannya; boleh juga
+        // kotak lain yang mencakup bingkai bolanya — lihat VitalsRig.
+        RectTransform _hpHover;
+        RectTransform _manaHover;
+
+        // Material cairan per bola, atau null kalau bolanya tidak memakai isian menegak.
+        // Salinan, bukan aset — jadi wajib dibuang sendiri di OnDestroy.
+        Material _hpLiquid;
+        Material _manaLiquid;
 
         // Animated bar state. The fill chases the real value; the chip trails behind it so you can
         // see how much was just taken off, which a bar that snaps can never show.
@@ -365,10 +404,20 @@ namespace Proto
             Player.OnCast += OnSpellCast;
             Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
 
+            // Saklar curang tetap menang atas pilihan pemain: itu memang gunanya, dan starter yang
+            // dipaksa dari DebugConfig harus tetap dipaksa walau menu barusan memilih yang lain.
             var cheats = Player.Cheats;
-            ApplyLoadout(cheats != null && cheats.LoadoutOverride != null
+            var hero = cheats != null && cheats.LoadoutOverride != null
                 ? cheats.LoadoutOverride
-                : _db.DefaultHero);
+                : HeroChoice.Resolve(_db);
+
+            ApplyLoadout(hero);
+
+            // Stat SESUDAH papannya tersusun, dan itu urutan yang penting: langkah ini mengisi HP
+            // dan mana sampai penuh, dan "penuh" termasuk bonus dari rune yang barusan didudukkan.
+            // Dijalankan lebih dulu, pemain membuka run dengan bola yang tidak pernah penuh —
+            // maksimumnya naik karena rune, isinya tertinggal di angka dasar.
+            Player.ApplyLoadoutStats(hero);
 
             for (int i = 0; i < Book.Placed.Count; i++) Discover(Book.Placed[i].Def);
 
@@ -376,6 +425,32 @@ namespace Proto
             Redraw();
 
             ApplyCheats(cheats);
+        }
+
+        /// <summary>
+        /// Membuka peta langsung di awal run, tanpa fase SUSUN GRIMOIRE-MU di depannya.
+        ///
+        /// <b>Dipanggil dari <see cref="AttachRun"/>, bukan dari <c>Init</c>.</b> Itu bukan selera:
+        /// <c>ProtoBootstrap</c> membuat UI LEBIH DULU dari sutradara run — sutradaranya mengecek
+        /// <c>WaveActive</c> saat lahir, jadi ia harus lahir belakangan. Dipanggil dari
+        /// <c>Init</c>, <c>_run</c> masih null dan seluruh fungsi ini keluar diam-diam: tidak ada
+        /// error, tidak ada peringatan, dan yang terlihat cuma peta yang tidak pernah terbuka.
+        ///
+        /// Memakai <see cref="RunDirector.DepartNow"/> — versi tanpa transisi. Yang berjalan
+        /// pelan bukan cuma lambat, ia memaksa menatap arena KOSONG selama <c>MapFadeClose</c>
+        /// detik: belum ada satu pun musuh, dan tidak ada apa pun di sana untuk dilihat.
+        ///
+        /// Dilewati kalau curang meminta langsung lompat ke wave tertentu: yang menyalakannya
+        /// sedang menguji pertempuran, dan peta pemilih di depannya cuma penghalang.
+        /// </summary>
+        void OpenRunOnMap()
+        {
+            if (_run == null || _balance == null || !_balance.MapOpensRun) return;
+
+            var cheats = Player.Cheats;
+            if (cheats != null && cheats.Enabled && cheats.OpeningWave > 0) return;
+
+            _run.DepartNow();
         }
 
         /// <summary>
@@ -436,6 +511,12 @@ namespace Proto
         void OnDestroy()
         {
             Time.timeScale = 1f;
+
+            // Salinan material tidak ikut mati bersama GameObject-nya. Scene game bisa dimuat
+            // ulang berkali-kali dalam satu sesi (mati, ulangi run), dan dua material bocor per
+            // run menumpuk tanpa ada yang pernah melihatnya.
+            if (_hpLiquid != null) Destroy(_hpLiquid);
+            if (_manaLiquid != null) Destroy(_manaLiquid);
         }
 
         const string GameSceneName = "Proto";
@@ -1094,12 +1175,62 @@ namespace Proto
             _manaFill = rig.ManaFill;
             _manaLabel = rig.ManaLabel;
 
+            // Kotak hover jatuh balik ke isiannya sendiri kalau prefabnya tidak menunjuk yang
+            // lain. Itu selalu benar walau kadang sempit: isian ADA di dalam bola, jadi kursor
+            // yang mengenainya pasti sedang menunjuk bola itu.
+            _hpHover = rig.HpHover != null ? rig.HpHover : _hpFill.rectTransform;
+            _manaHover = rig.ManaHover != null ? rig.ManaHover
+                       : _manaFill != null ? _manaFill.rectTransform
+                       : null;
+
             // Warna yang disetel di prefab jadi titik pulang kilat dan cerah. Dibaca di sini,
             // sekali, sebelum satu frame pun sempat menulis ke atasnya.
             _hpFillBase = _hpFill.color;
             if (_manaFill != null) _manaFillBase = _manaFill.color;
 
+            _hpLiquid = MakeLiquid(_hpFill);
+            _manaLiquid = MakeLiquid(_manaFill);
+
             return true;
+        }
+
+        /// <summary>
+        /// Material cairan untuk satu bola, atau null kalau bola ini tidak cocok untuknya.
+        ///
+        /// Hanya untuk isian MENEGAK. Gelombangnya melintang di sepanjang lebar dan mengayun
+        /// ketinggian permukaan — di bar mendatar tidak ada permukaan untuk digoyang, dan garis
+        /// yang bergerak di ujung kanan bar akan terbaca sebagai kedipan, bukan sebagai cairan.
+        /// Bar kotak bawaan lewat jalur ini tanpa berubah sedikit pun.
+        ///
+        /// Materialnya SALINAN per bola. Dua bola berbagi satu material berarti berbagi satu
+        /// <c>_Fill</c> juga, dan yang menulis belakangan menang — bola mana akan menggambar
+        /// ketinggian HP.
+        /// </summary>
+        Material MakeLiquid(Image fill)
+        {
+            if (fill == null || _theme == null || _theme.LiquidAmp <= 0f) return null;
+            if (fill.type != Image.Type.Filled || fill.fillMethod != Image.FillMethod.Vertical) return null;
+
+            var shader = Shader.Find("Grimoire/VitalsLiquid");
+            if (shader == null) return null;
+
+            var mat = new Material(shader);
+
+            // Kotak UV sprite di dalam atlasnya. Tanpa ini, sprite yang dipak ke atlas menghitung
+            // ketinggian permukaannya memakai koordinat atlas — dan garisnya mendarat di tempat
+            // yang sama sekali tidak berhubungan dengan bolanya.
+            var uv = fill.sprite != null
+                ? UnityEngine.Sprites.DataUtility.GetOuterUV(fill.sprite)
+                : new Vector4(0f, 0f, 1f, 1f);
+
+            mat.SetVector("_UvRect", uv);
+            mat.SetFloat("_Amp", _theme.LiquidAmp);
+            mat.SetFloat("_Speed", _theme.LiquidSpeed);
+            mat.SetFloat("_Waves", _theme.LiquidWaves);
+            mat.SetFloat("_Crest", _theme.LiquidCrest);
+
+            fill.material = mat;
+            return mat;
         }
 
         void BuildHud()
@@ -1139,6 +1270,9 @@ namespace Proto
                 _manaFill.fillOrigin = 0;
                 _manaLabel = MakeText("ManaLabel", new Vector2(Margin + 6, -73), new Vector2(250, 18), 13,
                     Color.white, new Vector2(0f, 1f), TextAnchor.UpperLeft);
+
+                _hpHover = _hpFill.rectTransform;
+                _manaHover = _manaFill.rectTransform;
             }
 
             _tipBg = MakeImage("TipBg", Vector2.zero, new Vector2(360, 150),
@@ -1171,6 +1305,8 @@ namespace Proto
                 new Vector2(SpellPanelW + 120, 20), 12, new Color(0.72f, 0.76f, 0.85f),
                 new Vector2(1f, 0f), TextAnchor.LowerRight);
 
+            BuildStripAnchors();
+
             _buffStrip = new StatusStrip(_canvas.transform, _font, 6, StripIcon,
                 new Color(1f, 0.92f, 0.55f));
 
@@ -1179,6 +1315,63 @@ namespace Proto
 
             _ailmentStrip = new StatusStrip(_canvas.transform, _font, 8, StripIcon,
                 new Color(0.85f, 0.88f, 0.95f));
+        }
+
+        /// <summary>
+        /// Menentukan pojok kiri-atas ketiga strip ikon, dari prefab penempat kalau temanya
+        /// membawa satu.
+        ///
+        /// Prefabnya cuma berisi kotak kosong — ikonnya tetap dibangun dan digambar kode, dan
+        /// tetap menempel di kanvas (bukan di dalam prefab) supaya urutan gambarnya tidak
+        /// bergantung pada susunan anak yang ditata orang lain.
+        ///
+        /// Yang dipindahkan cuma LETAK. Itu perlu sejak bar HP jadi bola: tempat lama ketiga
+        /// strip dipilih waktu barnya masih kotak setinggi 18 piksel, dan bola berbingkai
+        /// setinggi hampir 190 piksel menelan ketiganya.
+        /// </summary>
+        void BuildStripAnchors()
+        {
+            _buffOrigin = new Vector2(Margin, StripBuffY);
+            _debuffOrigin = new Vector2(Margin, StripDebuffY);
+            _ailmentOrigin = new Vector2(Margin, StripAilmentY);
+
+            if (_theme == null || _theme.StatusStripsPrefab == null) return;
+
+            var go = Instantiate(_theme.StatusStripsPrefab, _canvas.transform, false);
+            go.name = "StatusStripAnchors";
+
+            var rig = go.GetComponent<StatusStripRig>() ?? go.GetComponentInChildren<StatusStripRig>(true);
+
+            if (rig == null)
+            {
+                Debug.LogWarning("[GrimoireUI] StatusStripsPrefab tidak punya StatusStripRig — " +
+                                 "ketiga strip kembali ke tempat lamanya.");
+                Destroy(go);
+                return;
+            }
+
+            // Sudut dunia baru benar setelah kanvas menghitung tata letaknya. Prefab yang baru
+            // ditempel di frame yang sama masih memakai rect bawaannya, dan pangkal yang dibaca
+            // dari situ meleset — kadang sampai setengah layar.
+            Canvas.ForceUpdateCanvases();
+
+            Vector2 origin;
+            if (StatusStripRig.TryOrigin(rig.BuffArea, out origin)) _buffOrigin = origin;
+            if (StatusStripRig.TryOrigin(rig.DebuffArea, out origin)) _debuffOrigin = origin;
+
+            if (StatusStripRig.TryOrigin(rig.AilmentArea, out origin))
+            {
+                _ailmentOrigin = origin;
+
+                // Dua baris keterangan menumpang di bawah strip ailment. Membiarkannya di angka
+                // tetap berarti mereka tertinggal menggantung di tempat strip yang sudah pindah,
+                // dan yang memindahkan stripnya tidak akan menduga keduanya ikut terlibat.
+                if (_heldText != null)
+                    _heldText.rectTransform.anchoredPosition = origin + new Vector2(0f, -34f);
+
+                if (_evolveText != null)
+                    _evolveText.rectTransform.anchoredPosition = origin + new Vector2(0f, -56f);
+            }
         }
 
         /// <summary>
@@ -1226,10 +1419,10 @@ namespace Proto
         /// </summary>
         void DrawBuffs()
         {
-            PushSlots(_buffStrip, Player.Buffs, StripBuffY);
-            PushSlots(_debuffStrip, Player.Debuffs, StripDebuffY);
+            PushSlots(_buffStrip, Player.Buffs, _buffOrigin);
+            PushSlots(_debuffStrip, Player.Debuffs, _debuffOrigin);
 
-            _ailmentStrip.Begin(new Vector2(Margin, StripAilmentY));
+            _ailmentStrip.Begin(_ailmentOrigin);
 
             var counts = Enemies.StatusCounts;
             for (int i = 0; i < _db.Statuses.Count && i < counts.Length; i++)
@@ -1246,9 +1439,9 @@ namespace Proto
             _ailmentStrip.Apply();
         }
 
-        void PushSlots(StatusStrip strip, PlayerCaster.BuffSlot[] slots, float y)
+        void PushSlots(StatusStrip strip, PlayerCaster.BuffSlot[] slots, Vector2 origin)
         {
-            strip.Begin(new Vector2(Margin, y));
+            strip.Begin(origin);
 
             for (int i = 0; i < slots.Length; i++)
             {
@@ -1267,6 +1460,53 @@ namespace Proto
             }
 
             strip.Apply();
+        }
+
+        /// <summary>
+        /// Kartu keterangan bola HP / mana, atau null kalau kursor tidak di atas keduanya.
+        ///
+        /// Ada karena bola tidak membawa angka. Bar kotak lama menempelkan tulisan
+        /// "87 / 120" di badannya; bola berbingkai tidak punya tempat untuk itu tanpa
+        /// mengotori artnya — jadi angkanya pindah ke hover, sama seperti tiap ikon strip
+        /// di bawahnya. Satu kebiasaan, bukan dua.
+        /// </summary>
+        string VitalsTooltip(Vector2 mouse)
+        {
+            if (HoverHits(_hpHover, mouse))
+                return VitalsCard("NYAWA", Player.Hp, Player.MaxHp, Player.HpRegen);
+
+            if (HoverHits(_manaHover, mouse))
+                return VitalsCard("MANA", Player.Mana, Player.MaxMana, Player.ManaRegen);
+
+            return null;
+        }
+
+        /// <summary>
+        /// Kanvas ini Overlay, jadi kameranya null — memberikan kamera arena di sini membuat
+        /// setiap pengujian meleset sejauh perbedaan proyeksinya.
+        /// </summary>
+        static bool HoverHits(RectTransform area, Vector2 mouse) =>
+            area != null && area.gameObject.activeInHierarchy &&
+            RectTransformUtility.RectangleContainsScreenPoint(area, mouse, null);
+
+        string VitalsCard(string title, float now, float max, float regen)
+        {
+            _sb.Length = 0;
+            _sb.Append(title).Append('\n');
+
+            // Dibulatkan ke atas: satu HP yang tersisa ditampilkan "0" akan terbaca sebagai sudah
+            // mati, dan pemain yang membaca itu berhenti mencari cara bertahan.
+            _sb.Append(Mathf.CeilToInt(now)).Append(" / ").Append(Mathf.CeilToInt(max));
+
+            if (max > 0f)
+                _sb.Append("      ").Append(Mathf.RoundToInt(now / max * 100f)).Append('%');
+
+            // Baris regen hanya kalau ada. Menulis "pulih 0/dtk" itu janji palsu — pemain yang
+            // membacanya akan menunggu isian yang tidak akan pernah datang.
+            if (regen > 0f)
+                _sb.Append("\npulih ").Append(regen.ToString("0.#")).Append(" per detik");
+
+            return _sb.ToString();
         }
 
         /// <summary>Description of whichever strip icon the cursor is over, or null.</summary>
@@ -1341,11 +1581,22 @@ namespace Proto
 
         void ReleaseDrops()
         {
-            for (int i = 0; i < _balance.WaveClearDrops; i++)
+            // Elite membayar lebih karena ia menuntut lebih. Sebelum ini hadiahnya sama persis
+            // dengan pertarungan biasa, dan node yang lebih keras tanpa hadiah lebih besar bukan
+            // pilihan melainkan jebakan — tidak ada alasan menginjaknya kecuali kepepet jalur.
+            bool elite = _run != null && _run.CurrentKind == RunNodeKind.Elite;
+
+            int rolls = _balance.WaveClearDrops + (elite ? _balance.EliteBonusDrops : 0);
+            int starBonus = elite ? _balance.EliteStarBonus : 0;
+
+            for (int i = 0; i < rolls; i++)
             {
-                var bonus = _db.RandomDrop(_balance.RuneShareOfDrops, _balance.DropStarWeights);
+                var bonus = _db.RandomDrop(_balance.RuneShareOfDrops, _balance.DropStarWeights,
+                    _balance.DropStarMinWave, Enemies.Wave, starBonus);
                 if (bonus != null) _pendingDrops.Add(bonus);
             }
+
+            if (elite && _balance.EliteCoinBonus > 0) _pendingGold += _balance.EliteCoinBonus;
 
             int count = _pendingDrops.Count;
 
@@ -1999,7 +2250,15 @@ namespace Proto
         {
             if (Random.value > _balance.KillDropChance) return;
 
-            var drop = _db.RandomDrop(_balance.RuneShareOfDrops, _balance.DropStarWeights);
+            // Kenaikan bintang elite berlaku untuk SELURUH panen wave itu, bukan cuma hadiah
+            // penutupnya. Drop dari kill jumlahnya jauh lebih banyak, jadi di sinilah hadiah
+            // elite benar-benar terasa — hadiah penutup saja cuma menambah dua barang.
+            int starBonus = _run != null && _run.CurrentKind == RunNodeKind.Elite
+                ? _balance.EliteStarBonus
+                : 0;
+
+            var drop = _db.RandomDrop(_balance.RuneShareOfDrops, _balance.DropStarWeights,
+                    _balance.DropStarMinWave, Enemies.Wave, starBonus);
             if (drop == null) return;
 
             if (_pendingDrops.Count < _balance.MaxDropsPerWave) _pendingDrops.Add(drop);
@@ -2236,6 +2495,10 @@ namespace Proto
             };
 
             BuildRunPanels();
+
+            // Paling akhir: OnMapChoose di atas sudah terpasang, dan membukanya sebelum itu
+            // berarti peta berpindah ke mode pemilih tanpa ada yang mendengarnya.
+            OpenRunOnMap();
         }
 
         void OnRestEntered(RunNodeKind kind)
@@ -2664,6 +2927,15 @@ namespace Proto
             _mapGloom.rectTransform.sizeDelta = panel.size;
             _mapGloom.rectTransform.anchoredPosition = panel.center;
 
+            // Geseran perkamen DI ATAS penjaga di bawah, dan itu bukan detail: penjaga itu
+            // menahan seluruh sisa fungsi ini selama ukuran panel tidak berubah — dan scroll
+            // justru hal yang berubah tanpa panelnya berubah sedikit pun.
+            if (_mapPaperMat != null)
+            {
+                _mapPaperMat.SetVector("_PaperScroll",
+                    new Vector4(0f, panel.height > 1f ? _mapScroll / panel.height : 0f, 0f, 0f));
+            }
+
             if (_mapGloomSize == panel.size) return;
             _mapGloomSize = panel.size;
 
@@ -2696,6 +2968,7 @@ namespace Proto
             _mapGloomMat.SetFloat("_TearDepth", tearDepth);
 
             if (_mapPaperMat == null) return;
+
             _mapPaperMat.SetVector("_RectSize", size);
             _mapPaperMat.SetFloat("_Inset", inset);
             _mapPaperMat.SetFloat("_TearDepth", tearDepth);
@@ -3056,11 +3329,20 @@ namespace Proto
                 float wobble = ((h & 0xFF) / 255f - 0.5f) * 0.24f;
                 float twist = (((h >> 8) & 0xFF) / 255f - 0.5f) * 14f;
 
-                float size = (now ? 46f : next ? 38f : 32f) * (1f + wobble);
+                // Ukuran membawa DUA hal sekaligus, dan urutannya penting.
+                //
+                // Yang pertama status: yang sedang diinjak paling besar, yang bisa dituju sedang,
+                // sisanya kecil. Itu menjawab "aku boleh ke mana".
+                //
+                // Yang kedua JENIS, dan ini yang baru. Peta yang semua nodenya sebesar satu sama
+                // lain menuntut membaca hurufnya satu per satu untuk tahu ada apa di depan.
+                // Ukuran menjawab itu dari jarak pandang: yang besar berarti besar taruhannya.
+                float size = (now ? 46f : next ? 38f : 32f) * KindScale(n.Kind);
 
-                // Boss selalu paling besar — ia tujuan seluruh act, dan mata harus menemukannya
-                // dalam sedetik pertama peta terbuka.
-                if (n.Kind == RunNodeKind.Boss) size *= 1.35f;
+                // Jitter ber-seed, jadi diam di tempat. Boss dikecualikan: ia satu-satunya node
+                // yang ukurannya BERARTI SESUATU secara mutlak, dan boss yang kebetulan diundi
+                // kecil akan berhenti terbaca sebagai puncak act.
+                if (n.Kind != RunNodeKind.Boss) size *= 1f + wobble;
 
                 var tone = RunDirector.KindColor(n.Kind);
                 Color ring;
@@ -3096,11 +3378,42 @@ namespace Proto
                 _mapGlyphs[i].text = RunDirector.KindLabel(n.Kind).Substring(0, 1);
                 _mapGlyphs[i].color = new Color(0f, 0f, 0f, 0.85f);
 
+                // Hurufnya ikut membesar bersama kotaknya. Ukuran tetap membuat huruf di node
+                // boss yang dua kali lipat terlihat seperti tersasar di tengah kotak kosong —
+                // dan justru node itu yang paling perlu terbaca.
+                _mapGlyphs[i].fontSize = Mathf.Max(10, Mathf.RoundToInt(size * 0.46f));
+                _mapGlyphs[i].rectTransform.sizeDelta = new Vector2(size, size);
+
                 if (now && _mapYou != null)
                 {
                     _mapYou.rectTransform.anchoredPosition =
                         pos + new Vector2(0f, size * 0.5f + 16f);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Pengali ukuran node menurut jenisnya.
+        ///
+        /// Boss dua kali lipat pertarungan biasa, bukan sekadar sedikit lebih besar. Ia tujuan
+        /// seluruh act, dan mata harus menemukannya dalam sedetik pertama peta terbuka — tanpa
+        /// menyusuri lantai demi lantai mencari huruf B.
+        ///
+        /// Sisanya menurun sesuai seberapa besar taruhannya: elite itu pertarungan yang bisa
+        /// membunuh, toko dan slot menghabiskan koin, kejadian cuma menawarkan pilihan. Yang
+        /// paling banyak jumlahnya — pertarungan biasa — sengaja jadi yang paling kecil, karena
+        /// node yang muncul di mana-mana tidak perlu meminta perhatian.
+        /// </summary>
+        static float KindScale(RunNodeKind kind)
+        {
+            switch (kind)
+            {
+                case RunNodeKind.Boss: return 2.05f;
+                case RunNodeKind.Elite: return 1.42f;
+                case RunNodeKind.Shop: return 1.22f;
+                case RunNodeKind.Gamble: return 1.16f;
+                case RunNodeKind.Event: return 1.1f;
+                default: return 1f;
             }
         }
 
@@ -3138,27 +3451,48 @@ namespace Proto
 
             TrailControls(from, to, seed, out Vector2 p1, out Vector2 p2);
 
-            Vector2 prev = from;
-
-            for (int i = 1; i <= MapSegsPerEdge && seg < _mapEdges.Length; i++)
+            // Lengkungnya dicuplik jadi garis patah dulu, lalu DIUKUR. Membagi rata parameter t
+            // bukan hal yang sama dengan membagi rata jarak: bezier bergerak lebih cepat di
+            // tengah, jadi t yang berjarak sama menghasilkan potongan yang panjangnya tidak sama
+            // bahkan di dalam satu ruas.
+            for (int i = 0; i <= MapArcSamples; i++)
             {
-                float t = i / (float)MapSegsPerEdge;
+                float t = i / (float)MapArcSamples;
                 float u = 1f - t;
 
-                Vector2 point = u * u * u * from + 3f * u * u * t * p1 + 3f * u * t * t * p2
+                _arcPoints[i] = u * u * u * from + 3f * u * u * t * p1 + 3f * u * t * t * p2
                                 + t * t * t * to;
 
-                // Celah 30% di tiap segmen — patahan kecil itulah yang membuatnya terbaca
-                // sebagai jejak di peta, bukan kabel listrik.
-                Vector2 centre = (prev + point) * 0.5f;
-                Vector2 dir = point - prev;
-                float len = dir.magnitude * 0.7f;
+                _arcLengths[i] = i == 0
+                    ? 0f
+                    : _arcLengths[i - 1] + Vector2.Distance(_arcPoints[i - 1], _arcPoints[i]);
+            }
+
+            float curve = _arcLengths[MapArcSamples];
+            if (curve < 1f) return seg;
+
+            // Jumlah garis dari panjangnya, bukan angka tetap. Minimal dua: satu garis panjang
+            // untuk ruas pendek terbaca sebagai sambungan utuh, bukan sebagai putus-putus.
+            int count = Mathf.Clamp(Mathf.RoundToInt(curve / MapDashPitch), 2, MapSegsPerEdge);
+
+            // Jarak antar garis diratakan sepanjang ruas ini supaya yang terakhir berakhir pas di
+            // nodenya. Panjang GARISNYA tetap — itu yang dilihat mata — kecuali kalau jaraknya
+            // sendiri lebih rapat dari panjang garisnya, dan di situ garisnya yang mengalah.
+            float pitch = curve / count;
+            float dash = Mathf.Min(MapDashLength, pitch * 0.72f);
+
+            var view = MapView();
+
+            for (int i = 0; i < count && seg < _mapEdges.Length; i++)
+            {
+                float centreS = (i + 0.5f) * pitch;
+
+                Vector2 centre = PointAtArc(centreS, out Vector2 dir);
 
                 // Segmen yang tergulung keluar jendela ikut disembunyikan seperti nodenya.
-                if (!MapInView(centre, MapView()))
+                if (!MapInView(centre, view))
                 {
                     _mapEdges[seg++].enabled = false;
-                    prev = point;
                     continue;
                 }
 
@@ -3166,14 +3500,33 @@ namespace Proto
                 img.enabled = true;
                 img.color = tone;
                 img.rectTransform.anchoredPosition = centre;
-                img.rectTransform.sizeDelta = new Vector2(len, 5f);
+                img.rectTransform.sizeDelta = new Vector2(dash, 5f);
                 img.rectTransform.localEulerAngles =
                     new Vector3(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
-
-                prev = point;
             }
 
             return seg;
+        }
+
+        /// <summary>
+        /// Titik pada lengkung yang sudah dicuplik, sejauh <paramref name="s"/> diukur SEPANJANG
+        /// lengkungnya — bukan sepanjang garis lurus antar ujungnya.
+        /// </summary>
+        Vector2 PointAtArc(float s, out Vector2 direction)
+        {
+            for (int i = 1; i <= MapArcSamples; i++)
+            {
+                if (_arcLengths[i] < s) continue;
+
+                float span = _arcLengths[i] - _arcLengths[i - 1];
+                float f = span > 0.0001f ? (s - _arcLengths[i - 1]) / span : 0f;
+
+                direction = _arcPoints[i] - _arcPoints[i - 1];
+                return Vector2.LerpUnclamped(_arcPoints[i - 1], _arcPoints[i], f);
+            }
+
+            direction = _arcPoints[MapArcSamples] - _arcPoints[MapArcSamples - 1];
+            return _arcPoints[MapArcSamples];
         }
 
         static readonly string[] SlotFaces = { "X", "o", "O", "*2", "*3", "*4" };
@@ -3499,7 +3852,9 @@ namespace Proto
 
             // Strip icons win: they sit in the HUD corner, well away from the board, so a hit there
             // is unambiguous — and their whole reason to exist is answering "what is this".
-            string strip = StripTooltip(ProtoInput.MousePosition);
+            string strip = StripTooltip(ProtoInput.MousePosition)
+                        ?? VitalsTooltip(ProtoInput.MousePosition);
+
             if (strip != null)
             {
                 _recipes.Hide();
@@ -3923,6 +4278,11 @@ namespace Proto
             if (_hpFill != null) _hpFill.fillAmount = _hpShown;
             if (_hpChip != null) _hpChip.fillAmount = _hpChipShown;
             if (_manaFill != null) _manaFill.fillAmount = _manaShown;
+
+            // Shader cairan perlu tahu di mana permukaannya. Nilai yang SAMA dengan fillAmount,
+            // bukan nilai sasarannya: yang digoyang harus garis yang benar-benar tergambar.
+            if (_hpLiquid != null) _hpLiquid.SetFloat("_Fill", _hpShown);
+            if (_manaLiquid != null) _manaLiquid.SetFloat("_Fill", _manaShown);
 
             _hurtFlash = Mathf.Max(0f, _hurtFlash - dt * 3f);
 

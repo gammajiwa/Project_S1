@@ -183,6 +183,63 @@ namespace Proto
         }
 
         /// <summary>
+        /// Drop acak yang menghormati BATAS WAVE tiap bintang.
+        ///
+        /// Bintang yang belum waktunya bobotnya dinolkan sebelum diundi, jadi jumlah drop tidak
+        /// berubah — hanya mutunya yang turun. Itu bedanya dengan "gagal lalu ulang": pemain
+        /// tetap mendapat barang, cuma bukan barang yang menamatkan act di wave pertama.
+        /// </summary>
+        public PieceDefinition RandomDrop(float runeShare, float[] starWeights, int[] minWave, int wave,
+            int starBonus = 0)
+        {
+            int star = RollStar(GateByWave(starWeights, minWave, wave)) + Mathf.Max(0, starBonus);
+
+            // Batas wave tetap berlaku SESUDAH kenaikan. Tanpa jepitan ini, hadiah elite jadi
+            // pintu belakang: elite di wave 2 akan menyelundupkan bintang yang pintu depannya
+            // masih terkunci sampai wave 5.
+            star = Mathf.Min(star, HighestStarAllowed(minWave, wave));
+
+            return RandomOfStar(star, runeShare);
+        }
+
+        /// <summary>Bintang tertinggi yang boleh jatuh di wave ini. Minimal 1 — selalu ada hadiah.</summary>
+        static int HighestStarAllowed(int[] minWave, int wave)
+        {
+            if (minWave == null) return 5;
+
+            int best = 1;
+            for (int i = 0; i < minWave.Length && i < 5; i++)
+            {
+                if (wave >= minWave[i]) best = i + 1;
+            }
+
+            return best;
+        }
+
+        /// <summary>
+        /// Salinan bobot dengan bintang yang belum boleh jatuh dinolkan.
+        ///
+        /// Menyalin, tidak menulis di tempat: yang masuk itu array milik aset
+        /// <see cref="GameBalance"/>, dan menulis ke sana berarti mengubah file di disk —
+        /// batasnya akan menempel permanen di wave pertama yang pernah dimainkan.
+        /// </summary>
+        static float[] GateByWave(float[] weights, int[] minWave, int wave)
+        {
+            if (weights == null || minWave == null) return weights;
+
+            var gated = new float[weights.Length];
+
+            for (int i = 0; i < weights.Length; i++)
+            {
+                // Bintang tanpa batas tercatat dibiarkan lewat. Array yang lebih pendek dari
+                // bobotnya adalah kekurangan data, bukan perintah melarang.
+                gated[i] = i < minWave.Length && wave < minWave[i] ? 0f : weights[i];
+            }
+
+            return gated;
+        }
+
+        /// <summary>
         /// Piece acak TEPAT berbintang ini — hadiah slot dan kejadian memesan bintangnya sendiri.
         /// Bintang yang pool-nya kosong turun setingkat, bukan gagal senyap.
         /// </summary>

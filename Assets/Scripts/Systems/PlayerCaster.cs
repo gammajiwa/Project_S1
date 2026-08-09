@@ -51,6 +51,17 @@ namespace Proto
         public float BaseMaxHp = 100f;
         public float BaseMaxMana = 60f;
         public float BaseManaRegen = 5f;
+
+        /// <summary>
+        /// Kecepatan jalan dasar, dipegang di sini bukan dibaca langsung dari
+        /// <see cref="GameBalance"/> oleh yang menggerakkan pemain.
+        ///
+        /// Perlu pindah begitu starter boleh menimpanya: <see cref="GameBalance"/> itu aset yang
+        /// dipakai bersama, dan menimpa angkanya saat run berarti menulis permanen ke file di
+        /// disk — starter cepat yang dimainkan sekali akan mempercepat setiap run sesudahnya,
+        /// termasuk yang memilih starter lain.
+        /// </summary>
+        public float BaseMoveSpeed = 2.8f;
         public float BaseHpRegen = 0f;
 
         public float Hp = 100f;
@@ -318,6 +329,16 @@ namespace Proto
                                                  + _debuffStats[(int)StatKind.RangePct]);
 
         /// <summary>Mana cost from the temporary layer. The grid's own share lives on Grimoire.</summary>
+        /// <summary>
+        /// Pengali harga mana seluruh skill, dari <see cref="GameBalance"/>.
+        ///
+        /// Dibaca lewat properti, bukan disalin ke field saat <c>Init</c>: ini knob balancing yang
+        /// memang diputar sambil play mode berjalan, dan salinan akan membekukannya sampai run
+        /// berikutnya. Beda dengan <see cref="BaseMoveSpeed"/> — yang itu DITIMPA starter, jadi ia
+        /// justru tidak boleh membaca balik ke aset.
+        /// </summary>
+        float ManaCostScale => _balance != null ? Mathf.Max(0f, _balance.ManaCostScale) : 1f;
+
         float BuffManaCostMul => Mathf.Clamp(1f - _buffStats[(int)StatKind.ManaCostPct]
                                                 - _debuffStats[(int)StatKind.ManaCostPct], 0.2f, 2f);
 
@@ -415,6 +436,7 @@ namespace Proto
             BaseMaxMana = balance.BaseMaxMana;
             BaseManaRegen = balance.BaseManaRegen;
             BaseHpRegen = balance.BaseHpRegen;
+            BaseMoveSpeed = balance.BaseMoveSpeed;
             Hp = BaseMaxHp;
             Mana = BaseMaxMana;
             _mpb = new MaterialPropertyBlock();
@@ -432,6 +454,31 @@ namespace Proto
             _enemies.OnStatusApplied += OnEnemyStatusApplied;
 
             BuildRangeRing();
+        }
+
+        /// <summary>
+        /// Menimpa angka dasar dengan milik starter, lalu mengisi HP & mana sampai penuh.
+        ///
+        /// Dipanggil SESUDAH papan pembuka tersusun: "penuh" di sini memakai maksimum yang sudah
+        /// termasuk bonus rune, dan rune baru menyumbang setelah ia duduk di papan.
+        ///
+        /// Starter yang tidak menyebutkan satu stat pun (semuanya −1) melewati langkah ini tanpa
+        /// mengubah apa-apa selain mengisi ulang — persis perilaku sebelum starter bisa dipilih.
+        /// </summary>
+        public void ApplyLoadoutStats(HeroLoadout hero)
+        {
+            if (hero != null && _balance != null)
+            {
+                BaseMaxHp = HeroLoadout.Pick(hero.MaxHp, _balance.BaseMaxHp);
+                BaseMaxMana = HeroLoadout.Pick(hero.MaxMana, _balance.BaseMaxMana);
+                BaseManaRegen = HeroLoadout.Pick(hero.ManaRegen, _balance.BaseManaRegen);
+                BaseHpRegen = HeroLoadout.Pick(hero.HpRegen, _balance.BaseHpRegen);
+                BaseMoveSpeed = HeroLoadout.Pick(hero.MoveSpeed, _balance.BaseMoveSpeed);
+            }
+
+            // Lewat properti, bukan lewat Base-nya: yang ini yang menghitung bonus rune.
+            Hp = MaxHp;
+            Mana = MaxMana;
         }
 
         void OnReactionFired(Vector3 pos, ReactionDefinition rx)
@@ -495,7 +542,8 @@ namespace Proto
                 if (s.Source.CdTimer > 0f) continue;
 
                 // Cooldown is ready but the book is dry â€” hold the cast until mana comes back.
-                float cost = s.Source.Def.ManaCost * Book.ManaCostMultiplier * BuffManaCostMul;
+                float cost = s.Source.Def.ManaCost * ManaCostScale
+                             * Book.ManaCostMultiplier * BuffManaCostMul;
                 if (Mana < cost) continue;
 
                 // Charge spenders wait for something to spend. Firing at zero charges would make
@@ -540,7 +588,8 @@ namespace Proto
                 if (_db.IndexOfStatus(def.TriggerStatus) != statusIndex) continue;
                 if (points < def.TriggerPoints) continue;
                 if (s.Source.CdTimer > 0f) continue;
-                float triggerCost = def.ManaCost * Book.ManaCostMultiplier * BuffManaCostMul;
+                float triggerCost = def.ManaCost * ManaCostScale
+                                    * Book.ManaCostMultiplier * BuffManaCostMul;
                 if (Mana < triggerCost) continue;
 
                 _triggerDepth++;

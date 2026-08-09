@@ -44,11 +44,39 @@ namespace Proto
                  "Kosong = bar kotak datar bawaan seperti sebelum art masuk.")]
         public GameObject VitalsPrefab;
 
+        [Tooltip("PREFAB penempat tiga strip ikon (buff, kutukan, tally ailment), membawa " +
+                 "komponen StatusStripRig.\n\n" +
+                 "Isinya cuma kotak kosong — ikonnya tetap digambar kode. Yang dipindahkan " +
+                 "prefab ini adalah LETAKNYA, dan itu perlu sejak bar HP jadi bola: tempat lama " +
+                 "ketiga strip dipilih waktu barnya masih kotak setinggi 18 piksel, dan bola " +
+                 "setinggi 190 piksel menelan ketiganya.\n\n" +
+                 "Kosong = ketiganya kembali ke tempat lama di GrimoireLayout.")]
+        public GameObject StatusStripsPrefab;
+
         [Tooltip("Alas di belakang petak 7x7. DIKOSONGKAN atas permintaan pemilik project: " +
                  "bingkai berhias di belakang petak membuat dua bingkai bersarang, dan yang " +
                  "dimaksud 'grid' sejak awal adalah petak 7x7-nya sendiri — bukan gambar alas. " +
                  "Slotnya dibiarkan ada kalau nanti mau dicoba lagi.")]
         public Sprite GridFrame;
+
+        [Header("Cairan di bola HP & mana")]
+        [Tooltip("Seberapa tinggi permukaan cairan bergoyang, sebagai bagian dari tinggi bola.\n\n" +
+                 "Nol = permukaan datar seperti sebelumnya. Goyangannya hanya MENGURANGI isian, " +
+                 "tidak pernah menambah — Image bertipe Filled sudah memotong geometrinya di " +
+                 "ketinggian isian, jadi gelombang yang mencoba naik akan terpotong rata.")]
+        [Range(0f, 0.3f)] public float LiquidAmp = 0.045f;
+
+        [Tooltip("Kecepatan ayunannya. Terlalu cepat terbaca sebagai bergetar, bukan sebagai " +
+                 "cairan yang berat.")]
+        [Range(0f, 12f)] public float LiquidSpeed = 2.4f;
+
+        [Tooltip("Jumlah gelombang selebar bola. Di bawah 1 permukaannya cuma miring naik-turun; " +
+                 "di atas 4 ia jadi riak halus yang hilang di ukuran bola.")]
+        [Range(0.5f, 8f)] public float LiquidWaves = 2.3f;
+
+        [Tooltip("Terang tipis tepat di garis permukaan. Tanpa ini goyangannya terbaca sebagai " +
+                 "gambar yang bergetar; dengan ini, sebagai permukaan yang punya arah atas.")]
+        [Range(0f, 1f)] public float LiquidCrest = 0.35f;
 
         [Header("Ruang bingkai (piksel)")]
         [Tooltip("Berapa jauh sampul buku melebar keluar dari petak, per sisi: " +

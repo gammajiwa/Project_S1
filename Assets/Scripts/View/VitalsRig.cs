@@ -38,6 +38,18 @@ namespace Proto
 
         public Text ManaLabel;
 
+        [Header("Daerah hover")]
+        [Tooltip("Kotak yang memunculkan kartu keterangan HP saat kursor lewat di atasnya — " +
+                 "isinya berapa sekarang, berapa maksimum, dan berapa cepat pulih.\n\n" +
+                 "Kosong = kotak HpFill sendiri yang dipakai. Isi ini kalau bolanya berbingkai: " +
+                 "isian cuma menempati bagian dalam bola, sementara yang dilihat pemain sebagai " +
+                 "\"bola HP\" termasuk bingkainya — dan kursor yang mendarat di bingkai lalu " +
+                 "tidak memunculkan apa-apa terbaca sebagai rusak, bukan sebagai meleset.")]
+        public RectTransform HpHover;
+
+        [Tooltip("Kotak hover untuk bola mana. Kosong = kotak ManaFill sendiri.")]
+        public RectTransform ManaHover;
+
         /// <summary>
         /// Semua yang benar-benar dibutuhkan sudah ada. Bar tanpa mana masih separuh berguna,
         /// jadi yang dituntut cuma HP-nya.

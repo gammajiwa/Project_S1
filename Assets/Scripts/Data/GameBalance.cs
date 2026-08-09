@@ -232,6 +232,18 @@ namespace Proto
                  "menentukan berapa lama musuh sempat bergeser dari titik bidik.")]
         public float SkyFallSpeed = 52f;
 
+        [Tooltip("Pengali harga mana SELURUH skill. Satu knob, bukan 74 aset.\n\n" +
+                 "Ada karena harga di aset ditulis relatif satu sama lain — Fireball 1, Meteor " +
+                 "24 — dan perbandingan itu SUDAH benar; yang salah skalanya terhadap regen. " +
+                 "Dua skill pembuka menghabiskan 1,74 mana/detik melawan regen 5/detik, jadi " +
+                 "mana tidak pernah bergerak sedikit pun sepanjang run.\n\n" +
+                 "Menaikkan harga di tiap aset akan menghapus perbandingan yang sudah benar itu " +
+                 "dan menuntut 74 keputusan ulang. Angka di sini menggeser semuanya sekaligus " +
+                 "tanpa mengubah satu pun perbandingan.\n\n" +
+                 "Rune dan segel berharga nol dan tetap nol — nol dikali berapa pun tetap nol, " +
+                 "jadi yang pasif tidak pernah ikut terseret.")]
+        [Min(0f)] public float ManaCostScale = 3f;
+
         [Header("Loot")]
         [Range(0f, 1f)] public float KillDropChance = 0.04f;
         public int WaveClearDrops = 1;
@@ -242,9 +254,36 @@ namespace Proto
                  "puncak menara harus dibangun, bukan dipungut. ★4 boleh jatuh tapi langka.")]
         public float[] DropStarWeights = { 82f, 12f, 4.5f, 1.5f, 0f };
 
+        [Tooltip("Wave paling awal tiap bintang boleh JATUH, indeks 0 = ★1.\n\n" +
+                 "Bobot saja tidak cukup, dan itu terbukti dipakai: ★4 berbobot 1,5 tetap bisa " +
+                 "keluar di wave 1, dan satu skill bintang empat di wave pertama menyelesaikan " +
+                 "seluruh act itu sendirian. Yang salah bukan seberapa SERING — 1,5 memang " +
+                 "langka — melainkan bahwa peluangnya ADA sama sekali sebelum ada yang dibangun.\n\n" +
+                 "Bintang yang belum waktunya bobotnya dianggap nol lalu sisanya dinormalkan " +
+                 "ulang, jadi drop awal tidak berkurang jumlahnya — cuma turun mutunya.")]
+        public int[] DropStarMinWave = { 1, 1, 5, 11, 99 };
+
         [Tooltip("Batas drop dari kill yang ditahan sampai wave beres. Kelebihannya langsung jadi " +
                  "koin — tanpa ini wave besar menumpahkan dua puluh item sekaligus ke layar.")]
         public int MaxDropsPerWave = 8;
+
+        [Header("Hadiah elite")]
+        // Sebelum ini node elite cuma LEBIH KERAS: nyawa, jumlah, dan gigitan dikalikan, hadiahnya
+        // sama persis dengan pertarungan biasa. Itu bukan pilihan melainkan jebakan — tidak ada
+        // alasan menginjaknya kecuali kepepet jalur. Tiga angka di bawah yang membuatnya jadi
+        // taruhan: lebih banyak, lebih bagus, dan lebih berkoin.
+
+        [Tooltip("Drop tambahan saat wave elite beres, di luar WaveClearDrops.")]
+        [Min(0)] public int EliteBonusDrops = 2;
+
+        [Tooltip("Kenaikan bintang untuk SEMUA drop dari wave elite.\n\n" +
+                 "Ini bagian hadiah yang paling terasa, dan sekaligus yang paling perlu hati-hati: " +
+                 "batas wave per bintang tetap berlaku sesudah kenaikan ini, jadi elite di wave 2 " +
+                 "tidak bisa menyelundupkan ★3 lewat pintu belakang.")]
+        [Range(0, 2)] public int EliteStarBonus = 1;
+
+        [Tooltip("Koin tambahan saat wave elite beres.")]
+        [Min(0)] public int EliteCoinBonus = 45;
 
         [Header("Toko")]
         public int ShopEveryWaves = 3;
@@ -269,6 +308,14 @@ namespace Proto
         [Tooltip("Elite baru boleh muncul dari lantai ini. Elite di lantai awal bukan " +
                  "pilihan melainkan tembok.")]
         public int MapEliteMinFloor = 3;
+
+        [Tooltip("Peta langsung terbuka begitu run mulai, tanpa fase SUSUN GRIMOIRE-MU di depan.\n\n" +
+                 "Masuk akal sejak papan pembuka ditentukan di layar pilih starter: fase susun " +
+                 "pertama jadi layar yang tidak menanyakan apa-apa, karena keputusannya sudah " +
+                 "dibuat satu layar sebelumnya.\n\n" +
+                 "Matikan untuk kembali ke pembuka lama. Fase susun ANTAR wave tidak dipengaruhi " +
+                 "nilai ini — yang dilewati hanya yang paling pertama.")]
+        public bool MapOpensRun = true;
 
         [Header("Transisi peta (gloom)")]
         [Tooltip("Lama kegelapan MENUTUP sebelum peta terbuka, detik. Gloom mengecil dari " +

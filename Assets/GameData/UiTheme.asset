@@ -16,6 +16,7 @@ MonoBehaviour:
   GrimoirePanelPrefab: {fileID: 4725670757830398596, guid: 9e613509076f1824bb2986daeac17b35, type: 3}
   GrimoireFrame: {fileID: 21300000, guid: 8e93eba3dd21c6548b82dc8a2404e10f, type: 3}
   VitalsPrefab: {fileID: 9135706996123029156, guid: e186026d193fb7d4480926b63ea50484, type: 3}
+  StatusStripsPrefab: {fileID: 8380833403937783449, guid: e52f3bff49bb2494da5158b1591b473e, type: 3}
   GridFrame: {fileID: 0}
   GrimoirePad: {x: 63, y: 8, z: 13, w: 8}
   GridPad: {x: 16, y: 16, z: 16, w: 16}

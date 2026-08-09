@@ -70,6 +70,15 @@ namespace Proto
         /// <summary>Peta pemilih sedang terpampang, menunggu node dipilih.</summary>
         public bool Choosing => _stage == Stage.Choosing;
 
+        /// <summary>
+        /// Jenis node yang sedang dijalani. Yang menentukan hadiah saat wave beres — elite membayar
+        /// lebih karena ia menuntut lebih, dan tanpa ini yang membayar tidak punya cara tahu.
+        /// </summary>
+        public RunNodeKind CurrentKind =>
+            Map != null && Map.At >= 0 && Map.At < Map.Nodes.Count
+                ? Map.Nodes[Map.At].Kind
+                : RunNodeKind.Fight;
+
         /// <summary>Fase transisi gelap 0..1 — UI menumpangkan tirai hitamnya di sini supaya
         /// ujung transisi benar-benar HITAM TOTAL, bukan sekadar gloom yang sangat gelap.</summary>
         public float Fade => _fade;
@@ -176,6 +185,38 @@ namespace Proto
 
             _stage = Stage.Closing;
             _fade = _gloom != null && _gloom.CanShut ? 0f : 1f;
+        }
+
+        /// <summary>
+        /// Membuka peta SEKETIKA, tanpa transisi menutup.
+        ///
+        /// Dipakai di awal run, dan bedanya dengan <see cref="Depart"/> bukan soal kecepatan
+        /// melainkan soal apa yang ada di layar. Transisi gloom itu untuk BERANGKAT: pemain
+        /// sedang berdiri di arena, dan kegelapan yang menelan layar adalah cara meninggalkannya.
+        /// Di awal run tidak ada yang ditinggalkan — arenanya masih kosong, belum satu pun musuh
+        /// lahir, dan menutupnya pelan-pelan berarti memaksa menatap lapangan kosong selama
+        /// <c>MapFadeClose</c> detik sebelum layar yang sebenarnya diminta muncul.
+        ///
+        /// Layarnya ditinggalkan dalam keadaan GELAP PENUH, bukan dibiarkan bening: peta digambar
+        /// di atasnya, dan arena yang mengintip dari belakang peta pemilih terbaca sebagai
+        /// bocor. Tirainya dibuka nanti oleh <see cref="PickNode"/> lewat <c>Stage.Opening</c> —
+        /// jalur yang sama persis dengan berangkat biasa.
+        /// </summary>
+        public void DepartNow()
+        {
+            if (_stage != Stage.Ready) return;
+
+            if (CanEmbark != null && !CanEmbark())
+            {
+                OnAnnounce?.Invoke("PASANG MINIMAL 1 SKILL DULU", new Color(1f, 0.75f, 0.4f));
+                return;
+            }
+
+            _fade = 1f;
+            if (_gloom != null) _gloom.Shut = 1f;
+
+            _stage = Stage.Choosing;
+            OnMapChoose?.Invoke();
         }
 
         void Update()

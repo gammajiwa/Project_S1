@@ -180,6 +180,31 @@ namespace Proto
             }
         }
 
+        /// <summary>
+        /// Geser satu langkah ke kiri/kanan di sebuah carousel. -1, 0, atau 1.
+        ///
+        /// Panah dan A/D dua-duanya, karena keduanya sama-sama benar dan pemain tidak akan
+        /// membaca petunjuk untuk tahu yang mana: tangan yang sedang di WASD mencoba A/D, tangan
+        /// yang sedang di mouse mencoba panah.
+        /// </summary>
+        public static int CarouselStepDown
+        {
+            get
+            {
+#if ENABLE_INPUT_SYSTEM
+                var kb = UnityEngine.InputSystem.Keyboard.current;
+                if (kb == null) return 0;
+                if (kb.leftArrowKey.wasPressedThisFrame || kb.aKey.wasPressedThisFrame) return -1;
+                if (kb.rightArrowKey.wasPressedThisFrame || kb.dKey.wasPressedThisFrame) return 1;
+                return 0;
+#else
+                if (Input.GetKeyDown(KeyCode.LeftArrow) || Input.GetKeyDown(KeyCode.A)) return -1;
+                if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.D)) return 1;
+                return 0;
+#endif
+            }
+        }
+
         /// <summary>Melebarkan atau merapatkan sesuatu. -1, 0, atau 1.</summary>
         public static int SpreadStepDown
         {
