@@ -182,12 +182,31 @@ namespace Proto
             _vat.TryGet(VatRole.Run, out _clipRun);
         }
 
-        /// <summary>Tekstur warna sebuah material, dari nama properti mana pun yang dipakainya.</summary>
+        /// <summary>
+        /// Tekstur warna sebuah material, dari nama properti mana pun yang dipakainya.
+        ///
+        /// Tiga nama karena tiga paket memakai tiga konvensi: URP Lit menaruhnya di
+        /// <c>_BaseMap</c>, shader cel pihak ketiga di <c>_MainTex</c>, dan shader Feyloom di
+        /// <c>_BaseColor</c> — nama yang di URP Lit justru berarti WARNA, bukan tekstur.
+        ///
+        /// Yang pertama menghasilkan tekstur menang. <c>GetTexture</c> pada properti yang
+        /// bukan tekstur memulangkan null tanpa mengeluh, jadi urutan ini aman: material URP
+        /// Lit tidak akan salah mengambil warnanya sebagai gambar.
+        /// </summary>
         static Texture SkinOf(Material source)
         {
             if (source == null) return null;
-            if (source.HasProperty("_BaseMap")) return source.GetTexture("_BaseMap");
-            if (source.HasProperty("_MainTex")) return source.GetTexture("_MainTex");
+
+            string[] names = { "_BaseMap", "_MainTex", "_BaseColor" };
+
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (!source.HasProperty(names[i])) continue;
+
+                var found = source.GetTexture(names[i]);
+                if (found != null) return found;
+            }
+
             return null;
         }
 

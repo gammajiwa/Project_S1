@@ -26,6 +26,18 @@ namespace Proto.EditorTools
         /// </summary>
         const int Fps = 30;
 
+        /// <summary>
+        /// Batas frame per klip. Ukuran tekstur = jumlah vertex x TOTAL frame, jadi satu klip
+        /// diam sepanjang 6,7 detik sendirian memakan 201 baris — lebih dari seluruh sisa
+        /// klipnya digabung.
+        ///
+        /// Yang dipotong KECEPATAN SAMPLINGNYA, bukan durasinya: klip yang melewati batas ini
+        /// disampling lebih jarang tapi tetap dari ujung ke ujung. Memotong durasinya akan
+        /// mematahkan putarannya — frame terakhir tidak lagi menyambung ke frame pertama, dan
+        /// tiap pengulangan terlihat sebagai sentakan.
+        /// </summary>
+        const int MaxFramesPerClip = 90;
+
         [MenuItem("Tools/Grimoire/Bake Enemy VAT")]
         static void BakeSelection()
         {
@@ -45,12 +57,20 @@ namespace Proto.EditorTools
         [MenuItem("Tools/Grimoire/Bake Enemy VAT", true)]
         static bool BakeSelectionValid() => Selection.activeObject is GameObject;
 
-        public static VatClipSet Bake(GameObject source)
+        /// <param name="clipFolder">
+        /// Folder tempat animasinya dicari, kalau bukan di sebelah modelnya.
+        ///
+        /// Perlu ada karena paket aset sering memberi satu set animasi untuk BEBERAPA model
+        /// yang rignya sama — enam monster dengan enam puluh tulang identik, tapi cuma dua di
+        /// antaranya yang membawa folder animasi. Tanpa ini, empat sisanya tidak akan pernah
+        /// bisa bergerak meski tulangnya sanggup.
+        /// </param>
+        public static VatClipSet Bake(GameObject source, string clipFolder = null)
         {
             string sourcePath = AssetDatabase.GetAssetPath(source);
             string folder = System.IO.Path.GetDirectoryName(sourcePath).Replace('\\', '/');
 
-            var clips = CollectClips(folder);
+            var clips = CollectClips(clipFolder ?? folder);
 
             // Paket aset hampir selalu memisah prefab dan animasinya ke folder bersaudara
             // (Prefab/ di sebelah FBX/). Mencari di folder prefabnya saja akan selalu pulang
@@ -72,11 +92,20 @@ namespace Proto.EditorTools
                 }
             }
 
+            // Model tanpa animasi sama sekali tetap dipanggang, sebagai SATU pose diam. Itu
+            // bukan kegagalan: penyihir yang berdiri di tempat sambil menembak adalah musuh yang
+            // sah, dan menolak memanggangnya cuma menyisakan lubang di daftar musuh.
             if (clips.Count == 0)
             {
-                Debug.LogError("[VatBaker] tidak ada AnimationClip di " + folder +
-                               " maupun folder induknya — panggangan dibatalkan.");
-                return null;
+                Debug.LogWarning("[VatBaker] " + source.name + " tidak punya AnimationClip — " +
+                                 "dipanggang sebagai pose diam satu frame.");
+            }
+            else
+            {
+                // Paket aset membawa jauh lebih banyak daripada yang dipakai: mati, kena pukul,
+                // terhuyung, belasan varian serangan. Satu per peran sudah cukup, dan sisanya
+                // cuma menggandakan ukuran tekstur untuk pose yang tak pernah diminta.
+                clips = PickOnePerRole(clips);
             }
 
             // Dikerjakan di atas SALINAN di scene, bukan di asetnya. SampleAnimation menulis
@@ -118,7 +147,7 @@ namespace Proto.EditorTools
 
             for (int i = 0; i < clips.Count; i++)
             {
-                int frames = Mathf.Max(2, Mathf.RoundToInt(clips[i].length * Fps));
+                int frames = Mathf.Clamp(Mathf.RoundToInt(clips[i].length * Fps), 2, MaxFramesPerClip);
 
                 plan.Add(new VatClip
                 {
@@ -130,6 +159,22 @@ namespace Proto.EditorTools
                 });
 
                 rows += frames;
+            }
+
+            // Model tanpa animasi tetap butuh satu baris: tekstur setinggi nol tidak bisa
+            // dibuat, dan shadernya membagi dengan tinggi itu.
+            if (rows == 0)
+            {
+                plan.Add(new VatClip
+                {
+                    Role = VatRole.Idle,
+                    SourceName = "(pose diam — aset tidak membawa animasi)",
+                    FirstRow = 0,
+                    Rows = 1,
+                    Seconds = 1f,
+                });
+
+                rows = 1;
             }
 
             // RGBAHalf, dan posisinya disimpan APA ADANYA tanpa dinormalkan ke kotak pembatas.
@@ -149,6 +194,20 @@ namespace Proto.EditorTools
             var max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
             var buffer = new List<Vector3>(verts);
 
+            // Pose netral, dipakai kalau tidak ada satu pun klip untuk disampling.
+            if (clips.Count == 0)
+            {
+                probe.GetVertices(buffer);
+
+                for (int v = 0; v < verts; v++)
+                {
+                    var p = buffer[v];
+                    pixels[v] = new Color(p.x, p.y, p.z, 1f);
+                    min = Vector3.Min(min, p);
+                    max = Vector3.Max(max, p);
+                }
+            }
+
             for (int c = 0; c < clips.Count; c++)
             {
                 var clip = clips[c];
@@ -161,7 +220,7 @@ namespace Proto.EditorTools
                     // tiap kali mengulang.
                     float t = clip.length * (f / (float)slot.Rows);
 
-                    clip.SampleAnimation(rig, t);
+                    clip.SampleAnimation(AnimationRootFor(rig, clip), t);
                     smr.BakeMesh(probe, true);
                     probe.GetVertices(buffer);
 
@@ -277,6 +336,42 @@ namespace Proto.EditorTools
             return set;
         }
 
+        /// <summary>
+        /// Objek yang harus diberikan ke <c>SampleAnimation</c> supaya path di dalam klipnya
+        /// benar-benar ketemu.
+        ///
+        /// Ini jebakan paling mahal di seluruh baker, dan ia GAGAL DALAM DIAM. Kurva animasi
+        /// menyimpan jalur relatif seperti <c>"root"</c> atau <c>"DeformationSystem/Root_M"</c>.
+        /// Kalau objek yang diberikan bukan tempat jalur itu berpangkal — misalnya prefabnya
+        /// menyelipkan satu tingkat pembungkus, sehingga tulangnya ada di <c>"Monster38/root"</c>
+        /// — maka SampleAnimation tidak menemukan apa pun, tidak mengubah apa pun, dan
+        /// <b>tidak mengeluh sama sekali</b>. Yang keluar tekstur berisi pose netral berulang
+        /// ratusan kali, dan itu baru ketahuan setelah musuhnya berdiri beku di layar.
+        ///
+        /// Dicari dengan mencocokkan: objek pertama yang benar-benar PUNYA jalur itu di
+        /// bawahnya adalah pangkal yang benar.
+        /// </summary>
+        static GameObject AnimationRootFor(GameObject rig, AnimationClip clip)
+        {
+            var bindings = AnimationUtility.GetCurveBindings(clip);
+            if (bindings.Length == 0) return rig;
+
+            string path = bindings[0].path;
+            if (string.IsNullOrEmpty(path)) return rig;
+
+            foreach (var t in rig.GetComponentsInChildren<Transform>(true))
+            {
+                if (t.Find(path) != null) return t.gameObject;
+            }
+
+            // Tidak ketemu: kembalikan rignya apa adanya. Panggangannya akan keluar beku, tapi
+            // peringatan di bawah memberi tahu KENAPA — dan itu jauh lebih baik daripada diam.
+            Debug.LogWarning("[VatBaker] jalur \"" + path + "\" dari klip \"" + clip.name +
+                             "\" tidak ada di bawah " + rig.name +
+                             " — rignya tidak cocok, panggangan akan keluar beku.");
+            return rig;
+        }
+
         static List<AnimationClip> CollectClips(string folder)
         {
             var found = new List<AnimationClip>();
@@ -317,8 +412,13 @@ namespace Proto.EditorTools
         {
             string n = name.ToLowerInvariant();
 
-            // Lari diperiksa DULU: "run" juga muncul di dalam kata lain, tapi klip yang
-            // namanya mengandung sprint/run praktis selalu klip lari.
+            // Menyerang diperiksa PALING DULU. Paket aset sering menamainya "Attack01_InPlace"
+            // atau "Shoot02", dan potongan seperti "place" bisa tertangkap pemeriksaan lain.
+            if (n.Contains("attack") || n.Contains("shoot") || n.Contains("cast") ||
+                n.Contains("spell")) return VatRole.Attack;
+
+            // Lari sebelum jalan: "run" juga muncul di dalam kata lain, tapi klip yang namanya
+            // mengandung sprint/run praktis selalu klip lari.
             if (n.Contains("run") || n.Contains("sprint") || n.Contains("jog")) return VatRole.Run;
             if (n.Contains("walk") || n.Contains("move")) return VatRole.Walk;
 
@@ -326,6 +426,36 @@ namespace Proto.EditorTools
             // tebakan paling aman: musuh yang berdiri diam terlihat salah, musuh yang berlari
             // di tempat terlihat rusak.
             return VatRole.Idle;
+        }
+
+        /// <summary>
+        /// Klip mana yang benar-benar dipanggang, dari sekumpulan calon.
+        ///
+        /// Paket aset membawa jauh lebih banyak daripada yang dipakai — mati, kena pukul,
+        /// terhuyung, belasan varian serangan. Memanggang semuanya menggandakan ukuran tekstur
+        /// untuk pose yang tidak akan pernah diminta siapa pun. Yang diambil cuma SATU per
+        /// peran, yang pertama ketemu, dan urutan pencariannya sengaja mengutamakan varian
+        /// bernomor rendah karena di paket mana pun itu selalu gerakan yang paling netral.
+        /// </summary>
+        static List<AnimationClip> PickOnePerRole(List<AnimationClip> pool)
+        {
+            var taken = new Dictionary<VatRole, AnimationClip>();
+
+            for (int i = 0; i < pool.Count; i++)
+            {
+                var role = RoleOf(pool[i].name);
+                if (taken.ContainsKey(role)) continue;
+
+                // Varian "_InPlace" dilewati kalau masih ada calon lain: kami menggerakkan
+                // musuhnya sendiri lewat posisi, jadi klip yang sudah dicabut perpindahannya
+                // justru yang benar — tapi itu urusan yang memilih, bukan aturan keras.
+                taken[role] = pool[i];
+            }
+
+            var picked = new List<AnimationClip>(taken.Count);
+            foreach (var kv in taken) picked.Add(kv.Value);
+            picked.Sort((a, b) => RoleOf(a.name).CompareTo(RoleOf(b.name)));
+            return picked;
         }
     }
 }

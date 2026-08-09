@@ -167,7 +167,7 @@ MonoBehaviour:
   BlinkSeconds: 0.18
   CloseShare: 0.35
   Glow: {fileID: 6553887676801724737}
-  GlowPulse: {x: 0.45, y: 1}
+  GlowPulse: {x: 0.45, y: 2}
   GlowSeconds: 2.6
 --- !u!1 &1152435107968087083
 GameObject:

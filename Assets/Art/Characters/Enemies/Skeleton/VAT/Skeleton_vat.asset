@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!43 &-3941548335409145154
+--- !u!43 &-7893631315474083228
 Mesh:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -178,7 +178,43 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
---- !u!28 &-866861288360139819
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8587eef3a4e428547bd69148c2a9974f, type: 3}
+  m_Name: Skeleton_vat
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.VatClipSet
+  Mesh: {fileID: -7893631315474083228}
+  Positions: {fileID: 9166817836934784462}
+  SourceMaterial: {fileID: 2100000, guid: 8828101d1ea790c45a9f2ed424c3a48f, type: 2}
+  VertexCount: 2794
+  TotalRows: 100
+  BoundsMin: {x: -0.4602121, y: -0.0072391033, z: -0.7099804}
+  BoundsMax: {x: 0.56086946, y: 1.7135329, z: 0.6562624}
+  Height: 1.720772
+  Clips:
+  - Role: 0
+    SourceName: IDLE
+    FirstRow: 0
+    Rows: 48
+    Seconds: 1.6000004
+  - Role: 1
+    SourceName: Walk
+    FirstRow: 48
+    Rows: 32
+    Seconds: 1.0666666
+  - Role: 2
+    SourceName: Run
+    FirstRow: 80
+    Rows: 20
+    Seconds: 0.66666794
+--- !u!28 &9166817836934784462
 Texture2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -224,39 +260,3 @@ Texture2D:
     offset: 0
     size: 0
     path: 
---- !u!114 &11400000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8587eef3a4e428547bd69148c2a9974f, type: 3}
-  m_Name: Skeleton_vat
-  m_EditorClassIdentifier: Assembly-CSharp::Proto.VatClipSet
-  Mesh: {fileID: -3941548335409145154}
-  Positions: {fileID: -866861288360139819}
-  SourceMaterial: {fileID: 2100000, guid: 8828101d1ea790c45a9f2ed424c3a48f, type: 2}
-  VertexCount: 2794
-  TotalRows: 100
-  BoundsMin: {x: -0.4602121, y: -0.0072391033, z: -0.7099804}
-  BoundsMax: {x: 0.56086946, y: 1.7135329, z: 0.6562624}
-  Height: 1.720772
-  Clips:
-  - Role: 0
-    SourceName: IDLE
-    FirstRow: 0
-    Rows: 48
-    Seconds: 1.6000004
-  - Role: 1
-    SourceName: Walk
-    FirstRow: 48
-    Rows: 32
-    Seconds: 1.0666666
-  - Role: 2
-    SourceName: Run
-    FirstRow: 80
-    Rows: 20
-    Seconds: 0.66666794

@@ -15,6 +15,12 @@ namespace Proto
         Idle = 0,
         Walk = 1,
         Run = 2,
+
+        /// <summary>
+        /// Memukul atau menembak. Satu-satunya peran yang TIDAK berputar: ia punya awal dan
+        /// akhir, dan yang memainkannya harus tahu kapan selesai.
+        /// </summary>
+        Attack = 3,
     }
 
     [System.Serializable]
