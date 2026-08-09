@@ -105,18 +105,20 @@ namespace Proto.EditorTools
 
             hero.Placed = new[]
             {
-                // Dua alas 2x2 yang tidak bersentuhan: (2,2) mengisi 2-3 x 2-3, (4,4) mengisi 4-5 x 4-5.
-                Seat(db, "frostrune", 2, 2),
-                Seat(db, "runebenteng", 4, 4),
+                // Dua alas 2x2 CERMIN kiri-kanan, mengapit kolom tengah: (1,3) mengisi 1-2 x 3-4,
+                // (4,3) mengisi 4-5 x 3-4. Terpusat, bukan tersebar — susunan pembuka juga kartu
+                // di layar pilih, dan gerombolan petak yang lari ke pojok terbaca berantakan.
+                Seat(db, "frostrune", 1, 3),
+                Seat(db, "runebenteng", 4, 3),
 
                 // Menyilang di alas es, sama seperti Emberwright — pertanyaannya sengaja sama,
                 // jawabannya yang berbeda: melebur di sini berarti kehilangan satu-satunya
                 // penyembuh, bukan sekadar menukar dua sumber damage jadi satu.
-                Seat(db, "frostshard", 2, 2),
-                Seat(db, "minorheal", 3, 3),
+                Seat(db, "frostshard", 1, 3),
+                Seat(db, "minorheal", 2, 4),
 
-                Seat(db, "segelpenangkal", 4, 4),
-                Seat(db, "segelmata", 5, 5)
+                Seat(db, "segelpenangkal", 4, 3),
+                Seat(db, "segelmata", 5, 4)
             };
 
             hero.Loose = new PieceDefinition[0];
@@ -146,17 +148,19 @@ namespace Proto.EditorTools
 
             hero.Placed = new[]
             {
-                // Alas garis 3 petak dan alas 2x2 di sudut berlawanan.
-                Seat(db, "sparkrune", 1, 4),
-                Seat(db, "runesiphon", 4, 1),
+                // Garis di atas, kotak di bawah-tengah — masih BERJAUHAN (itu identitas starter
+                // ini) tapi mengumpul di tengah papan, bukan lari ke dua pojok. Jarak vertikal
+                // dua petak sudah cukup memisahkan; pojok cuma menambah kesan acak-acakan.
+                Seat(db, "sparkrune", 2, 5),
+                Seat(db, "runesiphon", 3, 2),
 
                 // Sabetan Petir mengisi alas garisnya PAS. Itu pelajarannya sendiri: alas yang
                 // terisi penuh tidak menyisakan tempat untuk apa pun berkembang di atasnya.
-                Seat(db, "sabetanpetir", 1, 4),
-                Seat(db, "fireball", 4, 1),
+                Seat(db, "sabetanpetir", 2, 5),
+                Seat(db, "fireball", 3, 2),
 
-                Seat(db, "segelpenangkal", 4, 2),
-                Seat(db, "segelmata", 5, 2)
+                Seat(db, "segelmata", 4, 2),
+                Seat(db, "segelpenangkal", 4, 3)
             };
 
             hero.Loose = new PieceDefinition[0];
