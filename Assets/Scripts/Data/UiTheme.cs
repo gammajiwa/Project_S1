@@ -53,6 +53,12 @@ namespace Proto
                  "Kosong = ketiganya kembali ke tempat lama di GrimoireLayout.")]
         public GameObject StatusStripsPrefab;
 
+        [Tooltip("PREFAB halaman setelan, disimpan otomatis oleh Tools/Grimoire/Build Main Menu. " +
+                 "Dipakai scene game untuk membuka setelan lewat ESC — satu panel untuk dua " +
+                 "scene, supaya keduanya tidak pernah saling menyimpang.\n\n" +
+                 "Kosong = ESC kembali ke perilaku lama (langsung pulang ke menu).")]
+        public GameObject SettingsPrefab;
+
         [Tooltip("Alas di belakang petak 7x7. DIKOSONGKAN atas permintaan pemilik project: " +
                  "bingkai berhias di belakang petak membuat dua bingkai bersarang, dan yang " +
                  "dimaksud 'grid' sejak awal adalah petak 7x7-nya sendiri — bukan gambar alas. " +

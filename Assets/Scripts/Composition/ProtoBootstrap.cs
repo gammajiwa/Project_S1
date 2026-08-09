@@ -198,6 +198,18 @@ namespace Proto
             // Charge generation lives on the kill, so "collect them by fighting" is literal.
             enemies.OnKill += caster.OnEnemyKilled;
 
+            // EventSystem untuk halaman setelan (ESC). Seluruh UI permainan memakai hit-test
+            // sendiri lewat ProtoInput, jadi scene ini tidak pernah membutuhkannya — sampai
+            // panel setelan (Button & Slider UGUI sungguhan) ikut menumpang di sini.
+            var eventSystem = new GameObject("EventSystem");
+            eventSystem.transform.SetParent(transform, false);
+            eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
+#if ENABLE_INPUT_SYSTEM
+            eventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+#else
+            eventSystem.AddComponent<UnityEngine.EventSystems.StandaloneInputModule>();
+#endif
+
             var uiGo = new GameObject("GrimoireUI");
             uiGo.transform.SetParent(transform, false);
             var ui = uiGo.AddComponent<GrimoireUI>();

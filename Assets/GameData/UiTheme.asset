@@ -17,7 +17,12 @@ MonoBehaviour:
   GrimoireFrame: {fileID: 21300000, guid: 8e93eba3dd21c6548b82dc8a2404e10f, type: 3}
   VitalsPrefab: {fileID: 9135706996123029156, guid: e186026d193fb7d4480926b63ea50484, type: 3}
   StatusStripsPrefab: {fileID: 8380833403937783449, guid: e52f3bff49bb2494da5158b1591b473e, type: 3}
+  SettingsPrefab: {fileID: 8437507822836442132, guid: a50a681ab2ee19e41b0cf1f82f1d855a, type: 3}
   GridFrame: {fileID: 0}
+  LiquidAmp: 0.045
+  LiquidSpeed: 2.4
+  LiquidWaves: 2.3
+  LiquidCrest: 0.35
   GrimoirePad: {x: 63, y: 8, z: 13, w: 8}
   GridPad: {x: 16, y: 16, z: 16, w: 16}
   GridCellIdle: {r: 0.24, g: 0.15, b: 0.06, a: 0.42}

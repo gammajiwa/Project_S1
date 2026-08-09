@@ -1699,6 +1699,101 @@ namespace Proto
                 sold + " tercecer kejual  +" + value + " koin", new Color(1f, 0.88f, 0.45f));
         }
 
+        // ---------- setelan dalam permainan ----------
+
+        /// <summary>Halaman setelan yang sedang terbuka, atau null. Prefabnya milik menu.</summary>
+        GameObject _settingsOverlay;
+
+        float _timeScaleBeforeSettings = 1f;
+
+        /// <summary>
+        /// Membuka halaman setelan DI DALAM run. Prefabnya persis yang dipakai menu — satu
+        /// panel untuk dua scene, jadi baris baru yang ditambahkan di menu otomatis muncul
+        /// di sini tanpa ada yang perlu mengingatnya.
+        /// </summary>
+        void OpenSettings()
+        {
+            _settingsOverlay = Instantiate(_theme.SettingsPrefab, _canvas.transform, false);
+            _settingsOverlay.name = "Settings";
+            _settingsOverlay.SetActive(true);
+
+            var panel = _settingsOverlay.GetComponentInChildren<SettingsPanel>(true);
+            if (panel != null) panel.Init(GameSettings.Load());
+
+            // Tombol KEMBALI milik halaman ini di-wire controller MENU; di sini controllernya
+            // kita. Dikenali dari nama barisnya ("MenuLine_Back", nama yang diberikan builder) —
+            // tombol stepper dan slider sudah di-wire SettingsPanel.Init sendiri.
+            foreach (var button in _settingsOverlay.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+            {
+                // Komponen Button-nya duduk di baris "MenuLine_Back" itu sendiri (lihat
+                // NewMenuLine di builder), bukan di anak bernama Hit.
+                if (!button.name.EndsWith("Back")) continue;
+
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(CloseSettings);
+            }
+
+            // Pulang ke menu — dulu kerja ESC, sekarang tombol yang disengaja. HANYA ada di
+            // overlay dalam-game; di menu, halaman yang sama tidak butuh tombol pulang ke
+            // dirinya sendiri.
+            BuildExitButton();
+
+            // Dunia berhenti selama setelannya terbuka. unscaled dipakai seluruh UI, jadi
+            // panelnya sendiri tetap hidup.
+            _timeScaleBeforeSettings = Time.timeScale;
+            Time.timeScale = 0f;
+        }
+
+        void BuildExitButton()
+        {
+            var go = new GameObject("KeluarKeMenu");
+            go.transform.SetParent(_settingsOverlay.transform, false);
+
+            var image = go.AddComponent<Image>();
+            image.color = new Color(0.45f, 0.16f, 0.14f, 0.95f);
+
+            var rt = image.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(1f, 0f);
+
+            // Sudut kanan-bawah PANEL (1180x1000 di tengah layar), berseberangan dengan KEMBALI
+            // di kiri-bawah — dua pintu keluar yang tidak mungkin tertukar posisinya.
+            rt.anchoredPosition = new Vector2(-(Screen.width - 1180f) * 0.5f - 48f, 130f);
+            rt.sizeDelta = new Vector2(300f, 46f);
+
+            var label = MakeText("KeluarLabel", Vector2.zero, new Vector2(300f, 46f), 18,
+                new Color(1f, 0.85f, 0.8f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
+            label.transform.SetParent(go.transform, false);
+            label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            label.rectTransform.anchoredPosition = Vector2.zero;
+            label.text = "KELUAR KE MENU";
+
+            var button = go.AddComponent<UnityEngine.UI.Button>();
+            button.targetGraphic = image;
+            button.onClick.AddListener(() => LoadScene(MainMenuSceneName));
+        }
+
+        void CloseSettings()
+        {
+            if (_settingsOverlay == null) return;
+
+            // SettingsPanel menyimpan di OnDisable — Destroy saja sudah memicunya lewat
+            // penonaktifan, tapi eksplisit lebih jujur daripada mengandalkan urutan teardown.
+            var panel = _settingsOverlay.GetComponentInChildren<SettingsPanel>(true);
+            if (panel != null) panel.gameObject.SetActive(false);
+
+            Destroy(_settingsOverlay);
+            _settingsOverlay = null;
+
+            Time.timeScale = _timeScaleBeforeSettings;
+
+            // Toggle teks damage berlaku SEKARANG, bukan run berikutnya — satu-satunya dari
+            // tiga toggle yang bisa dipasang-copot semurah ini.
+            var fresh = GameSettings.Load();
+            Enemies.OnEnemyDamaged -= _popups.Push;
+            if (fresh.DamageText) Enemies.OnEnemyDamaged += _popups.Push;
+        }
+
         // ---------- runtime ----------
 
         void Update()
@@ -1707,9 +1802,20 @@ namespace Proto
 
             if (ProtoInput.BackDown && _inputLock <= 0f)
             {
-                LoadScene(MainMenuSceneName);
+                // ESC membuka SETELAN, bukan langsung pulang ke menu. Perilaku lama membuang
+                // seluruh run karena satu tombol refleks — pulang sekarang lewat tombol di dalam
+                // panelnya, satu langkah yang disengaja. Tanpa prefab setelan (tema kosong),
+                // perilaku lama dipertahankan: ESC yang tidak melakukan apa-apa lebih buruk.
+                if (_settingsOverlay != null) CloseSettings();
+                else if (_theme != null && _theme.SettingsPrefab != null) OpenSettings();
+                else LoadScene(MainMenuSceneName);
+
                 return;
             }
+
+            // Selama setelan terbuka, dunia berhenti DAN input permainan ikut berhenti — klik
+            // di panel tidak boleh tembus jadi klik papan.
+            if (_settingsOverlay != null) return;
 
             bool consumed = HandleSpeed();
             if (!consumed) HandleInput();

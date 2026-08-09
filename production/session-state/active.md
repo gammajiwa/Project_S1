@@ -831,6 +831,19 @@ Detail: AI-HANDOFF.md §22.
   mematikan lembaran beam UFO di prefab debu Sunlight/Moonlight — akar asli
   "godray ngumpul di tengah".
 
+### DIMINTA USER, BELUM DIKERJAKAN — perombakan hover
+
+Permintaan tepatnya (2026-08-09): "rapihkan text hover, terlalu berantakan, apalagi hover
+skill banyak info yang gak butuh" + "hover evo dibuat FULL GAMBAR: [] = [] + [] + [] —
+kalau satu item bisa jadi 5 item baru, ada 5 baris resep ke bawah; bahan yang SUDAH
+dimiliki dikasih CEKLIS di bawah gambarnya dan gambarnya TERANG, yang belum punya GELAP;
+belum ada art, pakai placeholder dulu."
+
+File yang terlibat: `View/TooltipBuilder.cs` (kartu stat — pangkas), `View/RecipePanel.cs`
+(kartu ALT — dirombak jadi baris ikon), `GrimoireUI.UpdateTooltip` (routing). Ikon piece
+sudah ada (placeholder pip/kotak warna) — pakai `PieceDefinition.Icon`. "Punya" = hitung
+dari papan + tas + tercecer (`OwnedCount` sudah ada, dipakai RecipePanel sekarang).
+
 ### Berikutnya
 
 - VFX slot "dopamin ala Vampire Survivors" (panel masih teks) + cerita penjaga pulau

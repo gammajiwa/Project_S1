@@ -125,6 +125,11 @@ namespace Proto
                 .Set("_versionLabel", version)
                 .Apply();
 
+            // Halaman setelan DISIMPAN SEBAGAI PREFAB sebelum dimatikan — scene game membukanya
+            // lewat ESC. Satu panel untuk dua scene; dua salinan akan saling menyimpang begitu
+            // salah satunya diedit.
+            SaveSettingsPrefab(settingsPage.gameObject);
+
             starterPage.gameObject.SetActive(false);
             codexPage.gameObject.SetActive(false);
             settingsPage.gameObject.SetActive(false);
@@ -562,9 +567,10 @@ namespace Proto
             var page = NewRect("SettingsPage", canvas);
             Stretch(page);
 
-            // 1000, bukan 840: seksi PERFORMA menambah empat baris, dan panel yang memaksa
-            // scroll untuk setelan sependek ini lebih mahal dibaca daripada panel yang tinggi.
-            var panel = NewPanel(page, "SettingsPanel", new Vector2(1180f, 1000f));
+            // 1060, bukan 840: seksi PERFORMA menambah empat baris, dan pada 1000 baris DATA
+            // masih bertindihan dengan tombol KEMBALI di dasar panel. Layar referensinya 1080 —
+            // sisa 10 piksel per sisi itu disengaja, panel setelan memang boleh memenuhi layar.
+            var panel = NewPanel(page, "SettingsPanel", new Vector2(1180f, 1060f));
             panelComponent = panel.gameObject.AddComponent<SettingsPanel>();
 
             var heading = NewText("Heading", panel, "SETELAN", _theme.HeadingSize,
@@ -643,6 +649,25 @@ namespace Proto
                 new Vector2(360f, 46f));
 
             return page;
+        }
+
+        /// <summary>
+        /// Menyimpan halaman setelan sebagai prefab dan menautkannya ke <see cref="UiTheme"/>,
+        /// supaya scene game bisa membukanya tanpa tahu-menahu soal builder ini.
+        /// </summary>
+        static void SaveSettingsPrefab(GameObject page)
+        {
+            const string Path = "Assets/Art/UI/Prefabs/SettingsPage.prefab";
+
+            var prefab = PrefabUtility.SaveAsPrefabAsset(page, Path);
+
+            var theme = AssetDatabase.LoadAssetAtPath<UiTheme>("Assets/GameData/UiTheme.asset");
+            if (theme == null || prefab == null) return;
+
+            var so = new SerializedObject(theme);
+            so.FindProperty("SettingsPrefab").objectReferenceValue = prefab;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(theme);
         }
 
         struct Stepper
