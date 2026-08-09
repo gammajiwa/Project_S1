@@ -96,7 +96,12 @@ namespace Proto
             // Bob squash-stretch dimatikan begitu ada animasi sungguhan. Membiarkannya berarti
             // dua animasi berjalan di atas satu sama lain: kerangka yang melangkah sekaligus
             // memuai-mengempis seperti balon.
-            _animate = animate && _vat == null;
+            //
+            // KECUALI panggangan satu-pose. Necromancer Feyloom dijual tanpa satu pun klip —
+            // dipanggang sebagai satu baris diam — dan pose beku tidak punya animasi yang bisa
+            // didobeli. Penyihir yang bernapas lebih hidup daripada patung, dan bob memang
+            // dirancang sebagai jahitan animasi untuk badan yang tidak beranimasi.
+            _animate = animate && (_vat == null || _vat.TotalRows <= 1);
 
             var shader = _vat != null ? Shader.Find("Grimoire/EnemyVat") : null;
             if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
