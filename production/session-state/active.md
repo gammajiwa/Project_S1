@@ -1100,8 +1100,9 @@ Yang dibutuhkan, urutan yang disarankan:
 ### Berikutnya
 
 - **Balancing tiga starter** — angkanya belum pernah diadu sungguhan
-- **Tujuh musuh terpanggang belum jadi musuh sungguhan** — `EnemyRenderer` masih memegang
-  satu model untuk seluruh gerombolan; archetype api/es/penembak menyusul
+- **Tiga model musuh lagi belum terpakai.** Empat archetype sudah punya modelnya sendiri
+  (Grunt←Skeleton, Cursed←Monster37, Stalker←Monster40, Spitter←Necromancer), tapi
+  Monster38/39/41/42 masih menganggur — belum ada archetype yang memakainya
 - Starter belum punya `Portrait` — kartunya sekarang cuma papan + teks
 - **Dengar catatan rasa user setelah main** — kunang-kunang baru & gloom peta yang
   sekarang bergerak belum pernah dinilai dengan mata oleh pemilik project
