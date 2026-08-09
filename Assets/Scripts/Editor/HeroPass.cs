@@ -122,8 +122,8 @@ namespace Proto.EditorTools
             hero.Loose = new PieceDefinition[0];
 
             hero.MaxHp = 140f;
-            hero.MaxMana = 52f;
-            hero.ManaRegen = 4f;
+            hero.MaxMana = 60f;
+            hero.ManaRegen = 4.7f;
             hero.HpRegen = 3f;
             hero.MoveSpeed = 2.4f;
 
@@ -162,8 +162,8 @@ namespace Proto.EditorTools
             hero.Loose = new PieceDefinition[0];
 
             hero.MaxHp = 78f;
-            hero.MaxMana = 88f;
-            hero.ManaRegen = 7f;
+            hero.MaxMana = 100f;
+            hero.ManaRegen = 8.3f;
             hero.HpRegen = 1f;
             hero.MoveSpeed = 3.4f;
 
