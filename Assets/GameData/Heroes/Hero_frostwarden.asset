@@ -20,8 +20,8 @@ MonoBehaviour:
   Portrait: {fileID: 0}
   Accent: {r: 0.55, g: 0.82, b: 1, a: 1}
   MaxHp: 140
-  MaxMana: 90
-  ManaRegen: 3.5
+  MaxMana: 52
+  ManaRegen: 4
   HpRegen: 3
   MoveSpeed: 2.4
   Placed:

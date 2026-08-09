@@ -17,8 +17,8 @@ MonoBehaviour:
   BagWidth: 5
   BagHeight: 4
   BaseMaxHp: 100
-  BaseMaxMana: 120
-  BaseManaRegen: 5
+  BaseMaxMana: 70
+  BaseManaRegen: 5.5
   BaseHpRegen: 2
   HealPerWaveClear: 20
   BaseMoveSpeed: 2.8
@@ -32,14 +32,14 @@ MonoBehaviour:
   SurgeSpawnMultiplier: 1.25
   WaveRampStart: 0.55
   WaveRampEnd: 1.6
-  EnemyHpBase: 18
+  EnemyHpBase: 15
   EnemyHpPerWave: 4
-  EnemySpeedMin: 2
-  EnemySpeedMax: 2.4
+  EnemySpeedMin: 1.7
+  EnemySpeedMax: 2.05
   EnemySpeedPerWave: 0.025
-  EnemyContactDps: 10
-  EnemyContactDpsPerWave: 1.7
-  EnemyDamageGrowth: 1.055
+  EnemyContactDps: 6
+  EnemyContactDpsPerWave: 1.3
+  EnemyDamageGrowth: 1.045
   EnemiesBase: 18
   EnemiesPerWave: 6
   EnemyCountGrowth: 1.05
@@ -66,6 +66,7 @@ MonoBehaviour:
   ChainJumpRange: 5.5
   SkyFallHeight: 14
   SkyFallSpeed: 52
+  ManaCostScale: 2.2
   KillDropChance: 0.035
   WaveClearDrops: 1
   RuneShareOfDrops: 0.25
@@ -75,7 +76,11 @@ MonoBehaviour:
   - 4.5
   - 1.5
   - 0
+  DropStarMinWave: 0100000001000000050000000b00000063000000
   MaxDropsPerWave: 3
+  EliteBonusDrops: 2
+  EliteStarBonus: 1
+  EliteCoinBonus: 45
   ShopEveryWaves: 3
   ShopSlots: 6
   RerollCostStart: 20
@@ -88,6 +93,7 @@ MonoBehaviour:
   MapEventChance: 0.07
   MapGambleChance: 0.05
   MapEliteMinFloor: 3
+  MapOpensRun: 1
   MapFadeClose: 1.1
   MapFadeOpen: 1.4
   MapMarkerTravel: 0.8
