@@ -71,7 +71,7 @@ namespace Proto
                 Vector3 gap = to - pos;
                 gap.y = 0f;
 
-                float pace = Mathf.Max(0.5f, _balance.BaseMoveSpeed + _caster.Total(StatKind.MoveSpeed));
+                float pace = Mathf.Max(0.5f, _caster.BaseMoveSpeed + _caster.Total(StatKind.MoveSpeed));
 
                 if (gap.magnitude <= pace * dt + 0.35f)
                 {
@@ -105,7 +105,9 @@ namespace Proto
 
             _heading = Vector3.MoveTowards(_heading, want, _balance.TurnRate * dt);
 
-            float speed = Mathf.Max(0f, _balance.BaseMoveSpeed + _caster.Total(StatKind.MoveSpeed));
+            // Angka dasarnya dari caster, bukan dari GameBalance: starter boleh menimpanya, dan
+            // menimpanya di aset berarti menulis permanen ke disk.
+            float speed = Mathf.Max(0f, _caster.BaseMoveSpeed + _caster.Total(StatKind.MoveSpeed));
             pos += _heading * (speed * dt);
 
             transform.position = _roam ? pos : Clamp(pos);

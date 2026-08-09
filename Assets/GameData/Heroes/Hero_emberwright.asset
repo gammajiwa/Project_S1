@@ -17,6 +17,13 @@ MonoBehaviour:
   Blurb: "Dua alas, dua skill, dua segel. Fireball dan Frost Shard berdiri menyilang
     di alas api \u2014 dempetkan kalau mau Steam Burst bintang 2 yang mengisi alas
     itu utuh, atau biarkan keduanya tetap menembak."
+  Portrait: {fileID: 0}
+  Accent: {r: 1, g: 0.62, b: 0.28, a: 1}
+  MaxHp: -1
+  MaxMana: -1
+  ManaRegen: -1
+  HpRegen: -1
+  MoveSpeed: -1
   Placed:
   - Piece: {fileID: 11400000, guid: 84a034eac84a3c14eac80128c22945c5, type: 2}
     Origin: {x: 2, y: 2}

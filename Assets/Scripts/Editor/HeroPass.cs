@@ -61,16 +61,114 @@ namespace Proto.EditorTools
             };
 
             hero.Loose = new PieceDefinition[0];
+
+            // Emberwright memakai angka bawaan seluruhnya. Ia acuan: starter yang setiap statnya
+            // ditimpa tidak bisa dipakai membaca apakah angka di GameBalance sendiri sudah benar.
+            hero.Accent = new Color(1f, 0.62f, 0.28f, 1f);
             EditorUtility.SetDirty(hero);
 
-            db.EditorSetHeroes(new List<HeroLoadout> { hero });
+            var frost = BuildFrostwarden(db);
+            var storm = BuildStormcaller(db);
+
+            db.EditorSetHeroes(new List<HeroLoadout> { hero, frost, storm });
             EditorUtility.SetDirty(db);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[HeroPass] {hero.DisplayName}: {Describe(hero)}");
+            foreach (var h in new[] { hero, frost, storm })
+            {
+                Debug.Log($"[HeroPass] {h.DisplayName}: {Describe(h)}");
+            }
+
             Selection.activeObject = hero;
+        }
+
+        /// <summary>
+        /// Starter bertahan: nyawa besar, mana lambat.
+        ///
+        /// Angkanya PLACEHOLDER — dipilih supaya perbedaannya kelihatan waktu diadu, bukan supaya
+        /// seimbang. Yang menyeimbangkan cukup mengubah asetnya; tidak ada satu pun angka di sini
+        /// yang dibaca kode.
+        /// </summary>
+        static HeroLoadout BuildFrostwarden(ContentDatabase db)
+        {
+            var hero = Load("frostwarden");
+
+            hero.Id = "frostwarden";
+            hero.DisplayName = "Frostwarden";
+            hero.Blurb = "Tahan pukul, lambat mengisi. Frost Shard dan Minor Heal berdiri " +
+                         "menyilang di alas es — yang satu membunuh, yang satu menambal, dan " +
+                         "mendempetkannya berarti memilih salah satunya untuk hilang.";
+
+            hero.Accent = new Color(0.55f, 0.82f, 1f, 1f);
+
+            hero.Placed = new[]
+            {
+                // Dua alas 2x2 yang tidak bersentuhan: (2,2) mengisi 2-3 x 2-3, (4,4) mengisi 4-5 x 4-5.
+                Seat(db, "frostrune", 2, 2),
+                Seat(db, "runebenteng", 4, 4),
+
+                // Menyilang di alas es, sama seperti Emberwright — pertanyaannya sengaja sama,
+                // jawabannya yang berbeda: melebur di sini berarti kehilangan satu-satunya
+                // penyembuh, bukan sekadar menukar dua sumber damage jadi satu.
+                Seat(db, "frostshard", 2, 2),
+                Seat(db, "minorheal", 3, 3),
+
+                Seat(db, "segelpenangkal", 4, 4),
+                Seat(db, "segelmata", 5, 5)
+            };
+
+            hero.Loose = new PieceDefinition[0];
+
+            hero.MaxHp = 140f;
+            hero.MaxMana = 90f;
+            hero.ManaRegen = 3.5f;
+            hero.HpRegen = 3f;
+            hero.MoveSpeed = 2.4f;
+
+            EditorUtility.SetDirty(hero);
+            return hero;
+        }
+
+        /// <summary>Starter agresif: cepat dan rapuh, dua skill berjauhan dengan ukuran berbeda.</summary>
+        static HeroLoadout BuildStormcaller(ContentDatabase db)
+        {
+            var hero = Load("stormcaller");
+
+            hero.Id = "stormcaller";
+            hero.DisplayName = "Stormcaller";
+            hero.Blurb = "Rapuh dan cepat. Sabetan Petir mengisi penuh alas garisnya, Fireball " +
+                         "berdiri sendirian di seberang papan — dua skill yang tidak akan pernah " +
+                         "bertemu kecuali kamu yang memindahkannya.";
+
+            hero.Accent = new Color(0.86f, 0.72f, 1f, 1f);
+
+            hero.Placed = new[]
+            {
+                // Alas garis 3 petak dan alas 2x2 di sudut berlawanan.
+                Seat(db, "sparkrune", 1, 4),
+                Seat(db, "runesiphon", 4, 1),
+
+                // Sabetan Petir mengisi alas garisnya PAS. Itu pelajarannya sendiri: alas yang
+                // terisi penuh tidak menyisakan tempat untuk apa pun berkembang di atasnya.
+                Seat(db, "sabetanpetir", 1, 4),
+                Seat(db, "fireball", 4, 1),
+
+                Seat(db, "segelpenangkal", 4, 2),
+                Seat(db, "segelmata", 5, 2)
+            };
+
+            hero.Loose = new PieceDefinition[0];
+
+            hero.MaxHp = 78f;
+            hero.MaxMana = 150f;
+            hero.ManaRegen = 7f;
+            hero.HpRegen = 1f;
+            hero.MoveSpeed = 3.4f;
+
+            EditorUtility.SetDirty(hero);
+            return hero;
         }
 
         static HeroLoadout.Seat Seat(ContentDatabase db, string id, int x, int y)
@@ -106,8 +204,20 @@ namespace Proto.EditorTools
             var sb = new System.Text.StringBuilder();
             var skillCells = new List<Vector2Int>();
 
-            foreach (var seat in hero.Placed)
+            // Sel dicatat bersama PEMILIKNYA. Tanpa itu, skill yang lebih dari satu petak selalu
+            // dilaporkan bersentuhan — sel-selnya sendiri memang bertetangga, dan pemeriksa yang
+            // cuma melihat koordinat tidak bisa membedakan "dua piece berdempetan" dari "satu
+            // piece yang panjang". Cacat ini tidak pernah kelihatan selama semua skill pembuka
+            // masih satu petak.
+            //
+            // Penandanya nomor SEAT, bukan aset piece-nya: starter yang membuka dengan dua
+            // Fireball memegang aset yang sama dua kali, dan menandainya per aset akan
+            // menganggap keduanya satu benda — persis kasus yang paling perlu diperiksa.
+            var owner = new List<int>();
+
+            for (int s = 0; s < hero.Placed.Length; s++)
             {
+                var seat = hero.Placed[s];
                 if (seat.Piece == null) continue;
 
                 sb.Append(seat.Piece.DisplayName).Append('(').Append(seat.Piece.Cells.Length)
@@ -119,6 +229,7 @@ namespace Proto.EditorTools
                 foreach (var c in Shapes.Rotate(seat.Piece.Cells, seat.Rot))
                 {
                     skillCells.Add(seat.Origin + c);
+                    owner.Add(s);
                 }
             }
 
@@ -127,6 +238,8 @@ namespace Proto.EditorTools
             {
                 for (int k = i + 1; k < skillCells.Count; k++)
                 {
+                    if (owner[i] == owner[k]) continue;
+
                     int d = Mathf.Abs(skillCells[i].x - skillCells[k].x) +
                             Mathf.Abs(skillCells[i].y - skillCells[k].y);
 

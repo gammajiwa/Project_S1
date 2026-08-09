@@ -14,6 +14,7 @@ namespace Proto
         enum Page
         {
             Root,
+            Starter,
             Codex,
             Settings
         }
@@ -23,6 +24,7 @@ namespace Proto
 
         [Header("Halaman")]
         [SerializeField] GameObject _rootPage;
+        [SerializeField] GameObject _starterPage;
         [SerializeField] GameObject _codexPage;
         [SerializeField] GameObject _settingsPage;
 
@@ -33,6 +35,7 @@ namespace Proto
         [SerializeField] Button _quitButton;
 
         [Header("Tombol kembali")]
+        [SerializeField] Button _starterBackButton;
         [SerializeField] Button _codexBackButton;
         [SerializeField] Button _settingsBackButton;
 
@@ -61,6 +64,7 @@ namespace Proto
             Wire(_codexButton, () => Show(Page.Codex));
             Wire(_settingsButton, () => Show(Page.Settings));
             Wire(_quitButton, Quit);
+            Wire(_starterBackButton, () => Show(Page.Root));
             Wire(_codexBackButton, () => Show(Page.Root));
             Wire(_settingsBackButton, () => Show(Page.Root));
 
@@ -85,12 +89,27 @@ namespace Proto
             _page = page;
 
             if (_rootPage != null) _rootPage.SetActive(page == Page.Root);
+            if (_starterPage != null) _starterPage.SetActive(page == Page.Starter);
             if (_codexPage != null) _codexPage.SetActive(page == Page.Codex);
             if (_settingsPage != null) _settingsPage.SetActive(page == Page.Settings);
         }
 
+        /// <summary>
+        /// PLAY membuka layar pilih starter, bukan langsung memuat scene game — di situlah papan
+        /// pembuka run ditentukan.
+        ///
+        /// Yang memuat scene-nya <see cref="StarterSelectPanel"/>, sesudah pilihannya disimpan.
+        /// Halaman starter yang tidak terpasang jatuh balik ke perilaku lama, supaya scene menu
+        /// yang belum dibangun ulang tidak berubah jadi tombol PLAY yang tidak melakukan apa-apa.
+        /// </summary>
         void StartGame()
         {
+            if (_starterPage != null)
+            {
+                Show(Page.Starter);
+                return;
+            }
+
             if (string.IsNullOrEmpty(_gameSceneName))
             {
                 Debug.LogError("[MainMenuController] nama scene game belum diisi.", this);

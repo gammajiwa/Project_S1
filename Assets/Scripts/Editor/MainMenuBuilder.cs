@@ -54,6 +54,16 @@ namespace Proto
                 return;
             }
 
+            // Dipakai layar pilih starter buat menampilkan angka yang BENAR-BENAR berlaku: starter
+            // yang membiarkan sebuah stat kosong tetap harus memperlihatkan nilainya, dan nilai itu
+            // hidup di sini.
+            var balance = FindAsset<GameBalance>();
+            if (balance == null)
+            {
+                Debug.LogError("[MainMenuBuilder] GameBalance tidak ketemu di project.");
+                return;
+            }
+
             var database = FindAsset<ContentDatabase>();
             if (database == null)
             {
@@ -91,12 +101,17 @@ namespace Proto
             var rootPage = BuildRootPage(canvas, out var play, out var codexBtn,
                 out var settingsBtn, out var quit, out var version);
 
+            var starterPage = BuildStarterPage(canvas, database, balance,
+                out var starterPanel, out var starterBack);
+
             var codexPage = BuildCodexPage(canvas, database, out var codexPanel, out var codexBack);
             var settingsPage = BuildSettingsPage(canvas, out var settingsPanel, out var settingsBack);
 
             new Binder(controller)
                 .SetString("_gameSceneName", "Proto")
                 .Set("_rootPage", rootPage.gameObject)
+                .Set("_starterPage", starterPage.gameObject)
+                .Set("_starterBackButton", starterBack)
                 .Set("_codexPage", codexPage.gameObject)
                 .Set("_settingsPage", settingsPage.gameObject)
                 .Set("_playButton", play)
@@ -110,6 +125,7 @@ namespace Proto
                 .Set("_versionLabel", version)
                 .Apply();
 
+            starterPage.gameObject.SetActive(false);
             codexPage.gameObject.SetActive(false);
             settingsPage.gameObject.SetActive(false);
 
@@ -353,6 +369,91 @@ namespace Proto
 
             // The scroll area must not swallow the row the back button sits on.
             Place(viewport, new Vector2(0.5f, 0.5f), new Vector2(0f, 12f), new Vector2(1320f, 620f));
+
+            return page;
+        }
+
+        // ---------- starter page ----------
+
+        /// <summary>
+        /// Layar pilih starter. Yang besar di tengah adalah PAPAN PEMBUKANYA, bukan portrait:
+        /// susunan petak itu satu-satunya bagian kartu yang benar-benar memberi tahu apa yang
+        /// akan dimainkan, dan ia digambar sendiri oleh panelnya dari aset — jadi di sini cuma
+        /// disediakan kotaknya.
+        /// </summary>
+        static RectTransform BuildStarterPage(RectTransform canvas, ContentDatabase database,
+            GameBalance balance, out StarterSelectPanel panelComponent, out Button back)
+        {
+            var page = NewRect("StarterPage", canvas);
+            Stretch(page);
+
+            var panel = NewPanel(page, "StarterPanel", new Vector2(1420f, 840f));
+            panelComponent = panel.gameObject.AddComponent<StarterSelectPanel>();
+
+            var heading = NewText("Heading", panel, "PILIH GRIMOIRE", _theme.HeadingSize,
+                _theme.TextIdle, TextAlignmentOptions.Left, true);
+            Place(heading.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -40f), new Vector2(700f, 52f));
+
+            var page01 = NewText("PageLabel", panel, "1 / 1", _theme.BodySize,
+                _theme.Accent, TextAlignmentOptions.Right);
+            Place(page01.rectTransform, new Vector2(1f, 1f), new Vector2(-48f, -50f), new Vector2(300f, 30f));
+
+            // Papan di tengah, persegi. Sisi kiri untuk namanya, sisi kanan untuk portrait —
+            // papannya sendiri tidak boleh ikut melar mengikuti sisa ruang, karena petak yang
+            // gepeng membuat bentuk piece berbohong.
+            var board = NewRect("Board", panel);
+            Place(board, new Vector2(0.5f, 0.5f), new Vector2(0f, 22f), new Vector2(470f, 470f));
+
+            var name = NewText("Name", panel, "Nama Starter", _theme.HeadingSize,
+                _theme.Accent, TextAlignmentOptions.Left, true);
+            Place(name.rectTransform, new Vector2(0f, 0.5f), new Vector2(48f, 150f), new Vector2(420f, 48f));
+
+            var blurb = NewText("Blurb", panel, "", _theme.BodySize,
+                _theme.TextMuted, TextAlignmentOptions.TopLeft);
+            Place(blurb.rectTransform, new Vector2(0f, 0.5f), new Vector2(48f, 96f), new Vector2(420f, 220f));
+            blurb.textWrappingMode = TextWrappingModes.Normal;
+
+            var stats = NewText("Stats", panel, "", _theme.BodySize,
+                _theme.TextIdle, TextAlignmentOptions.Center);
+            Place(stats.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 118f), new Vector2(1200f, 30f));
+
+            var portrait = NewImage("Portrait", panel, Color.white);
+            Place(portrait.rectTransform, new Vector2(1f, 0.5f), new Vector2(-48f, 0f), new Vector2(380f, 480f));
+            portrait.preserveAspect = true;
+            portrait.raycastTarget = false;
+
+            // Panahnya mengapit papan, bukan berdiri di tepi panel: yang sedang diganti isi
+            // papannya, dan tombol yang jauh dari benda yang berubah terbaca sebagai ganti halaman.
+            var prev = NewMenuLine(panel, "Prev", "<");
+            Place((RectTransform)prev.transform, new Vector2(0.5f, 0.5f), new Vector2(-300f, 22f),
+                new Vector2(90f, 90f));
+
+            var next = NewMenuLine(panel, "Next", ">");
+            Place((RectTransform)next.transform, new Vector2(0.5f, 0.5f), new Vector2(300f, 22f),
+                new Vector2(90f, 90f));
+
+            var play = NewMenuLine(panel, "Launch", "MULAI RUN");
+            Place((RectTransform)play.transform, new Vector2(1f, 0f), new Vector2(-48f, 26f),
+                new Vector2(360f, 46f));
+
+            back = NewMenuLine(panel, "Back", "KEMBALI");
+            Place((RectTransform)back.transform, new Vector2(0f, 0f), new Vector2(48f, 26f),
+                new Vector2(360f, 46f));
+
+            new Binder(panelComponent)
+                .Set("_database", database)
+                .Set("_balance", balance)
+                .SetString("_gameSceneName", "Proto")
+                .Set("_nameLabel", name)
+                .Set("_blurbLabel", blurb)
+                .Set("_statsLabel", stats)
+                .Set("_pageLabel", page01)
+                .Set("_portrait", portrait)
+                .Set("_board", board)
+                .Set("_prevButton", prev)
+                .Set("_nextButton", next)
+                .Set("_playButton", play)
+                .Apply();
 
             return page;
         }
