@@ -10,26 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
-  m_Name: Piece_cataclysm
+  m_Name: Piece_runegema
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
-  Id: cataclysm
-  DisplayName: Cataclysm
-  Stars: 5
-  Layer: 1
-  Shape: 4
-  Color: {r: 1, g: 0.35, b: 0.1, a: 1}
-  Icon: {fileID: 21300000, guid: 0f009832e44d33c46928ab21fc30d7da, type: 3}
-  Kind: 4
-  Element: 0
-  BaseDamage: 150
-  BaseCooldown: 5.5
-  Radius: 12
-  Range: 12
+  Id: runegema
+  DisplayName: Echo Rune
+  Stars: 4
+  Layer: 0
+  Shape: 18
+  Color: {r: 0.79260004, g: 0.6462, b: 0.9695, a: 1}
+  Icon: {fileID: 21300000, guid: e77ceb5e11c6d99479da4a2d40bad24c, type: 3}
+  Kind: 8
+  Element: 3
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 20
+  ManaCost: 0
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
@@ -40,9 +40,9 @@ MonoBehaviour:
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
-  StatusDuration: 5
-  AppliedPoints: 3
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
+  AppliedPoints: 1
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
@@ -52,15 +52,13 @@ MonoBehaviour:
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
-  RestoreManaOnKill: 0.4
-  RestoreHpOnKill: 0.25
-  Aura: 0
-  AuraValue: 0
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 2
+  AuraValue: 1.4
   ElementMatchBonus: 0
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 'EVOLVED. Langit terbuka. Tidak ada yang selamat dua kali di dalam kawah.
-
-    PANEN:
-    tiap kill +0.4 mana & +0.25 HP.'
+  Blurb: 'Huruf S, 6 petak. Gema: total -140% cooldown dibagi ke enam petak. Menembak
+    lebih sering juga berarti membayar lebih sering.'

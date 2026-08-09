@@ -254,6 +254,19 @@ namespace Proto
         /// </summary>
         public readonly List<BuffDefinition> KillGrants = new List<BuffDefinition>();
 
+        /// <summary>
+        /// Total mana yang pulih per musuh mati, dijumlah dari semua piece terpasang yang membawa
+        /// efek panen. AGREGAT dengan sengaja, bukan per-skill-pembunuh: event kill cuma membawa
+        /// posisi, tidak pernah membawa skill mana yang membunuh — dan menjahitkan atribusi ke
+        /// seluruh jalur damage (proyektil, zone yang hidup 6 detik, chain, detonasi) demi satu
+        /// efek adalah harga yang salah. Memasang piece-nya = efeknya menyala; itu tetap terasa,
+        /// dan tetap satu keputusan papan.
+        /// </summary>
+        public float KillRestoreMana;
+
+        /// <summary>Total HP yang pulih per musuh mati. Aturan agregat yang sama.</summary>
+        public float KillRestoreHp;
+
         public float BonusMaxHp => Stats[(int)StatKind.MaxHp];
         public float BonusMaxMana => Stats[(int)StatKind.MaxMana];
         public float BonusManaRegen => Stats[(int)StatKind.ManaRegen];
@@ -1018,12 +1031,19 @@ namespace Proto
         {
             Spells.Clear();
             KillGrants.Clear();
+            KillRestoreMana = 0f;
+            KillRestoreHp = 0f;
             System.Array.Clear(Stats, 0, Stats.Length);
 
             // Any placed piece may hand out stats: runes, sigils, even skills.
             foreach (var piece in Placed)
             {
                 if (piece.Def.GrantOnKill != null) KillGrants.Add(piece.Def.GrantOnKill);
+
+                // Panen dijumlahkan saat kompilasi, bukan saat kill: handler kill berjalan
+                // ratusan kali per detik di wave tinggi dan tidak boleh menyentuh papan.
+                KillRestoreMana += piece.Def.RestoreManaOnKill;
+                KillRestoreHp += piece.Def.RestoreHpOnKill;
 
                 if (piece.Def.Stat != StatKind.None && piece.Def.Stat != StatKind.Count)
                 {

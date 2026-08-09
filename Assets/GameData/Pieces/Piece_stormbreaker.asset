@@ -33,6 +33,8 @@ MonoBehaviour:
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
+  CastVfx: {fileID: 0}
+  CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -50,11 +52,16 @@ MonoBehaviour:
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
+  RestoreManaOnKill: 0.7
+  RestoreHpOnKill: 0
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Delapan cabang petir berangkat sekaligus, tiap cabang melompat
+  Blurb: 'EVOLVED. Delapan cabang petir berangkat sekaligus, tiap cabang melompat
     empat kali, dan tidak ada dua cabang yang menyambar musuh yang sama.
+
+    PANEN:
+    tiap kill +0.7 mana.'

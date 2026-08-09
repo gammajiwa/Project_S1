@@ -155,6 +155,18 @@ namespace Proto
         [Tooltip("Tambahan damage per tumpukan yang dihabiskan. 0.35 = +35% per charge.")]
         public float DamagePerCharge = 0.35f;
 
+        [Header("Panen (skill besar: membunuh memulihkan)")]
+        [Tooltip("Mana yang pulih TIAP MUSUH MATI selama piece ini terpasang — kill siapa pun, " +
+                 "bukan cuma kill skill ini (event kill tidak membawa pelakunya). Angka WAJIB " +
+                 "kecil: wave besar itu ratusan kill, jadi yang dibaca desainer bukan angka ini " +
+                 "melainkan angka ini DIKALI laju kill — 0.3/kill di 10 kill/detik sudah setengah " +
+                 "regen dasar.")]
+        [Min(0f)] public float RestoreManaOnKill;
+
+        [Tooltip("HP yang pulih tiap musuh mati selama piece ini terpasang. Aturan yang sama: " +
+                 "kecil, karena pengalinya laju kill, bukan satu.")]
+        [Min(0f)] public float RestoreHpOnKill;
+
         [Header("Aura (khusus rune)")]
         public AuraKind Aura = AuraKind.None;
 

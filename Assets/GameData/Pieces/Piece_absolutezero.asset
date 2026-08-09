@@ -33,6 +33,8 @@ MonoBehaviour:
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
+  CastVfx: {fileID: 0}
+  CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -50,11 +52,15 @@ MonoBehaviour:
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0.5
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Tidak membidik siapa pun. Enam belas pecahan es menyembur ke SEGALA
+  Blurb: 'EVOLVED. Tidak membidik siapa pun. Enam belas pecahan es menyembur ke SEGALA
     ARAH, dan polanya berputar acak tiap tembakan.
+
+    PANEN: tiap kill +0.5 HP.'

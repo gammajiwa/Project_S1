@@ -298,8 +298,18 @@ namespace Proto
         /// </summary>
         public void OnEnemyKilled(Vector3 at)
         {
+            if (Book == null) return;
+
             var grants = Book.KillGrants;
             for (int i = 0; i < grants.Count; i++) ApplyBuff(grants[i]);
+
+            // Panen: skill besar yang membawa efek ini mengubah pembantaian jadi bahan bakar.
+            // Nilainya sudah teragregasi saat kompilasi grid, jadi di sini tinggal dua clamp —
+            // dan hanya selagi hidup: mayat tidak ikut memanen kill dari zone yang masih menyala.
+            if (!Alive) return;
+
+            if (Book.KillRestoreMana > 0f) Mana = Mathf.Min(MaxMana, Mana + Book.KillRestoreMana);
+            if (Book.KillRestoreHp > 0f) Hp = Mathf.Min(MaxHp, Hp + Book.KillRestoreHp);
         }
 
         // Buff berubah saat wave berjalan, jadi ini dipakai SAAT CAST — bukan saat kompilasi grid.
