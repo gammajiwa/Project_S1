@@ -76,6 +76,14 @@ Shader "Grimoire/GloomEdge"
         _Inset ("Mulai gelap (piksel dari tepi)", Float) = 190
         _Feather ("Gelap penuh (piksel dari tepi)", Float) = 8
 
+        // Membalik ARAH gradasinya: pekat di TENGAH, memudar ke tepi.
+        //
+        // Bawaannya menggelapkan dari tepi ke dalam, dan itu benar untuk pekerjaan aslinya —
+        // menggerogoti tepi sebuah panel yang isinya harus tetap terbaca. Tapi ia selalu
+        // menyisakan lubang di tengah, dan gumpalan berlubang tidak pernah bisa jadi ASAP.
+        // Dibalik, bidangnya jadi gumpalan pejal bertepi bergolak yang memudar keluar.
+        [Toggle] _Invert ("Balik: pekat di tengah", Float) = 0
+
         [Header(Bentuk garis batas)]
         _Scale ("Ukuran gumpalan (piksel)", Float) = 210
         _Wobble ("Ketakberaturan garis batas (piksel)", Float) = 90
@@ -144,6 +152,7 @@ Shader "Grimoire/GloomEdge"
             float _TexAspect;
             float _Inset;
             float _Feather;
+            float _Invert;
             float _Scale;
             float _Wobble;
             float _Warp;
@@ -249,7 +258,18 @@ Shader "Grimoire/GloomEdge"
                 // gigitan terjauh terpotong rata oleh optimasi ini — dan potongan rata itu
                 // muncul sebagai garis lurus mendadak di tengah tepi yang sedang robek.
                 if (nearest > max(_Inset + _Wobble, _TearDepth * 2.0 + _TearWarp * _TearScale))
-                    return _PaperMode > 0.5 ? paper : fixed4(_Color.rgb, 0);
+                {
+                    if (_PaperMode > 0.5) return paper;
+
+                    // Saat dibalik, bagian dalam yang dilewati optimasi ini justru bagian yang
+                    // PALING pekat — mengembalikan alpha nol di sini akan melubangi tengahnya,
+                    // yaitu persis cacat yang sedang dihapus oleh mode ini.
+                    if (_Invert > 0.5)
+                        return fixed4(_Color.rgb * input.color.rgb,
+                                      saturate(_Ceiling * _Color.a * input.color.a));
+
+                    return fixed4(_Color.rgb, 0);
+                }
 
                 // Derau dibaca dari koordinat piksel panel, jadi gumpalannya berukuran tetap
                 // di atas "kertas" — bukan ikut melar saat panelnya membesar.
@@ -276,6 +296,12 @@ Shader "Grimoire/GloomEdge"
                 float gx = 1.0 - smoothstep(full, start, toEdge.x);
                 float gy = 1.0 - smoothstep(full, start, toEdge.y);
                 float gloom = 1.0 - (1.0 - gx) * (1.0 - gy);
+
+                // Dibalik, penggabungannya ikut berbalik jadi PERKALIAN: sebuah titik hanya
+                // pekat kalau ia jauh dari kedua pasang tepi sekaligus. Memakai penggabungan
+                // peluang yang sama seperti di atas akan membuat seluruh pita tepi ikut pekat,
+                // dan yang keluar bujur sangkar penuh, bukan gumpalan.
+                if (_Invert > 0.5) gloom = (1.0 - gx) * (1.0 - gy);
 
                 gloom = saturate(gloom * _Ceiling);
 

@@ -561,6 +561,9 @@ namespace Proto
         /// </summary>
         GrimoireGridArea _gridRig;
 
+        /// <summary>Lingkaran rune di papan, kalau prefabnya membawa satu. Boleh null.</summary>
+        GrimoireRune _rune;
+
         void BuildGridFrames()
         {
             // Dikosongkan lebih dulu, SELALU. Play mode tanpa domain reload mempertahankan nilai
@@ -569,6 +572,7 @@ namespace Proto
             GridOverride = null;
             GridGapOverride = null;
             _gridRig = null;
+            _rune = null;
 
             if (_theme == null) return;
 
@@ -596,6 +600,8 @@ namespace Proto
                     _gridRig = marker;
                     GridGapOverride = marker.Gap;
                 }
+
+                _rune = go.GetComponentInChildren<GrimoireRune>(true);
 
                 if (area != null)
                 {
@@ -1391,6 +1397,12 @@ namespace Proto
                 if (_evolveTimer <= 0f) _evolveText.text = "";
             }
 
+            // Rune menyala selama ada yang duduk di papan. Dibaca dari Placed, bukan dari
+            // Spells: yang terakhir cuma menghitung skill yang benar-benar bisa menembak, dan
+            // rune dasar yang baru ditaruh — yang jelas-jelas terlihat di papan — tidak akan
+            // menyalakan apa pun.
+            if (_rune != null) _rune.SetLit(Book.Placed.Count > 0);
+
             Redraw();
             TickFloaters(Time.unscaledDeltaTime);
             _popups.Tick(Time.unscaledDeltaTime);
@@ -1960,6 +1972,11 @@ namespace Proto
 
             _evolveText.text = _sb.ToString();
             _evolveTimer = 6f;
+
+            // Runenya berputar sekali. Ditaruh di sini, bukan di tempat resep diselesaikan:
+            // di sini sudah dipastikan ADA yang benar-benar berevolusi (baris keluar lebih awal
+            // kalau daftarnya kosong), jadi runenya tidak pernah berputar untuk apa-apa.
+            if (_rune != null) _rune.Celebrate();
             PushFloater(Player.transform.position + Vector3.up * 3f, "EVOLVE!", new Color(0.55f, 1f, 0.7f));
         }
 

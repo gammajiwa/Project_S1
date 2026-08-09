@@ -30,6 +30,14 @@ namespace Proto
         [Tooltip("Kepekatan maksimum di tepi.")]
         [Range(0f, 1f)] public float Ceiling = 0.85f;
 
+        [Tooltip("BALIK arah gradasinya: pekat di tengah, memudar ke tepi.\n\n" +
+                 "Mati = menggerogoti tepi sebuah panel, tengahnya dibiarkan bening. Benar untuk " +
+                 "memberi bingkai gelap pada peta atau papan.\n\n" +
+                 "Hidup = gumpalan PEJAL bertepi bergolak. Ini yang dipakai untuk asap: bidang " +
+                 "berlubang di tengah tidak akan pernah terbaca sebagai kepulan, cuma sebagai " +
+                 "bingkai.")]
+        public bool Invert;
+
         [Header("Jangkauan dari tepi (piksel)")]
         [Tooltip("Seberapa jauh ke dalam kegelapannya mulai. Dijepit ke seperempat sisi " +
                  "terpendek di kode — tanpa itu kotak sempit bisa tertutup gelap seluruhnya.")]
@@ -107,6 +115,7 @@ namespace Proto
         {
             _material.SetColor("_Color", Tint);
             _material.SetFloat("_Ceiling", Ceiling);
+            _material.SetFloat("_Invert", Invert ? 1f : 0f);
             _material.SetFloat("_Wobble", Wobble);
             _material.SetFloat("_Scale", Scale);
             _material.SetFloat("_Churn", Churn);
@@ -125,7 +134,12 @@ namespace Proto
 
             // Dijepit ke seperempat sisi terpendek: kalau tidak, kotak sempit membuat kedua
             // sisinya bertemu di tengah dan seluruh kotak tertutup gelap.
-            float inset = Mathf.Min(Inset, Mathf.Min(size.x, size.y) * 0.25f);
+            //
+            // Saat DIBALIK, "tertutup penuh di tengah" justru yang dicari — jepitannya
+            // dilonggarkan ke setengah supaya gradasinya boleh memanjang sampai pusat. Dengan
+            // jepitan seperempat, asapnya terpaksa punya inti pejal bertepi mendadak.
+            float limit = Invert ? 0.5f : 0.25f;
+            float inset = Mathf.Min(Inset, Mathf.Min(size.x, size.y) * limit);
             _material.SetFloat("_Inset", inset);
             _material.SetFloat("_TearDepth", TearDepth);
         }

@@ -24,9 +24,16 @@ namespace Proto
         [Tooltip("Bola matanya — yang bergerak. Kosong = anak pertama yang punya Image dipakai.")]
         public RectTransform Pupil;
 
-        [Tooltip("Potong bola mata mengikuti bentuk gambar matanya. Tanpa ini bola matanya bisa " +
-                 "menyeberang keluar ke bingkai saat melirik jauh.")]
-        public bool MaskToEye = true;
+        // Masking SENGAJA tidak diurus di sini.
+        //
+        // Memotong bola mata itu pekerjaan UGUI, dan UGUI sudah punya alatnya: taruh Mask atau
+        // RectMask2D di objek pembungkus bola matanya, lalu tata lubangnya di jendela prefab.
+        // Kode yang ikut menyusun hierarki mask cuma menambah satu sumber kebenaran kedua —
+        // yang disusun tangan bisa ditimpa diam-diam saat run, dan yang mengubahnya tidak akan
+        // pernah tahu kenapa.
+        //
+        // Yang dituntut komponen ini dari hierarkinya cuma satu: <see cref="Pupil"/> boleh
+        // berada di mana saja, karena yang digerakkan anchoredPosition-nya sendiri.
 
         [Header("Jangkauan lirikan (pecahan setengah-sisi mata)")]
         [Tooltip("Seberapa jauh bola mata boleh menyimpang mendatar. Dijaga dalam ELIPS, bukan " +
@@ -74,20 +81,38 @@ namespace Proto
                  "Meluncur terbaca sebagai benda yang digeser, bukan mata yang melirik.")]
         [Min(0.5f)] public float GlanceSnap = 16f;
 
-        [Header("Kedip")]
-        public bool Blink = true;
+        // Kedipnya digerakkan dari GAMBAR kelopak, bukan dari memipihkan matanya.
+        //
+        // Percobaan pertama memakai squash sumbu Y pada seluruh mata, dan itu tidak pernah bisa
+        // bagus: sprite matanya membawa bingkai berduri, jadi yang memipih bukan kelopak
+        // melainkan durinya juga. Dua kelopak yang saling menghampiri memindahkan seluruh
+        // pekerjaan ke aset — dan cuma aset yang bisa punya bentuk kelopak.
+
+        [Header("Kedip (dua kelopak)")]
+        [Tooltip("Kelopak ATAS. Taruh di posisi TERBUKA di prefab — posisi itu yang dicatat " +
+                 "sebagai titik istirahatnya. Kosong = tidak ada kedip sama sekali.")]
+        public RectTransform LidTop;
+
+        [Tooltip("Kelopak BAWAH, juga ditaruh di posisi terbuka.")]
+        public RectTransform LidBottom;
+
+        [Tooltip("Ketinggian tempat kedua kelopak BERTEMU, dalam koordinat lokal mata. " +
+                 "Nol = bertemu tepat di pusat mata. Geser kalau garis temunya mau lebih " +
+                 "tinggi atau lebih rendah dari pusat.")]
+        public float MeetAt;
 
         [Tooltip("Jarak antar kedipan, dalam detik (acak).")]
         public Vector2 BlinkEvery = new Vector2(4f, 11f);
 
-        [Tooltip("Lama satu kedipan penuh, turun DAN naik. Kedip sungguhan itu cepat — " +
-                 "di atas ~0,25 detik ia berhenti terbaca sebagai kedip dan mulai terbaca " +
+        [Tooltip("Lama satu kedipan penuh, menutup DAN membuka. Kedip sungguhan itu cepat — " +
+                 "di atas ~0,3 detik ia berhenti terbaca sebagai kedip dan mulai terbaca " +
                  "sebagai mata yang mengantuk.")]
-        [Range(0.05f, 0.4f)] public float BlinkSeconds = 0.13f;
+        [Range(0.05f, 0.5f)] public float BlinkSeconds = 0.18f;
 
-        [Tooltip("Setipis apa matanya saat terpejam. Nol persis membuatnya lenyap satu frame; " +
-                 "menyisakan sedikit membuat garisnya tetap ada.")]
-        [Range(0f, 0.4f)] public float BlinkSquash = 0.06f;
+        [Tooltip("Bagian dari waktu itu yang dipakai MENUTUP. Sengaja di bawah setengah: " +
+                 "kelopak sungguhan jatuh lebih cepat daripada ia terangkat, dan kedip yang " +
+                 "simetris justru itu yang terbaca sebagai mesin.")]
+        [Range(0.1f, 0.9f)] public float CloseShare = 0.35f;
 
         [Header("Pendar")]
         [Tooltip("Anak yang memakai material Grimoire/UiGlow. Kosong = tidak ada pendar, dan " +
@@ -107,9 +132,13 @@ namespace Proto
 
         Vector2 _glance;
         float _glanceLeft;
+        bool _wasWatching;
 
+        Vector2 _lidTopHome;
+        Vector2 _lidBottomHome;
         float _blinkLeft;
         float _blinkPlaying = -1f;
+        float _shut;
 
         float _glowClock;
 
@@ -142,14 +171,11 @@ namespace Proto
                 _at = _home;
             }
 
-            if (MaskToEye && GetComponent<Image>() != null && GetComponent<Mask>() == null)
-            {
-                // showMaskGraphic: gambar matanya sendiri HARUS tetap tergambar. Mask bawaan
-                // UGUI menyembunyikan grafisnya secara default, dan yang tersisa cuma bola
-                // mata melayang tanpa mata.
-                var mask = gameObject.AddComponent<Mask>();
-                mask.showMaskGraphic = true;
-            }
+            // Titik istirahat kelopak dibaca dari prefab, bukan ditulis di kode: yang menata
+            // matanya yang tahu di mana kelopak terbuka itu berhenti, dan angkanya berubah tiap
+            // kali gambarnya diganti.
+            if (LidTop != null) _lidTopHome = LidTop.anchoredPosition;
+            if (LidBottom != null) _lidBottomHome = LidBottom.anchoredPosition;
 
             _glanceLeft = Roll(GlanceEvery);
             _blinkLeft = Roll(BlinkEvery);
@@ -193,6 +219,22 @@ namespace Proto
                 float near = Mathf.Max(0f, far - WakeFeather);
                 interest = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(far, near, toCursor.magnitude));
             }
+
+            // Kursor yang PERGI melepaskan pandangannya ke depan dulu.
+            //
+            // Tanpa ini, mata yang barusan mengunci kursor langsung menyambar arah acak begitu
+            // kursornya menjauh — dan sambaran itu terbaca sebagai kehilangan kendali, bukan
+            // sebagai kehilangan minat. Melepas ke tengah dulu yang membuatnya terbaca berhenti
+            // memperhatikan.
+            bool watching = interest > 0.5f;
+
+            if (_wasWatching && !watching)
+            {
+                _glance = Vector2.zero;
+                _glanceLeft = Roll(GlanceEvery);
+            }
+
+            _wasWatching = watching;
 
             Vector2 look = haveCursor ? Clamped(toCursor, half) : Vector2.zero;
             Vector2 idle = TickGlance(dt, half);
@@ -271,39 +313,51 @@ namespace Proto
             return new Vector2(n.x * half.x, n.y * half.y);
         }
 
+        /// <summary>
+        /// Kedip: kedua kelopak berjalan dari tempat istirahatnya menuju satu garis temu, lalu
+        /// kembali. Diam saja kalau kelopaknya belum ada.
+        /// </summary>
         void TickBlink(float dt)
         {
-            if (!Blink)
+            if (LidTop == null && LidBottom == null) return;
+
+            if (_blinkPlaying < 0f)
             {
-                transform.localScale = Vector3.one;
-                return;
+                _blinkLeft -= dt;
+                if (_blinkLeft > 0f) return;
+
+                _blinkPlaying = 0f;
             }
 
-            if (_blinkPlaying >= 0f)
-            {
-                _blinkPlaying += dt;
-                float t = Mathf.Clamp01(_blinkPlaying / Mathf.Max(0.01f, BlinkSeconds));
+            _blinkPlaying += dt;
 
-                // Turun lalu naik dalam satu gerak: sin memberi kedua arahnya tanpa cabang,
-                // dan tanpa jeda di titik terpejam — jeda di sana yang membuatnya terbaca
-                // sebagai mengantuk.
-                float shut = Mathf.Sin(t * Mathf.PI);
-                float squash = Mathf.Lerp(1f, BlinkSquash, shut);
+            float t = Mathf.Clamp01(_blinkPlaying / Mathf.Max(0.01f, BlinkSeconds));
+            float close = Mathf.Clamp(CloseShare, 0.05f, 0.95f);
 
-                transform.localScale = new Vector3(1f, squash, 1f);
+            // Menutup CEPAT, membuka lebih lambat. Kurva simetris membuat kedipnya terbaca
+            // sebagai mesin — kelopak sungguhan jatuh lebih cepat daripada ia terangkat.
+            float raw = t < close ? t / close : 1f - (t - close) / (1f - close);
+            _shut = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(raw));
 
-                if (t >= 1f)
-                {
-                    _blinkPlaying = -1f;
-                    _blinkLeft = Roll(BlinkEvery);
-                    transform.localScale = Vector3.one;
-                }
+            if (LidTop != null)
+                LidTop.anchoredPosition = Vector2.Lerp(
+                    _lidTopHome, new Vector2(_lidTopHome.x, MeetAt), _shut);
 
-                return;
-            }
+            if (LidBottom != null)
+                LidBottom.anchoredPosition = Vector2.Lerp(
+                    _lidBottomHome, new Vector2(_lidBottomHome.x, MeetAt), _shut);
 
-            _blinkLeft -= dt;
-            if (_blinkLeft <= 0f) _blinkPlaying = 0f;
+            if (t < 1f) return;
+
+            // Dikembalikan PERSIS ke titik istirahatnya, bukan dibiarkan di hasil lerp terakhir:
+            // sisa sepersekian piksel yang menumpuk tiap kedipan akan menurunkan kelopaknya
+            // sedikit demi sedikit sepanjang sesi.
+            if (LidTop != null) LidTop.anchoredPosition = _lidTopHome;
+            if (LidBottom != null) LidBottom.anchoredPosition = _lidBottomHome;
+
+            _shut = 0f;
+            _blinkPlaying = -1f;
+            _blinkLeft = Roll(BlinkEvery);
         }
 
         void TickGlow(float dt)
@@ -316,13 +370,9 @@ namespace Proto
             float lit = Mathf.Lerp(Mathf.Min(GlowPulse.x, GlowPulse.y),
                                    Mathf.Max(GlowPulse.x, GlowPulse.y), wave);
 
-            // Pendarnya ikut padam saat terpejam. Mata terpejam yang tetap memancarkan cahaya
+            // Pendarnya ikut padam saat terpejam. Mata tertutup yang tetap memancarkan cahaya
             // dari balik kelopaknya membatalkan seluruh kedipannya.
-            if (_blinkPlaying >= 0f)
-            {
-                float t = Mathf.Clamp01(_blinkPlaying / Mathf.Max(0.01f, BlinkSeconds));
-                lit *= 1f - Mathf.Sin(t * Mathf.PI);
-            }
+            lit *= 1f - _shut;
 
             var c = Glow.color;
             c.a = lit;
