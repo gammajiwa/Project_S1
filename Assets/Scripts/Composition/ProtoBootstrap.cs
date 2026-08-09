@@ -203,6 +203,14 @@ namespace Proto
             run.transform.SetParent(transform, false);
             run.Init(enemies, motor, arenaCam, cam, _balance, _database, playerGo.transform, _rig,
                 gloom, dresser, _restBiome);
+            // Ruangan singgah dipramuat SEKARANG, di awal run - bukan saat nodenya diinjak.
+            // Memuat scene tepat saat pemain menekan node berarti membayar jeda di detik yang
+            // paling tidak sabar; ketiganya kecil, dan memori yang dibayar untuk itu murah.
+            var rooms = new GameObject("Rooms").AddComponent<RoomLoader>();
+            rooms.transform.SetParent(transform, false);
+            rooms.Init(cam);
+            ui.AttachRooms(rooms);
+
             ui.AttachRun(run);
 
             // Diumumkan lewat banner yang sama dengan reaksi, bukan lewat widget baru: pemain

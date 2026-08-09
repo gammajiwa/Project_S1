@@ -91,6 +91,14 @@ namespace Proto
         RunDirector _run;
         bool _mapOpen;
 
+        /// <summary>
+        /// Ruangan singgah. Boleh null — tanpa ini, panel toko/kejadian/slot tampil di atas arena
+        /// persis seperti sebelum ruangan ada.
+        /// </summary>
+        RoomLoader _rooms;
+
+        public void AttachRooms(RoomLoader rooms) => _rooms = rooms;
+
         Image _mapBg;
         Text _mapTitle;
         Text _mapLegend;
@@ -2492,6 +2500,11 @@ namespace Proto
                 _mapChoose = true;
                 _mapSig = -1;
                 _mapTravelTo = -1;
+
+                // Peta pemilih terbuka = singgahnya sudah selesai. Ini titik keluar yang paling
+                // dapat dipercaya: apa pun cara pemain meninggalkan toko — tombol LANJUT, SPACE,
+                // atau apa pun yang ditambahkan nanti — semuanya bermuara ke sini.
+                if (_rooms != null) _rooms.Hide();
             };
 
             BuildRunPanels();
@@ -2525,6 +2538,32 @@ namespace Proto
             {
                 _eventOpen = true;
                 _eventDone = false;
+            }
+
+            ShowRoomFor(kind);
+        }
+
+        /// <summary>
+        /// Menukar LATAR di belakang panel singgah ke ruangan yang sesuai.
+        ///
+        /// Panelnya sendiri tidak pindah ke mana-mana — ia tetap digambar di kanvas yang sama
+        /// seperti dulu. Yang berubah apa yang ada di belakangnya: panel dagang yang mengambang
+        /// di atas rumput yang barusan berdarah tidak pernah terbaca sebagai singgah, cuma
+        /// sebagai jeda.
+        ///
+        /// Tanpa <see cref="RoomLoader"/> — atau tanpa scene ruangannya di Build Settings —
+        /// semuanya tetap berjalan persis seperti sebelum ruangan ada.
+        /// </summary>
+        void ShowRoomFor(RunNodeKind kind)
+        {
+            if (_rooms == null) return;
+
+            switch (kind)
+            {
+                case RunNodeKind.Shop: _rooms.Show(RoomLoader.ShopScene); break;
+                case RunNodeKind.Event: _rooms.Show(RoomLoader.EventScene); break;
+                case RunNodeKind.Gamble: _rooms.Show(RoomLoader.SlotScene); break;
+                default: _rooms.Hide(); break;
             }
         }
 
