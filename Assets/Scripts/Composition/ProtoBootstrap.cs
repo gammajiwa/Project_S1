@@ -55,7 +55,8 @@ namespace Proto
             Application.runInBackground = true;
 
             // Options are owned by the menu, but a run started from it must inherit them.
-            GameSettings.Load().Apply();
+            var settings = GameSettings.Load();
+            settings.Apply();
 
             _look.ApplyEnvironment();
 
@@ -81,6 +82,10 @@ namespace Proto
             // Alasan yang sama: renderernya dibangun di dalam Init dan tidak pernah dibangun
             // ulang, jadi panggangan yang dipasang belakangan tidak akan pernah terpakai.
             enemies.Vat = _enemyVat;
+
+            // Toggle performa dari menu. AND, bukan timpa: bayangan cuma menyala kalau pemilik
+            // project TIDAK mematikannya di inspector DAN pemainnya tidak mematikannya di menu.
+            enemies.EnemyShadows &= settings.EnemyShadows;
 
             enemies.Init(playerGo.transform, caster, _balance, _database);
             caster.Init(enemies, _database, _balance);
@@ -147,6 +152,7 @@ namespace Proto
                 gloom.Init(_rig, playerGo.transform, span);
 
                 var weather = new GameObject("Weather").AddComponent<Weather>();
+                weather.VfxEnabled = settings.WeatherVfx;
                 weather.transform.SetParent(transform, false);
                 weather.Init(_rig, sun, sky, glow, cam);
 

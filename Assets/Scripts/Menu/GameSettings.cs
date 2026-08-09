@@ -22,6 +22,9 @@ namespace Proto
         const string KeyMaster = "opt.vol.master";
         const string KeySfx = "opt.vol.sfx";
         const string KeyMusic = "opt.vol.music";
+        const string KeyDamageText = "opt.fx.damagetext";
+        const string KeyEnemyShadows = "opt.fx.enemyshadows";
+        const string KeyWeatherVfx = "opt.fx.weather";
 
         public bool Fullscreen = true;
         public int Width;
@@ -41,6 +44,25 @@ namespace Proto
         /// <summary>Stored only — see <see cref="SfxVolume"/>.</summary>
         public float MusicVolume = 0.7f;
 
+        // ------------------------------------------------------------------ performa
+        //
+        // Toggle untuk yang mahal digambar dan tidak mengubah aturan main sedikit pun. Semuanya
+        // nyala secara bawaan — mematikan adalah keputusan pemilik mesin kentang, bukan bawaan
+        // yang menghukum semua orang. Yang gameplay (jumlah musuh, drop) TIDAK boleh pindah ke
+        // sini: setting performa yang mengubah aturan main adalah cheat yang menyamar.
+
+        [Tooltip("Angka damage melayang.")]
+        public bool DamageText = true;
+
+        /// <summary>
+        /// Bayangan gerombolan. Satu-satunya petunjuk kaki menyentuh tanah di kamera menunduk,
+        /// tapi juga pass yang menggambar seluruh gerombolan SEKALI LAGI.
+        /// </summary>
+        public bool EnemyShadows = true;
+
+        /// <summary>Hujan, angin, kunang-kunang, dan kawan-kawan cuacanya.</summary>
+        public bool WeatherVfx = true;
+
         public static GameSettings Load()
         {
             var s = new GameSettings
@@ -52,7 +74,10 @@ namespace Proto
                 FrameCap = PlayerPrefs.GetInt(KeyFrameCap, FrameCapUnlimited),
                 MasterVolume = PlayerPrefs.GetFloat(KeyMaster, 1f),
                 SfxVolume = PlayerPrefs.GetFloat(KeySfx, 1f),
-                MusicVolume = PlayerPrefs.GetFloat(KeyMusic, 0.7f)
+                MusicVolume = PlayerPrefs.GetFloat(KeyMusic, 0.7f),
+                DamageText = PlayerPrefs.GetInt(KeyDamageText, 1) == 1,
+                EnemyShadows = PlayerPrefs.GetInt(KeyEnemyShadows, 1) == 1,
+                WeatherVfx = PlayerPrefs.GetInt(KeyWeatherVfx, 1) == 1
             };
 
             return s;
@@ -68,6 +93,9 @@ namespace Proto
             PlayerPrefs.SetFloat(KeyMaster, MasterVolume);
             PlayerPrefs.SetFloat(KeySfx, SfxVolume);
             PlayerPrefs.SetFloat(KeyMusic, MusicVolume);
+            PlayerPrefs.SetInt(KeyDamageText, DamageText ? 1 : 0);
+            PlayerPrefs.SetInt(KeyEnemyShadows, EnemyShadows ? 1 : 0);
+            PlayerPrefs.SetInt(KeyWeatherVfx, WeatherVfx ? 1 : 0);
             PlayerPrefs.Save();
         }
 

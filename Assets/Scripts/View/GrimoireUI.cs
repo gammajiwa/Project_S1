@@ -408,7 +408,10 @@ namespace Proto
             Enemies.OnWaveCleared += OnWaveCleared;
             Enemies.OnKill += OnEnemyKilled;
             Enemies.OnDamage += _meter.Record;
-            Enemies.OnEnemyDamaged += _popups.Push;
+            // Toggle performa dari menu: langganannya yang tidak dipasang, bukan tiap push
+            // diperiksa. Wave besar melahirkan ratusan hit per detik, dan gerbang yang dibayar
+            // per event harganya nyata justru di mesin yang toggle ini coba selamatkan.
+            if (GameSettings.Load().DamageText) Enemies.OnEnemyDamaged += _popups.Push;
             Player.OnCast += OnSpellCast;
             Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
 

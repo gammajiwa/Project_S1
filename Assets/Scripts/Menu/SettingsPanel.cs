@@ -39,6 +39,23 @@ namespace Proto
         [SerializeField] Slider _musicSlider;
         [SerializeField] TextMeshProUGUI _musicValue;
 
+        // Tiga baris performa. Stepper dua tombol seperti baris lain — bukan checkbox — supaya
+        // seluruh panel terbaca dengan satu kebiasaan.
+        [Header("Teks damage")]
+        [SerializeField] Button _damageTextPrev;
+        [SerializeField] Button _damageTextNext;
+        [SerializeField] TextMeshProUGUI _damageTextValue;
+
+        [Header("Bayangan musuh")]
+        [SerializeField] Button _enemyShadowsPrev;
+        [SerializeField] Button _enemyShadowsNext;
+        [SerializeField] TextMeshProUGUI _enemyShadowsValue;
+
+        [Header("VFX cuaca")]
+        [SerializeField] Button _weatherVfxPrev;
+        [SerializeField] Button _weatherVfxNext;
+        [SerializeField] TextMeshProUGUI _weatherVfxValue;
+
         [Header("Data")]
         [SerializeField] Button _resetCodex;
         [SerializeField] TextMeshProUGUI _resetLabel;
@@ -77,6 +94,12 @@ namespace Proto
             Wire(_vsyncNext, () => ToggleVSync());
             Wire(_frameCapPrev, () => StepFrameCap(-1));
             Wire(_frameCapNext, () => StepFrameCap(1));
+            Wire(_damageTextPrev, () => ToggleDamageText());
+            Wire(_damageTextNext, () => ToggleDamageText());
+            Wire(_enemyShadowsPrev, () => ToggleEnemyShadows());
+            Wire(_enemyShadowsNext, () => ToggleEnemyShadows());
+            Wire(_weatherVfxPrev, () => ToggleWeatherVfx());
+            Wire(_weatherVfxNext, () => ToggleWeatherVfx());
             Wire(_resetCodex, ResetCodex);
 
             BindSlider(_masterSlider, _settings.MasterVolume, value =>
@@ -100,9 +123,10 @@ namespace Proto
 
             if (_note != null)
             {
-                _note.text = Application.isEditor
+                _note.text = (Application.isEditor
                     ? "Resolusi & layar penuh cuma berlaku di build, bukan di Editor."
-                    : "Batas FPS diabaikan selama VSync hidup.";
+                    : "Batas FPS diabaikan selama VSync hidup.")
+                    + "   Baris PERFORMA berlaku mulai run berikutnya.";
             }
 
             Redraw();
@@ -134,6 +158,27 @@ namespace Proto
         void ToggleVSync()
         {
             _settings.VSync = !_settings.VSync;
+            ApplyAndRedraw();
+        }
+
+        // Ketiganya dibaca scene game saat lahir, bukan dipantau — jadi mengubahnya di sini
+        // baru terasa di run BERIKUTNYA. Catatan di bawah panel yang memberi tahu itu.
+
+        void ToggleDamageText()
+        {
+            _settings.DamageText = !_settings.DamageText;
+            ApplyAndRedraw();
+        }
+
+        void ToggleEnemyShadows()
+        {
+            _settings.EnemyShadows = !_settings.EnemyShadows;
+            ApplyAndRedraw();
+        }
+
+        void ToggleWeatherVfx()
+        {
+            _settings.WeatherVfx = !_settings.WeatherVfx;
             ApplyAndRedraw();
         }
 
@@ -209,6 +254,10 @@ namespace Proto
             SetPercent(_masterValue, _settings.MasterVolume);
             SetPercent(_sfxValue, _settings.SfxVolume);
             SetPercent(_musicValue, _settings.MusicVolume);
+
+            SetText(_damageTextValue, _settings.DamageText ? "HIDUP" : "MATI");
+            SetText(_enemyShadowsValue, _settings.EnemyShadows ? "HIDUP" : "MATI");
+            SetText(_weatherVfxValue, _settings.WeatherVfx ? "HIDUP" : "MATI");
 
             // The cap row is dead weight while vSync owns the frame rate — say so instead of lying.
             if (_frameCapValue != null)

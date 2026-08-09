@@ -71,6 +71,13 @@ namespace Proto
         // kalau kameranya tidak dititipkan — dan saat itu MinDistance di aset yang menentukan.
         float _offscreen;
 
+        /// <summary>
+        /// Toggle performa dari menu. Yang dimatikan cuma PARTIKELNYA — hujan, angin, kunang,
+        /// kejadian melintas. Mood, langit, dan cahaya tetap jalan: mereka murah, dan tanpa
+        /// mereka tiap wajah arena kehilangan identitasnya, bukan sekadar hiasannya.
+        /// </summary>
+        public bool VfxEnabled = true;
+
         public void Init(Transform follow, Light sun, Atmosphere sky, Light playerLight,
             Camera cam = null)
         {
@@ -176,7 +183,9 @@ namespace Proto
             _mood = new GameObject("Cuaca " + mood.Name).transform;
             _mood.SetParent(transform, false);
 
-            if (mood.Effects != null)
+            // Toggle performa yang sama dengan BuildAmbient — hujan dan angin milik mood lahir
+            // di sini, bukan di sana, dan pintu yang cuma menutup separuh bukan pintu.
+            if (mood.Effects != null && VfxEnabled)
             {
                 foreach (var effect in mood.Effects)
                 {
@@ -320,6 +329,10 @@ namespace Proto
         /// </summary>
         void BuildAmbient(BiomeDefinition biome)
         {
+            // Toggle performa: seluruh partikel suasana lahir di sini, jadi satu pintu ini cukup
+            // untuk mematikan semuanya — menetap maupun lewat.
+            if (!VfxEnabled) return;
+
             var entries = biome.AmbientVfx;
             if (entries == null || entries.Length == 0) return;
 

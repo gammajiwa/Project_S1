@@ -562,7 +562,9 @@ namespace Proto
             var page = NewRect("SettingsPage", canvas);
             Stretch(page);
 
-            var panel = NewPanel(page, "SettingsPanel", new Vector2(1180f, 840f));
+            // 1000, bukan 840: seksi PERFORMA menambah empat baris, dan panel yang memaksa
+            // scroll untuk setelan sependek ini lebih mahal dibaca daripada panel yang tinggi.
+            var panel = NewPanel(page, "SettingsPanel", new Vector2(1180f, 1000f));
             panelComponent = panel.gameObject.AddComponent<SettingsPanel>();
 
             var heading = NewText("Heading", panel, "SETELAN", _theme.HeadingSize,
@@ -576,6 +578,14 @@ namespace Proto
             var resolution = NewStepper(panel, "Resolusi", ref y);
             var vsync = NewStepper(panel, "VSync", ref y);
             var frameCap = NewStepper(panel, "Batas FPS", ref y);
+
+            // Toggle untuk yang mahal digambar. Mengubahnya baru terasa di run BERIKUTNYA -
+            // scene game membacanya saat lahir; catatan di bawah panel yang bilang begitu.
+            y -= 18f;
+            NewSection(panel, "PERFORMA", ref y);
+            var damageText = NewStepper(panel, "Teks damage", ref y);
+            var enemyShadows = NewStepper(panel, "Bayangan musuh", ref y);
+            var weatherVfx = NewStepper(panel, "VFX cuaca", ref y);
 
             y -= 18f;
             NewSection(panel, "SUARA", ref y);
@@ -605,6 +615,15 @@ namespace Proto
                 .Set("_frameCapPrev", frameCap.Prev)
                 .Set("_frameCapNext", frameCap.Next)
                 .Set("_frameCapValue", frameCap.Value)
+                .Set("_damageTextPrev", damageText.Prev)
+                .Set("_damageTextNext", damageText.Next)
+                .Set("_damageTextValue", damageText.Value)
+                .Set("_enemyShadowsPrev", enemyShadows.Prev)
+                .Set("_enemyShadowsNext", enemyShadows.Next)
+                .Set("_enemyShadowsValue", enemyShadows.Value)
+                .Set("_weatherVfxPrev", weatherVfx.Prev)
+                .Set("_weatherVfxNext", weatherVfx.Next)
+                .Set("_weatherVfxValue", weatherVfx.Value)
                 .Set("_masterSlider", master.Slider)
                 .Set("_masterValue", master.Value)
                 .Set("_sfxSlider", sfx.Slider)
