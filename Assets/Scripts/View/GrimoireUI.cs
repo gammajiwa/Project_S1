@@ -266,6 +266,18 @@ namespace Proto
         Image _hpBg;
         Image _hpChip;
         Image _hpFill;
+
+        /// <summary>
+        /// Warna diam kedua bar, dicatat SEKALI saat dibangun.
+        ///
+        /// Perlu dicatat karena kilat kena-pukul dan cerah mana-penuh keduanya menulis ke
+        /// <c>Image.color</c> tiap frame. Tanpa titik pulang yang tersimpan, keduanya harus
+        /// bertolak dari warna tetap di kode — dan itu membuang pewarnaan yang disetel di
+        /// prefab pada kilat pertama, selamanya.
+        /// </summary>
+        Color _hpFillBase = HpFillColor;
+
+        Color _manaFillBase = ManaFillColor;
         Text _hpLabel;
         Image _manaBg;
         Image _manaFill;
@@ -1047,38 +1059,87 @@ namespace Proto
                               Mathf.CeilToInt(boss.HpFraction * 100f) + "%";
         }
 
+        /// <summary>
+        /// Memasang bar HP & mana dari prefab, kalau temanya membawa satu.
+        ///
+        /// Yang diambil cuma RUJUKANNYA — kode sesudah ini menulis <c>fillAmount</c> dan teks ke
+        /// slot yang sama persis seperti dulu, jadi tidak ada satu pun pemakai di bawah yang
+        /// perlu tahu bar itu datang dari mana. Letak, ukuran, sprite, dan arah isian tidak
+        /// disentuh sama sekali: menyetelnya dari kode akan menimpa editan prefab diam-diam
+        /// saat run, dan itu pelajaran yang sudah dibayar di papan grimoire.
+        /// </summary>
+        bool BuildVitalsFromPrefab()
+        {
+            if (_theme == null || _theme.VitalsPrefab == null) return false;
+
+            var go = Instantiate(_theme.VitalsPrefab, _canvas.transform, false);
+            go.name = "Vitals";
+
+            var rig = go.GetComponent<VitalsRig>() ?? go.GetComponentInChildren<VitalsRig>(true);
+
+            if (rig == null || !rig.Usable)
+            {
+                // Prefabnya ada tapi tidak memberi tahu bagian mana yang mengisi. Dibuang dan
+                // kembali ke bar bawaan: bar kotak yang jelek masih bisa dibaca, sedangkan bar
+                // yang tidak pernah bergerak tidak.
+                Debug.LogWarning("[GrimoireUI] VitalsPrefab tidak punya VitalsRig dengan HpFill " +
+                                 "terisi — kembali ke bar bawaan.");
+                Destroy(go);
+                return false;
+            }
+
+            _hpFill = rig.HpFill;
+            _hpChip = rig.HpChip;
+            _hpLabel = rig.HpLabel;
+            _manaFill = rig.ManaFill;
+            _manaLabel = rig.ManaLabel;
+
+            // Warna yang disetel di prefab jadi titik pulang kilat dan cerah. Dibaca di sini,
+            // sekali, sebelum satu frame pun sempat menulis ke atasnya.
+            _hpFillBase = _hpFill.color;
+            if (_manaFill != null) _manaFillBase = _manaFill.color;
+
+            return true;
+        }
+
         void BuildHud()
         {
             _hudText = MakeText("Hud", new Vector2(Margin, -Margin), new Vector2(600, 26), 18,
                 Color.white, new Vector2(0f, 1f), TextAnchor.UpperLeft);
 
-            _hpBg = MakeImage("HpBg", new Vector2(Margin, -50), new Vector2(260, 18),
-                new Color(0.16f, 0.07f, 0.08f, 0.9f), new Vector2(0f, 1f));
+            // Prefab lebih dulu. Kalau ia menyediakan bar, blok bawaan di bawah dilewati —
+            // membangun keduanya berarti bar kotak datar lama menempel di belakang art baru.
+            // Yang di luar blok ini (tooltip, dsb) tetap dibangun apa pun jalurnya.
+            if (!BuildVitalsFromPrefab())
+            {
+                _hpBg = MakeImage("HpBg", new Vector2(Margin, -50), new Vector2(260, 18),
+                    new Color(0.16f, 0.07f, 0.08f, 0.9f), new Vector2(0f, 1f));
 
-            // Sits between background and fill: creation order is draw order on this canvas.
-            _hpChip = MakeImage("HpChip", new Vector2(Margin, -50), new Vector2(260, 18),
-                HpChipColor, new Vector2(0f, 1f));
-            _hpChip.type = Image.Type.Filled;
-            _hpChip.fillMethod = Image.FillMethod.Horizontal;
-            _hpChip.fillOrigin = 0;
+                // Sits between background and fill: creation order is draw order on this canvas.
+                _hpChip = MakeImage("HpChip", new Vector2(Margin, -50), new Vector2(260, 18),
+                    HpChipColor, new Vector2(0f, 1f));
+                _hpChip.type = Image.Type.Filled;
+                _hpChip.fillMethod = Image.FillMethod.Horizontal;
+                _hpChip.fillOrigin = 0;
 
-            _hpFill = MakeImage("HpFill", new Vector2(Margin, -50), new Vector2(260, 18),
-                HpFillColor, new Vector2(0f, 1f));
-            _hpFill.type = Image.Type.Filled;
-            _hpFill.fillMethod = Image.FillMethod.Horizontal;
-            _hpFill.fillOrigin = 0;
-            _hpLabel = MakeText("HpLabel", new Vector2(Margin + 6, -51), new Vector2(250, 18), 13,
-                Color.white, new Vector2(0f, 1f), TextAnchor.UpperLeft);
+                _hpFill = MakeImage("HpFill", new Vector2(Margin, -50), new Vector2(260, 18),
+                    HpFillColor, new Vector2(0f, 1f));
+                _hpFill.type = Image.Type.Filled;
+                _hpFill.fillMethod = Image.FillMethod.Horizontal;
+                _hpFill.fillOrigin = 0;
+                _hpLabel = MakeText("HpLabel", new Vector2(Margin + 6, -51), new Vector2(250, 18), 13,
+                    Color.white, new Vector2(0f, 1f), TextAnchor.UpperLeft);
 
-            _manaBg = MakeImage("ManaBg", new Vector2(Margin, -72), new Vector2(260, 18),
-                new Color(0.08f, 0.09f, 0.16f, 0.9f), new Vector2(0f, 1f));
-            _manaFill = MakeImage("ManaFill", new Vector2(Margin, -72), new Vector2(260, 18),
-                new Color(0.35f, 0.6f, 1f, 0.95f), new Vector2(0f, 1f));
-            _manaFill.type = Image.Type.Filled;
-            _manaFill.fillMethod = Image.FillMethod.Horizontal;
-            _manaFill.fillOrigin = 0;
-            _manaLabel = MakeText("ManaLabel", new Vector2(Margin + 6, -73), new Vector2(250, 18), 13,
-                Color.white, new Vector2(0f, 1f), TextAnchor.UpperLeft);
+                _manaBg = MakeImage("ManaBg", new Vector2(Margin, -72), new Vector2(260, 18),
+                    new Color(0.08f, 0.09f, 0.16f, 0.9f), new Vector2(0f, 1f));
+                _manaFill = MakeImage("ManaFill", new Vector2(Margin, -72), new Vector2(260, 18),
+                    new Color(0.35f, 0.6f, 1f, 0.95f), new Vector2(0f, 1f));
+                _manaFill.type = Image.Type.Filled;
+                _manaFill.fillMethod = Image.FillMethod.Horizontal;
+                _manaFill.fillOrigin = 0;
+                _manaLabel = MakeText("ManaLabel", new Vector2(Margin + 6, -73), new Vector2(250, 18), 13,
+                    Color.white, new Vector2(0f, 1f), TextAnchor.UpperLeft);
+            }
 
             _tipBg = MakeImage("TipBg", Vector2.zero, new Vector2(360, 150),
                 new Color(0.06f, 0.06f, 0.09f, 0.96f), Vector2.zero);
@@ -3856,23 +3917,34 @@ namespace Proto
                 ? _hpShown
                 : Mathf.MoveTowards(_hpChipShown, _hpShown, dt * 0.5f);
 
-            _hpFill.fillAmount = _hpShown;
-            _hpChip.fillAmount = _hpChipShown;
-            _manaFill.fillAmount = _manaShown;
+            // Semua diperiksa null: bar dari prefab boleh menghilangkan bagian mana pun kecuali
+            // isian HP-nya. Bola mana tanpa serpihan, tanpa latar, dan tanpa angka tetap bola
+            // mana yang sah — dan yang menatanya tidak boleh dihukum error karena memilih itu.
+            if (_hpFill != null) _hpFill.fillAmount = _hpShown;
+            if (_hpChip != null) _hpChip.fillAmount = _hpChipShown;
+            if (_manaFill != null) _manaFill.fillAmount = _manaShown;
 
             _hurtFlash = Mathf.Max(0f, _hurtFlash - dt * 3f);
-            _hpFill.color = Color.Lerp(HpFillColor, Color.white, _hurtFlash);
+
+            // Kilat putih bertolak dari warna ASLI bar itu, bukan dari warna tetap di kode.
+            // Memakai warna tetap berarti pukulan pertama membuang pewarnaan yang disetel di
+            // prefab, dan warnanya tidak pernah kembali sesudahnya.
+            if (_hpFill != null) _hpFill.color = Color.Lerp(_hpFillBase, Color.white, _hurtFlash);
 
             // Below a third, the bar breathes — readable without stealing attention from the board.
             float pulse = hpTarget <= 0.33f && Player.Alive
                 ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6f)
                 : 0f;
-            _hpBg.color = Color.Lerp(new Color(0.16f, 0.07f, 0.08f, 0.9f),
-                new Color(0.55f, 0.12f, 0.14f, 0.95f), pulse);
+
+            if (_hpBg != null)
+                _hpBg.color = Color.Lerp(new Color(0.16f, 0.07f, 0.08f, 0.9f),
+                    new Color(0.55f, 0.12f, 0.14f, 0.95f), pulse);
 
             // Mana reads brighter the moment it is topped up, so "ready to cast" is visible.
-            _manaFill.color = Color.Lerp(ManaFillColor, new Color(0.62f, 0.85f, 1f, 0.98f),
-                Mathf.InverseLerp(0.9f, 1f, _manaShown));
+            // Sama seperti HP: dicerahkan DARI warna aslinya, bukan ditukar ke warna tetap.
+            if (_manaFill != null)
+                _manaFill.color = Color.Lerp(_manaFillBase, Color.white,
+                    Mathf.InverseLerp(0.9f, 1f, _manaShown) * 0.4f);
         }
 
         void DrawHud()
@@ -3894,9 +3966,11 @@ namespace Proto
 
             AnimateBars(Time.unscaledDeltaTime);
 
+            if (_hpLabel != null)
             _hpLabel.text = "HP  " + Mathf.CeilToInt(Player.Hp) + " / " + Mathf.RoundToInt(Player.MaxHp) +
                             (Player.HpRegen > 0f ? "   (+" + Player.HpRegen.ToString("0.0") + "/s)" : "");
 
+            if (_manaLabel != null)
             _manaLabel.text = "MANA  " + Mathf.FloorToInt(Player.Mana) + " / " + Mathf.RoundToInt(Player.MaxMana) +
                               "   (+" + Player.ManaRegen.ToString("0.0") + "/s)";
 

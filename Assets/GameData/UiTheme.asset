@@ -15,6 +15,7 @@ MonoBehaviour:
   MapPaper: {fileID: 21300000, guid: b997f644670c7b040a65f899ad7baa66, type: 3}
   GrimoirePanelPrefab: {fileID: 4725670757830398596, guid: 9e613509076f1824bb2986daeac17b35, type: 3}
   GrimoireFrame: {fileID: 21300000, guid: 8e93eba3dd21c6548b82dc8a2404e10f, type: 3}
+  VitalsPrefab: {fileID: 9135706996123029156, guid: e186026d193fb7d4480926b63ea50484, type: 3}
   GridFrame: {fileID: 0}
   GrimoirePad: {x: 63, y: 8, z: 13, w: 8}
   GridPad: {x: 16, y: 16, z: 16, w: 16}
@@ -25,7 +26,16 @@ MonoBehaviour:
   GloomInset: 190
   GloomWobble: 90
   GloomScale: 210
+  GloomChurn: 0.3
+  GloomDrift: 42
+  TearDepth: 64
+  TearScale: 70
+  TearFray: 0.45
+  TearSoft: 1.5
+  TearWarp: 0.8
+  TearDrift: 5
   GloomInsetSmallMul: 0.45
+  GridTitleInk: {r: 0.28, g: 0.17, b: 0.06, a: 1}
   MapTitleInk: {r: 0.24, g: 0.13, b: 0.05, a: 1}
   MapLegendInk: {r: 0.36, g: 0.24, b: 0.13, a: 1}
   MapPathInk: {r: 0.42, g: 0.3, b: 0.18, a: 0.85}

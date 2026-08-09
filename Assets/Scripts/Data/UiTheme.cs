@@ -37,6 +37,13 @@ namespace Proto
                  "kelihatan ketarik, makanya prefab yang jadi jalur utama.")]
         public Sprite GrimoireFrame;
 
+        [Tooltip("PREFAB bar HP & mana, membawa komponen VitalsRig.\n\n" +
+                 "Aturannya sama dengan papan grimoire: kode cuma mengisi fillAmount dan teks. " +
+                 "Letak, ukuran, sprite, dan ARAH ISIAN — mendatar, menegak, atau memutar untuk " +
+                 "bola — semuanya milik prefab.\n\n" +
+                 "Kosong = bar kotak datar bawaan seperti sebelum art masuk.")]
+        public GameObject VitalsPrefab;
+
         [Tooltip("Alas di belakang petak 7x7. DIKOSONGKAN atas permintaan pemilik project: " +
                  "bingkai berhias di belakang petak membuat dua bingkai bersarang, dan yang " +
                  "dimaksud 'grid' sejak awal adalah petak 7x7-nya sendiri — bukan gambar alas. " +
