@@ -229,18 +229,35 @@ namespace Proto
             return new Rect(right - width, top - SpeedButtonH, width, SpeedButtonH);
         }
 
+        // ---------- override dari prefab panel singgah (ShopRig) ----------
+        //
+        // Pola yang sama dengan GridOverride: null = rumus hitungan lama, terisi = kotak yang
+        // ditata tangan di prefab. Hit-test dan penggambaran sama-sama membaca dari sini, jadi
+        // keduanya mustahil berbeda pendapat soal di mana slotnya berada.
+
+        public static Rect? ShopPanelOverride;
+        public static Rect[] ShopSlotsOverride;
+        public static Rect? ShopRerollOverride;
+        public static Rect? StartButtonOverride;
+
         public static Rect StartButtonRect()
         {
+            if (StartButtonOverride.HasValue) return StartButtonOverride.Value;
+
             float cx = Screen.width * 0.5f;
             float cy = Screen.height * 0.5f + 120f;
             return new Rect(cx - StartButtonW * 0.5f, cy - StartButtonH * 0.5f, StartButtonW, StartButtonH);
         }
 
         public static Rect PanelRect() =>
-            new Rect((Screen.width - PanelW) * 0.5f, (Screen.height - PanelH) * 0.5f, PanelW, PanelH);
+            ShopPanelOverride
+            ?? new Rect((Screen.width - PanelW) * 0.5f, (Screen.height - PanelH) * 0.5f, PanelW, PanelH);
 
         public static Rect ShopSlotRect(int i)
         {
+            if (ShopSlotsOverride != null && i >= 0 && i < ShopSlotsOverride.Length)
+                return ShopSlotsOverride[i];
+
             var panel = PanelRect();
             int col = i % 3;
             int row = i / 3;
@@ -252,6 +269,8 @@ namespace Proto
 
         public static Rect RerollRect()
         {
+            if (ShopRerollOverride.HasValue) return ShopRerollOverride.Value;
+
             var panel = PanelRect();
             return new Rect(panel.center.x - 120f, panel.yMin + 12f, 240f, 34f);
         }

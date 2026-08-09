@@ -78,6 +78,12 @@ namespace Proto.EditorTools
             // yang lupa dimatikan akan tetap tergambar di belakang ruangan lain.
             var root = new GameObject("Room_" + room.Title);
 
+            // JAUH dari arena. Scene additive berbagi satu ruang dunia, dan ruangan yang dibangun
+            // di titik nol berdiri TEPAT di tengah arena — kamera ruangan menatap hutan, cahaya
+            // ruangan menyiram pertempuran. Tiap ruangan dapat kavlingnya sendiri supaya cahaya
+            // ruangan sebelah juga tidak bocor.
+            root.transform.position = new Vector3(3000f, 0f, RoomOffset(room.Scene));
+
             var floor = GameObject.CreatePrimitive(PrimitiveType.Plane);
             floor.name = "Lantai";
             floor.transform.SetParent(root.transform, false);
@@ -117,6 +123,16 @@ namespace Proto.EditorTools
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, Folder + "/" + room.Scene + ".unity");
+        }
+
+        static float RoomOffset(string scene)
+        {
+            switch (scene)
+            {
+                case RoomLoader.EventScene: return 400f;
+                case RoomLoader.SlotScene: return 800f;
+                default: return 0f;
+            }
         }
 
         static void Paint(GameObject go, Color color)

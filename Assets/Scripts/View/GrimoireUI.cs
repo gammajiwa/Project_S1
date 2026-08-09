@@ -2623,10 +2623,78 @@ namespace Proto
             };
 
             BuildRunPanels();
+            BuildShopFromPrefab();
 
             // Paling akhir: OnMapChoose di atas sudah terpasang, dan membukanya sebelum itu
             // berarti peta berpindah ke mode pemilih tanpa ada yang mendengarnya.
             OpenRunOnMap();
+        }
+
+        /// <summary>
+        /// Membaca kotak-kotak panel singgah dari prefab tema, kalau ada.
+        ///
+        /// Override-nya DIBERSIHKAN dulu, apa pun yang terjadi sesudahnya: static bertahan
+        /// melintasi pemuatan ulang scene, dan tema yang prefabnya dicopot di tengah sesi tidak
+        /// boleh meninggalkan tata letak lama menggantung.
+        /// </summary>
+        void BuildShopFromPrefab()
+        {
+            ShopPanelOverride = null;
+            ShopSlotsOverride = null;
+            ShopRerollOverride = null;
+            StartButtonOverride = null;
+
+            if (_theme == null || _theme.ShopPrefab == null) return;
+
+            var go = Instantiate(_theme.ShopPrefab, _canvas.transform, false);
+            go.name = "ShopAnchors";
+
+            var rig = go.GetComponent<ShopRig>() ?? go.GetComponentInChildren<ShopRig>(true);
+
+            if (rig == null)
+            {
+                Debug.LogWarning("[GrimoireUI] ShopPrefab tidak punya ShopRig — tata letak " +
+                                 "hitungan lama yang dipakai.");
+                Destroy(go);
+                return;
+            }
+
+            // Sama seperti strip: sudut dunia baru benar setelah kanvas menghitung tata letak.
+            Canvas.ForceUpdateCanvases();
+
+            if (rig.Panel != null) ShopPanelOverride = CanvasRectOf(rig.Panel);
+            if (rig.Reroll != null) ShopRerollOverride = CanvasRectOf(rig.Reroll);
+            if (rig.StartButton != null) StartButtonOverride = CanvasRectOf(rig.StartButton);
+
+            if (rig.Slots != null && rig.Slots.Length > 0)
+            {
+                var slots = new Rect[rig.Slots.Length];
+                bool any = false;
+
+                for (int i = 0; i < rig.Slots.Length; i++)
+                {
+                    if (rig.Slots[i] == null) continue;
+                    slots[i] = CanvasRectOf(rig.Slots[i]);
+                    any = true;
+                }
+
+                if (any) ShopSlotsOverride = slots;
+            }
+
+            // Tombol LANJUT yang TERGAMBAR ikut kotaknya. Hit-test membaca StartButtonRect(),
+            // tapi gambarnya ditaruh sekali di BuildHud — tanpa baris ini keduanya berpisah:
+            // tombol terlihat di tengah, kliknya didengar di pojok.
+            if (StartButtonOverride.HasValue && _startBg != null && _startLabel != null)
+            {
+                var r = StartButtonOverride.Value;
+                var centre = new Vector2(r.center.x - Screen.width * 0.5f,
+                                         r.center.y - Screen.height * 0.5f);
+
+                _startBg.rectTransform.anchoredPosition = centre;
+                _startBg.rectTransform.sizeDelta = r.size;
+                _startLabel.rectTransform.anchoredPosition = centre;
+                _startLabel.rectTransform.sizeDelta = r.size;
+            }
         }
 
         void OnRestEntered(RunNodeKind kind)

@@ -18,6 +18,7 @@ MonoBehaviour:
   VitalsPrefab: {fileID: 9135706996123029156, guid: e186026d193fb7d4480926b63ea50484, type: 3}
   StatusStripsPrefab: {fileID: 8380833403937783449, guid: e52f3bff49bb2494da5158b1591b473e, type: 3}
   SettingsPrefab: {fileID: 8437507822836442132, guid: a50a681ab2ee19e41b0cf1f82f1d855a, type: 3}
+  ShopPrefab: {fileID: 1582209453909252090, guid: 00bedc846ae31d543a9302ac94975008, type: 3}
   GridFrame: {fileID: 0}
   LiquidAmp: 0.045
   LiquidSpeed: 2.4

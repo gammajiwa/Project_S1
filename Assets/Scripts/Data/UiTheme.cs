@@ -59,6 +59,12 @@ namespace Proto
                  "Kosong = ESC kembali ke perilaku lama (langsung pulang ke menu).")]
         public GameObject SettingsPrefab;
 
+        [Tooltip("PREFAB penempat panel singgah (toko/kejadian/slot), membawa komponen ShopRig.\n\n" +
+                 "Isinya kotak-kotak kosong: badan panel, enam slot dagangan, REROLL, dan tempat " +
+                 "tombol LANJUT. Isi panelnya tetap digambar kode — yang kamu tata LETAKNYA.\n\n" +
+                 "Kosong = tata letak hitungan lama.")]
+        public GameObject ShopPrefab;
+
         [Tooltip("Alas di belakang petak 7x7. DIKOSONGKAN atas permintaan pemilik project: " +
                  "bingkai berhias di belakang petak membuat dua bingkai bersarang, dan yang " +
                  "dimaksud 'grid' sejak awal adalah petak 7x7-nya sendiri — bukan gambar alas. " +
