@@ -24,6 +24,7 @@ MonoBehaviour:
   HoverHeight: 0
   UseTint: 1
   Tint: {r: 0.45, g: 0.62, b: 0.35, a: 1}
+  Vat: {fileID: 11400000, guid: 76e296bdf274b8640aa876ad274fcd11, type: 2}
   PreferredRange: 11
   Flanks: 1
   AttackInterval: 2.2

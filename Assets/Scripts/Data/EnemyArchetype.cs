@@ -44,6 +44,18 @@ namespace Proto
 
         public Color Tint = Color.white;
 
+        [Tooltip("Model terpanggang khusus archetype ini (Tools/Grimoire/Bake Enemy VAT).\n\n" +
+                 "Kosong = memakai model bawaan gerombolan yang dipasang di ProtoBootstrap. " +
+                 "Itu perilaku sebelum slot ini ada, dan tetap benar: archetype yang belum punya " +
+                 "model sendiri harus tetap terlihat, bukan hilang dari lapangan.\n\n" +
+                 "Harganya satu batch tambahan per model yang benar-benar dipakai — bukan per " +
+                 "musuh. Empat model = empat panggilan instanced untuk lima ratus musuh, masih " +
+                 "jauh di bawah anggaran yang dulu dibayar 200 kapsul.\n\n" +
+                 "Tingginya TIDAK perlu disamakan: tiap model diskalakan sendiri supaya semuanya " +
+                 "berdiri setinggi BodyHeight, jadi model raksasa tidak diam-diam mengubah " +
+                 "seberapa besar musuh terasa. Pakai 'Scale' di atas kalau memang mau lebih besar.")]
+        public VatClipSet Vat;
+
         [Header("Perilaku")]
         [Tooltip("Nol = mengejar sampai menempel. Di atas nol = berhenti di jarak ini dan menembak.")]
         public float PreferredRange;

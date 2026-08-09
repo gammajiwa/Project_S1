@@ -167,7 +167,14 @@ namespace Proto
         PlayerCaster _caster;
         GameBalance _balance;
         ContentDatabase _db;
-        EnemyRenderer _renderer;
+        /// <summary>
+        /// Satu per model yang dipakai di lapangan. Indeks 0 selalu model bawaan gerombolan.
+        /// </summary>
+        EnemyRenderer[] _renderers;
+
+        readonly List<VatClipSet> _models = new List<VatClipSet>();
+        readonly Dictionary<EnemyArchetype, int> _modelOf = new Dictionary<EnemyArchetype, int>();
+
         EnemyRenderer _shotRenderer;
         readonly Dictionary<EnemyArchetype, int> _shotTint = new Dictionary<EnemyArchetype, int>();
         readonly Dictionary<EnemyArchetype, int> _archetypeTint = new Dictionary<EnemyArchetype, int>();
@@ -446,26 +453,83 @@ namespace Proto
             _db = database;
             _statusCounts = new int[Mathf.Max(1, _db.Statuses.Count)];
 
-            bool baked = Vat != null && Vat.Mesh != null && Vat.Positions != null;
-
-            // Skala diturunkan dari tinggi model yang sebenarnya, bukan dikira-kira di inspector.
-            // Model yang diganti dengan yang lebih jangkung tidak boleh diam-diam mengubah
-            // seberapa besar musuh terasa di layar.
-            // Kapsul cadangan ikut digandakan. Mesh kapsul bawaan tingginya 2 unit, jadi
-            // pengalinya setengah dari tinggi yang diminta — kalau tidak, mematikan panggangan
-            // akan diam-diam mengecilkan seluruh gerombolan jadi separuhnya.
-            float body = baked && Vat.Height > 0.01f
-                ? BodyHeight / Vat.Height
-                : BodyHeight * 0.5f;
-
-            // Bayangan cuma untuk model panggangan. Kapsul yang menjatuhkan bayangan kapsul
-            // tidak menambah apa pun selain biaya — yang dibayar mahal itu justru siluetnya,
-            // dan kapsul tidak punya siluet yang layak dibayar.
-            _renderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Capsule),
-                BuildPalette(), Capacity, body, true, Vat, EnemyShadows && baked);
+            BuildSwarmRenderers();
 
             _shotRenderer = new EnemyRenderer(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Sphere),
                 BuildShotPalette(), MaxShots, 0.3f, false);
+        }
+
+        /// <summary>
+        /// Satu renderer per MODEL yang benar-benar dipakai — bukan per archetype, dan bukan satu
+        /// untuk semuanya.
+        ///
+        /// Sebelum ini gerombolan memegang satu <see cref="VatClipSet"/>, jadi Grunt, Cursed,
+        /// Stalker, dan Spitter semuanya tergambar sebagai kerangka yang sama. Modelnya sudah
+        /// dipanggang sejak lama; yang belum ada cuma jalan buat memakainya.
+        ///
+        /// Dikelompokkan per model, bukan per archetype, karena dua archetype yang memakai model
+        /// sama tidak punya alasan jadi dua panggilan gambar. Yang menentukan biaya jumlah MODEL
+        /// yang berbeda di lapangan, dan itu selalu kecil.
+        ///
+        /// Model bawaan selalu jadi indeks 0 supaya archetype yang slotnya kosong — termasuk boss
+        /// dan apa pun yang lahir tanpa archetype — punya tempat jatuh yang pasti.
+        /// </summary>
+        void BuildSwarmRenderers()
+        {
+            _models.Clear();
+            _modelOf.Clear();
+
+            _models.Add(Vat);
+
+            for (int i = 0; i < _db.Archetypes.Count; i++)
+            {
+                var kind = _db.Archetypes[i];
+                if (kind == null) continue;
+
+                // Slot kosong ikut model bawaan. Itu perilaku sebelum slot ini ada, dan tetap
+                // benar: archetype tanpa model sendiri harus tetap terlihat.
+                if (kind.Vat == null) { _modelOf[kind] = 0; continue; }
+
+                int found = _models.IndexOf(kind.Vat);
+                if (found < 0) { _models.Add(kind.Vat); found = _models.Count - 1; }
+
+                _modelOf[kind] = found;
+            }
+
+            _renderers = new EnemyRenderer[_models.Count];
+
+            for (int i = 0; i < _models.Count; i++)
+            {
+                var vat = _models[i];
+                bool baked = vat != null && vat.Mesh != null && vat.Positions != null;
+
+                // Skala diturunkan dari tinggi model yang sebenarnya, bukan dikira-kira di
+                // inspector — dan dihitung PER MODEL, karena tujuh model punya tujuh tinggi.
+                // Satu angka untuk semuanya akan membuat yang jangkung menjulang dan yang pendek
+                // tenggelam, padahal keduanya musuh biasa.
+                //
+                // Kapsul cadangan ikut digandakan. Mesh kapsul bawaan tingginya 2 unit, jadi
+                // pengalinya setengah dari tinggi yang diminta.
+                float body = baked && vat.Height > 0.01f
+                    ? BodyHeight / vat.Height
+                    : BodyHeight * 0.5f;
+
+                // Bayangan cuma untuk model panggangan. Kapsul yang menjatuhkan bayangan kapsul
+                // tidak menambah apa pun selain biaya — yang dibayar mahal itu justru siluetnya.
+                _renderers[i] = new EnemyRenderer(
+                    EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Capsule),
+                    BuildPalette(), Capacity, body, true, vat, EnemyShadows && baked);
+            }
+        }
+
+        /// <summary>
+        /// Renderer milik archetype ini. Yang tidak dikenal — termasuk musuh tanpa archetype sama
+        /// sekali — jatuh ke model bawaan, bukan ke pengecualian.
+        /// </summary>
+        int ModelOf(EnemyArchetype kind)
+        {
+            int index;
+            return kind != null && _modelOf.TryGetValue(kind, out index) ? index : 0;
         }
 
         /// <summary>One shot colour per shooting archetype, so different shooters read apart.</summary>
@@ -1492,9 +1556,9 @@ namespace Proto
         /// </summary>
         void LateUpdate()
         {
-            if (_renderer == null) return;
+            if (_renderers == null || _renderers.Length == 0) return;
 
-            _renderer.Begin();
+            for (int r = 0; r < _renderers.Length; r++) _renderers[r].Begin();
 
             for (int i = 0; i < _pool.Count; i++)
             {
@@ -1508,11 +1572,13 @@ namespace Proto
 
                 // Kecepatannya ikut dikirim: itu yang memilih antara diam, jalan, dan lari di
                 // animasi panggangan. Renderer kapsul mengabaikannya.
-                _renderer.Add(e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale,
+                _renderers[ModelOf(e.Kind)].Add(e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale,
                     Mathf.Clamp01(e.Speed / RunSpeed));
             }
 
-            _renderer.Draw(Time.time);
+            // Renderer yang tidak kebagian satu pun musuh keluar lebih awal tanpa menggambar,
+            // jadi model yang belum muncul di wave ini tidak membayar apa-apa.
+            for (int r = 0; r < _renderers.Length; r++) _renderers[r].Draw(Time.time);
 
             _shotRenderer.Begin();
             for (int i = 0; i < _shots.Count; i++)
@@ -1527,7 +1593,27 @@ namespace Proto
         }
 
         /// <summary>Draw calls the swarm cost this frame. Read by nothing but the profiler.</summary>
-        public int DrawBatches => _renderer != null ? _renderer.Batches : 0;
+        /// <summary>
+        /// Jumlah panggilan gambar seluruh gerombolan — DIJUMLAHKAN dari semua model.
+        ///
+        /// Melaporkan satu model saja akan membuat angka ini berbohong ke arah yang paling
+        /// berbahaya: kelihatan murah justru saat lapangan sedang memakai empat model sekaligus.
+        /// </summary>
+        public int DrawBatches
+        {
+            get
+            {
+                if (_renderers == null) return 0;
+
+                int total = 0;
+                for (int i = 0; i < _renderers.Length; i++)
+                {
+                    if (_renderers[i] != null) total += _renderers[i].Batches;
+                }
+
+                return total;
+            }
+        }
 
         // ---------- status ----------
 
