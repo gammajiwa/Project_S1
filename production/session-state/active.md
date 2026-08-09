@@ -831,6 +831,50 @@ Detail: AI-HANDOFF.md §22.
   mematikan lembaran beam UFO di prefab debu Sunlight/Moonlight — akar asli
   "godray ngumpul di tengah".
 
+### TERTULIS DI KODE, MENUNGGU KOMPILASI (play mode user menahan compile)
+
+Empat edit sudah di disk, belum terkompilasi/terverifikasi/ter-commit:
+
+1. **Fix drag belanjaan toko** (`GrimoireUI.HandlePanelClick`): klik ke piece tercecer
+   sekarang LOLOS dari guard panel toko. Akarnya: belanjaan dilempar DI DALAM PanelRect,
+   dan guard menelan semua klik di area itu — belanjaan tergeletak tak bisa diambil.
+2. **MainMenuBuilder.RegisterBuildSettings jadi MERGE, bukan timpa.** Versi lama mengganti
+   seluruh daftar dengan {menu, game} — tiap rebuild menu MENYAPU tiga scene ruangan, dan
+   itulah kenapa "masuk toko gak pindah scene": Room_* hilang dari Build Settings, RoomLoader
+   menolak diam-diam. Scene sudah kudaftarkan ulang manual; snapshot play lama tetap tanpa
+   ruangan — baru termuat di sesi play BERIKUTNYA.
+3. **Tata letak papan starter dipusatkan** (`HeroPass`): Frostwarden dua alas cermin
+   kiri-kanan mengapit tengah; Stormcaller garis atas + kotak bawah-tengah (tetap
+   berjauhan — identitasnya — tapi tidak lari ke pojok). SETELAH kompilasi jalankan
+   `Tools/Grimoire/Generate Heroes` lalu cek carousel.
+4. **Necromancer dapat bob napas** (`EnemyRenderer`): VAT satu-pose (TotalRows <= 1) tidak
+   lagi mematikan bob — paket Feyloom TERBUKTI tanpa satu pun AnimationClip (folder nol
+   klip, VAT 1 baris), jadi patung diam adalah satu-satunya alternatifnya.
+
+### INVESTIGASI BERJALAN
+
+- **Evo dicuri resep lain + lock tidak menolong.** Resolver & preview SAMA-SAMA
+  menghormati Locked (RecipeResolver 117, Grimoire 550/767/850) dan tidak ada yang
+  menghapus Locked. Dua mekanisme yang bisa menjelaskan: (a) urutan db.Recipes — resep
+  lain yang lebih dulu MENCURI bahan bersama; (b) CouldSeat gagal karena papan makin
+  penuh. ATURAN DARI PEMILIK: "kalo gw lock (penyusupnya) harusnya balik ke yang bisa
+  evo". BUTUH dari user: nama 3 piece yang terlibat saat kejadian.
+- **Teks reaction "tidak pernah muncul".** Sistem TERBUKTI hidup: injeksi burn+chill 10
+  poin memicu reaksi, musuh mati oleh burst, dua floater sempat hidup. Kemungkinan akar:
+  (a) build user saat itu tidak punya pasangan elemen (Frost Shard + Minor Heal saja);
+  (b) EnemyHpBase 15 membuat musuh awal mati SEBELUM ailment menumpuk ke ambang — efek
+  samping balancing, kandidat fix: turunkan ambang reaksi / naikkan poin ailment per hit.
+- **Asap mata "hilang".** Data bilang hidup: EyeSmoke aktif, alpha 1, GloomEdge terpasang,
+  UiGloomRect enabled. Shader edit _PaperScroll TIDAK menyentuh jalur non-paper. Belum
+  terlihat mata — butuh tangkapan layar area buku saat run berjalan.
+
+### DIMINTA USER, BELUM DIKERJAKAN — UI toko dirombak
+
+- Panel toko jadi PREFAB yang ditata tangan (pola GridArea/VitalsRig/StatusStripRig):
+  kotak per slot, reroll, judul — "buatin prefabsnya sekalian", layout sekarang berantakan.
+- Tombol LANJUT dipindah ke pojok kanan bawah (hati-hati: panel spell menempati area itu).
+- VFX evolusi (sekarang "muter doang") — minta efek; kandidat: prefab SSU/Lana + Flame SSU.
+
 ### DIMINTA USER, BELUM DIKERJAKAN — perombakan hover
 
 Permintaan tepatnya (2026-08-09): "rapihkan text hover, terlalu berantakan, apalagi hover
