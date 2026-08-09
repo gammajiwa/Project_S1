@@ -18,7 +18,7 @@ MonoBehaviour:
   BagHeight: 4
   BaseMaxHp: 100
   BaseMaxMana: 120
-  BaseManaRegen: 13
+  BaseManaRegen: 5
   BaseHpRegen: 2
   HealPerWaveClear: 20
   BaseMoveSpeed: 2.8
@@ -26,7 +26,7 @@ MonoBehaviour:
   TurnRate: 6
   ArenaHalfX: 40
   ArenaHalfZ: 30
-  SpawnRateBase: 0.5
+  SpawnRateBase: 0.7
   SpawnRatePerWave: 0.22
   SpawnRateGrowth: 1.03
   SurgeSpawnMultiplier: 1.25
@@ -40,7 +40,7 @@ MonoBehaviour:
   EnemyContactDps: 10
   EnemyContactDpsPerWave: 1.7
   EnemyDamageGrowth: 1.055
-  EnemiesBase: 12
+  EnemiesBase: 18
   EnemiesPerWave: 6
   EnemyCountGrowth: 1.05
   SurgeCountMultiplier: 1.25
