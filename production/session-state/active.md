@@ -1077,6 +1077,26 @@ koordinat petak, stat awal, nama, blurb, warna aksen.
 > **Angka Frostwarden & Stormcaller PLACEHOLDER.** Dipilih supaya perbedaannya kelihatan
 > waktu diadu, bukan supaya seimbang. Itu pekerjaan pemilik project.
 
+### DIMINTA USER, BELUM DIKERJAKAN — toko/kejadian/slot jadi scene sendiri
+
+Permintaan tepatnya: *"si shop si event si slot itu taro di scene berbeda tapi buat dia
+multiple scene biar gak loading lama"*, dan saat ditanya bentuknya user memilih
+**pramuat semua di awal run, tinggal nyala-mati** (bukan load-saat-dibutuhkan).
+
+Sekarang ketiganya cuma panel UGUI yang menumpang di scene `Proto`, digambar
+`GrimoireUI` di atas arena (`_shopOpen` / `_eventOpen` / `_gambleOpen`).
+
+Yang dibutuhkan, urutan yang disarankan:
+
+1. `RoomLoader` — `LoadSceneAsync(..., Additive)` ketiganya sekali saat run mulai, lalu
+   root-nya di-`SetActive` nyala-mati. Nol loading saat masuk, sesuai pilihan user.
+2. Kamera: tiap room punya kameranya sendiri; kamera arena dimatikan saat room aktif.
+   **Hati-hati** — `ArenaCamera` menjepit posisi pemain, dan `Gloom` mengikuti kamera.
+3. Routing input: `HandlePanelClick` sekarang menelan klik di dalam `PanelRect()`. Begitu
+   toko pindah ke room, guard itu harus ikut pindah atau ia akan menelan klik arena.
+4. `RunDirector.OnRestEntered` yang memicu masuk room; keluar room balik ke `Stage.Ready`.
+5. Tiga scene ditambahkan ke Build Settings.
+
 ### Berikutnya
 
 - **Balancing tiga starter** — angkanya belum pernah diadu sungguhan
