@@ -1165,7 +1165,13 @@ namespace Proto
             // pressed against the boundary.
             float t = Mathf.Max(4f, Mathf.Min(tx, tz)) * Mathf.Clamp(distanceScale, 0.2f, 1f);
 
-            return new Vector3(from.x + dx * t, 0.55f, from.z + dz * t);
+            // Y = 0: musuh lahir DI TANAH. Angka lama 0,55 adalah setengah tinggi kapsul era
+            // 1,1 unit — kapsul ber-origin tengah memang harus diangkat setengah badan supaya
+            // pantatnya tidak tenggelam. Model panggangan ber-origin KAKI, jadi angka itu
+            // membuat seluruh gerombolan melayang 0,55 unit — tak terlihat selama pass bayangan
+            // mati, dan langsung ketahuan begitu bayangan menyala. Kapsul cadangan sekarang
+            // mengangkat dirinya sendiri di LateUpdate, di tempat ia digambar.
+            return new Vector3(from.x + dx * t, 0f, from.z + dz * t);
         }
 
         Enemy GetFree()
@@ -1574,7 +1580,16 @@ namespace Proto
 
                 // Kecepatannya ikut dikirim: itu yang memilih antara diam, jalan, dan lari di
                 // animasi panggangan. Renderer kapsul mengabaikannya.
-                _renderers[ModelOf(e.Kind)].Add(e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale,
+                int model = ModelOf(e.Kind);
+
+                // Kapsul cadangan ber-origin TENGAH, model panggangan ber-origin KAKI. Posisi
+                // gameplay sekarang selalu di tanah; yang butuh diangkat cuma kapsulnya, dan
+                // pengangkatannya milik penggambaran — bukan milik posisi yang dipakai jarak
+                // gigit dan AoE.
+                var at = e.Pos;
+                if (_models[model] == null) at.y += BodyHeight * 0.5f * e.Scale;
+
+                _renderers[model].Add(at, e.Yaw, e.Phase, e.Tint, e.Scale,
                     Mathf.Clamp01(e.Speed / RunSpeed));
             }
 
@@ -1919,7 +1934,14 @@ namespace Proto
                 _corpses[(_corpseHead + alive) % _corpses.Length] = c;
                 alive++;
 
-                _renderers[ModelOf(c.Kind)].Add(c.Pos, c.Yaw, c.Phase, c.Tint, c.Scale,
+                int model = ModelOf(c.Kind);
+
+                // Pengangkatan kapsul yang sama dengan musuh hidup — bangkai kapsul yang tiba-tiba
+                // amblas setengah badan saat mati akan terbaca sebagai jatuh ke tanah, bukan terbakar.
+                var drawAt = c.Pos;
+                if (_models[model] == null) drawAt.y += BodyHeight * 0.5f * c.Scale;
+
+                _renderers[model].Add(drawAt, c.Yaw, c.Phase, c.Tint, c.Scale,
                     c.Speed01, c.Age / BurnSeconds);
             }
 
