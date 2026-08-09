@@ -2284,6 +2284,12 @@ namespace Proto
 
             if (!_shopOpen) return false;
 
+            // Klik ke PIECE TERCECER selalu lolos, walau jatuhnya di dalam panel. Barang yang
+            // barusan dibeli dilempar dekat slotnya — DI DALAM panel — dan tanpa baris ini guard
+            // di bawah menelan kliknya: belanjaan tergeletak di depan mata dan tidak bisa
+            // diambil, tanpa satu pun tanda kenapa.
+            if (ScreenToLoose(mouse) >= 0) return false;
+
             if (!PanelRect().Contains(mouse))
             {
                 // Clicking outside closes the panel instead of dropping the held piece behind it.
