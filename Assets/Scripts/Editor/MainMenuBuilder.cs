@@ -25,6 +25,8 @@ namespace Proto
         const string ScenePath = "Assets/Scenes/MainMenu.unity";
         const string GameScenePath = "Assets/Scenes/Proto.unity";
         const string ThemePath = "Assets/GameData/MenuTheme.asset";
+        const string UiThemePath = "Assets/GameData/UiTheme.asset";
+        const string StarterPrefabPath = "Assets/Art/UI/Prefabs/StarterPanel.prefab";
         const string MenuLookPath = "Assets/GameData/SceneLook_Menu.asset";
         const string MenuAssetDir = "Assets/GameData/Menu";
 
@@ -300,19 +302,21 @@ namespace Proto
             var page = NewRect("RootPage", canvas);
             Stretch(page);
 
-            var title = NewText("Title", page, "G R I M O I R E   H A V E N",
+            // Judulnya hidup di MenuTheme, bukan di sini: nama game diganti dengan mengedit satu
+            // field asset, dan jarak antar hurufnya diatur TMP — bukan dengan menyelipkan spasi ke
+            // dalam string, yang membuat teksnya tidak bisa dicari dan pecah saat namanya berubah.
+            var title = NewText("Title", page, _theme.GameTitle,
                 _theme.TitleSize, _theme.TextIdle, TextAlignmentOptions.Left, true);
-            Place(title.rectTransform, new Vector2(0f, 0.5f), new Vector2(180f, 250f), new Vector2(1400f, 120f));
+            title.characterSpacing = _theme.TitleTracking;
+            Place(title.rectTransform, new Vector2(0f, 0.5f), new Vector2(180f, 232f), new Vector2(1400f, 120f));
 
-            var tagline = NewText("Tagline", page, "penyihir yang menulis, bukan yang bertarung",
-                _theme.TaglineSize, _theme.TextMuted, TextAlignmentOptions.Left);
-            Place(tagline.rectTransform, new Vector2(0f, 0.5f), new Vector2(186f, 180f), new Vector2(900f, 30f));
-
+            // Tanpa tagline — permintaan pemilik project: "cukup nama aja". Garisnya tetap, karena
+            // dialah yang mengikat judul ke daftar menu; tanpa itu keduanya mengambang sendiri.
             var rule = NewImage("Rule", page, _theme.PanelLine);
-            Place(rule.rectTransform, new Vector2(0f, 0.5f), new Vector2(186f, 150f), new Vector2(420f, 2f));
+            Place(rule.rectTransform, new Vector2(0f, 0.5f), new Vector2(186f, 168f), new Vector2(420f, 2f));
 
             var list = NewRect("MenuList", page);
-            Place(list, new Vector2(0f, 0.5f), new Vector2(180f, 90f), new Vector2(520f, 10f));
+            Place(list, new Vector2(0f, 0.5f), new Vector2(180f, 118f), new Vector2(520f, 10f));
             list.pivot = new Vector2(0f, 1f);
 
             var layout = list.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -390,15 +394,44 @@ namespace Proto
         /// susunan petak itu satu-satunya bagian kartu yang benar-benar memberi tahu apa yang
         /// akan dimainkan, dan ia digambar sendiri oleh panelnya dari aset — jadi di sini cuma
         /// disediakan kotaknya.
+        ///
+        /// <b>Begitu <c>StarterPanel.prefab</c> ada, prefab itu yang memegang tata letaknya</b> dan
+        /// fungsi ini berhenti menata apa pun — ia cuma menyambungkan data ke label-label yang
+        /// ditunjuk <see cref="StarterRig"/>. Itu satu-satunya cara "geser posisinya" bisa
+        /// bertahan: scene menu digenerate ulang setiap kali, prefab tidak.
         /// </summary>
         static RectTransform BuildStarterPage(RectTransform canvas, ContentDatabase database,
             GameBalance balance, out StarterSelectPanel panelComponent, out Button back)
         {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(StarterPrefabPath);
+            if (existing != null)
+            {
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(existing, canvas);
+                instance.name = "StarterPage";
+
+                var prefabRig = instance.GetComponentInChildren<StarterRig>(true);
+                panelComponent = instance.GetComponentInChildren<StarterSelectPanel>(true);
+
+                if (prefabRig == null || panelComponent == null)
+                {
+                    Debug.LogError("[MainMenuBuilder] " + StarterPrefabPath + " tidak membawa " +
+                                   "StarterRig atau StarterSelectPanel. Hapus prefabnya kalau mau " +
+                                   "halaman bawaan dibangun ulang dari nol.");
+                    back = null;
+                    return (RectTransform)instance.transform;
+                }
+
+                BindStarter(panelComponent, database, balance, prefabRig);
+                back = prefabRig.Back;
+                return (RectTransform)instance.transform;
+            }
+
             var page = NewRect("StarterPage", canvas);
             Stretch(page);
 
             var panel = NewPanel(page, "StarterPanel", new Vector2(1420f, 840f));
             panelComponent = panel.gameObject.AddComponent<StarterSelectPanel>();
+            var rig = panel.gameObject.AddComponent<StarterRig>();
 
             var heading = NewText("Heading", panel, "PILIH GRIMOIRE", _theme.HeadingSize,
                 _theme.TextIdle, TextAlignmentOptions.Left, true);
@@ -408,20 +441,30 @@ namespace Proto
                 _theme.Accent, TextAlignmentOptions.Right);
             Place(page01.rectTransform, new Vector2(1f, 1f), new Vector2(-48f, -50f), new Vector2(300f, 30f));
 
-            // Papan di tengah, persegi. Sisi kiri untuk namanya, sisi kanan untuk portrait —
-            // papannya sendiri tidak boleh ikut melar mengikuti sisa ruang, karena petak yang
-            // gepeng membuat bentuk piece berbohong.
-            var board = NewRect("Board", panel);
-            Place(board, new Vector2(0.5f, 0.5f), new Vector2(0f, 22f), new Vector2(470f, 470f));
+            // Papannya BUKAN kotak kosong lagi: prefab papan grimoire yang dipakai di dalam run
+            // ditaruh apa adanya di sini, dan petak 7x7 digambar di dalam `GridArea` miliknya.
+            // Sampul, mata, dan rune-nya ikut — layar pilih starter memperlihatkan benda yang
+            // sama persis dengan yang akan dipegang pemain, bukan gambar penggantinya.
+            var board = BuildStarterBoard(panel);
 
+            // Nama dan blurb DULU saling menimpa: keduanya dipasang dengan pivot tengah, dan kotak
+            // blurb setinggi 220 yang dipusatkan di y=96 naik sampai y=206 — melewati baris nama di
+            // 126..174. Teksnya rata-atas, jadi kalimat pertama mendarat persis di atas namanya.
+            // Sekarang nama dipatok di 200 dan blurb digantung dari 160 KE BAWAH (pivot atas), jadi
+            // panjang blurb tidak pernah lagi bisa merambat naik.
             var name = NewText("Name", panel, "Nama Starter", _theme.HeadingSize,
                 _theme.Accent, TextAlignmentOptions.Left, true);
-            Place(name.rectTransform, new Vector2(0f, 0.5f), new Vector2(48f, 150f), new Vector2(420f, 48f));
+            Place(name.rectTransform, new Vector2(0f, 0.5f), new Vector2(48f, 200f), new Vector2(420f, 54f));
 
             var blurb = NewText("Blurb", panel, "", _theme.BodySize,
-                _theme.TextMuted, TextAlignmentOptions.TopLeft);
-            Place(blurb.rectTransform, new Vector2(0f, 0.5f), new Vector2(48f, 96f), new Vector2(420f, 220f));
+                Color.Lerp(_theme.TextMuted, _theme.TextIdle, 0.55f), TextAlignmentOptions.TopLeft);
+            Place(blurb.rectTransform, new Vector2(0f, 0.5f), new Vector2(48f, 160f), new Vector2(420f, 280f));
+            blurb.rectTransform.pivot = new Vector2(0f, 1f);
             blurb.textWrappingMode = TextWrappingModes.Normal;
+
+            // Blurb adalah satu-satunya paragraf di seluruh menu; baris rapat yang enak untuk label
+            // satu baris justru bikin paragraf jadi blok abu-abu.
+            blurb.lineSpacing = 14f;
 
             var stats = NewText("Stats", panel, "", _theme.BodySize,
                 _theme.TextIdle, TextAlignmentOptions.Center);
@@ -450,22 +493,114 @@ namespace Proto
             Place((RectTransform)back.transform, new Vector2(0f, 0f), new Vector2(48f, 26f),
                 new Vector2(360f, 46f));
 
-            new Binder(panelComponent)
+            rig.Board = board;
+            rig.NameLabel = name;
+            rig.Blurb = blurb;
+            rig.Stats = stats;
+            rig.PageLabel = page01;
+            rig.Portrait = portrait;
+            rig.Prev = prev;
+            rig.Next = next;
+            rig.Play = play;
+            rig.Back = back;
+
+            BindStarter(panelComponent, database, balance, rig);
+
+            SaveStarterPrefab(page.gameObject);
+            return page;
+        }
+
+        /// <summary>
+        /// Papan preview: prefab papan grimoire yang dipakai di dalam run, ditaruh apa adanya.
+        /// Petaknya digambar di dalam <c>GridArea</c> milik prefab itu — kotak yang sama yang
+        /// menentukan letak petak saat bermain, jadi preview dan papan sungguhan mustahil
+        /// berbeda ukuran sel.
+        ///
+        /// Tanpa prefab (tema kosong), kembali ke kotak kosong 470x470 seperti sebelumnya.
+        /// </summary>
+        static RectTransform BuildStarterBoard(RectTransform panel)
+        {
+            var uiTheme = AssetDatabase.LoadAssetAtPath<UiTheme>(UiThemePath);
+
+            if (uiTheme != null && uiTheme.GrimoirePanelPrefab != null)
+            {
+                var art = (GameObject)PrefabUtility.InstantiatePrefab(uiTheme.GrimoirePanelPrefab, panel);
+                art.name = "BoardArt";
+
+                // Prefabnya dirancang duduk di pojok kiri-bawah layar saat bermain. Di sini ia
+                // dipindah ke tengah panel; susunan ISI-nya tidak disentuh, cuma titik tumpunya.
+                var artRect = (RectTransform)art.transform;
+                artRect.anchorMin = artRect.anchorMax = artRect.pivot = new Vector2(0.5f, 0.5f);
+                artRect.anchoredPosition = new Vector2(0f, 10f);
+
+                var area = FindGridArea(art.transform);
+                if (area != null) return area;
+
+                Debug.LogWarning("[MainMenuBuilder] prefab papan grimoire tidak membawa GridArea — " +
+                                 "petak starter jatuh ke kotak kosong bawaan.");
+            }
+
+            var board = NewRect("Board", panel);
+            Place(board, new Vector2(0.5f, 0.5f), new Vector2(0f, 22f), new Vector2(470f, 470f));
+            return board;
+        }
+
+        /// <summary>Kotak petak di dalam prefab papan: lewat komponennya dulu, lalu lewat nama.</summary>
+        static RectTransform FindGridArea(Transform root)
+        {
+            var marker = root.GetComponentInChildren<GrimoireGridArea>(true);
+            if (marker != null) return (RectTransform)marker.transform;
+
+            var all = root.GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].name == "GridArea") return all[i];
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Menyambungkan data + widget ke panelnya. Dipakai dua kali: sekali untuk halaman bawaan
+        /// yang baru dibangun, dan sekali lagi tiap rebuild untuk halaman yang datang dari prefab.
+        /// </summary>
+        static void BindStarter(StarterSelectPanel panel, ContentDatabase database,
+            GameBalance balance, StarterRig rig)
+        {
+            new Binder(panel)
                 .Set("_database", database)
                 .Set("_balance", balance)
                 .SetString("_gameSceneName", "Proto")
-                .Set("_nameLabel", name)
-                .Set("_blurbLabel", blurb)
-                .Set("_statsLabel", stats)
-                .Set("_pageLabel", page01)
-                .Set("_portrait", portrait)
-                .Set("_board", board)
-                .Set("_prevButton", prev)
-                .Set("_nextButton", next)
-                .Set("_playButton", play)
+                .Set("_nameLabel", rig.NameLabel)
+                .Set("_blurbLabel", rig.Blurb)
+                .Set("_statsLabel", rig.Stats)
+                .Set("_pageLabel", rig.PageLabel)
+                .Set("_portrait", rig.Portrait)
+                .Set("_board", rig.Board)
+                .Set("_prevButton", rig.Prev)
+                .Set("_nextButton", rig.Next)
+                .Set("_playButton", rig.Play)
                 .Apply();
+        }
 
-            return page;
+        /// <summary>
+        /// Menyimpan halaman starter sebagai prefab SEKALI. Sesudah file ini ada, builder tidak
+        /// pernah menulisnya lagi — di situlah tata letak halaman ini boleh digeser tangan tanpa
+        /// hilang tiap rebuild.
+        /// </summary>
+        static void SaveStarterPrefab(GameObject page)
+        {
+            var prefab = PrefabUtility.SaveAsPrefabAsset(page, StarterPrefabPath);
+
+            if (prefab == null)
+            {
+                Debug.LogError("[MainMenuBuilder] gagal menyimpan " + StarterPrefabPath + ".");
+                return;
+            }
+
+            Debug.Log("[MainMenuBuilder] " + StarterPrefabPath + " dibuat. Mulai sekarang tata " +
+                      "letak layar pilih starter diatur DI PREFAB ITU — rebuild menu tidak akan " +
+                      "menimpanya lagi. Hapus prefabnya kalau mau kembali ke tata letak bawaan.");
         }
 
         static RectTransform BuildScrollArea(RectTransform panel, out RectTransform viewport)
@@ -567,46 +702,71 @@ namespace Proto
             var page = NewRect("SettingsPage", canvas);
             Stretch(page);
 
-            // 1060, bukan 840: seksi PERFORMA menambah empat baris, dan pada 1000 baris DATA
-            // masih bertindihan dengan tombol KEMBALI di dasar panel. Layar referensinya 1080 —
-            // sisa 10 piksel per sisi itu disengaja, panel setelan memang boleh memenuhi layar.
-            var panel = NewPanel(page, "SettingsPanel", new Vector2(1180f, 1060f));
+            // Dulu satu gulungan setinggi 1060: empat seksi berbaris ke bawah, dan tiap baris
+            // baru mendorong seksi di bawahnya sampai baris DATA menabrak tombol KEMBALI di
+            // dasar panel. Sekarang empat sub-halaman yang bergantian — yang tumbuh cuma satu
+            // halaman, dan panelnya boleh menyusut lagi ke ukuran yang tidak menelan layar.
+            var panel = NewPanel(page, "SettingsPanel", new Vector2(1180f, 720f));
             panelComponent = panel.gameObject.AddComponent<SettingsPanel>();
 
             var heading = NewText("Heading", panel, "SETELAN", _theme.HeadingSize,
                 _theme.TextIdle, TextAlignmentOptions.Left, true);
             Place(heading.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -40f), new Vector2(600f, 52f));
 
-            float y = -130f;
+            // Rail tab di kiri, badan halaman di kanan garis. Semuanya dipatok dari sudut
+            // kiri-atas panel, jadi menambah baris di satu halaman tidak menggeser halaman lain.
+            const float BodyLeft = 372f;
+            const float BodyTop = -112f;
+            var bodySize = new Vector2(1180f - BodyLeft - 48f, 452f);
 
-            NewSection(panel, "LAYAR", ref y);
-            var fullscreen = NewStepper(panel, "Mode layar", ref y);
-            var resolution = NewStepper(panel, "Resolusi", ref y);
-            var vsync = NewStepper(panel, "VSync", ref y);
-            var frameCap = NewStepper(panel, "Batas FPS", ref y);
+            var divider = NewImage("TabRule", panel, _theme.PanelLine);
+            Place(divider.rectTransform, new Vector2(0f, 1f), new Vector2(332f, BodyTop),
+                new Vector2(1f, bodySize.y));
+
+            var layar = NewTabBody(panel, "Layar", BodyLeft, BodyTop, bodySize);
+            float y = 0f;
+            var fullscreen = NewStepper(layar, "Mode layar", ref y);
+            var resolution = NewStepper(layar, "Resolusi", ref y);
+            var vsync = NewStepper(layar, "VSync", ref y);
+            var frameCap = NewStepper(layar, "Batas FPS", ref y);
 
             // Toggle untuk yang mahal digambar. Mengubahnya baru terasa di run BERIKUTNYA -
             // scene game membacanya saat lahir; catatan di bawah panel yang bilang begitu.
-            y -= 18f;
-            NewSection(panel, "PERFORMA", ref y);
-            var damageText = NewStepper(panel, "Teks damage", ref y);
-            var enemyShadows = NewStepper(panel, "Bayangan musuh", ref y);
-            var weatherVfx = NewStepper(panel, "VFX cuaca", ref y);
+            var performa = NewTabBody(panel, "Performa", BodyLeft, BodyTop, bodySize);
+            y = 0f;
+            var damageText = NewStepper(performa, "Teks damage", ref y);
+            var enemyShadows = NewStepper(performa, "Bayangan musuh", ref y);
+            var weatherVfx = NewStepper(performa, "VFX cuaca", ref y);
 
-            y -= 18f;
-            NewSection(panel, "SUARA", ref y);
-            var master = NewSliderRow(panel, "Master", ref y);
-            var sfx = NewSliderRow(panel, "Efek suara", ref y);
-            var music = NewSliderRow(panel, "Musik", ref y);
+            var suara = NewTabBody(panel, "Suara", BodyLeft, BodyTop, bodySize);
+            y = 0f;
+            var master = NewSliderRow(suara, "Master", ref y);
+            var sfx = NewSliderRow(suara, "Efek suara", ref y);
+            var music = NewSliderRow(suara, "Musik", ref y);
 
-            y -= 18f;
-            NewSection(panel, "DATA", ref y);
-            var reset = NewResetRow(panel, ref y);
+            var data = NewTabBody(panel, "Data", BodyLeft, BodyTop, bodySize);
+            y = 0f;
+            var reset = NewResetRow(data, ref y);
+
+            var tabs = panel.gameObject.AddComponent<SettingsTabs>();
+            var tabLines = new Object[4];
+            NewTabLine(panel, tabLines, 0, "LAYAR", BodyTop);
+            NewTabLine(panel, tabLines, 1, "PERFORMA", BodyTop);
+            NewTabLine(panel, tabLines, 2, "SUARA", BodyTop);
+            NewTabLine(panel, tabLines, 3, "DATA", BodyTop);
+
+            new Binder(tabs)
+                .SetArray("_lines", tabLines)
+                .SetArray("_pages", new Object[]
+                {
+                    layar.gameObject, performa.gameObject, suara.gameObject, data.gameObject
+                })
+                .Apply();
 
             // Opposite the back button: the rows above run all the way down to it.
             var note = NewText("Note", panel, "", _theme.SmallSize,
                 _theme.TextMuted, TextAlignmentOptions.Right);
-            Place(note.rectTransform, new Vector2(1f, 0f), new Vector2(-48f, 38f), new Vector2(760f, 24f));
+            Place(note.rectTransform, new Vector2(1f, 0f), new Vector2(-48f, 84f), new Vector2(760f, 24f));
 
             new Binder(panelComponent)
                 .Set("_fullscreenPrev", fullscreen.Prev)
@@ -661,7 +821,7 @@ namespace Proto
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(page, Path);
 
-            var theme = AssetDatabase.LoadAssetAtPath<UiTheme>("Assets/GameData/UiTheme.asset");
+            var theme = AssetDatabase.LoadAssetAtPath<UiTheme>(UiThemePath);
             if (theme == null || prefab == null) return;
 
             var so = new SerializedObject(theme);
@@ -690,19 +850,32 @@ namespace Proto
             public TextMeshProUGUI Hint;
         }
 
-        static void NewSection(RectTransform panel, string title, ref float y)
+        /// <summary>
+        /// Badan satu sub-halaman setelan. Keempatnya menumpuk persis di kotak yang sama; yang
+        /// menentukan mana yang terlihat adalah <see cref="SettingsTabs"/>.
+        /// </summary>
+        static RectTransform NewTabBody(RectTransform panel, string name, float left, float top,
+            Vector2 size)
         {
-            var label = NewText("Section_" + title, panel, title, _theme.SmallSize,
-                _theme.Accent, TextAlignmentOptions.Left);
-            Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, y), new Vector2(400f, 22f));
-            y -= 40f;
+            var body = NewRect("Tab_" + name, panel);
+            Place(body, new Vector2(0f, 1f), new Vector2(left, top), size);
+            return body;
         }
 
-        static RectTransform NewRow(RectTransform panel, string name, string label, ref float y)
+        static void NewTabLine(RectTransform panel, Object[] into, int index, string label, float top)
         {
-            var row = NewRect("Row_" + name, panel);
-            Place(row, new Vector2(0f, 1f), new Vector2(48f, y), new Vector2(1080f, 48f));
-            row.pivot = new Vector2(0f, 1f);
+            var button = NewMenuLine(panel, "Tab" + index, label);
+
+            Place((RectTransform)button.transform, new Vector2(0f, 1f),
+                new Vector2(48f, top - index * 56f), new Vector2(268f, 52f));
+
+            into[index] = button.GetComponent<MenuLine>();
+        }
+
+        static RectTransform NewRow(RectTransform host, string name, string label, ref float y)
+        {
+            var row = NewRect("Row_" + name, host);
+            Place(row, new Vector2(0f, 1f), new Vector2(0f, y), new Vector2(host.rect.width, 48f));
 
             var text = NewText("Label", row, label, _theme.BodySize,
                 _theme.TextIdle, TextAlignmentOptions.Left);
@@ -712,56 +885,75 @@ namespace Proto
             return row;
         }
 
-        static Stepper NewStepper(RectTransform panel, string label, ref float y)
+        /// <summary>
+        /// Kontrol baris dipatok dari tepi KANAN barisnya, bukan dari koordinat tetap. Angka
+        /// 340/740 yang dulu di-hardcode benar hanya selama barisnya selebar panel penuh; badan
+        /// sub-halaman lebih sempit, dan di sana keduanya menggantung keluar baris.
+        /// </summary>
+        static Stepper NewStepper(RectTransform host, string label, ref float y)
         {
-            var row = NewRow(panel, label, label, ref y);
+            var row = NewRow(host, label, label, ref y);
+
+            const float Arrow = 44f;
+            const float Value = 240f;
+            float x0 = row.rect.width - (Arrow * 2f + Value + 24f) - 8f;
 
             var stepper = new Stepper
             {
-                Prev = NewSmallButton(row, "Prev", "<", 340f),
-                Next = NewSmallButton(row, "Next", ">", 740f)
+                Prev = NewSmallButton(row, "Prev", "<", x0, Arrow),
+                Next = NewSmallButton(row, "Next", ">", x0 + Arrow + Value + 24f, Arrow)
             };
 
             stepper.Value = NewText("Value", row, "-", _theme.BodySize,
                 _theme.TextIdle, TextAlignmentOptions.Center);
-            Place(stepper.Value.rectTransform, new Vector2(0f, 0.5f), new Vector2(396f, 0f),
-                new Vector2(336f, 30f));
+            Place(stepper.Value.rectTransform, new Vector2(0f, 0.5f), new Vector2(x0 + Arrow + 12f, 0f),
+                new Vector2(Value, 30f));
 
             return stepper;
         }
 
-        static SliderRow NewSliderRow(RectTransform panel, string label, ref float y)
+        static SliderRow NewSliderRow(RectTransform host, string label, ref float y)
         {
-            var row = NewRow(panel, label, label, ref y);
+            var row = NewRow(host, label, label, ref y);
+
+            const float Track = 260f;
+            const float Value = 70f;
+            float x0 = row.rect.width - (Track + Value + 20f) - 8f;
 
             var sliderGo = DefaultControls.CreateSlider(UiResources());
             sliderGo.name = "Slider";
             sliderGo.transform.SetParent(row, false);
 
             var rect = (RectTransform)sliderGo.transform;
-            Place(rect, new Vector2(0f, 0.5f), new Vector2(340f, 0f), new Vector2(400f, 20f));
+            Place(rect, new Vector2(0f, 0.5f), new Vector2(x0, 0f), new Vector2(Track, 20f));
 
             var slider = sliderGo.GetComponent<Slider>();
             StyleSlider(slider);
 
             var value = NewText("Value", row, "100%", _theme.BodySize,
                 _theme.TextMuted, TextAlignmentOptions.Right);
-            Place(value.rectTransform, new Vector2(0f, 0.5f), new Vector2(760f, 0f), new Vector2(120f, 30f));
+            Place(value.rectTransform, new Vector2(0f, 0.5f), new Vector2(x0 + Track + 20f, 0f),
+                new Vector2(Value, 30f));
 
             return new SliderRow { Slider = slider, Value = value };
         }
 
-        static ResetRow NewResetRow(RectTransform panel, ref float y)
+        static ResetRow NewResetRow(RectTransform host, ref float y)
         {
-            var row = NewRow(panel, "Reset", "Codex", ref y);
+            var row = NewRow(host, "Reset", "Codex", ref y);
 
-            var button = NewSmallButton(row, "Reset", "KOSONGKAN CODEX", 340f, 320f);
+            const float Wide = 260f;
+            float x0 = row.rect.width - Wide - 8f;
+
+            var button = NewSmallButton(row, "Reset", "KOSONGKAN CODEX", x0, Wide);
             var label = button.GetComponentInChildren<TextMeshProUGUI>();
             label.color = _theme.TextMuted;
 
+            // Petunjuknya turun ke bawah label barisnya. Di kolom kanan yang sekarang lebih
+            // sempit ia akan berdesakan dengan tombolnya sendiri.
             var hint = NewText("Hint", row, "butuh dua klik", _theme.SmallSize,
                 _theme.TextMuted, TextAlignmentOptions.Left);
-            Place(hint.rectTransform, new Vector2(0f, 0.5f), new Vector2(676f, 0f), new Vector2(400f, 24f));
+            Place(hint.rectTransform, new Vector2(0f, 0.5f), new Vector2(6f, -20f), new Vector2(400f, 20f));
 
             return new ResetRow { Button = button, Label = label, Hint = hint };
         }

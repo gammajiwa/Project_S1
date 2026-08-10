@@ -11,6 +11,14 @@ namespace Proto
     [CreateAssetMenu(fileName = "MenuTheme", menuName = "Grimoire/Menu Theme")]
     public class MenuTheme : ScriptableObject
     {
+        [Header("Judul")]
+        [Tooltip("Nama game di layar pembuka. Jaraknya diatur lewat CharacterSpacing, jadi tulis " +
+                 "biasa saja - jangan diselang spasi manual.")]
+        public string GameTitle = "GRIMOIRE HAVEN";
+
+        [Tooltip("Renggang antar huruf judul, satuan em per 100. 0 = rapat normal.")]
+        public float TitleTracking = 26f;
+
         [Header("Font")]
         [Tooltip("Kosongkan untuk pakai font bawaan TMP (LiberationSans SDF).")]
         public TMP_FontAsset TitleFont;

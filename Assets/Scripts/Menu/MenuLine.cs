@@ -27,6 +27,18 @@ namespace Proto
         float _restX;
         float _blend;
         bool _hot;
+        bool _sticky;
+
+        /// <summary>
+        /// Menahan baris ini tetap menyala tanpa pointer di atasnya — dipakai rail tab setelan
+        /// untuk menandai halaman yang sedang terbuka. Tanpa ini, menyorot lalu meninggalkan tab
+        /// yang aktif akan memadamkan penandanya, karena keluar-pointer selalu berarti "dingin".
+        /// </summary>
+        public bool Sticky
+        {
+            get => _sticky;
+            set => _sticky = value;
+        }
 
         void Awake()
         {
@@ -53,7 +65,7 @@ namespace Proto
 
         void Update()
         {
-            float target = _hot ? 1f : 0f;
+            float target = _hot || _sticky ? 1f : 0f;
             if (Mathf.Approximately(_blend, target)) return;
 
             _blend = Mathf.MoveTowards(_blend, target, Time.unscaledDeltaTime * _speed);
