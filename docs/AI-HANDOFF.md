@@ -357,12 +357,24 @@ Ini semua sudah pernah terjadi. Jangan mengulangi.
     Pernah terjadi: `HeroPass` sukses menulis 4 seat, lalu `Init` di play mode cuma
     memasang 2. Stop, masuk lagi, dan benar. Kalau hasil runtime tidak cocok dengan
     log pass-nya, ulangi play mode sebelum mencari bug yang tidak ada.
-25. **Bentuk hasil resep HARUS muat di alas yang tersedia.** `CouldSeat()` menjaga
-    warnanya jujur, tapi ia tidak membuat resep mustahil jadi mungkin. Greater
-    Fireball sempat berbentuk Huruf T (3 petak melintang) sementara alas pembuka
-    hero cuma 2×2 — upgrade yang dijanjikan tidak akan pernah bisa terjadi. Kalau
-    sebuah resep memang dimaksudkan tersedia di titik tertentu, cek bentuk hasilnya
-    terhadap alas yang ada di titik itu.
+25. ~~**Bentuk hasil resep HARUS muat di alas yang tersedia.**~~ **DICABUT 2026-08-10.**
+    Dulu benar: merge dibatalkan kalau hasilnya tidak dapat tempat, jadi resep dengan
+    hasil lebih besar dari bahannya bisa mustahil dipicu. Sekarang evolusi **tidak
+    pernah dibatalkan** — hasil yang tidak muat keluar dari papan untuk dipasang ulang
+    (lihat §33). Bentuk hasil yang lebih besar dari bahan tetap punya harga: hasilnya
+    kepental keluar, bukan gagal. Yang masih perlu dicek adalah apakah harga itu wajar
+    di titik permainan tersebut, bukan apakah resepnya mungkin.
+26. **Kanvas scene game hidup tanpa `GraphicRaycaster` sampai 2026-08-10.** Seluruh
+    UI run memakai hit-test sendiri (posisi mouse → petak), jadi tidak ada yang
+    menagih raycaster sampai barang UGUI beneran masuk: halaman setelan lewat ESC,
+    tombol KELUAR KE MENU, stepper, slider. Semuanya **diam**, bukan error — persis
+    jebakan #9 (EventSystem salah modul), gejalanya identik. Kalau tombol UGUI di
+    dalam run tidak merespons, hitung dulu `FindObjectsByType<GraphicRaycaster>()`;
+    nol berarti tidak ada satu pun klik UI yang akan pernah sampai.
+27. **`Screen.width` bukan koordinat kanvas.** Tombol KELUAR KE MENU dulu mencari
+    tepi panel setelan sendiri lewat `(Screen.width - 1180) * 0.5f`, yang benar hanya
+    di jendela 1920 dengan skala kanvas 1 — di ukuran lain ia melayang entah di mana.
+    Tempelkan tombol ke rect panelnya sebagai anak, jangan hitung posisinya dari layar.
 
 ---
 
@@ -2204,3 +2216,188 @@ diadu, bukan supaya seimbang.
 Terverifikasi ujung ke ujung: menu -> halaman starter (3 kartu, 59/61/62 Image petak sesuai
 jumlah selnya) -> MULAI RUN -> `PlayerPrefs = 'stormcaller'` -> Hp 78/78, Mana 150/150, laju 3,4,
 regen 7+3 dari rune = 10 -> `Wave 1`, `Map.At 1` (peta memang terbuka lebih dulu dan node dipilih).
+
+---
+
+## 32. Bersih-bersih UI: menu, setelan bertab, HUD (2026-08-10)
+
+Permintaan pemilik project lewat lima screenshot bertanda: main menu jelek, HUD penuh
+teks sampah, toko berantakan, setelan berantakan + tidak bisa pulang ke menu, dan
+deskripsi starter tidak kebaca.
+
+### Akar "gak bisa ke main menu"
+
+`GrimoireUI.BuildCanvas()` tidak pernah menambahkan `GraphicRaycaster`. Bukan cuma tombol
+itu yang mati — **seluruh** UGUI di dalam run mati diam-diam (lihat jebakan #26).
+Diverifikasi lewat `EventSystem.RaycastAll` di titik tengah tombol: sesudah perbaikan
+`hits=2` (`KeluarKeMenu` di atas `SettingsPanel`), dan `KEMBALI` juga tertembus.
+Tombolnya sekarang anak dari rect panel, bukan dihitung dari `Screen.width`.
+
+### Setelan jadi empat sub-halaman (`Menu/SettingsTabs.cs`)
+
+Rail tab kiri (LAYAR / PERFORMA / SUARA / DATA) + satu badan halaman yang bergantian
+lewat `SetActive`. Panel menyusut **1180×1060 → 1180×720**. Alasan strukturalnya bukan
+selera: daftar tunggal membuat tiap baris baru mendorong seksi di bawahnya sampai baris
+DATA menabrak tombol KEMBALI — itu sudah pernah terjadi sekali dan dibayar dengan
+menaikkan tinggi panel ke 1060.
+
+`MenuLine` dapat properti `Sticky` supaya tab yang aktif tetap menyala setelah pointer
+pergi — tanpa itu, menyorot lalu meninggalkan tab aktif memadamkan penandanya.
+
+Baris setelan sekarang **memaku kontrolnya ke tepi kanan baris** (`row.rect.width - …`),
+bukan ke koordinat tetap 340/740. Angka lama benar hanya selama baris selebar panel penuh.
+
+### Judul game pindah ke `MenuTheme.GameTitle`
+
+Judul dulu string di builder, ditulis dengan spasi manual (`"G R I M O I R E   H A V E N"`).
+Sekarang satu field asset + `TitleTracking` (character spacing TMP). Ganti nama game =
+edit satu field, lalu `Tools/Grimoire/Build Main Menu`. **Tagline dibuang** atas permintaan
+pemilik project ("cukup nama aja").
+
+### Starter: nama & blurb tidak lagi saling menimpa
+
+Keduanya dipasang dengan pivot tengah; kotak blurb setinggi 220 yang dipusatkan di y=96
+naik sampai 206 dan melewati baris nama di 126..174. Sekarang nama dipatok di 200 dan blurb
+**digantung dari 160 ke bawah** (pivot atas), jadi panjang blurb tidak bisa merambat naik.
+Warnanya dinaikkan dari `TextMuted` (lerp 0,55 ke `TextIdle`) + `lineSpacing` 14.
+
+### HUD: yang dibuang dan yang tinggal
+
+| Dibuang | Sekarang |
+|---|---|
+| `_heldText` hint "klik item buat ambil \| klik kanan = putar \| …" | kosong saat tangan kosong |
+| `_heldText` "wave lagi jalan - grimoire terkunci, nonton aja…" | kosong |
+| label "ALT + hover = lihat resep" (bukan tombol, 220 px di atas petak 88 px — menindih PETA) | dihapus; ALT+hover tetap jalan |
+| "TAS (skill doang - drop skill masuk sini)" | "TAS" |
+| "SPELL AKTIF - urut damage yang sudah dihasilkan" | "SPELL AKTIF" |
+| "PETA (M)" | "PETA", digeser ke petak yang ditinggalkan label resep |
+| banner baris-kedua ("klik LANJUT…", "M = intip peta") | judul saja |
+
+> **Konsekuensi yang disadari:** penanda "grimoire terkunci selama wave" sekarang tidak
+> terlihat di mana pun — `_gridTitle` yang membawanya sudah dimatikan sejak §28. Kalau
+> pemain bingung kenapa papan tidak bisa disentuh saat wave jalan, penanda VISUAL di papan
+> (bukan kalimat) yang harus dibuat.
+
+### Toko
+
+- Banner tengah layar dimatikan (`_bannerText.enabled`) selama panel singgah terbuka —
+  itulah yang mendarat di atas dagangan dan membuat toko terlihat berantakan. Disembunyikan
+  lewat `enabled`, **bukan** dengan keluar lebih awal dari `HandleBanner`: sisa fungsi itu
+  juga yang mendengar SPACE untuk LANJUT.
+- `ShopPanel.prefab` → tinggi Panel **372 → 420**. REROLL (anchor dasar panel, y=12..46)
+  dulu menembus 24 px ke dalam slot baris kedua. Terukur sesudahnya: slot terbawah
+  `yMin=440`, reroll `yMax=416`, **nol bentrok** di keenam slot.
+- `_panelBg` sekarang ikut UKURAN `PanelRect()`, bukan cuma posisinya. Selama ini latarnya
+  dikunci di `PanelW × PanelH` sementara kotaknya boleh ditata tangan di prefab — dua angka
+  yang kebetulan sama sampai kotaknya digeser sekali.
+- Judul panel `"TOKO — <n> koin"`, reroll `"REROLL <n> koin"`.
+
+### Layar starter pindah ke prefab (`StarterRig` + `StarterPanel.prefab`)
+
+Dua keluhan sekaligus: papannya digambar sebagai kotak abu polos padahal prefab papan
+grimoire bersampul sudah ada, dan tata letaknya tidak bisa digeser karena hidup sebagai
+koordinat di builder — sementara scene menu digenerate ulang tiap kali.
+
+- **Papan preview = `UiTheme.GrimoirePanelPrefab`**, prefab yang sama dengan yang dipakai di
+  dalam run. Petak 7x7 digambar di dalam `GridArea` MILIK prefab itu, jadi ukuran sel preview
+  dan sel sungguhan mustahil berbeda. Sampul, rune, dan mata ikut hidup di layar starter.
+- **`Assets/Art/UI/Prefabs/StarterPanel.prefab` memegang tata letaknya.** Builder membuatnya
+  **sekali**; sesudah itu ia hanya `InstantiatePrefab` + menyambungkan data lewat
+  `StarterRig`. Terbukti: `BoardArt` digeser 60 px di prefab → rebuild menu → geserannya masih
+  ada di scene, dan scene-nya `IsPartOfPrefabInstance == true`. Karena scene memegang
+  INSTANCE, mengedit prefab langsung terlihat tanpa perlu rebuild sama sekali.
+- Mau kembali ke tata letak bawaan: **hapus prefabnya**, lalu rebuild.
+- **Jangkauan mata (`GrimoireEye.WakeRadius`) sekarang punya dua nilai.** Sumbernya
+  `GrimoirePanel.prefab` (dipakai in-game): **300 → 650**, feather 120 → 220. Halaman starter
+  menimpanya sebagai **override nested prefab**: radius **1700**, feather 450, `ReachX/Y`
+  0,32/0,24, `Follow` 9 — di layar 1920×1080 sudut terjauh dari mata ≈ 1221 px, di bawah
+  ambang penuh 1250, jadi di menu matanya praktis mengunci kursor di mana pun ia berada.
+  Menaikkan angka di prefab sumber **tidak** lagi mengubah yang di menu, dan sebaliknya.
+- Pola yang sama dengan `ShopRig`/`GrimoireGridArea`/`VitalsRig`. Kalau ada layar generated
+  lain yang "posisinya jelek", inilah bentuk jawabannya — jangan menambah koordinat di builder.
+
+Nama gamenya **GRIMOIRE MASTER** — diputuskan pemilik project 2026-08-10, terpasang di
+`MenuTheme.asset` dan terlihat penuh di layar pembuka (15 karakter masih muat di kotak 1400
+pada `TitleSize` 82 + tracking 26).
+
+### Belum dikerjakan
+
+- **`productName` di Player Settings masih "My project".** Sengaja tidak disamakan:
+  mengubahnya memindahkan kunci PlayerPrefs, dan codex + setelan yang sudah tersimpan akan
+  terbaca kosong. Itu keputusan yang harus diambil sadar, bukan efek samping.
+- **Diorama menu masih kubus abu + kapsul kuning.** Dua arah yang pernah ditawarkan:
+  sampul grimoire + mata jadi art utama (nol aset baru), atau diorama didandani aset hutan
+  + skeleton VAT.
+
+---
+
+## 33. Evolusi tidak pernah dibatalkan lagi (2026-08-10)
+
+Keluhan pemilik project: dua segel lengkap dan bersentuhan, garisnya biru, wave lewat tanpa
+menggabung. **Bukan bug** — hasilnya (`Power Sigil`, SBend 4 petak) tidak muat di alas yang
+tersisa setelah bahan (3 petak) dimakan, jadi `CouldSeat` menolak dan merge dibatalkan.
+
+Jawabannya bukan "perbaiki datanya" melainkan **cabut aturannya**, dan alasannya struktural:
+papan penuh adalah keadaan di mana pemain PALING butuh menukar tiga piece kecil jadi satu
+yang besar. Membatalkan merge di situ mengunci pemain — makin penuh papan, makin mustahil
+berevolusi. Arahnya terbalik dari yang dimaksud.
+
+### Aturan sekarang
+
+- Bahan **selalu** dimakan; hasilnya **selalu** lahir.
+- Hasil yang tidak dapat tempat dikeluarkan lewat callback `spill` — `Merge()` di
+  `Grimoire.cs` dan `RecipeResolver.cs` tidak lagi rollback.
+- `GrimoireUI.SpillEvolved` memutuskan pendaratannya: **tas dulu** (`SeatInBag`, mencoba tiap
+  petak × tiap putaran), **lantai belakangan** (`AddLoose` dekat papan). Urutan itu penting —
+  barang tercecer ikut terjual saat wave berikutnya mulai, dan ★4 hasil peleburan tiga piece
+  tidak pantas hilang karena pemain sempat berkedip. Rune tidak pernah bisa masuk tas.
+- Log merge menandai kasus ini: `"A + B  ->  C (keluar - pasang ulang)"`.
+
+### Warna garis — tiga, bukan dua lagi
+
+| Warna | Arti |
+|---|---|
+| emas | berevolusi, hasilnya mendarat di papan |
+| **jingga** (`LinkSpill`) | berevolusi, hasilnya KELUAR — pasang ulang sendiri |
+| biru | bahannya belum lengkap, atau grup itu cuma lengkap karena piece di kursor ikut dihitung |
+
+`EvoPreview.Complete` sekarang berarti "bahannya lengkap dan bersentuhan" saja;
+`EvoPreview.SpillsOut` yang menjawab "mendarat di mana". Jingga digambar setebal emas: dua-duanya
+janji yang ditepati.
+
+### Terverifikasi
+
+Dua papan uji terisolasi (`new Grimoire(db)`, tanpa scene):
+
+| Papan | preview | hasil |
+|---|---|---|
+| 3 petak rune sebaris — mustahil muat | `complete=True spillsOut=True` | `Keen Sigil + Frenzy Sigil -> Power Sigil (keluar - pasang ulang)`; bahan habis; `Power Sigil` masuk callback spill |
+| 4×4 petak rune — lapang | `complete=True spillsOut=False` | `Keen Sigil + Frenzy Sigil -> Power Sigil`; duduk di `(0,0)`; spill tidak terpanggil |
+
+### Ke mana hasilnya kepental, dan kapan lantai disapu (2026-08-10, permintaan pemilik project)
+
+- **Mendarat di sebelah bahannya.** `spill` membawa titik tengah petak bahan
+  (`Action<PieceDefinition, Vector2>`), dan `GrimoireUI.SpillFromBoard/SpillFromBag`
+  mengubahnya jadi piksel lewat `GridPoint`/`BagPoint` + satu sel ke atas. Terukur: bahan di
+  petak x=3,4,5 y=4 → spill dilaporkan di `(4.00, 4.00)`. Jalur "masuk tas dulu" **dicabut** —
+  pemilik project ingin barangnya benar-benar kepental keluar, bukan hilang diam-diam ke tas.
+- **Hadiah wave berhenti berpencar.** `DropPickups.Toss` dulu mengundi arah (0–2π) dan
+  kecepatan (2,5–4,5). Sekarang sudutnya **sudut emas × urutan** dan kecepatannya
+  `1,5 + 0,14 × urutan`. Terukur untuk lima hadiah: jarak 0,90 / 0,98 / 1,07 / 1,15 / 1,24
+  unit dari pemain (dulu 1,07–1,93 dan bisa bertumpuk), jarak antar-hadiah terdekat 0,94 unit
+  terhadap pickup selebar ~0,4 — rapat tapi tidak pernah menumpuk.
+- **LANJUT menyapu lantai, bukan wave berikutnya.** `SellLoose()` dulu hanya dipanggil
+  `StartNextWave()`. Begitu peta masuk, "lanjut" sering bukan wave sama sekali: node toko /
+  kejadian / slot berangkat lewat `Depart()` yang tidak menyentuh lantai, jadi barang tercecer
+  ikut menyeberang ke ruangan berikutnya. Sekarang kedua jalur LANJUT (SPACE di `HandleBanner`
+  dan klik di `StartButtonRect`) memanggil **`DepartRun()`** = `StashHeld` + `SellLoose` +
+  `_run.Depart()`. `run.OnEmbark` tetap melakukan hal yang sama sebagai jaring pengaman untuk
+  keberangkatan yang tidak lewat tombol (mis. `DepartNow` di pembuka run).
+
+### Angka yang melatarbelakangi
+
+Audit `ContentDatabase`: **20 dari 121 resep** hasilnya lebih besar dari total petak bahannya,
+7 di antaranya selisih ≥2 petak — `Fireball ×2` (2 petak) → `Greater Fireball` Square (4),
+`Keen Sigil ×2` (2) → `Razor Sigil` Square (4), `Ember Sigil ×2 + Chain Sigil` (6) →
+`Storm Rune` Big3 (9). Angka-angka ini sekarang berarti "seberapa sering hasil kepental
+keluar", bukan lagi "seberapa sering evolusi gagal".

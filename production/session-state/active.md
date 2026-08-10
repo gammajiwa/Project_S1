@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Layar pilih starter grimoire + musuh terpanggang (VAT)
-Task: Alur menu→starter→peta terverifikasi; angka tiga starter menunggu balancing
+Feature: Bersih-bersih UI sebelum dioper ke build clean
+Task: Menu/setelan/HUD/toko/starter beres; nama game & diorama menu menunggu keputusan
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -897,6 +897,89 @@ File yang terlibat: `View/TooltipBuilder.cs` (kartu stat — pangkas), `View/Rec
 sudah ada (placeholder pip/kotak warna) — pakai `PieceDefinition.Icon`. "Punya" = hitung
 dari papan + tas + tercecer (`OwnedCount` sudah ada, dipakai RecipePanel sekarang).
 
+**Lanjutan permintaan pemilik project (2026-08-10):**
+
+- Hasil yang kepental mendarat **di sebelah bahannya** (terukur: bahan di petak x=3,4,5 y=4 →
+  spill di `(4,4)`), bukan di titik tetap. Jalur "masuk tas dulu" dicabut — maunya memang
+  kepental keluar.
+- **Hadiah wave berhenti nyebar**: `DropPickups.Toss` tidak lagi mengundi arah & jarak.
+  Sudut emas × urutan, kecepatan `1,5 + 0,14×urutan`. Lima hadiah mendarat 0,90–1,24 unit dari
+  pemain (dulu 1,07–1,93 acak), jarak antar-hadiah terdekat 0,94 unit — rapat, tidak menumpuk.
+- **Bug: barang tercecer tidak terjual kalau node berikutnya bukan wave.** `SellLoose()` cuma
+  dipanggil `StartNextWave()`, sementara node toko/kejadian/slot berangkat lewat `Depart()`.
+  Sekarang kedua jalur LANJUT memanggil `DepartRun()` = `StashHeld` + `SellLoose` + `Depart`.
+
+**HUD dipangkas lagi + layar GAME OVER (2026-08-10):**
+
+- **Kotak JUAL dan tombol PETA dibuang.** JUAL jadi mubazir sejak LANJUT menyapu lantai;
+  PETA sudah punya kembarannya di tombol M. `SellRect`/`MapButtonRect`/`SellHeld`/`DrawSellBox`
+  ikut hilang, `SellY` berganti nama jadi `ButtonRowY`, dan TOKO (satu-satunya yang tersisa di
+  kolom itu) naik menempati barisnya.
+- **Layar GAME OVER.** Dulu kematian cuma mengganti teks banner ("SPACE buat ulang - ESC buat
+  balik ke menu") sementara arena tetap hidup di belakangnya. Sekarang: kerudung gelap penuh
+  layar, judul, baris "run berakhir di wave N - X koin", tombol **KE MENU UTAMA** dan **ULANG
+  RUN**. Peta/toko/kejadian/slot yang masih terbuka ikut ditutup — peta pemilih yang tertinggal
+  menyala menuntut jawaban untuk perjalanan yang sudah tidak ada. Diverifikasi lewat screenshot
+  (`Assets/Screenshots/game_over3.png`).
+
+**Temuan menunggu keputusan — resep yang menghasilkan RUNE:**
+
+**10 dari 121 resep** hasilnya rune, semua bahannya segel. Pemilik project menyatakan resep
+seharusnya cuma untuk skill & item. Konsekuensi kalau dicabut (terukur, 8000 undian drop
+@wave20): rune ★2/★3/★4 tetap bisa jatuh sendiri (244/83/35 dari 8000), tapi **`Keystone Rune`
+★5 = 0** — ia satu-satunya rune ★5 dan aturannya "★5 hanya lahir dari resep". Jadi mencabut
+kesepuluhnya menghapus Keystone dari permainan kecuali diberi jalur lain.
+
+Daftar: Current, Bastion, Siphon, Whetstone (★2) · Storm, Nadir (★3) · Beacon, Echo, River (★4)
+· Keystone (★5).
+
+**Belum dikerjakan (diminta 2026-08-10, belum tersentuh):**
+
+- **Pemain mati belum terbakar** seperti musuh. Musuh memakai jalur VAT instanced
+  (`_VatClip.w` + `BurnNoise`); pemain cuma kapsul `CreatePrimitive` bermaterial bawaan, jadi
+  butuh shader dissolve tersendiri — bukan sekadar menyalin materialnya.
+- **Damage popup "big number"** — angka damage dibuat besar supaya terasa jedar-jeder. Cara
+  paling aman: faktor TAMPILAN di `GameBalance` (mis. ×100) yang dipakai popup, panel spell,
+  dan tooltip sekaligus, sehingga balance internal tidak tersentuh sama sekali.
+
+**Angka besar & pemain terbakar (2026-08-10):**
+
+- **`Data/BigNumber.cs`** — pengali TAMPILAN (`Scale = 100`), bukan knob keseimbangan.
+  Simulasi tetap berjalan di angka aslinya; yang dikalikan cuma yang sampai ke mata, jadi
+  tidak satu pun konstanta `GameBalance` / aset piece / kurva musuh perlu disentuh. Dipakai
+  popup damage, panel spell, dan kartu hover. Format Indonesia eksplisit (titik ribuan, koma
+  desimal) — bukan culture mesin, supaya build di locale lain tidak memformat berbeda.
+  Terukur: `34 -> 3.400`, `128,4 -> 12.840` (panel: `12,8rb`), `5400 -> 540.000` (`540rb`).
+- **Popup lebih "jedar"**: rentang ukuran font 16–34 → **20–54** (dengan angka empat digit,
+  ukuran jadi satu-satunya pembeda gigitan kecil dari pukulan mematikan), sentakan lahir
+  0,45 → **0,8** dan mengempis lebih lambat (5 → 4).
+- **Pemain ikut hangus saat mati** — `Shaders/BurnAway.shader` + `View/PlayerBurnout.cs`.
+  Musuh terbakar lewat jalur VAT instanced yang terikat animasi terpanggang; pemain cuma
+  kapsul ber-MeshRenderer, jadi ia dapat shader dissolve sendiri. Noise DIHITUNG (value-noise
+  tiga oktaf), tanpa aset tekstur baru. Menjalar dari BAWAH ke atas — benda yang hilang dari
+  ubun-ubun terbaca sebagai tenggelam, bukan terbakar. Verifikasi: shader `isSupported=True`,
+  material terpasang di renderer pemain, `_Burn` beranimasi 0→1 lalu renderer dimatikan.
+  **Belum dinilai dengan mata** — kamera arena menimpa posisi tiap frame sehingga sulit
+  dipotret dari luar; pemilik project akan melihatnya saat mati sungguhan.
+
+**Resep tidak lagi menghasilkan rune (2026-08-10, keputusan pemilik project):**
+
+Aturannya sekarang: **evolusi untuk item & skill; rune DIDAPAT (drop) dan DIBELI (toko).**
+
+- **10 resep dicabut** dari `ContentDatabase._recipes` (121 -> 111): `Recipe_runearus_a`,
+  `runebenteng_a`, `runesiphon_a`, `runeasah_a`, `runebadai_a`, `runenadir_a`, `runemercu_a`,
+  `runegema_a`, `runesungai_a`, `runeinti_a`. **File `.asset`-nya masih di disk** (yatim, tidak
+  terdaftar, tidak pernah diperiksa resolver) — sengaja tidak dihapus supaya bisa dibalik;
+  bilang kalau mau dihapus permanen.
+- **Rune ★5 dibuka jalannya.** Tanpa resep, `Keystone Rune` mustahil didapat. `DropStarWeights[4]`
+  0 -> **0,35** dan `DropStarMinWave[4]` 99 -> **14**. Supaya aturan lama "skill ★5 hanya lahir
+  dari resep" tetap utuh, `ContentDatabase.RandomOfStar` memaksa bintang 5 mengambil dari pool
+  RUNE saja.
+- Terukur, 40.000 undian @wave20: rune ★1=8.096 ★2=1.227 ★3=438 ★4=147 **★5=141**
+  (Keystone), **skill ★5 = 0**. Di wave 10: bintang 5 = **0** (belum buka).
+- Toko (20.000 lemparan): rune ★1=1.944, ★2=583, ★3+ = 0 — `CanDrop` adalah properti
+  `Stars <= 1`, jadi toko memang lapak barang dasar; rune langka datang dari lantai.
+
 ### Berikutnya
 
 - VFX slot "dopamin ala Vampire Survivors" (panel masih teks) + cerita penjaga pulau
@@ -1194,8 +1277,90 @@ Yang dibutuhkan, urutan yang disarankan:
 4. `RunDirector.OnRestEntered` yang memicu masuk room; keluar room balik ke `Stage.Ready`.
 5. Tiga scene ditambahkan ke Build Settings.
 
+## Bersih-bersih UI (2026-08-10)
+
+Detail teknis: **docs/AI-HANDOFF.md §32**. Dasarnya lima screenshot bertanda dari pemilik
+project; sesi yang mengerjakannya mati kena listrik padam sebelum menyentuh kode, jadi
+semuanya digarap dari nol di sini.
+
+- **"Gak bisa ke main menu" ternyata bukan soal tombol.** `GrimoireUI.BuildCanvas()` tidak
+  pernah memasang `GraphicRaycaster` — **seluruh** tombol UGUI di dalam run mati diam-diam,
+  bukan cuma satu. Terbukti lewat `EventSystem.RaycastAll`: sesudahnya tombol KELUAR KE MENU
+  dan KEMBALI dua-duanya tertembus. Tombolnya juga berhenti menghitung posisi dari
+  `Screen.width` dan menempel ke rect panel.
+- **Setelan jadi empat sub-halaman** (LAYAR / PERFORMA / SUARA / DATA) lewat `SettingsTabs`.
+  Panel 1180×1060 → **1180×720**.
+- **Nama game: `GRIMOIRE MASTER`** (diputuskan pemilik project 2026-08-10). Hidup di
+  `MenuTheme.GameTitle` + `TitleTracking`; ganti = edit satu field lalu rebuild menu.
+  **Tagline dibuang.**
+- **Deskripsi starter kebaca** — nama dan blurb dulu saling menimpa karena keduanya
+  berpivot tengah.
+- **Layar starter pakai prefab papan grimoire** (sampul + rune + mata), bukan kotak abu
+  polos; petaknya digambar di `GridArea` milik prefab itu. Tata letak halamannya pindah ke
+  **`Assets/Art/UI/Prefabs/StarterPanel.prefab`** + komponen `StarterRig` — builder membuatnya
+  sekali lalu berhenti menimpanya, jadi geseran tangan bertahan melewati rebuild (diuji:
+  geser 60 px → rebuild → masih di tempat). Scene memegang instance-nya, jadi edit prefab
+  langsung kelihatan tanpa rebuild.
+- **HUD dibersihkan** dari teks tutorial yang menetap (hint klik, "wave lagi jalan",
+  "ALT + hover = lihat resep", "TAS (skill doang…)", ekor judul SPELL AKTIF, baris kedua
+  banner). PETA naik ke petak yang ditinggalkan label resep.
+- **Toko**: banner tengah layar dimatikan selama panel singgah terbuka; tinggi panel prefab
+  372 → 420 supaya REROLL berhenti menembus slot baris kedua (terukur nol bentrok);
+  `_panelBg` sekarang ikut ukuran kotak prefab, bukan cuma posisinya.
+
+Diverifikasi: kompilasi bersih (0 error/warning), `Build Main Menu` sukses, screenshot menu
+utama / halaman starter / setelan tab LAYAR & DATA, raycast tombol, dan perhitungan bentrok
+slot toko. **Belum dilihat mata pemilik project.**
+
+> **Konsekuensi yang disadari:** penanda "grimoire terkunci selama wave" sekarang tidak
+> muncul di mana pun. Kalau itu terasa hilang, gantinya harus penanda visual di papan.
+
+## Kartu hover & "kok nggak evolusi" (2026-08-10)
+
+**Kartu hover dirapikan.** Tiga penyebabnya sekaligus: kotaknya dipatok **360×150** apa pun
+isinya, teksnya `HorizontalWrapMode.Overflow` (jadi blurb berjalan keluar kotak dan dibaca di
+atas rumput), dan semua baris berbagi ukuran + warna yang sama. Sekarang tingginya dihitung
+dari `preferredHeight` (terukur: segel 380×161, skill 380×189), teks dibungkus, dan isinya
+dibagi tiga lapis — kepala (nama besar, jenis·bentuk·petak, status), angka, lalu kaki
+(harga & blurb, kecil dan redup di balik garis).
+
+**"Evo gak jalan, garisnya biru padahal bahannya lengkap".** Akarnya: hasil resep sering
+lebih besar dari bahannya — `Frenzy Sigil` (2 petak) + `Keen Sigil` (1 petak) = 3 petak
+dibebaskan, tapi `Power Sigil` berbentuk **SBend 4 petak**, dan tiap petaknya wajib beralas
+rune. Aturan lama **membatalkan merge** kalau hasilnya tidak dapat tempat: bahan dikembalikan,
+garis tetap biru, wave lewat tanpa apa-apa.
+
+Audit seluruh resep: **20 dari 121** hasilnya lebih besar dari total bahan, 7 di antaranya
+selisih ≥2 petak (mis. `Fireball ×2` 2 petak → `Greater Fireball` Square 4 petak).
+
+**Keputusan pemilik project (2026-08-10): evolusi TIDAK PERNAH dibatalkan.** Aturan lama
+terbalik arah — papan penuh justru saat pemain paling butuh menukar piece kecil jadi besar,
+dan membatalkannya mengunci pemain di sana. Sekarang bahannya tetap dimakan; hasil yang tidak
+muat **keluar dari papan** dan dipasang ulang sendiri oleh pemain. Urutan mendaratnya: TAS
+dulu (aman melewati pergantian wave), lantai belakangan — barang tercecer ikut terjual saat
+wave berikutnya mulai, dan ★4 hasil peleburan tidak pantas hilang karena pemain berkedip.
+Rune tidak bisa masuk tas, jadi langsung ke lantai dekat papan.
+
+Warna garis ikut berubah maknanya: **emas = berevolusi & mendarat di papan**, **jingga =
+berevolusi tapi hasilnya keluar**, biru tetap "kurang bahan". Jingga setebal emas — sama-sama
+janji yang ditepati, cuma beda tempat mendarat.
+
+Diverifikasi lewat dua papan uji terisolasi:
+
+| Papan | preview | hasil |
+|---|---|---|
+| 3 petak rune sebaris (mustahil muat) | `complete=True spillsOut=True` | `Keen + Frenzy -> Power Sigil (keluar - pasang ulang)`, bahan habis, `Power Sigil` dikeluarkan |
+| 4x4 petak rune (lapang) | `complete=True spillsOut=False` | `Keen + Frenzy -> Power Sigil`, duduk di `(0,0)`, tidak ada yang keluar |
+
+
 ### Berikutnya
 
+- **`productName` di Player Settings masih "My project"** — belum disamakan dengan
+  GRIMOIRE MASTER karena mengubahnya memindahkan lokasi PlayerPrefs (codex & setelan yang
+  sudah tersimpan bakal terbaca kosong). Butuh keputusan sadar, bukan sekalian
+- **Diorama menu masih kubus abu + kapsul kuning** — dua arah yang pernah ditawarkan:
+  sampul grimoire + mata jadi art utama (nol aset baru), atau diorama pakai aset hutan +
+  skeleton VAT
 - **Balancing tiga starter** — angkanya belum pernah diadu sungguhan
 - **Tiga model musuh lagi belum terpakai.** Empat archetype sudah punya modelnya sendiri
   (Grunt←Skeleton, Cursed←Monster37, Stalker←Monster40, Spitter←Necromancer), tapi
