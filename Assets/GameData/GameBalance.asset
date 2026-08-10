@@ -75,8 +75,8 @@ MonoBehaviour:
   - 12
   - 4.5
   - 1.5
-  - 0
-  DropStarMinWave: 0100000001000000050000000b00000063000000
+  - 0.35
+  DropStarMinWave: 0100000001000000050000000b0000000e000000
   MaxDropsPerWave: 3
   EliteBonusDrops: 2
   EliteStarBonus: 1

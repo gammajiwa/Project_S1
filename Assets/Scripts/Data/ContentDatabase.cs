@@ -252,7 +252,15 @@ namespace Proto
                 var runes = _dropRunesByStar[s - 1];
                 var others = _dropOthersByStar[s - 1];
 
-                bool wantRune = Random.value < runeShare;
+                // Bintang 5 adalah milik RUNE saja.
+                //
+                // Dua aturan bertemu di sini. Yang lama: skill ★5 tidak pernah jatuh — ia hanya
+                // lahir dari resep, dan itu yang membuat peleburan punya puncak. Yang baru:
+                // rune tidak lagi punya resep sama sekali (resep untuk item & skill), jadi satu-
+                // satunya jalan rune ★5 sampai ke tangan pemain adalah jatuh atau dibeli.
+                // Memaksa pilihan ke rune di tingkat ini menghormati keduanya tanpa menyentuh
+                // tabel bobot yang sudah diadu.
+                bool wantRune = s >= 5 || Random.value < runeShare;
                 var pool = wantRune ? runes : others;
                 if (pool.Count == 0) pool = runes.Count > 0 ? runes : others;
                 if (pool.Count == 0) continue;
