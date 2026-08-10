@@ -2694,3 +2694,36 @@ Terverifikasi lewat screenshot in-game (`player_lizmage_v5.png`): wave 1 berjala
 > GameObjectInspector` + `SerializedObjectNotCreatableException` muncul kalau objek yang
 > sedang dipilih di Inspector dihancurkan (keluar play mode / prefab dirakit ulang). Murni
 > editor-side, hilang dengan klik objek lain.
+
+## 37. Reaksi punya VFX-nya sendiri (2026-08-10)
+
+Sembilan reaksi — separuh damage sebuah build ailment — masih meledak sebagai bola primitif
+yang mengembang. Sekarang tiap reaksi punya efeknya sendiri, pola persis §35:
+
+- `ReactionDefinition.Vfx` + `VfxScale` (slot baru).
+- `PlayerCaster.OnReactionFired` menyembur lewat `SkillVfxPool`; bola primitifnya TIDAK
+  dibuang tapi ditipiskan (alpha ×0,35, radius ×1,1 bukan ×2) — ia masih berguna sebagai
+  kilatan warna yang menamai reaksinya, cuma tidak boleh menelan efek di titik yang sama.
+  Skala mengikuti aturan yang sama dengan skill: radius 3 unit = skala 1.
+- `Editor/ReactionVfxPass.cs` (Tools/Grimoire/Assign Reaction VFX) — wrapper per reaksi di
+  `Art/VFX/Reactions/<Nama>/Vfx_<Nama>.prefab`, create-if-missing, ditambah audit: reaksi
+  polos dan **efek LOOP di reaksi sekejap** (reaksi itu letusan; prefab loop akan menyala
+  selamanya di titik ledak).
+
+Pemilihannya mengikuti BAHAN, bukan warna: BLOOD SURGE cipratan darah, TOXIC BURST & FESTER
+racun (yang kedua berawan tengkorak), SHATTER & FROST CRACK & FROZEN VORTEX keluarga es,
+FIRESTORM & SEARING WOUND api, STATIC FREEZE listrik.
+
+Terverifikasi play mode wave 3: suntik 16 pasang burn+chill → **16 reaksi meletus, 16 instans
+`Vfx_SHATTER` hidup bersamaan**; giliran kedua dengan enam pasangan berbeda memunculkan
+BLOOD SURGE & TOXIC BURST (screenshot `Assets/Screenshots/reaction_vfx.png`, damage 645).
+
+### Dua jebakan pengukuran yang memakan waktu di sini
+
+1. **Callback `EditorApplication.update` MATI saat play mode berhenti** — driver sampling
+   yang menunggu 5–6 detik hilang tanpa jejak kalau play berakhir di tengah, dan yang
+   terlihat cuma "log-ku tidak pernah muncul". Untuk hal yang bisa diukur seketika, suntik
+   dan baca dalam SATU panggilan sinkron.
+2. **Musuh bisa habis sebelum probe jalan.** Percobaan pertama melaporkan 0 dari 9 wrapper
+   terlihat, dan penyebabnya bukan VFX-nya melainkan `Nearest()` mengembalikan null karena
+   wave sudah bersih. Selalu catat jumlah suntikan, bukan cuma jumlah yang terlihat.

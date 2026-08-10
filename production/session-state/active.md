@@ -1383,6 +1383,22 @@ Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholde
 - **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
   = edit tabel VfxPass, jangan assign manual (pass menimpa).
 
+## Reaksi punya VFX sendiri (2026-08-10)
+
+Detail: **AI-HANDOFF.md §37**. Sembilan reaksi berhenti jadi bola primitif —
+`ReactionDefinition.Vfx` + wrapper per reaksi di `Art/VFX/Reactions/<Nama>/` (bisa ditukar
+tangan, pass tidak menimpa), disembur lewat `SkillVfxPool`, bola primitif ditipiskan jadi
+kilatan penanda warna saja. Pass: **Tools/Grimoire/Assign Reaction VFX**, ada audit reaksi
+polos + efek LOOP di reaksi sekejap.
+
+Terverifikasi: 16 reaksi meletus → 16 `Vfx_SHATTER` hidup bersamaan; BLOOD SURGE & TOXIC
+BURST terlihat di screenshot `reaction_vfx.png`.
+
+> Jebakan baru: callback `EditorApplication.update` ikut mati saat play mode berhenti — probe
+> yang menunggu beberapa detik hilang tanpa jejak. Ukur sinkron dalam satu panggilan kalau
+> bisa, dan SELALU catat jumlah suntikan (percobaan pertama "0 dari 9" ternyata cuma karena
+> musuhnya sudah habis).
+
 ## Paket LizMage_Unity + tiga bug avatar (2026-08-10, malam)
 
 Detail: **AI-HANDOFF.md §36**. Paket baru dari pemilik project dipasang penuh mengikuti

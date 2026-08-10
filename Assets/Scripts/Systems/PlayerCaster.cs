@@ -522,7 +522,17 @@ namespace Proto
 
         void OnReactionFired(Vector3 pos, ReactionDefinition rx)
         {
-            SpawnFlash(pos, rx.BurstRadius * 2f, 0.35f, rx.FlashColor);
+            // Bola primitifnya ditipiskan kalau reaksi ini punya efeknya sendiri: tugasnya
+            // berubah dari MENJADI ledakan menjadi sekadar kilatan warna yang menamai reaksinya.
+            // Dibiarkan pekat, ia menelan efek yang barusan disembur di titik yang sama.
+            var tint = rx.FlashColor;
+            if (rx.Vfx != null) tint.a *= 0.35f;
+
+            SpawnFlash(pos, rx.BurstRadius * (rx.Vfx != null ? 1.1f : 2f), 0.35f, tint);
+
+            // Radius 3 unit = skala 1, aturan yang sama dengan skill — reaksi berdiameter 8
+            // tidak boleh terlihat sama besar dengan yang berdiameter 5.
+            _vfx.Burst(rx.Vfx, pos, rx.VfxScale * Mathf.Max(0.35f, rx.BurstRadius / 3f));
 
             // Inilah rantai intinya: reaksi -> buff -> skill berikutnya lebih kuat.
             if (rx.GrantBuff != null) ApplyBuff(rx.GrantBuff);

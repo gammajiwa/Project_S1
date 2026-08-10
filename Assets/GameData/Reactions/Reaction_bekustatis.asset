@@ -31,3 +31,5 @@ MonoBehaviour:
   CleansesOneDebuff: 1
   RefundMana: 0
   FlashColor: {r: 0.75, g: 0.85, b: 1, a: 1}
+  Vfx: {fileID: 7655232351691242374, guid: a17cf1dec6c8a3d4290e3389b82bc76c, type: 3}
+  VfxScale: 0.9

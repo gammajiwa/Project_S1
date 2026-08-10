@@ -61,6 +61,16 @@ namespace Proto
 
         public Color FlashColor = Color.white;
 
+        [Header("Efek partikel")]
+        [Tooltip("Prefab yang disemburkan di titik reaksi. Kosong = bola primitif lama saja. " +
+                 "Sama seperti skill, yang ditunjuk di sini prefab WRAPPER milik reaksi ini " +
+                 "(Art/VFX/Reactions/<Nama>) supaya isinya bisa ditukar tangan tanpa kode.")]
+        public GameObject Vfx;
+
+        [Tooltip("Pengali ukuran di atas skala yang sudah diturunkan dari BurstRadius " +
+                 "(radius 3 unit = skala 1).")]
+        [Min(0.05f)] public float VfxScale = 1f;
+
         public bool IsValid => A != null && B != null && A != B && (ConsumeA || ConsumeB);
 
         void OnValidate()

@@ -28,4 +28,8 @@ MonoBehaviour:
   ApplyPoints: 2
   SpreadToNearby: 0
   GrantBuff: {fileID: 11400000, guid: f4b1c005f72535544a660838eed5c7e7, type: 2}
+  CleansesOneDebuff: 0
+  RefundMana: 0
   FlashColor: {r: 0.7, g: 0.95, b: 1, a: 1}
+  Vfx: {fileID: 4076326913690190343, guid: 7ba868dad7ddb4641866b68ddb2ee948, type: 3}
+  VfxScale: 0.9
