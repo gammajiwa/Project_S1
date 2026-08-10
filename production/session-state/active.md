@@ -1383,7 +1383,24 @@ Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholde
 - **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
   = edit tabel VfxPass, jangan assign manual (pass menimpa).
 
-## "Balik posisinya" — LAPIS KEEMPAT & PENUTUP: dikepung = tidak pernah Idle (2026-08-10)
+## Audit transform + dua bug kamera/blink — lapis 5 & 6 (2026-08-10, epilog)
+
+**AI-HANDOFF §40 epilog.** Agent audit menyisir SEMUA penulis transform player/kamera:
+
+- **CameraShake settle glide** (lapis 5): trauma jenuh 1,0 di keramaian; begitu musuh
+  sekitar habis (= momen pemain berhenti), kamera meluncur dari offset terakhir (≤40 px)
+  balik ke origin ~0,4 dtk — dunia geser searah, karakter diam. Fix: ekor trauma dikuras
+  3×; puncak tak disentuh. + bug pause: kamera bergoyang selamanya di menu setelan
+  (deltaTime=0 → trauma tak terkuras); kini dikuras waktu nyata.
+- **Blink kotak-vs-elips** (lapis 6): CastBlink jepit KOTAK, motor tegakkan ELIPS →
+  blink ke sudut disentak balik 2–5 unit. Kini elips yang sama.
+- Koreksi premis auditor: "rig terkunci" salah — ia pakai arena 16×9 default kode; aset
+  40×30, rig terukur jalan 24,4 unit.
+
+**Verifikasi gabungan** (protokol satu-frame, 5×, wave 6, 15 dtk real): frame "pemain beku
+tapi digeser dunia >1,5 px" = **0/986**.
+
+## "Balik posisinya" — LAPIS KEEMPAT: dikepung = tidak pernah Idle (2026-08-10)
 
 **AI-HANDOFF §40 penutup.** Sticky-Run masih kalah karena berhentinya SUNGGUHAN: `PlayerMotor`
 memang dirancang berhenti saat terkepung (vektor kabur saling meniadakan — disengaja), jadi
