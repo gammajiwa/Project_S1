@@ -152,9 +152,9 @@ MonoBehaviour:
   Pupil: {fileID: 1230681213428763816}
   ReachX: 0.22
   ReachY: 0.16
-  Follow: 7
-  WakeRadius: 300
-  WakeFeather: 120
+  Follow: 30
+  WakeRadius: 500
+  WakeFeather: 220
   Wander: 1
   GlanceEvery: {x: 3, y: 7.5}
   GlanceCentre: 0.3
