@@ -37,6 +37,14 @@ namespace Proto
                  "sempat keluar layar sebelum kamera sadar.")]
         [SerializeField] float _smooth = 0.35f;
 
+        [Tooltip("Detik untuk menyusul saat pemain BERHENTI. Lebih pendek dari _smooth: sisa " +
+                 "perjalanan kamera setelah pemain diam terbaca sebagai KARAKTERNYA yang meluncur " +
+                 "mundur di layar, bukan sebagai kamera yang sedang menyusul.")]
+        [SerializeField] float _settle = 0.12f;
+
+        /// <summary>Posisi sasaran frame sebelumnya — dipakai menebak apakah ia sedang bergerak.</summary>
+        Vector3 _lastTargetPos;
+
         /// <summary>
         /// Zona matinya dihitung dari yang benar-benar TERLIHAT, bukan dari angka yang diketik:
         /// ukuran ortografis, rasio layar dan sudut kemiringan semuanya ikut menentukan seberapa
@@ -118,7 +126,19 @@ namespace Proto
 
             _focus.y = transform.position.y;
 
-            transform.position = Vector3.SmoothDamp(transform.position, _focus, ref _velocity, _smooth);
+            // Pemain yang BERHENTI mendapat penyusulan yang jauh lebih pendek.
+            //
+            // Ini memperbaiki keluhan "badannya geser balik ke titik semula": selagi berlari,
+            // pemain mengambang menjauh dari tengah layar (memang begitu cara zona mati bekerja),
+            // dan begitu ia berhenti kamera masih menyisakan perjalanan setengah detik lebih.
+            // Yang terbaca mata BUKAN kamera yang menyusul melainkan KARAKTERNYA yang meluncur
+            // mundur — dan sejak karakternya punya kaki, ia terbaca seperti animasi yang di-rewind.
+            // Terukur sebelum perbaikan: layarX 1219 -> 1171 selama 0,8 detik sesudah pemain diam.
+            bool moving = (p - _lastTargetPos).sqrMagnitude > 0.0000025f;
+            _lastTargetPos = p;
+
+            transform.position = Vector3.SmoothDamp(transform.position, _focus, ref _velocity,
+                moving ? _smooth : _settle);
         }
 
         static float Overshoot(float delta, float dead)

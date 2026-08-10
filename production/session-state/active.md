@@ -1383,6 +1383,22 @@ Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholde
 - **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
   = edit tabel VfxPass, jangan assign manual (pass menimpa).
 
+## "Rollback" saat berhenti = KAMERA, bukan animasi (2026-08-10)
+
+Detail: **AI-HANDOFF.md §40**. Tiga pengukuran memulangkan tersangka animasi: offset avatar
+tetap `(0,−1,0)`, panggul tidak menumpuk selama 4 detik Run (root motion memang sudah
+diekstrak — animasi SUDAH di tempat). Yang ketemu: **posisi pemain di layar** — lari 932→1219
+px, berhenti **1219→1171 px selama 0,8 detik**. Kamera yang menyusul telat, dibaca mata
+sebagai karakter meluncur mundur.
+
+Fix: `ArenaCamera` punya dua waktu susul — `_smooth` 0,35 saat sasaran bergerak, `_settle`
+**0,12** saat diam. Terukur: luncur balik selesai ~0,2 dtk (dulu 0,8). Knob lanjutan kalau
+masih terasa: `_settle`, atau `GameBalance.CameraDeadZone` (0,22 — **tidak kusentuh**, itu
+angka talaan pemilik project).
+
+> Pelajaran: keluhan "animasinya rollback" tiga kali membuat sesi ini menyunting importer
+> animasi. Yang menyelesaikannya pengukuran yang tidak menyentuh animasi sama sekali.
+
 ## Bilah demo dikecilkan + bug cuaca (2026-08-10)
 
 Detail: **AI-HANDOFF.md §39**.

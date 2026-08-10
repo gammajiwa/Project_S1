@@ -2845,3 +2845,35 @@ Play di sela-sela itu mendarat di arena.
 > **Aturan baru untuk sesi berikutnya:** jangan mengubah aset bersama demi screenshot selagi
 > pemilik project mungkin sedang bermain. Kalau butuh arena tanpa peta, tempuh alurnya —
 > `RunDirector.PickNode(run.Map.Nodes[0])` membawa masuk ke arena dalam satu panggilan.
+
+## 40. "Rollback" saat berhenti ternyata KAMERA, bukan animasi (2026-08-10)
+
+Laporan pemilik project: sesudah §38, badan pemain masih "geser balik ke titik semula" saat
+berhenti berlari. Tiga pengukuran memulangkan tersangka animasi satu per satu:
+
+| Yang diukur | Hasil | Artinya |
+|---|---|---|
+| `localPosition` avatar terhadap Player, sepanjang transisi | tetap `(0, −1, 0)`, nol pergerakan | objeknya tidak bergeser |
+| `localPosition` panggul selama 4 detik Run terus-menerus | konstan, **tidak menumpuk** | root motion memang sudah diekstrak; animasi SUDAH di tempat |
+| Posisi pemain **di layar** | lari: 932 → 1219 px; berhenti: **1219 → 1171 px selama 0,8 detik** | ketemu |
+
+Jadi yang bergerak mundur bukan karakternya melainkan KAMERA yang masih menyusul. Zona mati
+membuat pemain mengambang menjauh dari tengah layar selagi berlari (memang begitu desainnya),
+dan `SmoothDamp` bersisa perjalanan setengah detik lebih setelah pemain diam. Mata membacanya
+sebagai karakter yang meluncur mundur — dan sejak karakternya punya kaki alih-alih kapsul, ia
+terbaca sebagai animasi yang di-rewind.
+
+**Perbaikan** (`View/ArenaCamera.cs`): dua waktu penyusulan, bukan satu. `_smooth` 0,35 dipakai
+selagi sasaran bergerak; `_settle` **0,12** dipakai begitu sasaran diam. Terukur sesudahnya:
+luncur baliknya selesai dalam **~0,2 detik** (dulu 0,8) dengan jarak yang sama 49 px — cukup
+cepat untuk terbaca sebagai kamera menyusul, bukan karakter mundur.
+
+Knob kalau masih terasa: `_settle` di komponen ArenaCamera, dan `GameBalance.CameraDeadZone`
+(0,22) yang menentukan seberapa jauh pemain boleh mengambang sebelum kamera bergerak sama
+sekali — mengecilkannya memperpendek jarak 49 px itu. **Tidak kusentuh**: itu angka yang sudah
+ditala tangan pemilik project.
+
+> Pelajaran metodologis: keluhan "animasinya rollback" tiga kali membuat sesi ini menyunting
+> importer animasi. Yang menyelesaikannya justru pengukuran yang TIDAK menyentuh animasi sama
+> sekali — posisi pemain di layar. Kalau dua pengukuran berturut-turut membersihkan tersangka
+> utama, berhentilah memperbaiki tersangka itu.
