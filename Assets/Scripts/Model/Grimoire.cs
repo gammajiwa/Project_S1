@@ -58,6 +58,17 @@ namespace Proto
         /// </summary>
         public bool NeedsHeldPiece;
 
+        /// <summary>
+        /// Grup ini AKAN berevolusi, tapi hasilnya tidak muat berdiri di papan — jadi ia keluar
+        /// dari grimoire dan harus dipasang ulang sendiri oleh pemain.
+        ///
+        /// Bukan kegagalan. Evolusi tidak pernah dibatalkan: aturan lama membatalkan merge kalau
+        /// hasilnya tidak dapat tempat, dan itu membuat papan yang penuh — justru keadaan di mana
+        /// pemain paling butuh menggabung — jadi papan yang tidak bisa berevolusi sama sekali.
+        /// Yang berubah cuma DI MANA hasilnya mendarat.
+        /// </summary>
+        public bool SpillsOut;
+
         public string ResultName;
     }
 
@@ -169,8 +180,9 @@ namespace Proto
         // cells the casting build needs. Merging in the bag is how you cook parts without giving up
         // firing positions.
 
-        public List<string> ResolveEvolutions(ContentDatabase db) =>
-            RecipeResolver.Resolve(db, Placed, Rebuild, Place, CouldSeat);
+        public List<string> ResolveEvolutions(ContentDatabase db,
+            System.Action<PieceDefinition, Vector2> spill = null) =>
+            RecipeResolver.Resolve(db, Placed, Rebuild, Place, CouldSeat, spill);
 
         public List<EvoPreview> FindPendingGroups(ContentDatabase db) =>
             RecipeResolver.Preview(db, Placed, CouldSeat);
@@ -493,10 +505,19 @@ namespace Proto
         }
 
         /// <summary>
-        /// Merges every pair of identical skills that sit adjacent AND form one unbroken straight
-        /// line. Runs until nothing changes, so four in a row evolve twice. Returns a log for the UI.
+        /// Menyelesaikan setiap resep yang bahannya lengkap dan bersentuhan. Diulang sampai tidak
+        /// ada yang berubah, jadi empat piece sejalur berevolusi dua kali.
         /// </summary>
-        public List<string> ResolveEvolutions()
+        /// <param name="spill">
+        /// Dipanggil untuk hasil yang tidak dapat tempat di papan. Evolusinya TETAP terjadi dan
+        /// bahannya tetap dimakan — pemanggil yang memutuskan hasilnya mendarat di mana (tas,
+        /// lantai), dan pemain memasangnya ulang sendiri.
+        ///
+        /// Aturan lama membatalkan merge di titik ini. Itu keliru arah: papan yang penuh adalah
+        /// keadaan di mana menggabung paling dibutuhkan, dan membatalkannya justru mengunci
+        /// pemain di sana — makin penuh papan, makin mustahil evolusi.
+        /// </param>
+        public List<string> ResolveEvolutions(System.Action<PieceDefinition, Vector2> spill = null)
         {
             var log = new List<string>();
             bool changed = true;
@@ -507,7 +528,7 @@ namespace Proto
 
                 for (int r = 0; r < _db.Recipes.Count && !changed; r++)
                 {
-                    changed = TryRecipe(_db.Recipes[r], log);
+                    changed = TryRecipe(_db.Recipes[r], log, spill);
                 }
             }
 
@@ -686,12 +707,13 @@ namespace Proto
                     if (!FindClusterGroup(recipe, candidates, group, 0,
                             recipe.Ingredients.Length, true, null)) break;
 
-                    // Cuma yang BENAR-BENAR emas (lengkap DAN hasilnya muat duduk) yang boleh
-                    // mengunci anggota. Yang lengkap tapi tidak muat tetap diurus loop utama di
-                    // bawah — birunya jujur, dan anggotanya masih boleh dipakai ghost.
-                    if (!CouldSeat(recipe.Result, group)) break;
+                    // Lengkap = emas, titik. Muat atau tidak muat cuma menentukan hasilnya
+                    // mendarat di papan atau keluar untuk dipasang ulang — dan keduanya tetap
+                    // sebuah janji yang ditepati, jadi keduanya berhak mengunci anggotanya.
+                    var locked = MakePreview(group, true, recipe.Result.DisplayName, ghost);
+                    locked.SpillsOut = !CouldSeat(recipe.Result, group);
 
-                    previews.Add(MakePreview(group, true, recipe.Result.DisplayName, ghost));
+                    previews.Add(locked);
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
                 }
             }
@@ -711,8 +733,10 @@ namespace Proto
                     group.Clear();
                     if (!FindClusterGroup(recipe, candidates, group, 0, recipe.Ingredients.Length, true, ghost)) continue;
 
-                    previews.Add(MakePreview(group, CouldSeat(recipe.Result, group),
-                        recipe.Result.DisplayName, ghost));
+                    var withGhost = MakePreview(group, true, recipe.Result.DisplayName, ghost);
+                    withGhost.SpillsOut = !CouldSeat(recipe.Result, group);
+
+                    previews.Add(withGhost);
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
                     break;
                 }
@@ -731,9 +755,12 @@ namespace Proto
 
                 if (FindClusterGroup(recipe, candidates, group, 0, recipe.Ingredients.Length, true, null))
                 {
-                    // Complete on the board is not the same as able to evolve — the result still
-                    // has to land somewhere. Gold only when both are true.
-                    previews.Add(MakePreview(group, CouldSeat(result, group), result.DisplayName, ghost));
+                    // Lengkap berarti berevolusi. Yang ditanyakan CouldSeat sekarang bukan lagi
+                    // "jadi atau tidak" melainkan "mendarat di papan atau keluar".
+                    var preview = MakePreview(group, true, result.DisplayName, ghost);
+                    preview.SpillsOut = !CouldSeat(result, group);
+
+                    previews.Add(preview);
                     for (int i = 0; i < group.Count; i++) used.Add(group[i]);
                     continue;
                 }
@@ -838,7 +865,8 @@ namespace Proto
         }
 
         /// <summary>Finds a matching, unlocked, in-line group for one recipe and merges it.</summary>
-        bool TryRecipe(RecipeDefinition recipe, List<string> log)
+        bool TryRecipe(RecipeDefinition recipe, List<string> log,
+            System.Action<PieceDefinition, Vector2> spill)
         {
             var result = recipe.Result;
             if (result == null) return false;
@@ -860,23 +888,24 @@ namespace Proto
             if (candidates.Count < recipe.Ingredients.Length) return false;
 
             var group = new List<RuneInstance>();
-            return SearchGroup(recipe, candidates, group, 0, result, log);
+            return SearchGroup(recipe, candidates, group, 0, result, log, spill);
         }
 
         bool SearchGroup(RecipeDefinition recipe, List<RuneInstance> candidates,
-            List<RuneInstance> group, int startIndex, PieceDefinition result, List<string> log)
+            List<RuneInstance> group, int startIndex, PieceDefinition result, List<string> log,
+            System.Action<PieceDefinition, Vector2> spill)
         {
             if (group.Count == recipe.Ingredients.Length)
             {
                 if (!MatchesIngredients(recipe, group)) return false;
                 if (!FormsCluster(group)) return false;
-                return Merge(group, result, log);
+                return Merge(group, result, log, spill);
             }
 
             for (int i = startIndex; i < candidates.Count; i++)
             {
                 group.Add(candidates[i]);
-                if (SearchGroup(recipe, candidates, group, i + 1, result, log)) return true;
+                if (SearchGroup(recipe, candidates, group, i + 1, result, log, spill)) return true;
                 group.RemoveAt(group.Count - 1);
             }
 
@@ -897,7 +926,17 @@ namespace Proto
             return pool.Count == 0;
         }
 
-        bool Merge(List<RuneInstance> group, PieceDefinition result, List<string> log)
+        /// <summary>
+        /// Memakan bahannya dan melahirkan hasilnya. <b>Tidak pernah dibatalkan.</b>
+        ///
+        /// Versi lama mengembalikan bahan ke papan kalau hasilnya tidak dapat tempat. Akibatnya
+        /// terbalik dari yang dimaksud: makin penuh papan makin mustahil berevolusi, padahal
+        /// papan penuh justru saat pemain paling ingin menukar tiga piece kecil jadi satu yang
+        /// besar. Sekarang hasil yang tidak muat DIKELUARKAN lewat <paramref name="spill"/> dan
+        /// pemain memasangnya ulang sendiri.
+        /// </summary>
+        bool Merge(List<RuneInstance> group, PieceDefinition result, List<string> log,
+            System.Action<PieceDefinition, Vector2> spill)
         {
             var footprint = new List<Vector2Int>();
             for (int i = 0; i < group.Count; i++)
@@ -908,12 +947,11 @@ namespace Proto
             for (int i = 0; i < group.Count; i++) Placed.Remove(group[i]);
             Rebuild();
 
-            if (!SeatEvolved(result, footprint))
-            {
-                for (int i = 0; i < group.Count; i++) Placed.Add(group[i]);
-                Rebuild();
-                return false;
-            }
+            bool seated = SeatEvolved(result, footprint);
+
+            // Yang kepental mendarat DI SEBELAH bahannya, bukan di tempat acak: barang yang
+            // muncul jauh dari sumbernya tidak terbaca sebagai hasil peleburan tadi.
+            if (!seated) spill?.Invoke(result, Middle(footprint));
 
             var line = new System.Text.StringBuilder();
             for (int i = 0; i < group.Count; i++)
@@ -923,8 +961,20 @@ namespace Proto
             }
 
             line.Append("  ->  ").Append(result.DisplayName);
+            if (!seated) line.Append(" (keluar - pasang ulang)");
+
             log.Add(line.ToString());
             return true;
+        }
+
+        /// <summary>Titik tengah sekumpulan petak, dalam koordinat petak.</summary>
+        static Vector2 Middle(List<Vector2Int> cells)
+        {
+            if (cells.Count == 0) return Vector2.zero;
+
+            Vector2 sum = Vector2.zero;
+            for (int i = 0; i < cells.Count; i++) sum += new Vector2(cells[i].x, cells[i].y);
+            return sum / cells.Count;
         }
 
         /// <summary>

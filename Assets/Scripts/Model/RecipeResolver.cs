@@ -21,9 +21,16 @@ namespace Proto
 
         public delegate bool SeatCheck(PieceDefinition result, List<RuneInstance> group);
 
-        /// <summary>Merges every complete group it can find. Returns a log line per merge.</summary>
+        /// <summary>
+        /// Merges every complete group it can find. Returns a log line per merge.
+        /// </summary>
+        /// <param name="spill">
+        /// Hasil yang tidak dapat tempat di grid ini. Evolusinya tetap terjadi — lihat
+        /// <see cref="Grimoire.ResolveEvolutions"/> untuk alasannya.
+        /// </param>
         public static List<string> Resolve(ContentDatabase db, List<RuneInstance> placed,
-            System.Action rebuild, PlaceFunc place, SeatCheck couldSeat)
+            System.Action rebuild, PlaceFunc place, SeatCheck couldSeat,
+            System.Action<PieceDefinition, Vector2> spill = null)
         {
             var log = new List<string>();
             if (db == null) return log;
@@ -46,9 +53,8 @@ namespace Proto
 
                     group.Clear();
                     if (!Search(recipe, candidates, group, 0, recipe.Ingredients.Length, true, null)) continue;
-                    if (!couldSeat(recipe.Result, group)) continue;
 
-                    changed = Merge(group, recipe.Result, placed, rebuild, place, log);
+                    changed = Merge(group, recipe.Result, placed, rebuild, place, log, spill);
                 }
             }
 
@@ -78,8 +84,12 @@ namespace Proto
 
                 if (Search(recipe, candidates, group, 0, recipe.Ingredients.Length, true, null))
                 {
-                    previews.Add(Describe(group, couldSeat(recipe.Result, group),
-                        recipe.Result.DisplayName));
+                    // Lengkap berarti berevolusi; yang ditanyakan couldSeat cuma di mana hasilnya
+                    // mendarat — di grid ini, atau keluar untuk dipasang ulang.
+                    var preview = Describe(group, true, recipe.Result.DisplayName);
+                    preview.SpillsOut = !couldSeat(recipe.Result, group);
+
+                    previews.Add(preview);
                     foreach (var g in group) used.Add(g);
                     continue;
                 }
@@ -247,8 +257,10 @@ namespace Proto
             };
         }
 
+        /// <summary>Memakan bahannya dan melahirkan hasilnya. <b>Tidak pernah dibatalkan.</b></summary>
         static bool Merge(List<RuneInstance> group, PieceDefinition result, List<RuneInstance> placed,
-            System.Action rebuild, PlaceFunc place, List<string> log)
+            System.Action rebuild, PlaceFunc place, List<string> log,
+            System.Action<PieceDefinition, Vector2> spill)
         {
             var footprint = new List<Vector2Int>();
             for (int i = 0; i < group.Count; i++)
@@ -259,12 +271,8 @@ namespace Proto
             for (int i = 0; i < group.Count; i++) placed.Remove(group[i]);
             rebuild();
 
-            if (!Seat(result, footprint, place))
-            {
-                for (int i = 0; i < group.Count; i++) placed.Add(group[i]);
-                rebuild();
-                return false;
-            }
+            bool seated = Seat(result, footprint, place);
+            if (!seated) spill?.Invoke(result, Middle(footprint));
 
             var line = new System.Text.StringBuilder();
             for (int i = 0; i < group.Count; i++)
@@ -274,8 +282,20 @@ namespace Proto
             }
 
             line.Append("  ->  ").Append(result.DisplayName);
+            if (!seated) line.Append(" (keluar - pasang ulang)");
+
             log.Add(line.ToString());
             return true;
+        }
+
+        /// <summary>Titik tengah sekumpulan petak, dalam koordinat petak.</summary>
+        static Vector2 Middle(List<Vector2Int> cells)
+        {
+            if (cells.Count == 0) return Vector2.zero;
+
+            Vector2 sum = Vector2.zero;
+            for (int i = 0; i < cells.Count; i++) sum += new Vector2(cells[i].x, cells[i].y);
+            return sum / cells.Count;
         }
 
         /// <summary>Prefers the ground the ingredients just vacated, then anywhere it fits.</summary>
