@@ -33,6 +33,8 @@ MonoBehaviour:
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
+  CastVfx: {fileID: 2426369331579621310, guid: 759d73abda0610443b8e714603b744b9, type: 3}
+  CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -50,6 +52,8 @@ MonoBehaviour:
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0

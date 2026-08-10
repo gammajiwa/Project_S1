@@ -2401,3 +2401,296 @@ Audit `ContentDatabase`: **20 dari 121 resep** hasilnya lebih besar dari total p
 `Keen Sigil ×2` (2) → `Razor Sigil` Square (4), `Ember Sigil ×2 + Chain Sigil` (6) →
 `Storm Rune` Big3 (9). Angka-angka ini sekarang berarti "seberapa sering hasil kepental
 keluar", bukan lagi "seberapa sering evolusi gagal".
+
+## 34. VFX untuk SEMUA skill: dua pack diadopsi, kolam bersama, 74/74 terpasang (2026-08-10)
+
+Permintaan pemilik project: tidak boleh ada lagi skill placeholder — semua skill pakai VFX,
+dipilihkan yang paling cocok per skill. Sebelumnya hanya 4 dari 74 skill aktif yang punya
+`CastVfx` (Ashfall, Ion Storm, Tornado, Maelstrom), dan slot itu hanya dikonsumsi kind
+`Zone` + `Vortex`.
+
+### Dua pack di-clone dari project_b (GUID utuh, .meta ikut)
+
+- **`Assets/Art/VFX/Packs/GabrielAguiarProductions/`** (255 MB, 431 file) — Unique Magic
+  Abilities Vol.2: keluarga AOE elemental (`MeteorRain/ArrowRain/SingleComet/ImpactAoE/
+  BuffAoE/DebuffAoE/DebuffVertical` × Fire/Ice/Water/Poison/Electricity/Void/Arcane/Speed/
+  Heal). Prefabnya MURNI ParticleSystem (0 MonoBehaviour). Demo `Scenes/` sengaja tidak ikut.
+- **`Assets/Art/VFX/Packs/JMO Assets/Cartoon FX Remaster/`** (134 MB, 2549 file) — CFXR:
+  fireball/iceball/lightball projectile loop, hit per elemen, explosion, barrier, poison,
+  portal. `Demo Assets/` sengaja tidak ikut (berisi Kino Bloom lama yang berisiko gagal
+  kompilasi); `Cartoon FX Easy Editor/` juga tidak (tidak dibutuhkan). CFXR punya asmdef
+  sendiri (`CFXR Runtime`) — tidak menyentuh Assembly-CSharp.
+- Cartoon Coffee (806 MB) & 118 sprite effects (611 MB) TIDAK diambil: efek sprite 2D,
+  kebutuhan sudah tercover, dan beratnya tidak sebanding.
+
+### `View/SkillVfxPool.cs` — satu kolam untuk semua kind
+
+Kamus `prefab → Stack<Transform>`; instans hanya pernah kembali ke tumpukan prefabnya
+sendiri, jadi slot peluru yang gantian dipakai skill lain tidak pernah tertukar efeknya.
+Tiga API: `Attach` (dipegang pemanggil, diikuti tiap frame), `Release`, `Burst` (sekali-main,
+umur dari cache `duration + startLifetime` per prefab, dua tahap mati: berhenti memancar →
+0,7 dtk kemudian nonaktif — memutus loop mendadak meninggalkan partikel terpotong di udara).
+Pagar `MaxLiveOneShots = 64` mendaur yang paling dekat selesai, pola yang sama dengan
+`MaxFlashes`.
+
+**Instans baru DIPRERETELI saat lahir**: `Light`, `AudioSource`, dan semua script `CFXR_*`
+dicabut. Yang terakhir itu wajib — `CFXR_Effect` punya mode menghancurkan GameObject-nya
+sendiri selesai main, dan itu mencuri instans dari kolam tanpa error. Dicabut berdasarkan
+NAMA tipe, bukan referensi assembly, supaya Assembly-CSharp tetap tidak bergantung pada CFXR.
+
+### Titik pasang per kind (PlayerCaster + PlayerCasterSignature)
+
+| Kind | Mekanisme |
+|---|---|
+| Projectile / Radial | prefab jadi BADAN peluru (attach, ikut terbang, rotasi ikut arah); bola primitif menciut 0,45→0,12 jadi inti penguji tabrakan |
+| Orbit | idem, di pecahan mengambang (skala 0,6×) |
+| RollingBall | idem, di bola (batu menciut 0,3×radius) |
+| Nova / Heal / Cleanse / Surge / Restore / ForcePush | `Burst` di pemain, skala `CastVfxScale × max(0.35, radius/3)` untuk yang ber-radius |
+| Chain | `Burst` HANYA di sasaran pertama tiap cabang — Stormbreaker 32 hit = 8 semburan, bukan 32 |
+| Detonate | `Burst` per musuh yang meledak (di callback `DetonateStatus`, ikut poin) |
+| AreaAtTarget | `Burst` di titik jatuh, di `Impact()` |
+| SunStrike | `Burst` di detik hantaman (prefab dibawa di `Strike` — dia tidak menyimpan `Def`) |
+| Line | `Burst` berarah di 30% panjang garis, umur DIPAKSA 0,8 dtk (sebagian prefabnya loop: flamethrower) |
+| Blink | dua `Burst`: berangkat & tiba |
+| Ward | attach MENETAP di pemain selama `Shield > 0` — dilepas di `TickShield`, DI ATAS guard `Shield <= 0` karena perisai bisa habis dimakan damage tanpa lewat timer |
+| Zone / Vortex | jalur lama `AttachCastVfx`/`AttachTwisterVfx` TIDAK disentuh (sudah terverifikasi) |
+
+### `Editor/VfxPass.cs` — Tools/Grimoire/Assign Skill VFX
+
+Tabel 70 entri (4 yang sudah dipasang tangan tidak disentuh). Aturan pemilihan: elemen
+dipegang (Fire api, Ice es, Lightning listrik, Arcane ungu/void, arcane-racun pakai racun);
+kind menentukan bentuk; tier tinggi = varian lebih ramai. Idempotent; ada AUDIT bawaan:
+skill aktif tanpa VFX + kind gendong (Zone/Vortex/Ward) yang prefabnya tidak loop.
+
+**Audit itu langsung menangkap dua**: `CFXR2 Poison Cloud` & `Poison Cloud + Skulls`
+ternyata SEKALI-MAIN — kubangan racun akan diam separuh umurnya. Diganti
+`Potion Bubbles (Loop)` (Poison Pool) & `Flies Cloud` (Plague Bloom, loop).
+
+### Verifikasi — sweep otomatis 74 skill di Playground
+
+Driver di `EditorApplication.update` (BUKAN loop + sleep di `execute_code` — itu membekukan
+main thread, jebakan lama §13): pilih skill → pancing kondisi → tunggu 2,2 dtk → hitung
+instans milik skill itu (`SkillVfx <prefab>` / `CastVfx <nama>`) → log → lanjut.
+Pancingan per kind: Heal = HP dipotong, Restore = mana dikuras, Cleanse = disuntik debuff,
+Detonate = boneka diolesi ailment via `EnemyManager.ApplyStatus`, charge-spender = 6 charge.
+
+Putaran 1: 62/74. Sisa 12 semuanya kind yang MENOLAK menembak di playground, bukan bug VFX:
+- Nova radius kecil & ForcePush & Radial: boneka di luar jangkauan → putaran 2 teleport
+  pemain ke tengah gerombolan → LOLOS (Absolute Zero max=16 instans, Whirling Blade 8).
+- Blink ×2: formasi boneka playground SIMETRIS mengelilingi pemain → `CrowdPressure` ≈ 0 →
+  menolak. Setelah pemain dipinggirkan: lolos (2 semburan, berangkat+tiba).
+- Mana Well: **`PlaygroundBootstrap.Update()` baris 446 mengisi mana penuh TIAP FRAME**
+  ("rem mana tidak boleh mengaburkan hasil") — `CastRestore` (nyala saat mana < 60%) mustahil
+  menembak di playground. `pb.enabled = false` 3 dtk → lolos. Catat jebakan ini untuk tes
+  skill bersyarat mana ke depan.
+
+**Hasil akhir: 74/74 skill menembakkan VFX-nya. 0 error, 0 warning.** Beban: 60 boneka +
+Absolute Zero / Cataclysm = 158–166 fps; kolam berisi 59 prefab / 117 instans idle setelah
+seluruh sweep (histori penuh terparkir, tidak ada yang bocor ke Destroy).
+
+### Knob & catatan
+
+- Skala per skill: `CastVfxScale` di aset piece (diisi VfxPass; MeteorRain/ArrowRain GA
+  sengaja 0,7–0,8 karena efeknya lahir lebar).
+- Ganti pasangan VFX = edit tabel `VfxPass.cs` → jalankan ulang menu. JANGAN assign manual
+  di inspector kalau tidak mau ditimpa pass (pass menang karena idempotent-nya cek nilai).
+- **Belum dinilai mata pemilik project** — semua verifikasi programatik. Rasa, warna, dan
+  proporsi menunggu playtest.
+- FX `PlayerCaster` yang lama (bola descent, flash bola, beam) MASIH ADA di bawah VFX baru —
+  penanda jangkauan/telegraf tetap primitif sesuai desain. Optimasi "GameObject satu-satu"
+  (backlog lama) belum disentuh; kolam baru justru mengurangi tekanannya (nol
+  Instantiate/Destroy per cast begitu kolam hangat).
+
+## 35. Feedback VFX putaran 1: wrapper per skill, avatar LizMage, ring AOE (2026-08-10)
+
+Empat permintaan pemilik project sesudah gelombang VFX pertama, semuanya masuk:
+
+### Folder + prefab per skill — pemilik project bisa menukar sendiri
+
+`Assets/Art/VFX/Skills/<Nama Skill>/Vfx_<Nama>.prefab` — 74 folder, satu wrapper per skill.
+Wrapper = root kosong + prefab paket BERSARANG di dalamnya (`PrefabUtility.InstantiatePrefab`,
+supaya tautan nested-prefab hidup). `PieceDefinition.CastVfx` menunjuk WRAPPER, bukan paket.
+
+**Kontrak `VfxPass` berubah**: wrapper yang sudah ada TIDAK PERNAH dibangun ulang — mengganti
+efek jelek = buka prefabnya, hapus anaknya, seret prefab paket lain ke dalam. Pass hanya
+membangun yang belum ada + meluruskan pointer. Ganti default dari tabel = hapus dulu
+wrapper-nya baru jalankan ulang.
+
+Perubahan isi tabel di putaran ini: **3 skill petir ramping** (Spark Bolt, Spark Shards,
+Storm Shards → `Vefects VFX_Trail_Electric`, murni 3 TrailRenderer — yang lama bola gemuk),
+**Flame Lash** → `CFXR4 Sword Hit FIRE (Slash)` (sabetan, bukan flamethrower), **Ashfall**
+dikecilkan (Rockfall dibakar skala 0,22 DI DALAM wrapper — dari ~59 unit visual jadi ~13
+terhadap area diameter 8). Pack baru: `Packs/Vefects/Trails VFX URP` (subset VFX + _ Extra,
+10 MB; Demo/Sounds/Scripts ditinggal).
+
+### Penanda AOE tidak pekat lagi — `Assets/Shaders/AoeRing.shader`
+
+Permintaan: "semi transparan, tengah tidak bolong, tepi luar lebih kelihatan". Shader
+`Grimoire/AoeRing` (unlit transparan URP): jarak radial dihitung di ruang OBJEK silinder unit,
+isi `_FillAlpha` 0,14, tepi `_RimAlpha` 0,8 mulai `_RimStart` 0,82, denyut pelan hanya di
+tepi, tepi didorong ke putih supaya terbaca di lantai gelap. Dipakai: cakram Zone
+(`SpawnZone`) dan cincin telegraf SunStrike (`TakeStrike`) — dua-duanya lewat `_aoeMaterial`
+baru di `PlayerCaster.Init` (fallback ke `_fxMaterial` kalau shadernya hilang). Logika lama
+"tipiskan alpha kalau ada VFX" di SpawnZone DIBUANG — kepekatan sekarang urusan shader.
+Terverifikasi screenshot `Assets/Screenshots/vfx_aoe_ring.png`.
+
+### Avatar pemain: LizMage + dua animasi + cloth — kapsul pensiun (di run)
+
+Aset: `Art/Characters/Player/LizMage_IDLE.fbx` + `LizMage_RUN.fbx` (Mixamo Generic, 29 node,
+mesh TANPA UV/tekstur — URP Lit abu polos, memang begitu ekspornya; badan 477 vert, cape 112).
+
+**`Editor/PlayerRigPass.cs`** (Tools/Grimoire/Build Player Avatar), idempotent:
+- Importer: `isReadable = true` (WAJIB buat Cloth), klip "Scene" → "Idle"/"Run" + `loopTime`,
+  `globalScale` dihitung dari tinggi renderer TERUKUR → target 1,65 unit (mentahnya ~2 cm).
+- `PlayerAnim.controller`: Idle ⇄ Run lewat param float `Speed`, ambang renggang 0,9/0,6
+  supaya tidak gagap di kecepatan batas.
+- `PlayerAvatar.prefab`: root (Animator + `PlayerAvatar`) + model + **Cloth di cape** —
+  puncak dijepit (maxDistance 0 di 18% atas, kuadratik melonggar ke bawah), satu
+  CapsuleCollider "ClothBody" menahan kain menembus badan. Prefab TIDAK dibangun ulang kalau
+  sudah ada — editan tangan pemilik project selamat; hapus dulu kalau mau rakit ulang.
+
+**`View/PlayerAvatar.cs`**: kecepatan dibaca dari delta transform (Blink/Relocate ikut
+terbaca; lompatan > 3 unit/frame dianggap teleport, bukan lari), dihaluskan eksponensial;
+**menembak menahan pose Idle 0,45 dtk** (`caster.OnCast`) — keputusan pemilik project: model
+tidak punya animasi cast, Idle-lah pose castnya. Badan berbelok ke arah jalan 720°/dtk,
+hadap terakhir dipertahankan saat diam.
+
+**Wiring** (`ProtoBootstrap`): field baru `_playerAvatarPrefab` (terpasang di scene Proto).
+`BuildPlayer`: renderer+filter kapsul di-Destroy, avatar anak di lokal (0,−1,0) skala 1/0,9
+(pivot pemain tetap di dada y=0,9 — SEMUA sistem lain memegang transform itu). Kosongkan
+field = balik ke kapsul. Playground sengaja tetap kapsul.
+
+**`PlayerBurnout` jadi multi-renderer**: badan + jubah terbakar bersama; hanya
+Mesh/SkinnedMeshRenderer (RangeRing LineRenderer tidak disentuh — ia lahir belakangan tapi
+filter tetap dipasang sebagai jaring). `BurnAway.shader` dapat `_HeightMin/_HeightMax`
+(default −0,5/0,5 = persis kapsul lama) diisi dari bounds mesh masing-masing supaya jalaran
+kaki-ke-kepala benar di mesh ukuran apa pun.
+
+Terverifikasi play mode: badan+jubah render `Grimoire/BurnAway` (warna asli terbawa),
+Animator Idle → **Run saat digerakkan (param 3,67, yaw mengikuti arah)**, Cloth hidup
+(90 vert, 1 collider), Zone playground bershader `Grimoire/AoeRing` @170 fps, Spark Bolt
+terbang membawa 3 TrailRenderer. Screenshot: `player_lizmage.png`, `vfx_aoe_ring.png`.
+
+### Jebakan baru sesi ini
+
+1. **`refresh_unity` + `RequestScriptReload` TIDAK menjamin recompile** sesudah file .cs
+   ditulis dari luar — assembly sempat basi 28 menit (menu jalan pakai kode lama TANPA error).
+   Bukti basinya: bandingkan `File.GetLastWriteTime` assembly vs .cs. Palu yang benar:
+   `UnityEditor.Compilation.CompilationPipeline.RequestScriptCompilation()`.
+2. **Memaksa `_mapOpen = false` lewat reflection meninggalkan tirai hitam** — jalur tutup
+   peta yang sah lewat urutan fade. Buat foto arena: matikan `GameBalance.MapOpensRun`
+   sementara, JANGAN bedah state UI (sudah dikembalikan ke True + tersimpan).
+3. Playground memilih skill berdasarkan INDEKS katalog tersortir (bintang, lalu nama) —
+   indeks bergeser tiap konten bertambah; cari by DisplayName dulu, jangan hafalkan angka.
+
+### Belum dinilai mata pemilik project
+
+Jubah berkibar saat lari & blink, pose Idle saat menembak di tengah lari, warna model abu
+polos (tanpa tekstur — mau ditint ke PlayerColor atau dibiarkan?), proporsi ring AOE, dan
+seluruh rupa 74 VFX. Semua verifikasi di atas programatik + screenshot.
+
+## 36. Paket LizMage_Unity terpasang + tiga bug avatar generasi pertama (2026-08-10)
+
+Pemilik project mengirim paket baru `Art/Characters/Player/LizMage_Unity/` (FBX IDLE+RUN,
+atlas 1024, BACA-DULU.txt). `PlayerRigPass` ditulis ulang mengikuti resepnya baris demi baris
+— dan resep itu menjelaskan bug generasi pertama dengan tepat.
+
+### Tiga bug yang dilaporkan mata pemilik project, akarnya dua
+
+1. **"Animasi gak jalan / semua kurva (Missing!)"** — klip Generic mencocokkan kurva lewat
+   NAMA JALUR relatif terhadap transform Animator. Generasi pertama menaruh Animator di node
+   pembungkus, satu tingkat di atas root FBX → semua jalur `MX_Rig/...` tidak ketemu, model
+   beku, TANPA error. Fix ganda: **rig Humanoid** (mencocokkan lewat peta tulang, kebal
+   hierarki — bonus: animasi Mixamo apa pun tinggal impor & retarget) + prefab dirakit dengan
+   **model sebagai root** (Animator persis di root FBX).
+2. **"Gepeng + gerak-gerak gak jelas"** — SATU akar: `Animator.applyRootMotion` bawaannya
+   TRUE. Klip Mixamo ikut menyeret dan MEMIRINGKAN root tiap frame; melawan PlayerMotor
+   (gerak tidak jelas) dan dari kamera atas badan miring terbaca GEPENG. Fix: root motion
+   mati — posisi milik motor, pose milik klip.
+3. **"Gede banget" + spam `Invalid AABB` / `IsFinite`** — cloth generasi kedua memetakan
+   jangkar pakai INDEKS VERTEX MESH (112) padahal partikel cloth adalah vertex yang sudah
+   di-las (90) — indeksnya nyasar, cuma 2 partikel terjahit, jubah jatuh bebas & terbang
+   liar, bounds renderer meledak. Fix: jangkar dipetakan dari `cloth.vertices` (posisi
+   partikelnya sendiri) — kerah 18% atas maxDistance 0 (20/90 terjangkar), sisanya kuadratik
+   ke bawah dengan plafon 0,12.
+
+### Yang dipasang pass sekarang (Tools/Grimoire/Build Player Avatar)
+
+- **Ekstraksi rupa**: Extract Textures + Extract Materials ke `Textures/`; FBX paket ini
+  menunjuk tekstur sebagai FILE LUAR sehingga `ExtractTextures` tidak mengisi apa pun —
+  `FeedTextures()` menjahit `LizMage_Texture.png` ke slot `_BaseMap` material hasil ekstraksi
+  (salinan embedded `L1png` yang identik byte-per-byte dihapus). Semua tekstur folder itu
+  di-filter **Point** (atlas berpetak; filter halus membocorkan warna antar petak).
+- **Importer**: Humanoid + CreateFromThisModel, isReadable (wajib untuk Cloth), klip
+  Idle/Run loop, `globalScale` dari tinggi terukur → 1,65 unit.
+- **Prefab**: variant dari FBX IDLE, Animator+controller+PlayerAvatar+Cloth+ClothBody.
+- **`BurnAway.shader` sekarang bertekstur** (`_BaseMap`, bawaan putih = kapsul lama tetap
+  benar): PlayerBurnout mengganti material sejak Init, dan tanpa membawa tekstur, model
+  bertekstur hidup sebagai siluet polos. PlayerBurnout menyalin tekstur material asli.
+
+### Jebakan paling mahal sesi ini: identitas fileID prefab
+
+`SaveAsPrefabAsset` dengan ROOT BARU di path lama mempertahankan GUID tapi MENGGANTI fileID
+root → referensi `_playerAvatarPrefab` di scene Proto mati DIAM-DIAM (avatar tidak muncul,
+tanpa error). Sudah kejadian saat prefab biasa ditimpa varian. Aturan sekarang di pass:
+prefab sehat disembuhkan lewat **`LoadPrefabContents` → betulkan → simpan** (identitas awet);
+rakit-dari-nol hanya untuk prefab rusak/sumber-lama, dan pass MEMPERINGATKAN untuk cek
+referensi scene sesudahnya.
+
+Terukur setelah semua fix (play mode, wave hidup): pitch/roll **0,0/0,0**, bounds badan
+**1,62** (persis tinggi kapsul lama), cloth delta idle **0,36** (sebelumnya 3,0 = meledak),
+0 error, 0 spam AABB. Tekstur terpasang di badan+jubah (`LizMage_Texture`).
+
+FBX lama di root `Player/` (LizMage_IDLE/RUN generasi pertama) sudah tidak dirujuk siapa pun
+— menunggu keputusan pemilik project untuk dihapus.
+
+### §36 lanjutan: Humanoid DIBATALKAN — balik ke Generic (2026-08-10, larut)
+
+Humanoid ternyata MEREMUKKAN kadal ini jadi jarum vertikal: muscle-space manusia tidak punya
+tempat untuk proporsi kepala-besar-badan-pendek, auto T-pose menekuk bind pose sampai kolaps
+— buktinya preview klip Idle di inspector IKUT penyet, artinya avatarnya yang rusak, bukan
+scene. Keputusan: **Generic**, karena alasan asli memakai Humanoid (kurva "(Missing!)") sudah
+mati dari akar — model kini root prefab dan Animator duduk persis di root FBX, jadi
+pencocokan jalur Generic selalu ketemu.
+
+Harga yang diterima sadar: animasi Mixamo baru TIDAK auto-retarget lagi. Kalau nanti perlu,
+petakan avatar Humanoid MANUAL (jangan auto T-pose).
+
+Terukur sesudah balik: jarak bahu 0,347 (sebelumnya kolaps), bounds badan (1,24 × 1,54 ×
+0,92), avatar Generic valid, kadal tampil utuh bertekstur di play mode
+(`Assets/Screenshots/player_lizmage_v3.png` — kepala hijau + jubah marun, cloth duduk wajar).
+
+### §36 lanjutan 2: cloth dijinakkan, player dibesarkan, angka & ring dikendurkan (2026-08-10)
+
+Empat koreksi rasa dari pemilik project, semuanya kecil tapi masing-masing punya jebakan:
+
+**Cloth "terlalu brutal, gak natural".** Yang diubah bukan cuma angka: jangkar dulu dipetakan
+dari tinggi partikel di ruang LOKAL mesh — dan ruang lokal jubah ini tingginya **6 milimeter**
+dengan sumbu tak jelas (skala & rotasi hidup di node), jadi "atas" di sana adalah derau; dua
+run berturut-turut dari kode yang SAMA menjangkar 20 lalu 4 partikel. Sekarang tinggi diukur
+di **ruang dunia pada bind pose** (jubah membentang 0,15–1,02 unit, kerah jelas di puncak) →
+stabil 12/90 terjangkar. Setelan: kerah 15% teratas dijahit, plafon ayun `0.08·h²`,
+`damping 0.65`, `bendingStiffness 0.4` (menahan lipatan patah ala kertas),
+`worldVelocity/Acceleration 0.15/0.25` (auto-dodge pemain berbelok terus — inilah yang dulu
+mencambuk jubah tiap frame), `clothSolverFrequency 240`.
+Terukur: ayunan idle 3,0 → **0,023**, saat lari **0,007**.
+
+**Player "kekecilan".** Dua kali dinaikkan karena ukurannya harus dinilai dalam PIKSEL, bukan
+meter: kamera ortografis size 11 di layar 1080 = 1 unit ≈ 49 px, dan proyeksi miring
+memendekkannya lagi. 1,65 → 2,10 (~103 px, masih kecil) → **3,0 unit (~147 px)**, akhirnya
+lebih tinggi dari Cursed (musuh terbesar, skala 1,45). Knob: `PlayerRigPass.TargetHeight`.
+
+**Popup damage.** `BigNumber.Scale` 100 → **10** (pemilik project: "harus dari ratusan dulu"),
+dan pemisah ribuan DITAHAN sampai 10.000 — titik di angka pendek dibaca mengganggu.
+Terukur: `28→280`, `128,4→1284`, `975→9750`, `1030→10.300`, `5400→54.000`.
+
+**Ring AOE "terlalu mencolok".** `_FillAlpha` 0,14→0,06, `_RimAlpha` 0,8→0,4, `_RimStart`
+0,82→0,86, denyut 0,16→0,12, dorongan putih tepi 0,35→0,2.
+
+Terverifikasi lewat screenshot in-game (`player_lizmage_v5.png`): wave 1 berjalan, popup
+`364` tanpa titik, kadal bertekstur dengan siluet jelas di antara gerombolan, jubah tenang.
+
+> **Catatan error yang BUKAN bug**: `MissingReferenceException: m_Targets of
+> GameObjectInspector` + `SerializedObjectNotCreatableException` muncul kalau objek yang
+> sedang dipilih di Inspector dihancurkan (keluar play mode / prefab dirakit ulang). Murni
+> editor-side, hilang dengan klik objek lain.

@@ -37,6 +37,9 @@ namespace Proto
                  "dimainkan, bukan lapangan tanpa musuh terlihat.")]
         [SerializeField] VatClipSet _enemyVat;
 
+        [Tooltip("Avatar pemain (model + animator + cloth). Kosong = kapsul primitif lama.")]
+        [SerializeField] GameObject _playerAvatarPrefab;
+
         [Header("Debug")]
         [Tooltip("Saklar curang buat rekaman & tes. Boleh dikosongkan — dan aset ini pun tidak " +
                  "berefek apa pun sampai gerbang 'Enabled' di dalamnya dinyalakan.")]
@@ -73,6 +76,11 @@ namespace Proto
 
             var caster = playerGo.AddComponent<PlayerCaster>();
             var motor = playerGo.AddComponent<PlayerMotor>();
+
+            // Avatar dinyawakan SETELAH caster ada — dialah yang memberi tahu kapan pose
+            // Idle harus ditahan (menembak memakai Idle, keputusan pemilik project).
+            var avatar = playerGo.GetComponentInChildren<PlayerAvatar>();
+            if (avatar != null) avatar.Init(caster);
 
             // Pemain ikut hangus saat mati, seperti gerombolan yang dibunuhnya. Dipasang di sini
             // dan bukan di dalam PlayerCaster: yang dipegangnya renderer, bukan angka.
@@ -530,11 +538,30 @@ namespace Proto
             if (col != null) Destroy(col);
 
             var r = go.GetComponent<Renderer>();
-            r.sharedMaterial = _look.CreateSurface(_look.PlayerColor);
 
-            // Enemy shadows stay off for the 200-enemy budget; the player is a single caster.
-            r.shadowCastingMode = ShadowCastingMode.On;
-            r.receiveShadows = true;
+            if (_playerAvatarPrefab != null)
+            {
+                // Badan sungguhan menggantikan kapsul: mesh kapsulnya dicabut, tapi GameObject
+                // dan posisinya tetap — seluruh sistem lain memegang transform INI, bukan
+                // modelnya. Pivot pemain ada di tengah dada (y 0,9 dunia), sedangkan pivot
+                // model di telapak kaki; offset lokalnya membatalkan itu. Skala parent 0,9
+                // warisan kapsul dikompensasi supaya avatar tampil pada ukuran aslinya.
+                Destroy(r);
+                Destroy(go.GetComponent<MeshFilter>());
+
+                var avatar = Instantiate(_playerAvatarPrefab, go.transform);
+                avatar.transform.localPosition = new Vector3(0f, -1f, 0f);
+                avatar.transform.localScale = Vector3.one * (1f / 0.9f);
+            }
+            else
+            {
+                r.sharedMaterial = _look.CreateSurface(_look.PlayerColor);
+
+                // Enemy shadows stay off for the 200-enemy budget; the player is a single caster.
+                r.shadowCastingMode = ShadowCastingMode.On;
+                r.receiveShadows = true;
+            }
+
             return go;
         }
     }

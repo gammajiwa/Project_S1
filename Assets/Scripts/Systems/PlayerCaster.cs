@@ -32,6 +32,15 @@ namespace Proto
             public EnemyManager.Enemy LastHit;
 
             public bool Active;
+
+            /// <summary>
+            /// Efek partikel yang menjadi badan peluru ini, kalau skillnya punya. Dilepas kembali
+            /// ke kolam saat peluru pensiun — slot peluru dipakai ulang lintas skill, jadi efeknya
+            /// tidak boleh menetap di slotnya.
+            /// </summary>
+            public Transform Vfx;
+
+            public GameObject VfxSrc;
         }
 
         class Flash
@@ -374,6 +383,14 @@ namespace Proto
         int _triggerDepth;
         Transform _fxRoot;
         Material _fxMaterial;
+
+        /// <summary>
+        /// Material penanda AOE: isi semi transparan, tepi tegas (shader <c>Grimoire/AoeRing</c>).
+        /// Cakram pekat menutupi persis apa yang sedang ditandainya; yang ini membiarkan musuh
+        /// dan efek terlihat, sementara TEPI — informasi jangkauan yang sebenarnya — tetap tebal.
+        /// </summary>
+        Material _aoeMaterial;
+
         MaterialPropertyBlock _mpb;
 
         readonly List<Projectile> _projectiles = new List<Projectile>(64);
@@ -386,7 +403,15 @@ namespace Proto
         readonly EnemyManager.Enemy[] _chainBuffer = new EnemyManager.Enemy[64];
 
         BoltPool _bolts;
+        SkillVfxPool _vfx;
         LineRenderer _rangeRing;
+
+        /// <summary>
+        /// Skala instans VFX sebuah skill: radius 3 unit = skala 1, aturan yang sama dengan
+        /// kubangan Zone, supaya efek yang area-nya di-buff ikut terlihat membesar.
+        /// </summary>
+        float VfxScale(PieceDefinition def, float radius) =>
+            def.CastVfxScale * Mathf.Max(0.35f, radius / 3f);
 
         /// <summary>Draws a ground ring showing a skill's reach while you hover it.</summary>
         public void ShowRange(float radius, Color color)
@@ -455,10 +480,14 @@ namespace Proto
             if (shader == null) shader = Shader.Find("Unlit/Color");
             _fxMaterial = new Material(shader) { enableInstancing = true };
 
+            var aoeShader = Shader.Find("Grimoire/AoeRing");
+            _aoeMaterial = aoeShader != null ? new Material(aoeShader) : _fxMaterial;
+
             _fxRoot = new GameObject("FX").transform;
             _fxRoot.SetParent(transform.parent, false);
 
             _bolts = new BoltPool(_fxRoot);
+            _vfx = new SkillVfxPool(_fxRoot);
 
             _enemies.OnReaction += OnReactionFired;
             _enemies.OnStatusApplied += OnEnemyStatusApplied;
@@ -529,6 +558,7 @@ namespace Proto
             TickSignature(dt);
             TickFlashes(dt);
             _bolts.Tick(dt);
+            _vfx.Tick(dt);
         }
 
         /// <summary>Called when a wave starts so every spell opens on a ready cooldown.</summary>
@@ -633,6 +663,7 @@ namespace Proto
                     _enemies.DamageArea(at, radius, spell.Damage * BuffDamageMul * RollCrit(),
                         def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
                     SpawnFlash(at, radius * 2f, 0.3f, def.Color);
+                    _vfx.Burst(def.CastVfx, at, VfxScale(def, radius));
                     return true;
                 }
 
@@ -643,12 +674,14 @@ namespace Proto
                     _enemies.Damage(target, spell.Damage * BuffDamageMul * RollCrit(),
                         def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
                     SpawnFlash(at, 1.8f, 0.2f, def.Color);
+                    _vfx.Burst(def.CastVfx, at, def.CastVfxScale);
                     return true;
 
                 case CastKind.Heal:
                     if (Hp >= MaxHp) return false;
                     Hp = Mathf.Min(MaxHp, Hp + spell.Damage);
                     SpawnFlash(transform.position, 3.2f, 0.3f, def.Color);
+                    _vfx.Burst(def.CastVfx, transform.position, def.CastVfxScale);
                     return true;
             }
 
@@ -688,6 +721,7 @@ namespace Proto
                         def.AppliedStatus, def.StatusDuration, AilmentPoints(def), true, def.DisplayName);
 
                     SpawnFlash(transform.position, radius * 2f, 0.3f, def.Color);
+                    _vfx.Burst(def.CastVfx, transform.position, VfxScale(def, radius));
                     return true;
                 }
 
@@ -706,6 +740,7 @@ namespace Proto
 
                     Hp = Mathf.Min(MaxHp, Hp + spell.Damage);
                     SpawnFlash(transform.position, 3.2f, 0.3f, def.Color);
+                    _vfx.Burst(def.CastVfx, transform.position, def.CastVfxScale);
                     return true;
                 }
 
@@ -718,6 +753,7 @@ namespace Proto
 
                     if (spell.Damage > 0f) Hp = Mathf.Min(MaxHp, Hp + spell.Damage);
                     SpawnFlash(transform.position, 4f, 0.35f, def.Color);
+                    _vfx.Burst(def.CastVfx, transform.position, def.CastVfxScale);
                     return true;
                 }
 
@@ -751,6 +787,18 @@ namespace Proto
 
                     _bolts.Beam(transform.position, transform.position + dir.normalized * length,
                         def.Color, halfWidth * 1.6f);
+
+                    // Di 30% panjang garis, menghadap arah sapuan: lidah api terbaca keluar dari
+                    // pemain, dan efek ledakan tidak menutupi pemainnya sendiri. Umurnya dipaksa
+                    // pendek karena sebagian prefab garis (semburan api) adalah loop.
+                    if (def.CastVfx != null && dir.sqrMagnitude > 0.0001f)
+                    {
+                        Vector3 dirN = dir.normalized;
+                        _vfx.Burst(def.CastVfx, transform.position + dirN * (length * 0.3f),
+                            def.CastVfxScale * Mathf.Max(0.6f, length / 6f),
+                            Quaternion.LookRotation(dirN), 0.8f);
+                    }
+
                     return true;
                 }
 
@@ -811,6 +859,12 @@ namespace Proto
 
                     _bolts.Arc(from, to, def.Color);
                     SpawnFlash(to, 1.6f, 0.15f, def.Color);
+
+                    // Hanya sasaran PERTAMA tiap cabang: Stormbreaker menyambar 32 musuh sekali
+                    // cast, dan 32 semburan adalah cara tercepat menjenuhkan kolam sekaligus
+                    // menutupi lapangan. Delapan pangkal cabang sudah menceritakan bentuknya;
+                    // sisanya tetap dapat kilat dan flash.
+                    if (i == taken) _vfx.Burst(def.CastVfx, to, def.CastVfxScale);
 
                     _enemies.Damage(target, damage, def.AppliedStatus, def.StatusDuration,
                         points, true, def.DisplayName, from);
@@ -874,6 +928,7 @@ namespace Proto
                 {
                     // Bigger stack, bigger bang — the flash has to say so.
                     SpawnFlash(at, radius * (1f + points * 0.12f), 0.28f, def.Color);
+                    _vfx.Burst(def.CastVfx, at, def.CastVfxScale * (1f + points * 0.05f));
                 });
 
             return blasts > 0;
@@ -1002,6 +1057,7 @@ namespace Proto
                 d.Def.StatusDuration, AilmentPoints(d.Def), true, d.Def.DisplayName);
 
             SpawnFlash(d.Target, d.Radius * 2f, 0.3f, d.Def.Color);
+            _vfx.Burst(d.Def.CastVfx, d.Target, VfxScale(d.Def, d.Radius));
         }
 
         /// <summary>A pop where an enemy died. Wired from the composition root, not from combat.</summary>
@@ -1043,6 +1099,21 @@ namespace Proto
             p.T.GetComponent<Renderer>().SetPropertyBlock(_mpb);
 
             p.T.position = transform.position;
+
+            // Prefab efek menjadi badan peluru; bola primitifnya menciut jadi inti nyaris tak
+            // terlihat. Tetap ada karena dialah yang dites tabrakannya — efek cuma bajunya.
+            if (source.CastVfx != null)
+            {
+                p.Vfx = _vfx.Attach(source.CastVfx, p.T.position,
+                    Quaternion.LookRotation(dir), source.CastVfxScale);
+                p.VfxSrc = source.CastVfx;
+                p.T.localScale = Vector3.one * 0.12f;
+            }
+            else
+            {
+                p.T.localScale = Vector3.one * 0.45f;
+            }
+
             p.T.gameObject.SetActive(true);
             p.Dir = dir;
             p.Life = 2.2f;
@@ -1075,6 +1146,7 @@ namespace Proto
                 }
 
                 p.T.position += p.Dir * (speed * dt);
+                if (p.Vfx != null) p.Vfx.position = p.T.position;
 
                 var hit = _enemies.NearestExcluding(p.T.position, 0.75f, p.LastHit);
                 if (hit == null) continue;
@@ -1103,6 +1175,10 @@ namespace Proto
                 _bolts.Arc(p.T.position, next.Pos, p.Tint, 0.1f, 0.12f);
 
                 p.Dir = toNext.normalized;
+                if (p.Vfx != null && p.Dir.sqrMagnitude > 0.0001f)
+                {
+                    p.Vfx.rotation = Quaternion.LookRotation(p.Dir);
+                }
                 p.LastHit = hit;
                 p.Bounces--;
                 p.Life = Mathf.Max(p.Life, 0.9f);
@@ -1113,6 +1189,15 @@ namespace Proto
         {
             p.Active = false;
             p.T.gameObject.SetActive(false);
+
+            // Selalu dilepas, bukan disimpan di slot: slot peluru berikutnya bisa milik skill
+            // lain, dan kolamnya yang membuat lepas-pasang ini murah.
+            if (p.Vfx != null)
+            {
+                _vfx.Release(p.VfxSrc, p.Vfx);
+                p.Vfx = null;
+                p.VfxSrc = null;
+            }
         }
 
         /// <summary>Ceiling on the flash pool. Every kill pops one, so at 150 enemies a wave this
@@ -1227,18 +1312,17 @@ namespace Proto
 
                 go.transform.SetParent(_fxRoot, false);
                 var r = go.GetComponent<Renderer>();
-                r.sharedMaterial = _fxMaterial;
+                r.sharedMaterial = _aoeMaterial;
                 r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
                 z = new Zone { T = go.transform };
                 _zones.Add(z);
             }
 
-            // Cakram ditipiskan kalau skill ini punya efek partikelnya sendiri: tugasnya berubah
-            // dari MENJADI efeknya menjadi sekadar menandai jangkauan damage. Dibiarkan pekat,
-            // ia menelan efek yang barusan dipasang di atasnya.
+            // Kepekatan bukan lagi urusan kode ini — shader AoeRing yang memegangnya: isi tipis,
+            // tepi tegas. Yang dikirim dari sini tinggal WARNANYA.
             var tone = def.Color;
-            if (def.CastVfx != null) tone.a *= 0.3f;
+            tone.a = 1f;
 
             _mpb.SetColor(BaseColorId, tone);
             z.T.GetComponent<Renderer>().SetPropertyBlock(_mpb);

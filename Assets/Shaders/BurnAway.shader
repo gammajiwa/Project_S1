@@ -12,11 +12,20 @@ Shader "Grimoire/BurnAway"
     // tepinya compang-camping alih-alih rata seperti gelas terisi.
     Properties
     {
+        // Putih polos = perilaku lama (kapsul berwarna). Model bertekstur mengisi slot ini
+        // dari material aslinya supaya rupanya tidak berubah selama masih hidup.
+        _BaseMap ("Tekstur", 2D) = "white" {}
         _BaseColor ("Warna", Color) = (0.85, 0.78, 0.55, 1)
         _Burn ("Hangus", Range(0, 1)) = 0
         _EdgeWidth ("Lebar bara", Range(0.01, 0.5)) = 0.16
         _EdgeColor ("Warna bara", Color) = (1, 0.45, 0.08, 1)
         _NoiseScale ("Rapat noise", Float) = 6
+
+        // Rentang tinggi mesh di ruang objek, untuk arah jalar bawah-ke-atas. Bawaannya persis
+        // kapsul primitif (y -0,5..0,5); mesh lain (model pemain) mengisi rentang aslinya
+        // lewat kode supaya gradien membentang dari kaki ke kepala, bukan menumpuk di pinggang.
+        _HeightMin ("Kaki (y objek)", Float) = -0.5
+        _HeightMax ("Kepala (y objek)", Float) = 0.5
     }
 
     SubShader
@@ -48,12 +57,18 @@ Shader "Grimoire/BurnAway"
                 float _Burn;
                 float _EdgeWidth;
                 float _NoiseScale;
+                float _HeightMin;
+                float _HeightMax;
             CBUFFER_END
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
 
             struct Attributes
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
+                float2 uv         : TEXCOORD0;
             };
 
             struct Varyings
@@ -61,6 +76,7 @@ Shader "Grimoire/BurnAway"
                 float4 positionCS : SV_POSITION;
                 float3 normalWS   : TEXCOORD0;
                 float3 positionOS : TEXCOORD1;
+                float2 uv         : TEXCOORD2;
             };
 
             Varyings vert(Attributes input)
@@ -69,6 +85,7 @@ Shader "Grimoire/BurnAway"
                 o.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 o.normalWS = TransformObjectToWorldNormal(input.normalOS);
                 o.positionOS = input.positionOS.xyz;
+                o.uv = input.uv;
                 return o;
             }
 
@@ -114,12 +131,14 @@ Shader "Grimoire/BurnAway"
 
                 // Dari BAWAH ke atas: api menjalar naik, dan benda yang hilang dari ubun-ubun
                 // terbaca sebagai tenggelam, bukan terbakar.
-                float height = saturate(input.positionOS.y + 0.5);
+                float height = saturate((input.positionOS.y - _HeightMin) /
+                                        max(_HeightMax - _HeightMin, 0.001));
                 float threshold = _Burn * 1.35 - height * 0.35;
 
                 clip(n - threshold);
 
-                float3 albedo = _BaseColor.rgb;
+                float3 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb
+                                * _BaseColor.rgb;
 
                 // Pita bara di ambang guntingnya. Ditambahkan, bukan dicampur: bara yang
                 // ikut menggelap bersama bayangan berhenti terbaca sebagai sesuatu yang panas.

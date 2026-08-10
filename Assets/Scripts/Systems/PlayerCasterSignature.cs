@@ -23,6 +23,16 @@ namespace Proto
 
         float _shieldTimer;
 
+        /// <summary>
+        /// Gelembung perisai yang menempel di pemain SELAMA serapannya hidup — satu-satunya efek
+        /// skill yang umurnya diikat ke state, bukan ke cast. Perisai yang habis dimakan damage
+        /// harus kehilangan gelembungnya di frame yang sama, atau pemain membaca perlindungan
+        /// yang sudah tidak ada.
+        /// </summary>
+        Transform _wardVfx;
+
+        GameObject _wardVfxSrc;
+
         // ---------- pecahan mengambang ----------
 
         class Orb
@@ -43,6 +53,11 @@ namespace Proto
             public string SourceName;
             public float Trigger;
             public bool Active;
+
+            /// <summary>Efek partikel yang menjadi badan pecahan, dilepas ke kolam saat pensiun.</summary>
+            public Transform Vfx;
+
+            public GameObject VfxSrc;
         }
 
         // ---------- hantaman beraba-aba ----------
@@ -60,6 +75,11 @@ namespace Proto
             public string SourceName;
             public Color Tint;
             public bool Active;
+
+            /// <summary>Prefab semburan detik hantaman — dibawa karena Strike tidak menyimpan Def.</summary>
+            public GameObject VfxPrefab;
+
+            public float VfxScale;
         }
 
         // ---------- bola menggelinding ----------
@@ -77,6 +97,11 @@ namespace Proto
             public float StatusDuration;
             public int Points;
             public string SourceName;
+
+            /// <summary>Efek yang menggelinding bersama bola. Mengikuti posisi, bukan putarannya.</summary>
+            public Transform Vfx;
+
+            public GameObject VfxSrc;
 
             /// <summary>Yang sudah dilindas, supaya satu bola tidak menagih musuh yang sama berkali-kali.</summary>
             public readonly List<EnemyManager.Enemy> Hit = new List<EnemyManager.Enemy>(64);
@@ -169,6 +194,23 @@ namespace Proto
                 Paint(o.T, def.Color);
                 o.T.localScale = Vector3.one * 0.34f;
                 o.T.gameObject.SetActive(true);
+
+                // Badan pecahan diganti efek partikel; bolanya menciut jadi inti. Aturannya sama
+                // dengan peluru — slotnya dipakai ulang lintas skill, jadi efek selalu lepas-pasang.
+                if (o.Vfx != null)
+                {
+                    _vfx.Release(o.VfxSrc, o.Vfx);
+                    o.Vfx = null;
+                    o.VfxSrc = null;
+                }
+
+                if (def.CastVfx != null)
+                {
+                    o.Vfx = _vfx.Attach(def.CastVfx, o.T.position, Quaternion.identity,
+                        def.CastVfxScale * 0.6f);
+                    o.VfxSrc = def.CastVfx;
+                    o.T.localScale = Vector3.one * 0.1f;
+                }
             }
 
             return true;
@@ -198,6 +240,8 @@ namespace Proto
             SpawnFlash(from, 3.4f, 0.28f, def.Color);
             SpawnFlash(to, 3.4f, 0.28f, def.Color);
             _bolts.Beam(from + Vector3.up * 0.6f, to + Vector3.up * 0.6f, def.Color, 0.5f);
+            _vfx.Burst(def.CastVfx, from, def.CastVfxScale);
+            _vfx.Burst(def.CastVfx, to, def.CastVfxScale);
 
             if (def.GrantOnCast != null) ApplyBuff(def.GrantOnCast);
             return true;
@@ -213,6 +257,23 @@ namespace Proto
             _shieldTimer = Mathf.Max(1f, def.ZoneDuration);
 
             SpawnFlash(transform.position, 4.2f, 0.35f, def.Color);
+
+            // Ward lain boleh menimpa: gelembung lama dilepas dulu supaya dua kubah tidak
+            // bertumpuk di badan yang sama.
+            if (_wardVfx != null && _wardVfxSrc != def.CastVfx)
+            {
+                _vfx.Release(_wardVfxSrc, _wardVfx);
+                _wardVfx = null;
+                _wardVfxSrc = null;
+            }
+
+            if (def.CastVfx != null && _wardVfx == null)
+            {
+                _wardVfx = _vfx.Attach(def.CastVfx, transform.position, Quaternion.identity,
+                    def.CastVfxScale);
+                _wardVfxSrc = def.CastVfx;
+            }
+
             if (def.GrantOnCast != null) ApplyBuff(def.GrantOnCast);
             return true;
         }
@@ -235,6 +296,7 @@ namespace Proto
 
             ApplyBuff(def.GrantOnCast);
             SpawnFlash(transform.position, 3.6f, 0.3f, def.Color);
+            _vfx.Burst(def.CastVfx, transform.position, def.CastVfxScale);
             return true;
         }
 
@@ -248,6 +310,7 @@ namespace Proto
             Mana = spell.Damage <= 0f ? MaxMana : Mathf.Min(MaxMana, Mana + spell.Damage);
 
             SpawnFlash(transform.position, 3.8f, 0.32f, def.Color);
+            _vfx.Burst(def.CastVfx, transform.position, def.CastVfxScale);
             if (def.GrantOnCast != null) ApplyBuff(def.GrantOnCast);
             return true;
         }
@@ -273,6 +336,8 @@ namespace Proto
             s.Points = AilmentPoints(def);
             s.SourceName = def.DisplayName;
             s.Tint = def.Color;
+            s.VfxPrefab = def.CastVfx;
+            s.VfxScale = VfxScale(def, s.Radius);
             s.Active = true;
 
             Paint(s.Ring, def.Color);
@@ -316,6 +381,24 @@ namespace Proto
             b.T.position = transform.position + Vector3.up * (b.Radius * 0.5f);
             b.T.localScale = Vector3.one * (b.Radius * 1.4f);
             b.T.gameObject.SetActive(true);
+
+            // Bola api menggantikan batu primitif. Batunya menciut jadi inti — dia yang melindas,
+            // efek cuma menumpang di posisinya.
+            if (b.Vfx != null)
+            {
+                _vfx.Release(b.VfxSrc, b.Vfx);
+                b.Vfx = null;
+                b.VfxSrc = null;
+            }
+
+            if (def.CastVfx != null)
+            {
+                b.Vfx = _vfx.Attach(def.CastVfx, b.T.position,
+                    Quaternion.LookRotation(b.Dir), def.CastVfxScale * Mathf.Max(0.6f, b.Radius / 1.4f));
+                b.VfxSrc = def.CastVfx;
+                b.T.localScale = Vector3.one * (b.Radius * 0.3f);
+            }
+
             return true;
         }
 
@@ -406,6 +489,7 @@ namespace Proto
             }
 
             SpawnFlash(transform.position, radius * 2.2f, 0.28f, def.Color);
+            _vfx.Burst(def.CastVfx, transform.position, VfxScale(def, radius));
             if (def.GrantOnCast != null) ApplyBuff(def.GrantOnCast);
             return true;
         }
@@ -425,7 +509,22 @@ namespace Proto
 
         void TickShield(float dt)
         {
-            if (Shield <= 0f) return;
+            // Gelembungnya dievaluasi SEBELUM guard: perisai bisa habis dimakan damage (bukan cuma
+            // waktu), dan jalur itu tidak lewat sini — satu-satunya tempat yang pasti berjalan
+            // tiap frame adalah tick ini.
+            if (Shield <= 0f)
+            {
+                if (_wardVfx != null)
+                {
+                    _vfx.Release(_wardVfxSrc, _wardVfx);
+                    _wardVfx = null;
+                    _wardVfxSrc = null;
+                }
+
+                return;
+            }
+
+            if (_wardVfx != null) _wardVfx.position = transform.position;
 
             _shieldTimer -= dt;
             if (_shieldTimer > 0f) return;
@@ -449,6 +548,7 @@ namespace Proto
                     // muatannya ikut. Muatan yang tertinggal di seberang peta tidak ada gunanya.
                     o.Angle += 2.2f * dt;
                     o.T.position = head + new Vector3(Mathf.Cos(o.Angle), 0f, Mathf.Sin(o.Angle)) * 0.85f;
+                    if (o.Vfx != null) o.Vfx.position = o.T.position;
 
                     var prey = _enemies.Nearest(transform.position, o.Trigger);
                     if (prey == null) continue;
@@ -471,6 +571,7 @@ namespace Proto
                 }
 
                 o.T.position += o.Dir * (o.Speed * dt);
+                if (o.Vfx != null) o.Vfx.position = o.T.position;
 
                 var hit = _enemies.NearestExcluding(o.T.position, 0.8f, null);
                 if (hit == null) continue;
@@ -505,6 +606,7 @@ namespace Proto
 
                 _bolts.Beam(s.Target + Vector3.up * 14f, s.Target, s.Tint, s.Radius * 0.7f);
                 SpawnFlash(s.Target, s.Radius * 2.4f, 0.35f, s.Tint);
+                _vfx.Burst(s.VfxPrefab, s.Target, s.VfxScale);
 
                 s.Active = false;
                 s.Ring.gameObject.SetActive(false);
@@ -526,11 +628,20 @@ namespace Proto
                     b.Active = false;
                     b.T.gameObject.SetActive(false);
                     SpawnFlash(b.T.position, b.Radius * 2.6f, 0.3f, Color.white);
+
+                    if (b.Vfx != null)
+                    {
+                        _vfx.Release(b.VfxSrc, b.Vfx);
+                        b.Vfx = null;
+                        b.VfxSrc = null;
+                    }
+
                     continue;
                 }
 
                 b.T.position += b.Dir * step;
                 b.T.Rotate(Vector3.Cross(Vector3.up, b.Dir), step * 220f, Space.World);
+                if (b.Vfx != null) b.Vfx.position = b.T.position;
 
                 Sweep(b);
             }
@@ -619,6 +730,13 @@ namespace Proto
             o.Active = false;
             o.Flying = false;
             o.T.gameObject.SetActive(false);
+
+            if (o.Vfx != null)
+            {
+                _vfx.Release(o.VfxSrc, o.Vfx);
+                o.Vfx = null;
+                o.VfxSrc = null;
+            }
         }
 
         void Paint(Transform t, Color color)
@@ -647,6 +765,11 @@ namespace Proto
             }
 
             var fresh = new Strike { Ring = NewPrimitive("StrikeRing", PrimitiveType.Cylinder) };
+
+            // Telegraf memakai material penanda AOE, bukan unlit pekat: isi tipis supaya musuh
+            // yang sedang diincar tetap terlihat, tepi tegas karena tepilah aba-abanya.
+            fresh.Ring.GetComponent<Renderer>().sharedMaterial = _aoeMaterial;
+
             _strikes.Add(fresh);
             return fresh;
         }

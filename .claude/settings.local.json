@@ -34,7 +34,10 @@
       "mcp__unity-mcp__run_tests",
       "mcp__unity-mcp__get_test_job",
       "WebSearch",
-      "WebFetch(domain:docs.unity3d.com)"
+      "WebFetch(domain:docs.unity3d.com)",
+      "PowerShell(robocopy \"D:\\\\GameGamma\\\\project_b\\\\Assets\\\\11_Plugin\\\\GabrielAguiarProductions\" \"D:\\\\GameGamma\\\\Project_S1\\(fix\\)\\\\Assets\\\\Art\\\\VFX\\\\Packs\\\\GabrielAguiarProductions\" /E /XD Scenes /NFL /NDL /NJH /NP; \"RC exit: $LASTEXITCODE\")",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(Out-Null *)"
     ]
   },
   "enabledMcpjsonServers": [

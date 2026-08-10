@@ -133,3 +133,17 @@ InitTestScene*.unity*
 # di sini supaya tidak ikut membengkakkan repo. Tekstur 4K asli dan paket yang belum
 # dipakai disimpan di sini kalau nanti perlu dipanggang ulang.
 /_RawAssets/
+
+# Paket VFX yang di-clone dari project_b ke Assets/Art/VFX/Packs/ — 403 MB .png/.fbx yang
+# lewat LFS, alasan yang sama persis dengan lima paket di atas. Wrapper per skill di
+# Assets/Art/VFX/Skills/ TETAP dilacak; dia yang memegang pilihan efek tiap skill.
+# Cara mengembalikannya ada di docs/asset-store-packages.md.
+/[Aa]ssets/[Aa]rt/VFX/Packs/GabrielAguiarProductions/
+/[Aa]ssets/[Aa]rt/VFX/Packs/GabrielAguiarProductions.meta
+/[Aa]ssets/[Aa]rt/VFX/Packs/JMO Assets/
+/[Aa]ssets/[Aa]rt/VFX/Packs/JMO Assets.meta
+/[Aa]ssets/[Aa]rt/VFX/Packs/Vefects/
+/[Aa]ssets/[Aa]rt/VFX/Packs/Vefects.meta
+
+# Berkas cadangan editor gambar (Krita/GIMP menulis "nama.png~" di sebelah aslinya).
+*~

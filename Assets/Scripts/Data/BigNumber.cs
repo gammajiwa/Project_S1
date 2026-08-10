@@ -26,8 +26,12 @@ namespace Proto
         /// <summary>
         /// Pengali tampilan. Disimpan di sini, bukan di <see cref="GameBalance"/>, karena ia
         /// bukan knob keseimbangan: mengubahnya tidak mengubah satu pun hasil pertarungan.
+        ///
+        /// 10, bukan 100 — keputusan pemilik project (2026-08-10): pukulan pembuka harus
+        /// terbaca RATUSAN dulu (280, 340) supaya masih ada langit di atasnya; ribuan dan
+        /// puluhan ribu adalah hadiah pertumbuhan, bukan sapaan wave pertama.
         /// </summary>
-        public static float Scale = 100f;
+        public static float Scale = 10f;
 
         /// <summary>
         /// Titik untuk ribuan, koma untuk pecahan — seluruh teks game berbahasa Indonesia, dan
@@ -43,8 +47,10 @@ namespace Proto
         };
 
         /// <summary>
-        /// Angka bulat dengan pemisah ribuan. Pecahan dibuang di atas skala — "3.412,7" tidak
-        /// pernah dibaca sampai koma saat ia melayang di atas gerombolan selama 0,75 detik.
+        /// Angka bulat; titik ribuan BARU muncul mulai 10.000. Permintaan pemilik project:
+        /// di angka pendek titik itu mengganggu ("3.400" kebaca ribet padahal sekilas), tapi
+        /// "10300" tanpa titik tidak terhitung lagi — jadi 9750 polos, 10.300 bertitik.
+        /// Pecahan dibuang — "412,7" tidak pernah dibaca sampai koma saat melayang 0,75 detik.
         /// </summary>
         public static string Damage(float raw)
         {
@@ -53,6 +59,7 @@ namespace Proto
             // Di bawah 10 pecahannya justru satu-satunya yang membedakan dua angka, jadi di
             // situ ia dipertahankan. Ini hanya terjadi kalau Scale dikecilkan mendekati 1.
             if (shown < 10f) return shown.ToString("0.#", Id);
+            if (shown < 10_000f) return Mathf.RoundToInt(shown).ToString();
 
             return Mathf.RoundToInt(shown).ToString("N0", Id);
         }
@@ -65,7 +72,7 @@ namespace Proto
             if (shown >= 1_000_000f) return (shown / 1_000_000f).ToString("0.#", Id) + "jt";
             if (shown >= 10_000f) return (shown / 1_000f).ToString("0.#", Id) + "rb";
 
-            return shown < 10f ? shown.ToString("0.#", Id) : Mathf.RoundToInt(shown).ToString("N0", Id);
+            return shown < 10f ? shown.ToString("0.#", Id) : Mathf.RoundToInt(shown).ToString();
         }
     }
 }

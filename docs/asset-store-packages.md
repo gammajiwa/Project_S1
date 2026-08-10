@@ -54,6 +54,44 @@ present for the compressed form to exist.
 their prefabs, and rescales them to this game's proportions. If the packages are missing, those
 references resolve to null and the arena dresses itself with nothing.
 
+## Paket VFX skill (ditambahkan 2026-08-10)
+
+Tiga paket lagi, di bawah `Assets/Art/VFX/Packs/`, di-**clone dari
+`D:/GameGamma/project_b/Assets/11_Plugin/`** (bukan diimpor ulang dari Asset Store — GUID-nya
+harus persis sama dengan yang di project_b supaya wrapper skill tidak putus):
+
+| Paket | Path tujuan | Besar | Dipakai untuk |
+|---|---|---|---|
+| GabrielAguiarProductions (Unique Magic Abilities Vol.2) | `Assets/Art/VFX/Packs/GabrielAguiarProductions/` | 256 MB | AOE elemental: MeteorRain / ArrowRain / SingleComet / ImpactAoE / BuffAoE / DebuffAoE |
+| JMO Assets — Cartoon FX Remaster | `Assets/Art/VFX/Packs/JMO Assets/Cartoon FX Remaster/` | 138 MB | projectile loop, hit per elemen, explosion, barrier, portal |
+| Vefects — Trails VFX URP (subset `VFX/` + `_ Extra/`) | `Assets/Art/VFX/Packs/Vefects/Trails VFX URP/` | 10 MB | trail petir ramping |
+
+Yang **tidak** ikut disalin, dan sebaiknya tetap tidak: `GabrielAguiarProductions/Scenes/`,
+`Cartoon FX Remaster/Demo Assets/` (berisi Kino Bloom lama yang berisiko gagal kompilasi),
+`Cartoon FX Easy Editor/`, dan `Vefects/{Demo,Sounds,Scripts}/`.
+
+Cara mengembalikan setelah clone bersih:
+
+```
+set SRC=D:\GameGamma\project_b\Assets\11_Plugin
+robocopy "%SRC%\GabrielAguiarProductions" ^
+         "Assets\Art\VFX\Packs\GabrielAguiarProductions" /E /XD Scenes
+robocopy "%SRC%\JMO Assets\Cartoon FX Remaster" ^
+         "Assets\Art\VFX\Packs\JMO Assets\Cartoon FX Remaster" /E /XD "Demo Assets"
+robocopy "%SRC%\Vefects\Trails VFX URP\VFX" ^
+         "Assets\Art\VFX\Packs\Vefects\Trails VFX URP\VFX" /E
+```
+
+File `.meta` folder induknya ikut disalin manual (robocopy tidak membawa `.meta` milik folder
+yang jadi tujuan), lalu `Tools/Grimoire/Assign Skill VFX` untuk meluruskan pointer yang putus.
+
+### Yang tetap dilacak git
+
+`Assets/Art/VFX/Skills/` — 74 folder wrapper, satu prefab per skill. Isinya cuma root kosong
++ referensi ke prefab paket, jadi ringan, dan **di situlah pilihan efek tiap skill hidup**.
+Tanpa paketnya, wrapper-nya kosong tapi strukturnya utuh; begitu paket dikembalikan,
+referensinya nyambung lagi karena GUID-nya sama.
+
 ## Related
 
 - `.gitignore` — the three ignore entries, with the same reasoning in short form

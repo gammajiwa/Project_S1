@@ -1,0 +1,86 @@
+LizMage - siap dipasang di Unity
+=================================
+
+Isi folder:
+  LizMage_RUN.fbx    badan + jubah + rangka + animasi lari  (38 frame)
+  LizMage_IDLE.fbx   badan + jubah + rangka + animasi diam  (56 frame)
+  Textures/          tekstur 1024x1024
+
+Salin SELURUH folder ini ke dalam Assets/ di project Unity.
+Folder Textures harus ikut dan tetap bersebelahan dengan FBX-nya, karena
+Unity mencari tekstur di situ saat mengekstrak material.
+
+
+LANGKAH PEMASANGAN (urut, jangan dilompat)
+------------------------------------------
+
+1. TEKSTUR
+   Klik LizMage_RUN.fbx -> Inspector -> tab Materials
+   -> Extract Textures...   (arahkan ke folder Textures)
+   -> Extract Materials...  (arahkan ke folder Textures)
+   Ulangi untuk LizMage_IDLE.fbx.
+
+   Lalu klik LizMage_Texture.png -> set Filter Mode: Point (no filter) -> Apply.
+   Model ini memakai atlas tekstur berpetak. Kalau difilter halus, warna
+   antar petak saling bocor dan wajahnya jadi kotor.
+
+2. RIG
+   Klik FBX -> tab Rig -> Animation Type: Humanoid -> Apply.
+   Lakukan untuk KEDUA file.
+
+   Kenapa Humanoid, bukan Generic: Generic mencocokkan animasi lewat NAMA
+   JALUR objek. Kalau GameObject-nya dibungkus satu tingkat lagi, semua
+   kurva jadi "Missing!". Humanoid mencocokkan lewat peta tulang, jadi
+   kebal terhadap susunan hierarki.
+
+   Bonusnya: animasi Mixamo APA PUN bisa langsung dipakai. Download animasi
+   dengan karakter bawaan Mixamo, import sebagai Humanoid, Unity me-retarget
+   sendiri ke kadal ini. Tidak perlu upload karakter lagi.
+
+   Kalau Unity protes "character not in T-pose" saat konfigurasi Avatar,
+   tekan tombol Enforce T-Pose. Itu normal dan tidak mengubah bentuk model.
+
+3. ANIMASI
+   Klik FBX -> tab Animation -> pastikan Import Animation dicentang.
+   Di daftar Clips, centang Loop Time untuk RUN dan IDLE. Apply.
+
+4. ANIMATOR
+   Project -> klik kanan -> Create -> Animator Controller.
+   Dobel klik, seret clip RUN dan IDLE ke dalamnya sebagai state.
+   Klik kanan pada IDLE -> Set as Layer Default State.
+
+   Seret LizMage_IDLE.fbx ke Hierarchy.
+   Pada GameObject ROOT hasil seretan itu, komponen Animator -> isi slot
+   Controller dengan Animator Controller tadi.
+
+   PENTING: Animator harus berada di GameObject ROOT hasil FBX, bukan di
+   objek pembungkus di atasnya. Ini penyebab paling umum animasi tidak
+   jalan padahal clip-nya ada.
+
+5. JUBAH (Cloth)
+   Cloth TIDAK ADA di dalam FBX. Tidak ada format file yang bisa membawanya.
+   Ini komponen Unity yang harus dipasang tangan.
+
+   Di Hierarchy, buka anak-anak karakter, pilih objek LizMage_Cape
+   (bukan objek kosong terpisah, bukan induknya).
+   Add Component -> Cloth.
+   Klik Edit Constraints -> pilih deretan vertex di KERAH ATAS
+   -> set Max Distance = 0.
+
+   Vertex ber-Max Distance 0 jadi jangkar; sisanya bebas berayun.
+   Tanpa jangkar, seluruh jubah akan jatuh ke lantai saat Play.
+
+
+CATATAN ISI MODEL
+-----------------
+  LizMage_Body   280 vertex, 421 poligon   badan (ekor sudah dipotong)
+  LizMage_Cape    90 vertex,  87 poligon   objek TERPISAH, untuk Cloth
+  MX_Rig          25 tulang, rangka Mixamo (mixamorig:*)
+
+Jubah sengaja dipisah sebagai objek sendiri dengan Skinned Mesh Renderer
+tersendiri, karena komponen Cloth hanya bisa dipasang per renderer.
+Bobotnya diikat ke Spine1/Spine2 supaya kerahnya mengikuti dada; Cloth
+tinggal menambahkan ayunan di atas itu.
+
+Kedua animasi sudah didudukkan tepat di lantai (titik terendah = 0.000),
+jadi karakternya tidak tenggelam atau melayang.

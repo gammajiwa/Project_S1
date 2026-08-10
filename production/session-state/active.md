@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Bersih-bersih UI sebelum dioper ke build clean
-Task: Menu/setelan/HUD/toko/starter beres; nama game & diorama menu menunggu keputusan
+Feature: VFX per-skill bisa ditukar tangan + avatar LizMage hidup
+Task: 74 wrapper VFX, ring AOE baru, player beranimasi+cloth; menunggu penilaian mata
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -1353,6 +1353,109 @@ Diverifikasi lewat dua papan uji terisolasi:
 | 4x4 petak rune (lapang) | `complete=True spillsOut=False` | `Keen + Frenzy -> Power Sigil`, duduk di `(0,0)`, tidak ada yang keluar |
 
 
+## VFX untuk SEMUA skill — 74/74 terpasang & terverifikasi (2026-08-10)
+
+Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholder skill".
+
+- **Dua pack di-clone dari project_b** (GUID utuh): `Art/VFX/Packs/GabrielAguiarProductions`
+  (AOE elemental: MeteorRain/ArrowRain/ImpactAoE/BuffAoE/SingleComet, 255 MB) dan
+  `Art/VFX/Packs/JMO Assets/Cartoon FX Remaster` (CFXR: projectile loop, hit, explosion,
+  barrier, 134 MB). Demo scene & Kino Bloom sengaja ditinggal. Cartoon Coffee & 118 sprite
+  (1,4 GB, sprite 2D) tidak diambil.
+- **`View/SkillVfxPool.cs`** — kolam per-prefab untuk semua kind; instans baru dipreteli
+  (Light, AudioSource, script `CFXR_*` — yang terakhir menghancurkan dirinya sendiri selesai
+  main, musuh pooling). Burst dua tahap mati (stop emit → 0,7 dtk → nonaktif).
+- **Semua CastKind dapat titik pasang**: Projectile/Radial/Orbit/RollingBall = prefab jadi
+  badan yang ikut terbang (primitif menciut jadi inti); Nova/Heal/Cleanse/Surge/Restore/
+  ForcePush/Blink = burst; Chain = burst pangkal cabang saja (Stormbreaker 8, bukan 32);
+  Detonate = burst per ledakan; AreaAtTarget/SunStrike = burst titik jatuh; Line = burst
+  berarah umur-paksa; Ward = kubah MENETAP selama Shield hidup; Zone/Vortex = jalur lama utuh.
+- **`Editor/VfxPass.cs`** (Tools/Grimoire/Assign Skill VFX) — tabel 70 skill → prefab + skala,
+  elemen dipegang teguh, idempotent, dengan audit bawaan (skill polos & kind-gendong berprefab
+  non-loop). Audit langsung menangkap Poison Cloud CFXR yang ternyata sekali-main → Poison
+  Pool pakai `Potion Bubbles (Loop)`, Plague Bloom pakai `Flies Cloud`.
+- **Verifikasi sweep otomatis 74 skill** di Playground (driver `EditorApplication.update`,
+  pancingan per kind: HP dipotong buat Heal, debuff buat Cleanse, ailment ke boneka buat
+  Detonate, teleport ke gerombolan buat Nova/Blink/Radial): **74/74 menembakkan VFX-nya,
+  0 error/warning, 158–166 fps @60 boneka**. Jebakan baru: `PlaygroundBootstrap.Update()`
+  mengisi mana penuh tiap frame → skill Restore mustahil menembak di playground tanpa
+  mematikan komponennya sebentar.
+- **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
+  = edit tabel VfxPass, jangan assign manual (pass menimpa).
+
+## Paket LizMage_Unity + tiga bug avatar (2026-08-10, malam)
+
+Detail: **AI-HANDOFF.md §36**. Paket baru dari pemilik project dipasang penuh mengikuti
+BACA-DULU.txt-nya: tekstur diekstrak & dijahit (`FeedTextures` — FBX-nya menunjuk file luar,
+ExtractTextures tidak mengisi apa pun), filter Point, **rig Humanoid** (animasi Mixamo apa pun
+kini bisa langsung retarget), klip loop, Cloth di cape.
+
+**Putaran rasa (AI-HANDOFF §36 lanjutan 2):** cloth dijinakkan (jangkar diukur di ruang DUNIA
+— ruang lokal jubah cuma 6 mm, jadi "atas"-nya derau dan jumlah jangkar berubah tiap run;
+ayunan idle 3,0 → 0,023), player 1,65 → 2,10 → **3,0 unit** (~147 px; ukuran harus dinilai
+dalam piksel, bukan meter), `BigNumber.Scale` 100 → **10** + titik ribuan baru muncul di
+10.000 (`975→9750`, `1030→10.300`), ring AOE dikendurkan (isi 0,06 / tepi 0,4).
+Terverifikasi in-game: `player_lizmage_v5.png`.
+
+> Error `m_Targets of GameObjectInspector` + `SerializedObjectNotCreatableException` = editor
+> Inspector kehilangan objek yang dipilih saat play mode berhenti / prefab dirakit ulang.
+> BUKAN bug game.
+
+**KOREKSI LARUT MALAM — Humanoid dibatalkan, balik Generic.** Muscle-space manusia meremukkan
+proporsi kadal jadi jarum vertikal (preview klipnya ikut penyet = avatarnya yang rusak).
+Generic aman sekarang karena Animator sudah di root FBX (akar bug "(Missing!)" sudah mati).
+Konsekuensi sadar: animasi Mixamo baru tidak auto-retarget; kalau perlu, petakan avatar manual.
+Terukur pulih: bahu 0,347, bounds (1,24×1,54×0,92), kadal tampil bertekstur
+(`player_lizmage_v3.png`).
+
+Tiga keluhan mata pemilik project, dua akar:
+- "gepeng" + "gerak-gerak gak jelas" = **applyRootMotion** bawaan TRUE — klip menyeret &
+  memiringkan root melawan PlayerMotor; dari kamera atas, miring = penyet. Dimatikan.
+- "gede banget" + spam Invalid AABB = **jangkar cloth nyasar** (indeks vertex mesh 112 dipakai
+  untuk partikel cloth 90 yang sudah di-las; cuma 2 terjahit, jubah terbang, bounds meledak).
+  Dipetakan ulang dari `cloth.vertices` sendiri: 20/90 terjangkar di kerah, plafon ayun 0,12.
+- Kurva "(Missing!)" generasi pertama = Animator di node pembungkus, satu tingkat di atas root
+  FBX. Sekarang model = root prefab, Humanoid.
+
+**Jebakan mahal**: menimpa prefab dengan ROOT BARU di path sama = GUID awet tapi fileID root
+ganti → referensi scene mati DIAM-DIAM. Pass sekarang menyembuhkan prefab sehat lewat
+`LoadPrefabContents` (identitas awet); rakit-ulang penuh memperingatkan cek `_playerAvatarPrefab`.
+
+Terukur: pitch/roll 0/0, bounds badan 1,62, cloth delta 0,36 (dulu 3,0), tekstur nempel,
+0 error. `BurnAway` dapat `_BaseMap` supaya model bertekstur tidak jadi siluet polos.
+**Menunggu mata pemilik project.** FBX lama di root Player/ sudah yatim — boleh dihapus?
+
+## Feedback VFX putaran 1: wrapper per skill, avatar LizMage, ring AOE (2026-08-10)
+
+Detail teknis: **docs/AI-HANDOFF.md §35**. Empat permintaan, semua masuk:
+
+- **Folder per skill**: `Art/VFX/Skills/<Nama>/Vfx_<Nama>.prefab` (74 buah) — piece menunjuk
+  WRAPPER, ganti efek jelek = buka prefab, hapus anak, seret prefab paket lain. Pass TIDAK
+  membangun ulang wrapper yang sudah ada (editan tangan aman); hapus dulu kalau mau default baru.
+- **3 skill petir ramping**: Spark Bolt / Spark Shards / Storm Shards → Vefects
+  `VFX_Trail_Electric` (murni TrailRenderer). **Flame Lash** → `Sword Hit FIRE (Slash)`.
+  **Ashfall** dikecilkan (bake 0,22 dalam wrapper; dari ~59 unit → ~13 vs area 8).
+  Pack baru: `Packs/Vefects/Trails VFX URP` (10 MB subset).
+- **Ring AOE** (`Shaders/AoeRing.shader`): isi semi transparan 0,14, tepi 0,8 mulai 0,82,
+  tengah tetap keisi, tepi didorong putih + denyut pelan. Dipakai cakram Zone + telegraf
+  SunStrike. Screenshot: `Assets/Screenshots/vfx_aoe_ring.png`.
+- **Avatar LizMage**: `Tools/Grimoire/Build Player Avatar` → importer betul (readable, loop,
+  skala terukur → tinggi 1,65), `PlayerAnim.controller` Idle⇄Run, **Cloth di cape** (puncak
+  dijepit, capsule collider badan), `PlayerAvatar.prefab` (create-if-missing). Runtime:
+  jalan = Run, diam = Idle, **menembak menahan Idle 0,45 dtk**, badan belok ke arah jalan.
+  Kapsul pensiun di run (`_playerAvatarPrefab` di _Bootstrap scene Proto; kosongkan = balik
+  kapsul). PlayerBurnout membakar badan+jubah sekaligus (BurnAway dapat _HeightMin/Max).
+  Screenshot: `player_lizmage.png`.
+
+**Jebakan baru**: (1) tulis .cs dari luar → `refresh_unity` TIDAK menjamin recompile, assembly
+bisa basi diam-diam — palunya `CompilationPipeline.RequestScriptCompilation()`; (2) jangan
+paksa `_mapOpen=false` via reflection (tirai fade ketinggalan) — matikan `GameBalance.
+MapOpensRun` sementara kalau butuh foto arena (SUDAH dikembalikan True); (3) indeks katalog
+playground bergeser tiap konten nambah — cari by DisplayName.
+
+**Belum dinilai mata**: kibaran jubah, pose cast, warna model (abu polos tanpa tekstur — mau
+ditint?), proporsi ring AOE, rupa 74 VFX.
+
 ### Berikutnya
 
 - **`productName` di Player Settings masih "My project"** — belum disamakan dengan
@@ -1369,8 +1472,6 @@ Diverifikasi lewat dua papan uji terisolasi:
 - **Dengar catatan rasa user setelah main** — kunang-kunang baru & gloom peta yang
   sekarang bergerak belum pernah dinilai dengan mata oleh pemilik project
 - Font in-game masih Arial bawaan
-- VFX skill non-Zone (Projectile/Nova/Chain/Line) masih primitif — pola `CastVfx`
-  tinggal ditiru
 - Penjaga pulau masih kapsul (dan kapsulnya pakai Default-Material bawaan
   `CreatePrimitive` — belum magenta karena `SetPropertyBlock`, tapi rapuh)
 - Spam warning "no audio listeners" masih ada
