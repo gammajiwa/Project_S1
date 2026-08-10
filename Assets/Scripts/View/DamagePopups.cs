@@ -154,12 +154,15 @@ namespace Proto
             float share = maxHp <= 0f ? 0f : Mathf.Clamp01(p.Amount / maxHp);
 
             p.Label.text = Format(p.Amount);
-            p.Label.fontSize = Mathf.RoundToInt(Mathf.Lerp(16f, 34f, Mathf.Clamp01(share * 1.8f)));
+
+            // Rentangnya dilebarkan (dulu 16-34): dengan angka besar, ukuran adalah satu-satunya
+            // hal yang membedakan gigitan kecil dari pukulan yang mematikan — dua angka empat
+            // digit yang seukuran terbaca sama saja betapa pun jauh bedanya.
+            p.Label.fontSize = Mathf.RoundToInt(Mathf.Lerp(20f, 54f, Mathf.Clamp01(share * 1.8f)));
             p.Label.color = Color.Lerp(LightHit, HeavyHit, Mathf.Clamp01(share * 2.2f));
         }
 
-        static string Format(float amount) =>
-            amount >= 10f ? Mathf.RoundToInt(amount).ToString() : amount.ToString("0.#");
+        static string Format(float amount) => BigNumber.Damage(amount);
 
         /// <summary>
         /// Driven with unscaled time: at 5x speed a scaled label would be gone before the eye
@@ -187,11 +190,12 @@ namespace Proto
                 }
 
                 p.World += Vector3.up * (RiseSpeed * dt);
-                p.Bump = Mathf.MoveTowards(p.Bump, 0f, dt * 5f);
+                p.Bump = Mathf.MoveTowards(p.Bump, 0f, dt * 4f);
 
                 var screen = _camera.WorldToScreenPoint(p.World);
                 p.Rect.anchoredPosition = new Vector2(screen.x, screen.y);
-                p.Rect.localScale = Vector3.one * (1f + p.Bump * 0.45f);
+                // Sentakan lahir lebih besar dan mengempis lebih lambat: itu bagian "jedar"-nya.
+                p.Rect.localScale = Vector3.one * (1f + p.Bump * 0.8f);
 
                 var c = p.Label.color;
                 c.a = Mathf.Clamp01(p.Life / (LifeSpan * 0.5f));
