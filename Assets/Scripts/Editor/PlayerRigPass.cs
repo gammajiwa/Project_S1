@@ -219,12 +219,12 @@ namespace Proto.EditorTools
                 dirty = true;
             }
 
-            // Rig Generic TIDAK punya konsep "root" bawaan — tanpa menunjuk simpulnya di sini,
-            // seluruh setelan Bake Into Pose di bawah tidak melakukan apa pun (tercentang di
-            // inspector, nol pengaruh). Panggul adalah simpul yang membawa perpindahan Mixamo.
-            if (imp.motionNodeName != "mixamorig:Hips")
+            // Animasinya kini DIAM DI TEMPAT DARI SUMBERNYA (pemilik project mengekspor ulang
+            // 2026-08-10) — tidak ada lagi perpindahan yang perlu diekstrak, jadi simpul root
+            // motion dikosongkan. Seluruh akrobat Bake Into Pose / Center of Mass ikut pensiun.
+            if (!string.IsNullOrEmpty(imp.motionNodeName))
             {
-                imp.motionNodeName = "mixamorig:Hips";
+                imp.motionNodeName = string.Empty;
                 dirty = true;
             }
 
@@ -235,38 +235,19 @@ namespace Proto.EditorTools
             {
                 var clips = imp.clipAnimations;
                 bool needClip = clips.Length == 0 || clips[0].name != clipName ||
-                                !clips[0].loopTime || !clips[0].lockRootPositionXZ ||
-                                clips[0].keepOriginalPositionXZ || clips[0].lockRootHeightY;
+                                !clips[0].loopTime || clips[0].lockRootPositionXZ ||
+                                clips[0].lockRootRotation || clips[0].lockRootHeightY;
 
                 if (needClip)
                 {
                     var clip = defaults[0];
                     clip.name = clipName;
+
+                    // Cuma dua hal: nama dan loop. Sumbernya sudah in-place, jadi setelan
+                    // root-motion apa pun di sini hanya bisa merusak, tidak bisa menolong.
                     clip.loopTime = true;
-
-                    // RESEP LARI DI TEMPAT — dari pemilik project, sesudah dua tebakan keliru
-                    // di sesi ini. Yang menentukan bukan cuma "Bake Into Pose" melainkan
-                    // pasangannya, "Based Upon":
-                    //
-                    // - Position XZ: Bake Into Pose ON + Based Upon **Center of Mass**. Pose
-                    //   diukur relatif terhadap titik berat, jadi perpindahan mendatarnya
-                    //   dibatalkan dan karakternya berlari di tempat. Percobaan pertama memakai
-                    //   Bake ON + Based Upon *Original* — itu tidak membatalkan apa pun, badannya
-                    //   tetap merayap. Percobaan kedua mematikan Bake sama sekali — sama saja.
-                    //   (keepOriginalPositionXZ = false ITULAH "Center of Mass".)
-                    //
-                    // - Rotation: Bake Into Pose ON, supaya klipnya tidak memutar arah karakter;
-                    //   yang menentukan hadap adalah PlayerAvatar, bukan animasinya.
-                    //
-                    // - Position Y: Bake Into Pose **OFF** untuk lari. Ini disengaja: pantulan
-                    //   vertikal itu yang membuat larinya hidup, dan membakukannya membuat
-                    //   larinya rata dan mati.
-                    clip.lockRootPositionXZ = true;
-                    clip.keepOriginalPositionXZ = false;
-
-                    clip.lockRootRotation = true;
-                    clip.keepOriginalOrientation = true;
-
+                    clip.lockRootPositionXZ = false;
+                    clip.lockRootRotation = false;
                     clip.lockRootHeightY = false;
 
                     imp.clipAnimations = new[] { clip };
@@ -335,11 +316,9 @@ namespace Proto.EditorTools
             toRun.duration = 0.12f;
             toRun.AddCondition(AnimatorConditionMode.Greater, 0.9f, "Speed");
 
-            // 0,28, bukan 0,15: pose lari condong ke depan dan pose diam tegak — blend yang
-            // pendek membuat pergantiannya terbaca sebagai badan yang disentak balik.
             var toIdle = runState.AddTransition(idleState);
             toIdle.hasExitTime = false;
-            toIdle.duration = 0.28f;
+            toIdle.duration = 0.15f;
             toIdle.AddCondition(AnimatorConditionMode.Less, 0.6f, "Speed");
 
             return c;

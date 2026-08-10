@@ -2999,3 +2999,30 @@ berjalan 24,4 unit selama lari. Dua fix kamera sebelumnya tidak menembak organ m
 **Verifikasi gabungan** (protokol satu-frame auditor, kondisi keluhan: 5×, wave 6, 15 dtk
 real): frame di mana pemain BEKU tapi bergeser >1,5 px di layar = **0 dari 986**. Dunia
 tidak pernah lagi menggeser pemain yang diam.
+
+## 41. Animasi in-place dari SUMBER — semua penyangga dicabut (2026-08-10, penutup saga)
+
+Pemilik project mengekspor ulang `LizMage_RUN.fbx` agar diam di tempat DARI SUMBERNYA, lalu
+memerintahkan: cabut semua tetek bengek, buat jalan normal. Terukur kurva mentahnya:
+rentang panggul **X 0,00 / Z 0,00 m** (dulu Z=3,55) — akar masalah mati di file art.
+
+Yang dicabut:
+- `PlayerRigPass`: seluruh setelan Bake Into Pose / Center of Mass / `motionNodeName` —
+  importer kini cuma menyetel nama klip + loop. Blend Run→Idle balik 0,15.
+- `PlayerAvatar`: state Run lengket, StopSpeed/StopDelay, CombatRadius paksa-lari, dan
+  ketergantungan `EnemyManager` — kembali ke driver polos (ambang + smoothing + cast-hold
+  saat berdiri + hadap arah jalan). `Init(caster)` lagi, bukan `Init(caster, enemies)`.
+- `ArenaCamera` & `CameraShake` sudah direvert satu commit sebelumnya (78eda3c) — guncangan
+  itu talaan tangan pemilik project dan memang benar dari awal.
+
+Sanity wave 6 nyata: **Run saat jalan 8/8 frame, Idle saat diam 494/498** (4 sisanya blend
+transisi yang sah). Klip diverifikasi in-place; driver polos; tidak ada penyangga tersisa.
+
+> Kalau gejala "mental balik" muncul lagi suatu hari: periksa KLIPNYA dulu (`SampleAnimation`
+> mentah pada prefab — rentang panggul dunia harus ~0), bukan memasang ulang penyangga.
+> Seluruh sejarah salah-diagnosisnya terdokumentasi di §40 — enam lapis, dua verifikasi
+> cacat, dan pelajaran termahalnya: art yang benar mengalahkan semua workaround runtime.
+
+> Jebakan probe baru: memaksa `anim.SetFloat` dari `EditorApplication.update` KALAH oleh
+> `PlayerAvatar.Update` yang menulis param yang sama tiap frame — hasil "Run tidak pernah
+> main" itu artefak rebutan penulis, bukan bug. Uji lewat gerak sungguhan (wave + motor).
