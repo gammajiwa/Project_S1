@@ -1383,7 +1383,24 @@ Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholde
 - **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
   = edit tabel VfxPass, jangan assign manual (pass menimpa).
 
-## "Balik posisinya" TUNTAS — tiga lapis, yang terakhir animator flapping (2026-08-10)
+## "Balik posisinya" — LAPIS KEEMPAT & PENUTUP: dikepung = tidak pernah Idle (2026-08-10)
+
+**AI-HANDOFF §40 penutup.** Sticky-Run masih kalah karena berhentinya SUNGGUHAN: `PlayerMotor`
+memang dirancang berhenti saat terkepung (vektor kabur saling meniadakan — disengaja), jadi
+pemain betul-betul stop-start tiap beberapa detik di kerumunan, dan tiap stop melepas pose
+lari yang condong (~28 cm) → "badan mundur". Verifikasi lamaku juga CACAT GANDA: diuji
+di wave sepi, dan metrik flip-nya memaafkan transisi (1 flip/20 dtk itu palsu — film
+per-frame menunjukkan `R R I R I I…` di kecepatan 3,4).
+
+Fix final: `PlayerAvatar.CombatRadius = 5` — musuh sedekat itu + wave aktif = pose lari
+TIDAK PERNAH dilepas (lari di tempat sah; aturan bullet-heaven). Terukur di kondisi persis
+keluhan (**5× — setelan kecepatan yang dipakai pemilik project**, wave 6): frame Idle saat
+musuh dekat **3/838**, flip total 2/75 dtk game, dua-duanya sah.
+
+> Pelajaran terpenting hari ini: verifikasi wajib memakai KONDISI dan METRIK yang sama
+> dengan keluhan. Dua-duanya sempat salah sekaligus.
+
+## Arsip: lapis 1-3 "rollback" (perlu tapi belum cukup)
 
 Detail: **AI-HANDOFF.md §40 (tiga bagian)**. Kronologi lengkapnya pelajaran mahal:
 

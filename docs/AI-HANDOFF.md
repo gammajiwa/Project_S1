@@ -2948,3 +2948,27 @@ Dua pelajaran metodologis, keduanya dibayar mahal hari ini:
 2. **Probe agregat menyembunyikan kejadian sesaat.** "meshVsTransform maks 0,284 m" terlihat
    sehat; log burst per-frame yang menunjukkan URUTAN state-lah yang membuka kasus. Kalau
    gejalanya "kadang menyentak", rekam URUTAN, jangan maksimum.
+
+### §40 penutup: aturan bullet-heaven — dikepung = tidak pernah Idle (2026-08-10, tengah malam)
+
+Sticky-Run saja masih kalah, dan pemilik project yang menemukannya (di 5× — verifikasi
+sebelumnya juga cacat: metrik `IsName || Next` menyembunyikan flip selama transisi, dan
+"1 flip / 20 dtk" itu palsu). Kebenaran dari film per-frame: state masih bolak-balik
+`R R I R I I R…` pada kecepatan 3,4 — dan setelah semua penulis param di-grep (cuma
+PlayerAvatar), kesimpulannya tinggal satu: **berhentinya SUNGGUHAN**. `PlayerMotor` memang
+dirancang berhenti saat terkepung (vektor kabur saling meniadakan — "that is the intended
+shape of the failure"), jadi di kerumunan pemain betul-betul berhenti-jalan-berhenti tiap
+beberapa detik, dan tiap berhenti melepas pose lari yang condong → badan terbaca mundur.
+Histeresis mana pun kalah melawan berhenti yang nyata.
+
+**Fix**: `PlayerAvatar.CombatRadius = 5` — ada musuh sedekat itu (dan wave aktif) = pose lari
+TIDAK PERNAH dilepas, bergerak atau tidak (lari di tempat sah, aturan genre). Idle hanya
+untuk lapangan sepi. `Init` sekarang menerima `EnemyManager`.
+
+Terukur di kondisi persis keluhan (5×, wave 6, metrik jujur current-state-only):
+**frame Idle saat musuh dekat = 3/838** (semuanya di detik pembuka), flip total 2 dalam
+75 detik game (keduanya transisi sah saat lapangan bersih).
+
+Pelajaran ketiga hari ini, yang paling penting: **verifikasi harus memakai kondisi DAN metrik
+yang sama dengan keluhannya**. Dua-duanya sempat salah — uji di wave sepi (kondisinya salah)
+dan penghitung flip yang memaafkan transisi (metriknya salah).

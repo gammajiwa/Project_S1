@@ -85,9 +85,10 @@ namespace Proto
             var motor = playerGo.AddComponent<PlayerMotor>();
 
             // Avatar dinyawakan SETELAH caster ada — dialah yang memberi tahu kapan pose
-            // Idle harus ditahan (menembak memakai Idle, keputusan pemilik project).
+            // Idle harus ditahan. EnemyManager ikut: selama musuh dekat, pose lari tidak
+            // pernah dilepas (aturan bullet-heaven — lihat PlayerAvatar.CombatRadius).
             var avatar = playerGo.GetComponentInChildren<PlayerAvatar>();
-            if (avatar != null) avatar.Init(caster);
+            if (avatar != null) avatar.Init(caster, enemies);
 
             // Pemain ikut hangus saat mati, seperti gerombolan yang dibunuhnya. Dipasang di sini
             // dan bukan di dalam PlayerCaster: yang dipegangnya renderer, bukan angka.

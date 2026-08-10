@@ -42,8 +42,22 @@ namespace Proto
         /// <summary>Detik selambat <see cref="StopSpeed"/> sebelum Run dilepas.</summary>
         const float StopDelay = 0.3f;
 
+        /// <summary>
+        /// Ada musuh sedekat ini = pose lari TIDAK PERNAH dilepas, bergerak atau tidak.
+        ///
+        /// Ini penutup kasus "balik posisinya" yang sebenarnya: motor memang dirancang
+        /// berhenti-jalan-berhenti di kerumunan (vektor kabur saling meniadakan saat terkepung —
+        /// disengaja, itu bentuk kalahnya). Tiap berhenti sungguhan, pose lari yang condong ke
+        /// depan dilepas ke pose diam yang tegak, dan badan terbaca mundur ~28 cm — berulang
+        /// setiap beberapa detik di wave ramai. Ambang dan histeresis mana pun kalah melawan
+        /// berhenti yang SUNGGUHAN; aturan genre-nya memang karakter terus bergerak selama
+        /// dikepung, lari-di-tempat sekalipun.
+        /// </summary>
+        const float CombatRadius = 5f;
+
         Animator _anim;
         PlayerCaster _caster;
+        EnemyManager _enemies;
         Vector3 _lastPos;
         float _castHold;
         float _smoothSpeed;
@@ -53,9 +67,10 @@ namespace Proto
 
         float _slowTimer;
 
-        public void Init(PlayerCaster caster)
+        public void Init(PlayerCaster caster, EnemyManager enemies)
         {
             _caster = caster;
+            _enemies = enemies;
             _anim = GetComponentInChildren<Animator>();
             _lastPos = transform.position;
 
@@ -96,7 +111,11 @@ namespace Proto
             // Aturannya sekarang: masuk Run seketika begitu melaju; keluar Run hanya setelah
             // benar-benar lambat (StopSpeed) selama StopDelay penuh. Lintasan nol sesaat tidak
             // pernah cukup lama untuk lolos.
-            if (_smoothSpeed >= RunThreshold)
+            // Dikepung = terus lari, titik. Lihat catatan CombatRadius.
+            bool combat = _enemies != null && _enemies.WaveActive &&
+                          _enemies.Nearest(transform.position, CombatRadius) != null;
+
+            if (combat || _smoothSpeed >= RunThreshold)
             {
                 _running = true;
                 _slowTimer = 0f;
