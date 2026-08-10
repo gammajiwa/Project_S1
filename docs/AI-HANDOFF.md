@@ -2972,3 +2972,30 @@ Terukur di kondisi persis keluhan (5×, wave 6, metrik jujur current-state-only)
 Pelajaran ketiga hari ini, yang paling penting: **verifikasi harus memakai kondisi DAN metrik
 yang sama dengan keluhannya**. Dua-duanya sempat salah — uji di wave sepi (kondisinya salah)
 dan penghitung flip yang memaafkan transisi (metriknya salah).
+
+### §40 epilog: audit menyeluruh penulis transform + dua bug kamera/blink (2026-08-10)
+
+Agent audit terpisah menyisir SEMUA penulis transform player & kamera. Dua temuan nyata,
+keduanya sudah diperbaiki; satu premisnya dikoreksi.
+
+**1. CameraShake settle glide.** Guncangan diisi reaction-chain (`OnReaction → Add(0.16 +
+BurstRadius×0.045)`) dan di wave ramai trauma jenuh di 1,0. Begitu musuh sekitar habis —
+persis momen pemain berhenti — trauma berhenti diisi dan kamera meluncur dari offset
+terakhirnya (maks 0,85 unit ≈ 40 px) balik ke titik asal selama ~0,4 dtk: dunia bergeser
+searah sementara karakter diam. Fix: ekor trauma (<0,35) dikuras 3× lebih cepat — puncak
+guncangan tidak disentuh, cuma ekornya yang dipotong. Sekalian: saat pause `deltaTime = 0`
+membuat trauma tidak pernah terkuras sementara Perlin jalan di unscaledTime — kamera
+bergoyang SELAMANYA di menu setelan; kurasnya kini memakai waktu nyata selama pause.
+
+**2. Blink kotak-vs-elips.** `CastBlink` menjepit tujuan ke KOTAK ±ArenaHalf sementara
+`PlayerMotor.Clamp` menegakkan ELIPS tiap frame — blink ke arah sudut mendarat di luar elips
+lalu disentak radial balik 2–5 unit pada frame yang sama, dan flash/beam menandai titik yang
+tidak pernah dihuni. Fix: CastBlink memakai jepitan elips yang SAMA dengan motor.
+
+**Koreksi premis auditor:** klaim "rig kamera terkunci (limit 0)" memakai arena 16×9 —
+itu nilai default kode, bukan aset (arena sudah 40×30 sejak §15). Terukur langsung: rig
+berjalan 24,4 unit selama lari. Dua fix kamera sebelumnya tidak menembak organ mati.
+
+**Verifikasi gabungan** (protokol satu-frame auditor, kondisi keluhan: 5×, wave 6, 15 dtk
+real): frame di mana pemain BEKU tapi bergeser >1,5 px di layar = **0 dari 986**. Dunia
+tidak pernah lagi menggeser pemain yang diam.

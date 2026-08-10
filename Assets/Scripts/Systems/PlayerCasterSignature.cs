@@ -228,10 +228,23 @@ namespace Proto
 
             Vector3 from = transform.position;
             Vector3 to = from + away.normalized * Mathf.Max(3f, spell.Range * BuffRangeMul);
-
-            to.x = Mathf.Clamp(to.x, -_balance.ArenaHalfX, _balance.ArenaHalfX);
-            to.z = Mathf.Clamp(to.z, -_balance.ArenaHalfZ, _balance.ArenaHalfZ);
             to.y = from.y;
+
+            // Jepitan ELIPS — geometri yang SAMA dengan PlayerMotor.Clamp. Dulu kotak
+            // ±ArenaHalf, dan itu bug yang ditemukan audit 2026-08-10: blink ke arah sudut
+            // mendarat di luar elips arena, lalu pada frame yang sama motor menyentaknya
+            // radial balik ke tepi — pemain terlihat maju lalu DITARIK MUNDUR 2-5 unit,
+            // sementara flash dan beam menandai titik yang tidak pernah dihuni.
+            float nx = to.x / _balance.ArenaHalfX;
+            float nz = to.z / _balance.ArenaHalfZ;
+            float outside = nx * nx + nz * nz;
+
+            if (outside > 1f)
+            {
+                float shrink = 1f / Mathf.Sqrt(outside);
+                to.x *= shrink;
+                to.z *= shrink;
+            }
 
             transform.position = to;
 
