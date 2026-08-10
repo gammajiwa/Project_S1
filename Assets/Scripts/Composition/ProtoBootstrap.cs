@@ -74,6 +74,10 @@ namespace Proto
             var caster = playerGo.AddComponent<PlayerCaster>();
             var motor = playerGo.AddComponent<PlayerMotor>();
 
+            // Pemain ikut hangus saat mati, seperti gerombolan yang dibunuhnya. Dipasang di sini
+            // dan bukan di dalam PlayerCaster: yang dipegangnya renderer, bukan angka.
+            playerGo.AddComponent<PlayerBurnout>().Init(caster);
+
             // Dipasang SEBELUM Init: keduanya membaca saklar ini selama penyiapan, dan memasangnya
             // belakangan berarti wave pertama sudah lewat sebelum curangnya berlaku.
             enemies.Cheats = _cheats;
