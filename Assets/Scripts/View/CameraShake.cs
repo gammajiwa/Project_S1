@@ -52,20 +52,7 @@ namespace Proto
             transform.localPosition = _origin + (transform.right * x + transform.up * y) * amount;
 
             // Scaled time here: at 5x the action is over faster, and so should the shake be.
-            //
-            // Dua tambalan dari audit (2026-08-10):
-            // - Ekor trauma dikuras 3x lebih cepat. Di wave ramai reaction-chain menahan trauma
-            //   di 1,0; begitu musuh sekitar habis — persis saat pemain berhenti — kamera
-            //   MELUNCUR dari offset terakhirnya (sampai 0,85 unit ≈ 40 px) balik ke titik
-            //   asal selama ~0,4 dtk. Dunia bergeser searah sementara karakternya diam, dan
-            //   mata membacanya sebagai badan yang digeser balik. Puncak guncangan tidak
-            //   disentuh; yang dipotong cuma ekor peluruhannya.
-            // - Saat pause (timeScale = 0) deltaTime = 0, jadi trauma tidak pernah terkuras
-            //   sementara Perlin memakai unscaledTime — kamera bergoyang SELAMANYA di menu
-            //   setelan. Selama pause, kurasnya memakai waktu nyata.
-            float tail = _trauma < 0.35f ? 3f : 1f;
-            float drain = Time.deltaTime > 0f ? Time.deltaTime : Time.unscaledDeltaTime;
-            _trauma = Mathf.Max(0f, _trauma - drain * _decay * tail);
+            _trauma = Mathf.Max(0f, _trauma - Time.deltaTime * _decay);
         }
     }
 }

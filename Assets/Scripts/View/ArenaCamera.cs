@@ -37,20 +37,6 @@ namespace Proto
                  "sempat keluar layar sebelum kamera sadar.")]
         [SerializeField] float _smooth = 0.35f;
 
-        [Tooltip("Kecepatan sasaran (unit/detik) yang masih dianggap DIAM. Di bawah ini kamera " +
-                 "membeku total, bukan sekadar melambat.")]
-        [SerializeField] float _stillSpeed = 0.25f;
-
-        [Tooltip("Sejauh mana kamera boleh tertinggal saat membeku. Lebih jauh dari ini ia tetap " +
-                 "menyusul walau pemain diam — kalau tidak, Blink/teleport meninggalkan pemain " +
-                 "di tepi layar selamanya.")]
-        [SerializeField] float _freezeWithin = 3f;
-
-        /// <summary>Posisi sasaran frame sebelumnya — dipakai menebak apakah ia sedang bergerak.</summary>
-        Vector3 _lastTargetPos;
-
-        bool _hasLast;
-
         /// <summary>
         /// Zona matinya dihitung dari yang benar-benar TERLIHAT, bukan dari angka yang diketik:
         /// ukuran ortografis, rasio layar dan sudut kemiringan semuanya ikut menentukan seberapa
@@ -131,35 +117,6 @@ namespace Proto
             }
 
             _focus.y = transform.position.y;
-
-            // Pemain BERHENTI = kamera ikut berhenti, TITIK.
-            //
-            // Ini keluhan "badannya geser balik ke titik semula", dan dua percobaan pertama salah
-            // sasaran karena keduanya cuma MEMPERCEPAT penyusulan. Selama kamera masih bergerak
-            // sesudah pemain diam, matanya tetap membaca karakternya yang meluncur mundur — yang
-            // menentukan bukan seberapa cepat, tapi apakah ada gerakan sama sekali.
-            //
-            // Selagi berlari pemain mengambang menjauh dari tengah layar (memang begitu cara zona
-            // mati bekerja). Membekukan kamera berarti ia BERTAHAN di tempatnya yang sedikit
-            // menepi itu — dan pemain yang diam di posisi menepi tidak terbaca sebagai apa-apa,
-            // sementara pemain yang merayap pulang terbaca sebagai animasi yang di-rewind.
-            float dt = Mathf.Max(Time.deltaTime, 0.0001f);
-            float targetSpeed = _hasLast ? (p - _lastTargetPos).magnitude / dt : 0f;
-
-            _lastTargetPos = p;
-            _hasLast = true;
-
-            // Jauh tertinggal = tetap menyusul walau pemain diam. Tanpa pengecualian ini, Blink
-            // dan teleport antar-node meninggalkan pemain di tepi layar sampai ia berjalan lagi.
-            bool farBehind = (transform.position - _focus).sqrMagnitude > _freezeWithin * _freezeWithin;
-
-            if (targetSpeed <= _stillSpeed && !farBehind)
-            {
-                // Kecepatan dinolkan supaya penyusulan berikutnya berangkat mulus dari diam,
-                // bukan meneruskan momentum yang sudah basi beberapa detik.
-                _velocity = Vector3.zero;
-                return;
-            }
 
             transform.position = Vector3.SmoothDamp(transform.position, _focus, ref _velocity, _smooth);
         }
