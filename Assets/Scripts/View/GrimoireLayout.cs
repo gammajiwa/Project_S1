@@ -79,10 +79,10 @@ namespace Proto
         public const int BagGap = 3;
         public const int BagY = 20;
 
-        public const int SellW = 182;
-        public const int SellH = 40;
-        // Clears the 4x4 bag, whose top row plus its label reach y=190.
-        public const int SellY = 196;
+        // Baris tombol tepat di atas tas 4x4, yang baris atasnya plus labelnya mencapai y=190.
+        // Dulu bernama SellY karena kotak JUAL yang duduk di sini; kotaknya sudah dibuang —
+        // menjual sekarang berarti meninggalkan barang di lantai, dan LANJUT yang menyapunya.
+        public const int ButtonRowY = 196;
 
         // Wide enough for "1. Greater Fireball   34.0 dmg   32.4 dps   1.05s   17 mana".
         // Icon strips, stacked straight under the mana bar (which ends at -90).
@@ -171,8 +171,6 @@ namespace Proto
 
         public static Vector2 BagAnchor(int x, int y) =>
             new Vector2(RightX() + x * (BagCell + BagGap), BagY + y * (BagCell + BagGap));
-
-        public static Rect SellRect() => new Rect(RightX(), SellY, SellW, SellH);
 
         public static Vector2Int ScreenToCell(Vector2 mouse)
         {
@@ -275,11 +273,33 @@ namespace Proto
             return new Rect(panel.center.x - 120f, panel.yMin + 12f, 240f, 34f);
         }
 
-        public static Rect ShopButtonRect() => new Rect(RightX(), SellY + SellH + 8, 88, 32);
+        // Satu-satunya tombol yang tersisa di kolom ini, dan ia cuma muncul saat toko buka.
+        // Teman-temannya sudah pergi: label resep (bukan tombol), kotak JUAL (LANJUT yang
+        // menjual sekarang), dan PETA (tombol M sudah melakukan hal yang sama).
+        public static Rect ShopButtonRect() => new Rect(RightX(), ButtonRowY, 120, 34);
 
-        public static Rect RecipeButtonRect() => new Rect(RightX() + 94, SellY + SellH + 8, 88, 32);
+        // ---------- layar GAME OVER ----------
+        //
+        // Ditaruh di tengah dan BESAR: ini satu-satunya layar di mana pemain tidak sedang
+        // melakukan apa-apa, jadi tidak ada yang perlu dihindari — dan tombol kecil di layar
+        // kalah membuat pemain mengira run-nya menggantung, bukan berakhir.
 
-        public static Rect MapButtonRect() => new Rect(RightX() + 188, SellY + SellH + 8, 88, 32);
+        public const int OverButtonW = 340;
+        public const int OverButtonH = 64;
+
+        public static Rect GameOverMenuRect()
+        {
+            float cx = Screen.width * 0.5f;
+            float cy = Screen.height * 0.5f - 60f;
+            return new Rect(cx - OverButtonW * 0.5f, cy - OverButtonH * 0.5f, OverButtonW, OverButtonH);
+        }
+
+        /// <summary>Tepat di bawah tombol menu, lebih kecil: mengulang itu pilihan kedua.</summary>
+        public static Rect GameOverRetryRect()
+        {
+            var menu = GameOverMenuRect();
+            return new Rect(menu.xMin + 40f, menu.yMin - 68f, OverButtonW - 80f, 48f);
+        }
 
         /// <summary>Panel peta run saat MEMILIH: satu layar penuh, tegak ala Slay the Spire —
         /// lantai menumpuk dari bawah ke atas dengan jarak tetap, sisanya diintip lewat scroll.

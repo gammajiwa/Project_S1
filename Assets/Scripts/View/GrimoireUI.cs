@@ -59,8 +59,6 @@ namespace Proto
         Image[] _cdFill;
         float[] _pulse;
 
-        Image _sellBg;
-        Text _sellLabel;
 
         // --- shop / recipes ---
         const int ShopSlots = 6;
@@ -79,6 +77,11 @@ namespace Proto
         // a wash over an area, so they can be opaque — a line has to be followed, not just noticed.
         static readonly Color LinkIncomplete = new Color(0.4f, 0.68f, 1f, 0.85f);
         static readonly Color LinkComplete = new Color(1f, 0.84f, 0.32f, 0.95f);
+
+        // Warna ketiga: grup ini tetap berevolusi, tapi hasilnya tidak muat berdiri di papan dan
+        // akan KELUAR untuk dipasang ulang. Bukan peringatan gagal — sebuah janji yang ditepati
+        // di tempat lain — jadi warnanya tetap hangat, hanya bergeser dari emas ke jingga.
+        static readonly Color LinkSpill = new Color(1f, 0.58f, 0.24f, 0.95f);
 
         // Browsing the codex belongs to the main menu now. A run only ever writes to it.
         DiscoveryLog _codex;
@@ -102,8 +105,6 @@ namespace Proto
         Image _mapBg;
         Text _mapTitle;
         Text _mapLegend;
-        Image _mapBtnBg;
-        Text _mapBtnLabel;
         Image[] _mapEdges = System.Array.Empty<Image>();
 
         // Penyangga pengukur lengkung, dipakai ulang tiap ruas. Dialokasikan sekali: peta penuh
@@ -243,7 +244,15 @@ namespace Proto
         Text _rerollLabel;
         Image _shopBtnBg;
         Text _shopBtnLabel;
-        Text _recipeBtnLabel;
+
+        // --- layar GAME OVER ---
+        Image _overVeil;
+        Text _overTitle;
+        Text _overInfo;
+        Image _overMenuBg;
+        Text _overMenuLabel;
+        Image _overRetryBg;
+        Text _overRetryLabel;
 
         /// <summary>
         /// Every drop lands scattered across the screen. Whatever is still lying around when a
@@ -390,7 +399,6 @@ namespace Proto
             BuildGrid();
             BuildSkillWidgets();
             BuildBackpack();
-            BuildSellBox();
             BuildLoose();
             BuildShop();
             _codex = DiscoveryLog.Load();
@@ -554,6 +562,13 @@ namespace Proto
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
             scaler.scaleFactor = 1f;
+
+            // Seluruh UI permainan memakai hit-test sendiri (posisi mouse -> petak), jadi kanvas
+            // ini hidup lama tanpa raycaster dan tidak ada yang sadar. Yang menagihnya adalah
+            // barang UGUI beneran: halaman setelan yang dibuka ESC, tombol KELUAR KE MENU,
+            // stepper, slider. Tanpa GraphicRaycaster, EventSystem tidak menemukan satu pun
+            // grafik di kanvas ini dan tombolnya tidak mati dengan error — dia cuma DIAM.
+            go.AddComponent<GraphicRaycaster>();
         }
 
         Image MakeImage(string name, Vector2 pos, Vector2 size, Color color, Vector2 anchor)
@@ -880,17 +895,7 @@ namespace Proto
 
             MakeText("BagTitle", new Vector2(RightX(), BagY + Backpack.Height * (BagCell + BagGap) + 2),
                 new Vector2(300, 20), 13, new Color(0.85f, 0.8f, 0.6f),
-                Vector2.zero, TextAnchor.LowerLeft).text = "TAS  (skill doang - drop skill masuk sini)";
-        }
-
-        void BuildSellBox()
-        {
-            _sellBg = MakeImage("SellBg", new Vector2(RightX(), SellY), new Vector2(SellW, SellH),
-                new Color(0.35f, 0.15f, 0.15f, 0.9f), Vector2.zero);
-
-            _sellLabel = MakeText("SellLabel", new Vector2(RightX(), SellY + 11), new Vector2(SellW, 20), 14,
-                new Color(0.95f, 0.7f, 0.7f), Vector2.zero, TextAnchor.LowerCenter);
-            _sellLabel.text = "JUAL";
+                Vector2.zero, TextAnchor.LowerLeft).text = "TAS";
         }
 
         void BuildLoose()
@@ -934,17 +939,131 @@ namespace Proto
             return cursor;
         }
 
+        /// <summary>
+        /// Layar GAME OVER: kerudung gelap sepenuh layar, judul, dan dua pintu keluar.
+        ///
+        /// Dulu kematian cuma mengganti teks banner jadi "MATI di wave N - SPACE buat ulang,
+        /// ESC buat balik ke menu". Dua tombol keyboard yang harus dihafal, di layar yang sudah
+        /// tidak menerima input lain, sementara arena tetap terlihat hidup di belakangnya —
+        /// run yang berakhir terbaca seperti run yang menggantung.
+        /// </summary>
+        void BuildGameOver()
+        {
+            _overVeil = MakeImage("OverVeil", Vector2.zero, Vector2.zero,
+                new Color(0.03f, 0.02f, 0.04f, 0.88f), Vector2.zero);
+            _overVeil.rectTransform.anchorMin = Vector2.zero;
+            _overVeil.rectTransform.anchorMax = Vector2.one;
+            _overVeil.rectTransform.offsetMin = Vector2.zero;
+            _overVeil.rectTransform.offsetMax = Vector2.zero;
+
+            _overTitle = MakeText("OverTitle", new Vector2(0f, 150f), new Vector2(900f, 90f), 64,
+                new Color(1f, 0.35f, 0.3f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
+            _overTitle.text = "GAME OVER";
+
+            _overInfo = MakeText("OverInfo", new Vector2(0f, 90f), new Vector2(900f, 34f), 20,
+                new Color(0.8f, 0.78f, 0.85f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
+
+            _overMenuBg = MakeImage("OverMenuBg", Vector2.zero, Vector2.zero,
+                new Color(0.42f, 0.16f, 0.15f, 0.95f), Vector2.zero);
+            _overMenuLabel = MakeText("OverMenuLabel", Vector2.zero, new Vector2(OverButtonW, 30f), 24,
+                new Color(1f, 0.9f, 0.86f), Vector2.zero, TextAnchor.MiddleCenter);
+            _overMenuLabel.text = "KE MENU UTAMA";
+
+            _overRetryBg = MakeImage("OverRetryBg", Vector2.zero, Vector2.zero,
+                new Color(0.16f, 0.17f, 0.22f, 0.95f), Vector2.zero);
+            _overRetryLabel = MakeText("OverRetryLabel", Vector2.zero, new Vector2(OverButtonW, 26f), 18,
+                new Color(0.85f, 0.85f, 0.9f), Vector2.zero, TextAnchor.MiddleCenter);
+            _overRetryLabel.text = "ULANG RUN   (SPACE)";
+
+            ShowGameOver(false);
+        }
+
+        void ShowGameOver(bool on)
+        {
+            // Dibangun lebih awal daripada HUD lainnya, jadi urutan anaknya menaruhnya DI BAWAH
+            // segalanya — termasuk peta layar-penuh, yang juga naik ke puncak saat dibuka.
+            // Diangkat hanya kalau BELUM di puncak, bukan tiap frame: memindahkan sibling tiap
+            // frame memaksa kanvas membangun ulang batch-nya.
+            var last = _overRetryLabel.transform;
+            bool onTop = last.GetSiblingIndex() == last.parent.childCount - 1;
+
+            if (on && !onTop)
+            {
+                _overVeil.transform.SetAsLastSibling();
+                _overTitle.transform.SetAsLastSibling();
+                _overInfo.transform.SetAsLastSibling();
+                _overMenuBg.transform.SetAsLastSibling();
+                _overMenuLabel.transform.SetAsLastSibling();
+                _overRetryBg.transform.SetAsLastSibling();
+                _overRetryLabel.transform.SetAsLastSibling();
+            }
+
+            _overVeil.enabled = on;
+            _overTitle.enabled = on;
+            _overInfo.enabled = on;
+            _overMenuBg.enabled = on;
+            _overMenuLabel.enabled = on;
+            _overRetryBg.enabled = on;
+            _overRetryLabel.enabled = on;
+        }
+
+        /// <summary>Menempatkan kotak &amp; label tombolnya. Tiap frame — layar bisa diubah ukurannya.</summary>
+        void DrawGameOver()
+        {
+            if (Player.Alive)
+            {
+                ShowGameOver(false);
+                return;
+            }
+
+            // Run sudah selesai: tidak ada panel yang masih pantas terbuka di belakang kerudung.
+            // Peta pemilih yang tertinggal menyala adalah yang paling menyesatkan — ia menuntut
+            // jawaban untuk perjalanan yang sudah tidak ada.
+            _mapOpen = false;
+            _shopOpen = false;
+            _eventOpen = false;
+            _gambleOpen = false;
+
+            ShowGameOver(true);
+            _overInfo.text = "run berakhir di wave " + Enemies.Wave + "   -   " + _gold + " koin";
+
+            var menu = GameOverMenuRect();
+            Seat(_overMenuBg.rectTransform, menu);
+            Seat(_overMenuLabel.rectTransform, menu);
+
+            var retry = GameOverRetryRect();
+            Seat(_overRetryBg.rectTransform, retry);
+            Seat(_overRetryLabel.rectTransform, retry);
+
+            // Menyorot tombolnya: satu-satunya umpan balik yang tersisa di layar ini.
+            var mouse = ProtoInput.MousePosition;
+            _overMenuBg.color = menu.Contains(mouse)
+                ? new Color(0.72f, 0.24f, 0.2f, 0.98f)
+                : new Color(0.42f, 0.16f, 0.15f, 0.95f);
+            _overRetryBg.color = retry.Contains(mouse)
+                ? new Color(0.28f, 0.3f, 0.38f, 0.98f)
+                : new Color(0.16f, 0.17f, 0.22f, 0.95f);
+        }
+
+        static void Seat(RectTransform rect, Rect box)
+        {
+            rect.anchoredPosition = new Vector2(box.xMin, box.yMin);
+            rect.sizeDelta = box.size;
+        }
+
         void BuildShop()
         {
-            _shopBtnBg = MakeImage("ShopBtn", new Vector2(RightX(), SellY + SellH + 8),
-                new Vector2(88, 32), new Color(0.2f, 0.3f, 0.45f, 0.92f), Vector2.zero);
-            _shopBtnLabel = MakeText("ShopBtnLabel", new Vector2(RightX(), SellY + SellH + 16),
-                new Vector2(88, 20), 14, Color.white, Vector2.zero, TextAnchor.LowerCenter);
+            var shopRect = ShopButtonRect();
+            _shopBtnBg = MakeImage("ShopBtn", new Vector2(shopRect.xMin, shopRect.yMin),
+                shopRect.size, new Color(0.2f, 0.3f, 0.45f, 0.92f), Vector2.zero);
+            _shopBtnLabel = MakeText("ShopBtnLabel", new Vector2(shopRect.xMin, shopRect.yMin + 8f),
+                new Vector2(shopRect.width, 20), 14, Color.white, Vector2.zero, TextAnchor.LowerCenter);
             _shopBtnLabel.text = "TOKO";
 
-            _recipeBtnLabel = MakeText("RecipeHint", new Vector2(RightX() + 94, SellY + SellH + 16),
-                new Vector2(220, 20), 12, new Color(0.7f, 0.68f, 0.78f), Vector2.zero, TextAnchor.LowerLeft);
-            _recipeBtnLabel.text = "ALT + hover = lihat resep";
+            // Baris "ALT + hover = lihat resep" dulu duduk di sini: teks selebar 220 px di atas
+            // petak yang cuma 88 px, jadi ia menindih tombol PETA di sebelahnya. Bukan tombol,
+            // tidak pernah bisa diklik — cuma pengumuman tombol keyboard yang menempel selamanya.
+            // ALT + hover tetap bekerja; yang hilang cuma papan namanya.
 
             _panelBg = MakeImage("PanelBg", Vector2.zero, new Vector2(PanelW, PanelH),
                 new Color(0.07f, 0.07f, 0.11f, 0.98f), new Vector2(0.5f, 0.5f));
@@ -975,6 +1094,8 @@ namespace Proto
             _rerollLabel = MakeText("RerollLabel", Vector2.zero, new Vector2(240, 22), 15,
                 Color.white, Vector2.zero, TextAnchor.LowerCenter);
             _rerollLabel.enabled = false;
+
+            BuildGameOver();
 
             _evoLines = new Image[EvoLinePool];
             for (int i = 0; i < EvoLinePool; i++)
@@ -1028,8 +1149,7 @@ namespace Proto
 
             MakeText("SpellTitle", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 6),
                 new Vector2(400, 22), 15, new Color(0.85f, 0.82f, 0.95f),
-                new Vector2(1f, 0f), TextAnchor.LowerRight).text =
-                "SPELL AKTIF  -  urut damage yang sudah dihasilkan";
+                new Vector2(1f, 0f), TextAnchor.LowerRight).text = "SPELL AKTIF";
         }
 
         void BuildSpeedControl()
@@ -1286,14 +1406,21 @@ namespace Proto
                 _manaHover = _manaFill.rectTransform;
             }
 
-            _tipBg = MakeImage("TipBg", Vector2.zero, new Vector2(360, 150),
+            _tipBg = MakeImage("TipBg", Vector2.zero, new Vector2(TipWidth, 150),
                 new Color(0.06f, 0.06f, 0.09f, 0.96f), Vector2.zero);
             _tipBg.rectTransform.pivot = new Vector2(0f, 1f);
             _tipBg.enabled = false;
 
-            _tipText = MakeText("TipText", Vector2.zero, new Vector2(344, 140), 13,
+            _tipText = MakeText("TipText", Vector2.zero, new Vector2(TipWidth - TipPadX * 2f, 140), 13,
                 new Color(0.92f, 0.92f, 0.96f), Vector2.zero, TextAnchor.UpperLeft);
             _tipText.rectTransform.pivot = new Vector2(0f, 1f);
+
+            // Dibungkus, bukan diluberkan. Kartu ini satu-satunya teks panjang di seluruh HUD:
+            // dengan Overflow, kalimat blurb berjalan terus melewati tepi kotak gelapnya dan
+            // sisanya dibaca di atas rumput.
+            _tipText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            _tipText.supportRichText = true;
+
             _tipText.enabled = false;
 
             _bannerText = MakeText("Banner", new Vector2(0, 210), new Vector2(900, 100), 28,
@@ -1682,7 +1809,11 @@ namespace Proto
             return -1;
         }
 
-        /// <summary>Anything left lying around when the wave starts has no home â€” it is sold.</summary>
+        /// <summary>
+        /// Apa pun yang masih tergeletak di lantai saat pemain menekan LANJUT / MULAI WAVE tidak
+        /// punya rumah — ia dijual. Dipanggil dari kedua tombol keberangkatan, bukan cuma dari
+        /// yang memulai wave.
+        /// </summary>
         void SellLoose()
         {
             if (_loose.Count == 0) return;
@@ -1736,7 +1867,7 @@ namespace Proto
             // Pulang ke menu — dulu kerja ESC, sekarang tombol yang disengaja. HANYA ada di
             // overlay dalam-game; di menu, halaman yang sama tidak butuh tombol pulang ke
             // dirinya sendiri.
-            BuildExitButton();
+            BuildExitButton(panel != null ? (RectTransform)panel.transform : null);
 
             // Dunia berhenti selama setelannya terbuka. unscaled dipakai seluruh UI, jadi
             // panelnya sendiri tetap hidup.
@@ -1744,10 +1875,18 @@ namespace Proto
             Time.timeScale = 0f;
         }
 
-        void BuildExitButton()
+        /// <param name="panel">
+        /// Badan panel setelan. Tombolnya menempel DI SITU, bukan di layar: versi lama menghitung
+        /// tepi panel sendiri dari <c>Screen.width</c> dengan mengasumsikan lebar panel 1180 dan
+        /// skala kanvas 1 — dua asumsi yang meleset begitu jendelanya bukan 1920, dan tombolnya
+        /// melayang entah di mana. Menumpang di panel membuat posisinya benar tanpa dihitung.
+        /// </param>
+        void BuildExitButton(RectTransform panel)
         {
+            var host = panel != null ? panel : (RectTransform)_settingsOverlay.transform;
+
             var go = new GameObject("KeluarKeMenu");
-            go.transform.SetParent(_settingsOverlay.transform, false);
+            go.transform.SetParent(host, false);
 
             var image = go.AddComponent<Image>();
             image.color = new Color(0.45f, 0.16f, 0.14f, 0.95f);
@@ -1756,9 +1895,9 @@ namespace Proto
             rt.anchorMin = rt.anchorMax = new Vector2(1f, 0f);
             rt.pivot = new Vector2(1f, 0f);
 
-            // Sudut kanan-bawah PANEL (1180x1000 di tengah layar), berseberangan dengan KEMBALI
-            // di kiri-bawah — dua pintu keluar yang tidak mungkin tertukar posisinya.
-            rt.anchoredPosition = new Vector2(-(Screen.width - 1180f) * 0.5f - 48f, 130f);
+            // Sudut kanan-bawah panel, sebaris dengan KEMBALI di kiri-bawahnya — dua pintu keluar
+            // yang tidak mungkin tertukar posisinya.
+            rt.anchoredPosition = new Vector2(-48f, 26f);
             rt.sizeDelta = new Vector2(300f, 46f);
 
             var label = MakeText("KeluarLabel", Vector2.zero, new Vector2(300f, 46f), 18,
@@ -1907,6 +2046,25 @@ namespace Proto
             Enemies.StartWave(Enemies.Wave + 1);
         }
 
+        /// <summary>
+        /// LANJUT dengan sutradara peta terpasang.
+        ///
+        /// Beres-beresnya ada DI SINI, bukan di <see cref="StartNextWave"/>. Dulu barang tercecer
+        /// hanya dijual saat wave berikutnya dimulai — dan begitu peta masuk, "lanjut" sering
+        /// tidak berarti wave sama sekali: node toko, kejadian, atau slot berangkat lewat
+        /// <c>Depart</c> yang tidak pernah menyentuh lantai. Akibatnya barang yang ditinggal
+        /// menyeberang ke ruangan berikutnya dan menggantung di sana tanpa pemilik.
+        ///
+        /// Aturannya sekarang satu kalimat: begitu LANJUT ditekan, apa pun yang tidak berdiri di
+        /// papan atau di tas sudah dijual.
+        /// </summary>
+        void DepartRun()
+        {
+            StashHeld();
+            SellLoose();
+            _run.Depart();
+        }
+
         void HandleBanner()
         {
             bool showStart = CanStartWave() || CanDepart();
@@ -1914,12 +2072,21 @@ namespace Proto
             _startLabel.enabled = showStart;
             _startLabel.text = _run != null ? "LANJUT   (SPACE)" : "MULAI WAVE   (SPACE)";
 
+            // Panel singgah duduk di tengah layar — persis tempat banner ini. Keduanya menyala
+            // bersamaan berarti judul hijau mendarat di atas dagangan toko, dan itulah yang
+            // membuat toko terlihat berantakan padahal kartunya tertata rapi. Selama panelnya
+            // terbuka, panel itu yang bicara.
+            //
+            // Disembunyikan lewat `enabled`, BUKAN dengan keluar lebih awal: sisa fungsi ini juga
+            // yang mendengar SPACE untuk LANJUT, dan toko yang terbuka tidak boleh mematikannya.
+            _bannerText.enabled = !(_shopOpen || _eventOpen || _gambleOpen);
+
             if (!Player.Alive)
             {
+                // Layar GAME OVER yang bicara sekarang; banner di tengah arena cuma akan
+                // bertumpuk dengan judulnya sendiri.
                 _gridTitle.text = "GRIMOIRE";
-                _bannerText.color = new Color(1f, 0.4f, 0.4f);
-                _bannerText.text = "MATI di wave " + Enemies.Wave +
-                                   "\nSPACE buat ulang   -   ESC buat balik ke menu";
+                _bannerText.text = "";
 
                 if (ProtoInput.RestartDown) LoadScene(GameSceneName);
 
@@ -1940,15 +2107,15 @@ namespace Proto
                         return;
                     }
 
+                    // Baris keduanya dulu berisi instruksi tombol — "klik LANJUT", "M = intip
+                    // peta". Tombolnya sendiri sudah kelihatan di pojok layar, jadi yang tersisa
+                    // cuma kalimat yang menutupi lapangan tiap kali wave berakhir.
                     if (_run.Resting)
-                        _bannerText.text = "PULAU REHAT — " + RunDirector.KindLabel(_run.RestKind) +
-                                           "\nklik LANJUT kalau sudah";
+                        _bannerText.text = "PULAU REHAT — " + RunDirector.KindLabel(_run.RestKind);
                     else if (Enemies.Wave == 0)
-                        _bannerText.text = "SUSUN GRIMOIRE-MU\nlalu klik LANJUT buat milih tujuan" +
-                                           " di peta   -   M = intip peta";
+                        _bannerText.text = "SUSUN GRIMOIRE-MU";
                     else
-                        _bannerText.text = "WAVE " + Enemies.Wave +
-                                           " BERES\nklik LANJUT — pilih node di peta   -   M = intip peta";
+                        _bannerText.text = "WAVE " + Enemies.Wave + " BERES";
 
                     if (Book.Spells.Count == 0)
                     {
@@ -1957,7 +2124,7 @@ namespace Proto
                     }
                     else if (ProtoInput.RestartDown && _inputLock <= 0f && CanDepart())
                     {
-                        _run.Depart();
+                        DepartRun();
                     }
 
                     return;
@@ -1966,9 +2133,9 @@ namespace Proto
                 if (Enemies.Wave == 0)
                     _bannerText.text = "SUSUN GRIMOIRE-MU";
                 else if (ShopEventActive)
-                    _bannerText.text = "WAVE " + Enemies.Wave + " BERES\nTOKO BUKA - klik tombol TOKO di kiri";
+                    _bannerText.text = "WAVE " + Enemies.Wave + " BERES   -   TOKO BUKA";
                 else
-                    _bannerText.text = "WAVE " + Enemies.Wave + " BERES\nsusun ulang, atau jual yang nggak kepake";
+                    _bannerText.text = "WAVE " + Enemies.Wave + " BERES";
 
                 if (!showStart)
                 {
@@ -1993,7 +2160,20 @@ namespace Proto
             // Kecuali sedang mode MEMILIH: peta itu wajib dijawab, M tidak boleh menutupnya.
             if (_run != null && ProtoInput.MapDown && !_mapChoose) _mapOpen = !_mapOpen;
 
-            if (!Player.Alive || _inputLock > 0f) return;
+            // Mati: cuma dua tombol layar GAME OVER yang masih hidup. Diperiksa SEBELUM kunci
+            // input umum — layar ini justru muncul saat segalanya yang lain berhenti menerima.
+            if (!Player.Alive)
+            {
+                if (!ProtoInput.LeftClickDown) return;
+
+                var dead = ProtoInput.MousePosition;
+                if (GameOverMenuRect().Contains(dead)) LoadScene(MainMenuSceneName);
+                else if (GameOverRetryRect().Contains(dead)) LoadScene(GameSceneName);
+
+                return;
+            }
+
+            if (_inputLock > 0f) return;
 
             // Grimoire is locked while a wave runs â€” you only watch.
             if (Enemies.WaveActive)
@@ -2045,7 +2225,7 @@ namespace Proto
 
             if ((CanStartWave() || CanDepart()) && StartButtonRect().Contains(mouse))
             {
-                if (_run != null) _run.Depart();
+                if (_run != null) DepartRun();
                 else StartNextWave();
 
                 return;
@@ -2053,12 +2233,6 @@ namespace Proto
 
             if (_held != null)
             {
-                if (SellRect().Contains(mouse))
-                {
-                    SellHeld();
-                    return;
-                }
-
                 var bagTarget = ScreenToBagCell(mouse);
                 if (bagTarget.x >= 0)
                 {
@@ -2190,12 +2364,6 @@ namespace Proto
                 // memilih itu wajib.
                 _mapDragging = true;
                 _mapDragLast = mouse;
-                return true;
-            }
-
-            if (_run != null && MapButtonRect().Contains(mouse))
-            {
-                _mapOpen = !_mapOpen;
                 return true;
             }
 
@@ -2354,21 +2522,6 @@ namespace Proto
             _held = null;
         }
 
-        void SellHeld()
-        {
-            if (_held == null) return;
-
-            // Only the base is sold. Selling a rune must not quietly sell whatever was standing
-            // on it — those go back on the floor.
-            DropRiders();
-
-            int value = ValueOf(_held);
-            _gold += value;
-            PushFloater(Player.transform.position + Vector3.up * 2f,
-                _held.DisplayName + " kejual  +" + value, new Color(1f, 0.88f, 0.45f));
-            _held = null;
-        }
-
         void OnEnemyKilled(Vector3 at)
         {
             if (Random.value > _balance.KillDropChance) return;
@@ -2398,10 +2551,12 @@ namespace Proto
 
             ReleaseDrops();
 
-            var evolutions = Book.ResolveEvolutions();
+            // Hasil yang tidak dapat tempat TIDAK membatalkan evolusinya — ia dikeluarkan ke sini.
+            _spilled = 0;
+            var evolutions = Book.ResolveEvolutions(SpillFromBoard);
 
             // The bag cooks too. Spare copies used to pile up in there with nowhere to go.
-            evolutions.AddRange(_bag.ResolveEvolutions(_db));
+            evolutions.AddRange(_bag.ResolveEvolutions(_db, SpillFromBag));
             for (int i = 0; i < Book.Placed.Count; i++) Discover(Book.Placed[i].Def);
             if (evolutions.Count == 0) return;
 
@@ -2413,6 +2568,7 @@ namespace Proto
                 _sb.Append(evolutions[i]);
             }
 
+            _evolveText.color = _spilled > 0 ? new Color(1f, 0.78f, 0.45f) : new Color(0.55f, 1f, 0.7f);
             _evolveText.text = _sb.ToString();
             _evolveTimer = 6f;
 
@@ -2421,6 +2577,37 @@ namespace Proto
             // kalau daftarnya kosong), jadi runenya tidak pernah berputar untuk apa-apa.
             if (_rune != null) _rune.Celebrate();
             PushFloater(Player.transform.position + Vector3.up * 3f, "EVOLVE!", new Color(0.55f, 1f, 0.7f));
+        }
+
+        int _spilled;
+
+        /// <summary>
+        /// Hasil evolusi yang tidak dapat tempat, dikeluarkan tepat DI SEBELAH bahannya.
+        ///
+        /// Jaraknya sengaja pendek — cukup untuk lepas dari petak bekas bahannya, tidak lebih.
+        /// Barang yang mendarat jauh dari sumbernya berhenti terbaca sebagai hasil peleburan
+        /// yang barusan terjadi, dan pemain harus mencarinya alih-alih memungutnya.
+        /// </summary>
+        void SpillFromBoard(PieceDefinition def, Vector2 cell) => Spill(def, GridPoint(cell));
+
+        void SpillFromBag(PieceDefinition def, Vector2 cell) => Spill(def, BagPoint(cell));
+
+        void Spill(PieceDefinition def, Vector2 at)
+        {
+            if (def == null) return;
+
+            _spilled++;
+
+            // Digeser sedikit ke kanan-atas dari titik bahannya supaya tidak menindih petak yang
+            // baru saja kosong — masih dalam satu pandangan, tapi jelas "di luar papan".
+            var pos = at + new Vector2(0f, CellSize + 26f);
+
+            pos.x = Mathf.Clamp(pos.x, 60f, Mathf.Max(80f, Screen.width - 60f));
+            pos.y = Mathf.Clamp(pos.y, 60f, Mathf.Max(80f, Screen.height - 90f));
+
+            AddLoose(def, pos);
+            PushFloater(Player.transform.position + Vector3.up * 2.8f,
+                def.DisplayName + " kepental keluar", new Color(1f, 0.72f, 0.35f));
         }
 
         void DrawEvoLines()
@@ -2502,7 +2689,10 @@ namespace Proto
             // player can still drop it somewhere else, so it stays blue until it is actually down.
             bool settled = preview.Complete && !preview.NeedsHeldPiece;
 
-            var color = settled ? LinkComplete : LinkIncomplete;
+            // Jingga setebal emas: sama-sama janji yang akan ditepati, cuma beda tempat mendarat.
+            bool spills = settled && preview.SpillsOut;
+
+            var color = spills ? LinkSpill : settled ? LinkComplete : LinkIncomplete;
             float thickness = settled ? EvoLineThick : EvoLineThin;
 
             // Walk order: start at the first ingredient, then always hop to the closest one left.
@@ -2880,16 +3070,6 @@ namespace Proto
             _mapTitle.enabled = false;
             _mapLegend.enabled = false;
 
-            _mapBtnBg = MakeImage("MapBtn", Vector2.zero, Vector2.zero,
-                new Color(0.2f, 0.3f, 0.45f, 0.9f), Vector2.zero);
-            _mapBtnLabel = MakeText("MapBtnLabel", Vector2.zero, new Vector2(88f, 32f), 14,
-                Color.white, Vector2.zero, TextAnchor.MiddleCenter);
-            _mapBtnLabel.text = "PETA (M)";
-            Centre(_mapBtnBg.rectTransform);
-            Centre(_mapBtnLabel.rectTransform);
-            _mapBtnBg.enabled = false;
-            _mapBtnLabel.enabled = false;
-
             // ---- slot ----
             _slotBg = MakeImage("SlotBg", Vector2.zero, new Vector2(PanelW, PanelH),
                 new Color(0.1f, 0.05f, 0.11f, 0.97f), Vector2.zero);
@@ -2970,20 +3150,6 @@ namespace Proto
         void DrawRunPanels(float dt)
         {
             bool hasRun = _run != null;
-
-            if (_mapBtnBg != null)
-            {
-                _mapBtnBg.enabled = hasRun;
-                _mapBtnLabel.enabled = hasRun;
-
-                if (hasRun)
-                {
-                    var r = MapButtonRect();
-                    _mapBtnBg.rectTransform.anchoredPosition = r.center;
-                    _mapBtnBg.rectTransform.sizeDelta = r.size;
-                    _mapBtnLabel.rectTransform.anchoredPosition = r.center;
-                }
-            }
 
             UpdateMapTransition(dt);
             DrawMapOverlay();
@@ -3921,7 +4087,6 @@ namespace Proto
             DrawSkillWidgets(Time.deltaTime);
             DrawBackpack();
             DrawLoose();
-            DrawSellBox();
             DrawSpells();
             DrawHud();
             DrawBossBar();
@@ -3929,6 +4094,10 @@ namespace Proto
             DrawBuffs();
             DrawRunPanels(Time.deltaTime);
             UpdateTooltip();
+
+            // Paling akhir: kerudungnya harus menutupi SEMUA yang digambar di atas, termasuk
+            // kartu hover dan panel yang kebetulan masih terbuka saat pemain mati.
+            DrawGameOver();
         }
 
         void DrawGrid()
@@ -4041,28 +4210,26 @@ namespace Proto
             for (int i = cursor; i < _looseCells.Length; i++) _looseCells[i].enabled = false;
         }
 
+        /// <summary>
+        /// Baris ini SATU-SATUNYA teks mengambang yang tersisa di kiri layar, dan ia hanya bicara
+        /// saat ada yang di tangan.
+        ///
+        /// Dulu ia tidak pernah diam: aturan penempatan, cara memutar, nasib barang tercecer, dan
+        /// pengumuman "wave lagi jalan" bergantian mengisinya sepanjang run. Isinya benar semua —
+        /// dan justru itu masalahnya. Kalimat yang selalu ada berhenti dibaca setelah run pertama,
+        /// tapi tidak pernah berhenti menempati layar. Aturan yang dipelajari sekali tidak perlu
+        /// diulang tiap frame; nama barang yang sedang diangkat perlu.
+        /// </summary>
         void UpdateHeldText()
         {
-            if (_held != null)
+            if (_held == null)
             {
-                string kind = _held.Layer == Layer.Rune ? "RUNE" : "SKILL";
-                string rule = _held.Layer == Layer.Rune
-                    ? "RUNE nggak bisa masuk tas - pasang di grimoire atau JUAL"
-                    : "bisa dipasang di grimoire atau disimpan di tas";
-
-                _heldText.text = "[" + kind + " - " + _held.DisplayName + "] " + _held.Blurb +
-                                 "   |   " + rule + "   (klik kanan = putar)";
+                _heldText.text = "";
                 return;
             }
 
-            if (Enemies.WaveActive)
-            {
-                _heldText.text = "wave lagi jalan - grimoire terkunci, nonton aja sampai wave beres";
-                return;
-            }
-
-            _heldText.text = "klik item buat ambil  |  klik kanan = putar  |  " +
-                             "item yang tercecer pas wave mulai = kejual";
+            string kind = _held.Layer == Layer.Rune ? "RUNE" : "SKILL";
+            _heldText.text = kind + " - " + _held.DisplayName + "   " + _held.Blurb;
         }
 
         /// <summary>Detailed hover card + the ground ring showing the hovered skill's reach.</summary>
@@ -4166,16 +4333,43 @@ namespace Proto
             ShowHoverRange(hovered, spell);
         }
 
-        /// <summary>Puts the hover card next to the cursor, clamped so it never leaves the screen.</summary>
+        const float TipWidth = 380f;
+        const float TipPadX = 14f;
+        const float TipPadY = 12f;
+
+        /// <summary>
+        /// Menaruh kartu hover di sebelah kursor, dijepit supaya tidak pernah keluar layar.
+        ///
+        /// Tingginya DIHITUNG dari teksnya, tidak lagi dipatok 150 piksel. Kotak berukuran mati
+        /// itu salah di dua arah sekaligus: segel dengan empat baris menyisakan sepertiga kotak
+        /// kosong, sementara skill dengan sepuluh baris menulis keluar dari kotaknya sendiri —
+        /// dan yang keluar itu justru baris terakhir, tempat blurb-nya berada.
+        /// </summary>
         void ShowCard(string body)
         {
-            var m = ProtoInput.MousePosition;
-            float x = Mathf.Min(m.x + 18f, Screen.width - 372f);
-            float y = Mathf.Max(m.y - 12f, 160f);
-
             _tipText.text = body;
+
+            var textRect = _tipText.rectTransform;
+            float inner = TipWidth - TipPadX * 2f;
+
+            // Lebar dikunci DULU: preferredHeight tanpa lebar yang pasti akan menjawab untuk
+            // teks satu baris panjang, bukan untuk teks yang sudah dibungkus.
+            textRect.sizeDelta = new Vector2(inner, 0f);
+            float height = _tipText.preferredHeight;
+            textRect.sizeDelta = new Vector2(inner, height);
+
+            float boxHeight = height + TipPadY * 2f;
+            _tipBg.rectTransform.sizeDelta = new Vector2(TipWidth, boxHeight);
+
+            var m = ProtoInput.MousePosition;
+            float x = Mathf.Min(m.x + 18f, Screen.width - TipWidth - 8f);
+
+            // Pivotnya kiri-ATAS, jadi y adalah tepi atas kartu: yang harus dijaga tetap di
+            // dalam layar adalah DASARNYA, dan dasar itu bergantung tinggi kartunya.
+            float y = Mathf.Clamp(m.y - 12f, boxHeight + 8f, Screen.height - 8f);
+
             _tipBg.rectTransform.anchoredPosition = new Vector2(x, y);
-            _tipText.rectTransform.anchoredPosition = new Vector2(x + 10f, y - 8f);
+            textRect.anchoredPosition = new Vector2(x + TipPadX, y - TipPadY);
             _tipBg.enabled = true;
             _tipText.enabled = true;
         }
@@ -4295,9 +4489,16 @@ namespace Proto
 
             var panel = PanelRect();
             _panelBg.rectTransform.anchoredPosition = panel.center;
+
+            // Ukurannya ikut kotak prefab, bukan cuma posisinya. Selama ini latar panel dikunci di
+            // PanelW x PanelH bawaan sementara kotaknya boleh ditata tangan — dua angka yang
+            // kebetulan sama, sampai kotaknya digeser sekali saja dan latarnya berhenti menutupi
+            // isinya sendiri.
+            _panelBg.rectTransform.sizeDelta = panel.size;
+
             _panelTitle.rectTransform.anchoredPosition = new Vector2(panel.xMin + 14f, panel.yMax - 8f);
             _panelTitle.rectTransform.pivot = new Vector2(0f, 1f);
-            _panelTitle.text = "TOKO   -   koin " + _gold + "   |   klik barang buat beli, klik di luar buat nutup";
+            _panelTitle.text = "TOKO   —   " + _gold + " koin";
 
             for (int i = 0; i < ShopSlots; i++)
             {
@@ -4337,7 +4538,7 @@ namespace Proto
                 : new Color(0.3f, 0.18f, 0.18f, 0.95f);
 
             _rerollLabel.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin + 8f);
-            _rerollLabel.text = "REROLL  -  " + _rerollCost + " koin  (harga naik terus)";
+            _rerollLabel.text = "REROLL   " + _rerollCost + " koin";
 
             return cursor;
         }
@@ -4365,16 +4566,6 @@ namespace Proto
 
             if (_held == piece) n++;
             return n;
-        }
-
-        void DrawSellBox()
-        {
-            bool armed = _held != null && SellRect().Contains(ProtoInput.MousePosition);
-            _sellBg.color = armed
-                ? new Color(0.85f, 0.3f, 0.25f, 0.95f)
-                : new Color(0.35f, 0.15f, 0.15f, 0.9f);
-
-            _sellLabel.text = _held != null ? "JUAL  +" + ValueOf(_held) : "JUAL";
         }
 
         /// <summary>
@@ -4458,8 +4649,8 @@ namespace Proto
                 int share = _meter.ShareOf(s.Source.Def.DisplayName);
                 if (share > 0) _sb.Append("  ").Append(share).Append('%');
 
-                _sb.Append("   ").Append(s.Damage.ToString("0.0")).Append(" dmg");
-                _sb.Append("   ").Append((s.Cooldown <= 0f ? 0f : s.Damage / s.Cooldown).ToString("0.0"))
+                _sb.Append("   ").Append(BigNumber.Short(s.Damage)).Append(" dmg");
+                _sb.Append("   ").Append(BigNumber.Short(s.Cooldown <= 0f ? 0f : s.Damage / s.Cooldown))
                     .Append(" dps");
                 _sb.Append("   ").Append(s.Cooldown.ToString("0.00")).Append('s');
                 _sb.Append("   ").Append(Mathf.RoundToInt(s.Source.Def.ManaCost)).Append(" mana");
