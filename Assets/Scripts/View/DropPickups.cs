@@ -30,6 +30,15 @@ namespace Proto
         const float TossHeight = 4.2f;
         const float Gravity = 14f;
 
+        /// <summary>Kecepatan mendatar hadiah pertama. Kecil = mendarat rapat di kaki pemain.</summary>
+        const float TossSpeed = 1.5f;
+
+        /// <summary>Tambahan kecepatan per hadiah berikutnya, supaya yang banyak tidak menumpuk.</summary>
+        const float TossSpread = 0.14f;
+
+        /// <summary>~137,5° dalam radian — sudut yang tidak pernah mengulang pola.</summary>
+        const float GoldenAngle = 2.399963f;
+
         /// <summary>Jarak saat magnet mulai menjemput.</summary>
         const float MagnetRange = 7f;
 
@@ -72,7 +81,20 @@ namespace Proto
 
             var p = Take();
 
-            float angle = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+            // Sudutnya DIHITUNG, tidak diundi.
+            //
+            // Arah acak membuat lima hadiah yang berangkat dari satu titik mendarat berpencar ke
+            // segala penjuru — dua bisa menumpuk, dua lagi terlempar ke arah berlawanan, dan
+            // pemain harus memburu hadiahnya sendiri satu per satu. Sudut emas (~137,5°) menyebar
+            // mereka merata di sekeliling pemain: tidak ada dua yang bertumpuk, dan semuanya
+            // tetap dalam satu genggaman pandangan.
+            int seq = 0;
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                if (_pool[i].Active) seq++;
+            }
+
+            float angle = seq * GoldenAngle;
             Vector3 outward = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
 
             p.Piece = piece;
@@ -82,7 +104,11 @@ namespace Proto
             // Berangkat dari pemain, bukan dari tempat musuh mati. Tempat matinya bisa di seberang
             // peta, dan barang yang mendarat di sana tidak pernah terbaca sebagai hadiah.
             p.T.position = _player.position + Vector3.up * 0.8f;
-            p.Velocity = outward * UnityEngine.Random.Range(2.5f, 4.5f) + Vector3.up * TossHeight;
+
+            // Melebar sedikit demi sedikit, bukan diundi 2,5-4,5: yang kesepuluh boleh mendarat
+            // lebih jauh daripada yang pertama, tapi yang pertama tidak boleh terlempar jauh
+            // hanya karena undiannya sedang besar.
+            p.Velocity = outward * (TossSpeed + seq * TossSpread) + Vector3.up * TossHeight;
 
             _mpb.SetColor(BaseColorId, piece.Color);
             p.T.GetComponent<Renderer>().SetPropertyBlock(_mpb);
