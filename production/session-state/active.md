@@ -1383,6 +1383,23 @@ Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholde
 - **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
   = edit tabel VfxPass, jangan assign manual (pass menimpa).
 
+## Bilah demo dikecilkan + bug cuaca (2026-08-10)
+
+Detail: **AI-HANDOFF.md §39**.
+
+- **"Hujan gak jalan" akarnya daftar cuaca BEDA per wajah arena.** Weather-nya sehat (Badai =
+  881 partikel hidup); tombolnya yang dibangun sekali dari daftar mood wajah pembuka, lalu
+  indeksnya salah arti begitu malam datang — klik BADAI di malam hari menghasilkan
+  `mood=Sunyi, partikel=0`. `DemoBar.SyncMoods()` sekarang membangun ulang tombol tiap daftar
+  mood berubah, dan pilihan diingat lewat NAMA, bukan nomor.
+- **Bilah pindah ke pojok kanan atas, 258×92** (dulu selebar layar di bawah = menutupi tas &
+  panel spell). Terverifikasi 9/9 tombol jadi target teratas raycast.
+- **"Flow ke arena, bukan peta" = alarm palsu dan salahku**: `MapOpensRun` benar (=1),
+  runtime terbukti `stage=Choosing`. Sesi ini berkali-kali mematikannya sementara demi
+  screenshot arena; siapa pun yang menekan Play di sela itu mendarat di arena.
+  **Aturan baru: jangan utak-atik aset bersama demi screenshot — tempuh alurnya
+  (`RunDirector.PickNode(run.Map.Nodes[0])`).**
+
 ## Bayangan, animasi lari, FX jadi prefab, bilah demo (2026-08-10)
 
 Detail: **AI-HANDOFF.md §38**.

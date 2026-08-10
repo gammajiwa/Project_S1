@@ -2805,3 +2805,43 @@ diam-diam mengganti wajah arena).
 
 Terverifikasi: 9 tombol lahir bernama asli dari aset, klik MALAM → wajah malam, klik HUJAN →
 hujan turun (screenshot `Assets/Screenshots/demo_bar.png`).
+
+## 39. Bilah demo dikecilkan, dan bug cuaca yang sesungguhnya (2026-08-10)
+
+### "Hujan dll gak jalan" — daftar cuaca BERBEDA per wajah arena
+
+Bukan Weather-nya yang rusak. Terukur: `Force(3)` melahirkan 12 ParticleSystem, Badai 881
+partikel hidup. Yang salah bilah demonya: tombol cuaca dibangun SEKALI dari daftar mood milik
+wajah yang kebetulan tampil saat run dimulai, sementara **tiap `BiomeDefinition` punya
+`WeatherMoods` sendiri**. Begitu wajah berganti (malam / senja / tengah malam), indeks yang
+dipegang tombol menunjuk mood yang artinya lain — atau tidak ada sama sekali.
+
+Bukti yang menutup kasusnya: klik tombol "BADAI" sesudah masuk wave malam menghasilkan
+`mood=Sunyi, partikelHidup=0`. Persis "hujannya nggak jalan".
+
+Perbaikan: `DemoBar.SyncMoods()` membangun ulang deretan tombol begitu daftar mood berubah
+(dipanggil saat tombol wajah ditekan DAN tiap 30 frame, karena wave juga mengganti wajah
+sendiri), dan pilihan tangan diingat **lewat NAMA** (`SelectedName`), bukan nomor — jadi
+"Hujan" tetap hujan setelah pindah ke malam, selama wajah malam juga punya hujan.
+
+### Bilah dipindah ke pojok kanan atas & dikecilkan
+
+Bilah selebar layar di bawah menutupi tas, panel spell, dan lantai tempat barang jatuh
+mendarat — "terlalu blocking". Sekarang panel 258×92 di bawah tombol nama biome: label kecil
++ dua baris tombol pendek (S.MLM untuk "TENGAH MALAM" — inisial + potongan kata kedua, karena
+tiga huruf pertamanya tidak memberi tahu apa pun).
+
+Terverifikasi: **9 dari 9 tombol jadi target teratas `EventSystem.RaycastAll` di posisi
+barunya** — tidak ada satu pun yang tertutup HUD.
+
+### Peta di awal run: alarm palsu, dan penyebabnya sesi ini sendiri
+
+Laporan "abis pilih grimoire malah ke arena, harusnya ke peta dulu" bukan regresi kode:
+`GameBalance.MapOpensRun` = 1 di disk maupun di commit, dan diuji runtime peta memang terbuka
+(`mapOpen=True, mapChoose=True, runStage=Choosing`). Yang terjadi: sesi ini berkali-kali
+mematikan flag itu sementara untuk mengambil screenshot arena, dan siapa pun yang menekan
+Play di sela-sela itu mendarat di arena.
+
+> **Aturan baru untuk sesi berikutnya:** jangan mengubah aset bersama demi screenshot selagi
+> pemilik project mungkin sedang bermain. Kalau butuh arena tanpa peta, tempuh alurnya —
+> `RunDirector.PickNode(run.Map.Nodes[0])` membawa masuk ke arena dalam satu panggilan.

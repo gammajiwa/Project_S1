@@ -54,64 +54,161 @@ namespace Proto
 
             canvasGo.AddComponent<GraphicRaycaster>();
 
-            var row = new GameObject("Baris").AddComponent<RectTransform>();
-            row.SetParent(canvasGo.transform, false);
-            row.anchorMin = new Vector2(0.5f, 0f);
-            row.anchorMax = new Vector2(0.5f, 0f);
-            row.pivot = new Vector2(0.5f, 0f);
-            row.anchoredPosition = new Vector2(0f, 14f);
-            row.sizeDelta = new Vector2(1200f, 76f);
+            // POJOK KANAN ATAS, di bawah tombol nama biome — bukan bilah selebar layar di bawah.
+            // Yang pertama menutupi tas, panel spell, dan lantai tempat barang jatuh mendarat;
+            // pemilik project menyebutnya "terlalu blocking", dan memang alat bantu tidak boleh
+            // menghalangi hal yang sedang dipamerkan.
+            var panel = new GameObject("Panel").AddComponent<RectTransform>();
+            panel.SetParent(canvasGo.transform, false);
+            panel.anchorMin = new Vector2(1f, 1f);
+            panel.anchorMax = new Vector2(1f, 1f);
+            panel.pivot = new Vector2(1f, 1f);
+            panel.anchoredPosition = new Vector2(-14f, -84f);
+            panel.sizeDelta = new Vector2(258f, 92f);
 
-            var bg = row.gameObject.AddComponent<Image>();
-            bg.color = new Color(0.04f, 0.05f, 0.08f, 0.72f);
+            var bg = panel.gameObject.AddComponent<Image>();
+            bg.color = new Color(0.04f, 0.05f, 0.08f, 0.66f);
 
-            var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.spacing = 6f;
-            layout.padding = new RectOffset(10, 10, 8, 8);
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = true;
+            var layout = panel.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 3f;
+            layout.padding = new RectOffset(5, 5, 4, 4);
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
 
-            _label = MakeLabel(row, "DEMO");
+            _label = MakeLabel(panel, "DEMO");
 
+            // Dua baris: wajah di atas, cuaca di bawah. Nama dipendekkan jadi 3-4 huruf —
+            // di lebar 258 piksel, "TENGAH MALAM" tidak muat dan yang penting cuma bisa dibedakan.
+            var faceRow = MakeRow(panel);
             for (int i = 0; i < faceCount && i < FaceNames.Length; i++)
             {
                 int index = i;
-                _faceButtons.Add(MakeButton(row, FaceNames[i], () =>
+                _faceButtons.Add(MakeButton(faceRow, Short(FaceNames[i]), () =>
                 {
                     _dresser.Show(index);
 
-                    // Cuaca disetel ULANG setelah wajah berganti: Apply() membangun Weather dari
-                    // nol, jadi rasa yang sedang dipilih ikut terhapus kalau tidak dipasang lagi.
-                    _weather.Force(SelectedMood);
+                    // Daftar cuacanya ikut berganti bersama wajahnya — tombolnya dibangun ulang
+                    // dulu, baru pilihan lama dipasang kembali LEWAT NAMA.
+                    SyncMoods();
+
+                    int keep = IndexOfSelected();
+                    if (keep >= 0) _weather.Force(keep);
+
                     Refresh();
                 }));
             }
 
-            Separator(row);
-
-            int moods = _weather != null ? _weather.MoodCount : 0;
-            for (int i = 0; i < moods; i++)
-            {
-                int index = i;
-                string caption = _weather.MoodNameAt(i);
-                if (string.IsNullOrEmpty(caption)) caption = "CUACA " + (i + 1);
-
-                _moodButtons.Add(MakeButton(row, caption.ToUpperInvariant(), () =>
-                {
-                    SelectedMood = index;
-                    _weather.Force(index);
-                    Refresh();
-                }));
-            }
+            _moodRow = MakeRow(panel);
+            SyncMoods();
 
             Refresh();
         }
 
-        /// <summary>Rasa cuaca yang sedang dipilih tangan, dipertahankan melewati ganti wajah.</summary>
-        int SelectedMood;
+        RectTransform _moodRow;
+        readonly List<string> _moodNames = new List<string>();
+
+        /// <summary>
+        /// Membangun ulang deretan tombol cuaca kalau daftar cuacanya berganti.
+        ///
+        /// Wajib, dan ini bug yang benar-benar terjadi: **tiap wajah arena punya daftar cuaca
+        /// sendiri**. Tombol yang dibuat sekali dari daftar SIANG akan menunjuk indeks yang
+        /// artinya berbeda begitu malam datang — menekan "BADAI" memanggil mood "Sunyi" yang
+        /// tidak punya hujan sama sekali, dan yang terlihat pemilik project adalah "hujannya
+        /// nggak jalan".
+        /// </summary>
+        void SyncMoods()
+        {
+            if (_weather == null || _moodRow == null) return;
+
+            int count = _weather.MoodCount;
+
+            bool same = count == _moodNames.Count;
+            for (int i = 0; same && i < count; i++)
+            {
+                if (_moodNames[i] != _weather.MoodNameAt(i)) same = false;
+            }
+
+            if (same) return;
+
+            for (int i = _moodRow.childCount - 1; i >= 0; i--) Destroy(_moodRow.GetChild(i).gameObject);
+
+            _moodButtons.Clear();
+            _moodNames.Clear();
+
+            for (int i = 0; i < count; i++)
+            {
+                int index = i;
+                string full = _weather.MoodNameAt(i);
+                if (string.IsNullOrEmpty(full)) full = "C" + (i + 1);
+
+                _moodNames.Add(full);
+
+                _moodButtons.Add(MakeButton(_moodRow, Short(full), () =>
+                {
+                    // Yang diingat NAMANYA, bukan nomornya — supaya "Hujan" tetap hujan setelah
+                    // pemain menekan MALAM, selama wajah malam juga punya hujan.
+                    SelectedName = _weather.MoodNameAt(index);
+                    _weather.Force(index);
+                    Refresh();
+                }));
+            }
+        }
+
+        /// <summary>Nama cuaca yang sedang dipilih tangan, dipertahankan melewati ganti wajah.</summary>
+        string SelectedName;
+
+        /// <summary>Indeks cuaca yang namanya cocok dengan pilihan tangan, −1 kalau tidak ada.</summary>
+        int IndexOfSelected()
+        {
+            if (_weather == null || string.IsNullOrEmpty(SelectedName)) return -1;
+
+            for (int i = 0; i < _weather.MoodCount; i++)
+            {
+                if (_weather.MoodNameAt(i) == SelectedName) return i;
+            }
+
+            return -1;
+        }
+
+        /// <summary>Tiga huruf pertama, cukup untuk membedakan dan muat di tombol sempit.</summary>
+        static string Short(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "?";
+
+            // "TENGAH MALAM" -> "T.MLM": dua kata dipendekkan lewat inisial + potongan kata kedua,
+            // karena tiga huruf pertamanya ("TEN") tidak memberi tahu apa pun.
+            int space = name.IndexOf(' ');
+            if (space > 0 && space + 1 < name.Length)
+            {
+                string tail = name.Substring(space + 1);
+                return (name[0] + "." + tail.Substring(0, Mathf.Min(3, tail.Length))).ToUpperInvariant();
+            }
+
+            return name.Substring(0, Mathf.Min(4, name.Length)).ToUpperInvariant();
+        }
+
+        static RectTransform MakeRow(RectTransform parent)
+        {
+            var row = new GameObject("Baris").AddComponent<RectTransform>();
+            row.SetParent(parent, false);
+
+            var layout = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            layout.spacing = 3f;
+            layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = true;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+
+            var le = row.gameObject.AddComponent<LayoutElement>();
+            le.minHeight = 26f;
+            le.preferredHeight = 26f;
+
+            return row;
+        }
 
         void Refresh()
         {
@@ -125,9 +222,13 @@ namespace Proto
 
         void Update()
         {
-            // Nama cuaca berubah sendiri tiap wave baru diundi; tanpa ini bilahnya menampilkan
-            // nama yang sudah basi sampai ada tombol yang dipencet.
-            if (Time.frameCount % 30 == 0) Refresh();
+            // Wajah dan cuaca berganti sendiri tiap wave baru diundi. Tanpa ini bilahnya
+            // menampilkan nama basi, dan — lebih buruk — tombol cuaca peninggalan wajah lama
+            // tetap terpasang sampai ada yang menekannya.
+            if (Time.frameCount % 30 != 0) return;
+
+            SyncMoods();
+            Refresh();
         }
 
         static Text MakeLabel(RectTransform parent, string text)
@@ -137,30 +238,17 @@ namespace Proto
 
             var label = go.AddComponent<Text>();
             label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = 20;
-            label.alignment = TextAnchor.MiddleLeft;
+            label.fontSize = 13;
+            label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(1f, 0.93f, 0.72f);
             label.text = text;
             label.horizontalOverflow = HorizontalWrapMode.Overflow;
 
             var le = go.AddComponent<LayoutElement>();
-            le.minWidth = 300f;
-            le.preferredWidth = 300f;
+            le.minHeight = 18f;
+            le.preferredHeight = 18f;
 
             return label;
-        }
-
-        static void Separator(RectTransform parent)
-        {
-            var go = new GameObject("Pemisah");
-            go.transform.SetParent(parent, false);
-
-            var img = go.AddComponent<Image>();
-            img.color = new Color(1f, 1f, 1f, 0.18f);
-
-            var le = go.AddComponent<LayoutElement>();
-            le.minWidth = 2f;
-            le.preferredWidth = 2f;
         }
 
         static Button MakeButton(RectTransform parent, string caption, UnityEngine.Events.UnityAction onClick)
@@ -176,15 +264,15 @@ namespace Proto
             button.onClick.AddListener(onClick);
 
             var le = go.AddComponent<LayoutElement>();
-            le.minWidth = 108f;
-            le.preferredWidth = 108f;
+            le.minWidth = 44f;
+            le.flexibleWidth = 1f;
 
             var textGo = new GameObject("Teks");
             textGo.transform.SetParent(go.transform, false);
 
             var text = textGo.AddComponent<Text>();
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = 15;
+            text.fontSize = 12;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = new Color(0.92f, 0.94f, 1f);
             text.text = caption;
