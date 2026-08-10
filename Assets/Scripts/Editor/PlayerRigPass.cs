@@ -219,18 +219,47 @@ namespace Proto.EditorTools
                 dirty = true;
             }
 
+            // Rig Generic TIDAK punya konsep "root" bawaan — tanpa menunjuk simpulnya di sini,
+            // seluruh setelan Bake Into Pose di bawah tidak melakukan apa pun (tercentang di
+            // inspector, nol pengaruh). Panggul adalah simpul yang membawa perpindahan Mixamo.
+            if (imp.motionNodeName != "mixamorig:Hips")
+            {
+                imp.motionNodeName = "mixamorig:Hips";
+                dirty = true;
+            }
+
             // Idle/Run dua-duanya gerak siklus — sekali main lalu beku adalah bug yang
             // kelihatan seperti "animasinya cuma jalan sekali".
             var defaults = imp.defaultClipAnimations;
             if (defaults.Length > 0)
             {
                 var clips = imp.clipAnimations;
-                bool needClip = clips.Length == 0 || clips[0].name != clipName || !clips[0].loopTime;
+                bool needClip = clips.Length == 0 || clips[0].name != clipName ||
+                                !clips[0].loopTime || clips[0].lockRootPositionXZ ||
+                                !clips[0].lockRootHeightY || !clips[0].lockRootRotation;
+
                 if (needClip)
                 {
                     var clip = defaults[0];
                     clip.name = clipName;
                     clip.loopTime = true;
+
+                    // Ini yang membetulkan sentakan balik saat Run berganti ke Idle, dan
+                    // arahnya BERLAWANAN dengan tebakan pertama: "Bake Into Pose" berarti
+                    // gerakan itu DIPERTAHANKAN di dalam pose. Dipasang untuk XZ, badannya
+                    // justru merayap maju sepanjang klip lalu ditarik pulang oleh Idle.
+                    //
+                    // Yang benar untuk animasi di tempat:
+                    // - XZ TIDAK dipanggang → perpindahannya diekstrak jadi root motion, lalu
+                    //   dibuang karena applyRootMotion mati. Badan diam, kaki tetap melangkah.
+                    // - Y dan rotasi DIPANGGANG → tidak ada root motion vertikal maupun putar,
+                    //   jadi kaki tetap menapak dan model tidak berputar sendiri.
+                    clip.lockRootPositionXZ = false;
+                    clip.lockRootHeightY = true;
+                    clip.keepOriginalPositionY = true;
+                    clip.lockRootRotation = true;
+                    clip.keepOriginalOrientation = true;
+
                     imp.clipAnimations = new[] { clip };
                     dirty = true;
                 }
@@ -476,7 +505,7 @@ namespace Proto.EditorTools
                 // berkibar. Dibagi skala, jadi ini benar-benar 14 sentimeter di dunia.
                 coeffs[i].maxDistance = h < 0.15f
                     ? 0f
-                    : 0.14f * (TargetHeight / AuthoredHeight) * h * h / scale;
+                    : 0.18f * (TargetHeight / AuthoredHeight) * h * h / scale;
 
                 // Jarak aman 2 cm terhadap collider tulang. Nol berarti kain boleh menempel
                 // persis di kulit kapsul — dan di sanalah ia gampang terjepit lalu terlempar.
@@ -490,11 +519,14 @@ namespace Proto.EditorTools
             // bolak-balik, tapi tidak membekukan gerak), tekuk lunak supaya jatuhnya luwes,
             // dan skala dunia kecil — pemain berbelok terus karena auto-dodge, dan angka besar
             // di sini yang dulu mencambuk jubah tiap frame.
-            cloth.damping = 0.35f;
-            cloth.stretchingStiffness = 0.9f;
-            cloth.bendingStiffness = 0.15f;
-            cloth.worldVelocityScale = 0.25f;
-            cloth.worldAccelerationScale = 0.35f;
+            // Dilunakkan SEDIKIT atas permintaan pemilik project ("jangan terlalu kaku, tapi
+            // dikit aja lunaknya"): redaman turun tipis supaya ayunan sempat terbaca sebelum
+            // mati, tekuk lebih lunak supaya jatuhnya melipat alih-alih menekuk seperti karton.
+            cloth.damping = 0.28f;
+            cloth.stretchingStiffness = 0.85f;
+            cloth.bendingStiffness = 0.08f;
+            cloth.worldVelocityScale = 0.3f;
+            cloth.worldAccelerationScale = 0.4f;
             cloth.friction = 0.4f;
             cloth.clothSolverFrequency = 240f;
 

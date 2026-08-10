@@ -136,6 +136,13 @@ namespace Proto
             if (biome != null && biome != _current) Apply(biome);
         }
 
+        /// <summary>
+        /// Nama wajah yang sedang tampil, TANPA mengubah apa pun. <see cref="Show"/> membungkus
+        /// indeksnya dengan modulo, jadi memanggilnya sekadar untuk membaca nama akan diam-diam
+        /// mengganti wajah arena.
+        /// </summary>
+        public string CurrentName => _current != null ? _current.DisplayName : "";
+
         /// <summary>Mengganti wajah arena sekarang juga. Nama wajahnya dikembalikan.</summary>
         public string Show(int index)
         {

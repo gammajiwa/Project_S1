@@ -2727,3 +2727,81 @@ BLOOD SURGE & TOXIC BURST (screenshot `Assets/Screenshots/reaction_vfx.png`, dam
 2. **Musuh bisa habis sebelum probe jalan.** Percobaan pertama melaporkan 0 dari 9 wrapper
    terlihat, dan penyebabnya bukan VFX-nya melainkan `Nearest()` mengembalikan null karena
    wave sudah bersih. Selalu catat jumlah suntikan, bukan cuma jumlah yang terlihat.
+
+## 38. Bayangan pemain, animasi lari, FX jadi prefab, bilah demo (2026-08-10)
+
+Empat keluhan + dua permintaan pemilik project, semuanya masuk.
+
+### Bayangan pemain hilang — `BurnAway.shader` cuma punya satu pass
+
+Shader itu hanya berisi pass `UniversalForward`; begitu `PlayerBurnout` memasangnya di Init,
+pemain BERHENTI melempar bayangan — gagal diam-diam, nol error. Ditambahkan pass
+`ShadowCaster` dengan clip yang sama persis, jadi bayangannya ikut terkikis saat terbakar.
+Jebakan lama diulang di komentar: `ApplyShadowBias` mengembalikan POSISI DUNIA, bukan clip —
+memasukkannya langsung ke `positionCS` adalah cara pass ini gagal kompilasi tanpa suara
+(persis yang pernah terjadi pada shader VAT musuh). Terukur: `passCount=2`,
+`shadowMode=On` di badan & jubah.
+
+### Animasi lari tidak pernah main
+
+Aturan "menembak = tahan pose Idle 0,45 dtk" yang dipasang di §35 MENELAN animasi lari:
+papan penuh menembak jauh lebih sering dari 0,45 detik, jadi penahannya tidak pernah lepas.
+Sekarang pose cast hanya menang saat pemain BERDIRI (`!moving && _castHold > 0`) — pemilik
+project menegaskan "sambil lari nge-skill juga gpp". Terukur: 5 cast selama lari, animator
+tetap masuk Run.
+
+### "Rollback" saat Run → Idle — Root Motion Node yang kosong
+
+Badan merayap maju sepanjang klip Run lalu tersentak pulang begitu Idle mengambil alih.
+Akarnya: rig **Generic tidak punya konsep root bawaan**, dan tanpa `ModelImporter.motionNodeName`
+seluruh setelan Bake Into Pose tercentang di inspector tapi NOL pengaruh. Diisi
+`mixamorig:Hips`.
+
+Sekalian koreksi salah paham yang memakan satu putaran: **"Bake Into Pose" berarti gerakan
+DIPERTAHANKAN di dalam pose**, bukan dibuang. Dipasang untuk XZ, badan justru merayap. Yang
+benar untuk animasi di tempat: XZ TIDAK dipanggang (perpindahannya diekstrak jadi root motion
+lalu dibuang karena `applyRootMotion` mati), Y dan rotasi DIPANGGANG (kaki menapak, tidak
+berputar sendiri).
+
+> **Jangan mengukur ini dengan `AnimationClip.SampleAnimation`** — ia menerapkan kurva mentah
+> dan melewati penanganan root motion Animator, jadi selalu menunjukkan rayapan penuh (3,55 m)
+> baik sebelum maupun sesudah perbaikan. Ukur di play mode. Hasil runtime: rayapan panggul
+> saat Run **0,127 m** (ayunan langkah wajar), sentakan Run→Idle **0,014 m**.
+
+### Semua benda FX jadi prefab ber-folder — `FxLibrary`
+
+Permintaan: "setiap object, mau itu AOE, skill, meteor, dll — buat jadi prefab, folderin yang
+rapi, nanti gw QA." Sepuluh benda yang dulu lahir dari `CreatePrimitive` sekarang punya
+prefabnya sendiri di `Assets/Art/VFX/Core/<Nama>/`:
+
+Inti Peluru · Kilatan Tumbukan · Meteor Jatuh · Cakram Kubangan · Telegraf Hantaman ·
+Pecahan Mengambang · Bola Menggelinding · Puting Beliung · Barang Jatuh · Penjaga Pulau
+
+`Data/FxLibrary.cs` (aset `Assets/GameData/FxLibrary.asset`, dipasang di `_Bootstrap`)
+memegang satu slot per benda; `PlayerCaster.NewFx` melahirkan dari prefab kalau slotnya
+terisi dan **jatuh kembali ke primitif kalau kosong** — slot kosong tidak boleh pernah
+membuat sebuah skill jadi tak terlihat. Prefab bawaannya identik dengan primitif lama
+(mesh, material aset sungguhan, skala), jadi memasangnya tidak mengubah apa pun sampai
+isinya benar-benar diganti tangan. Pass: `Tools/Grimoire/Build Core FX`, idempotent.
+
+Sekalian: kilatan tumbukan peluru yang dulu SELALU bola putih besar kini mengecil dan
+mengikuti warna skill kalau pelurunya sudah membawa VFX sendiri (bola putih itu muncul
+belasan kali per detik — primitif yang paling sering terlihat di seluruh game), dan bola
+Descent menciut jadi inti 0,3 kalau skillnya punya efek sendiri.
+
+### Bilah demo cuaca & siang-malam
+
+`View/DemoBar.cs` — sembilan tombol di bawah layar: SIANG / MALAM / SENJA / TENGAH MALAM +
+CERAH / BERANGIN / GERIMIS / HUJAN / BADAI, plus label wajah & cuaca yang sedang tampil.
+Untuk memperlihatkan game ke klien: cuaca diundi deterministik per nomor wave, bagus untuk
+permainan tapi mustahil untuk presentasi.
+
+Kanvas sendiri (`sortingOrder 500`), terpisah dari `GrimoireUI` — bilah demo tidak boleh
+bisa merusak HUD sungguhan, dan mencabutnya cukup satu saklar: `_demoBar` di `_Bootstrap`
+(**matikan sebelum build dikirim**). API baru: `Weather.Force(int)`, `Weather.MoodCount`,
+`Weather.MoodNameAt(int)`, `BiomeDresser.CurrentName` (yang terakhir wajib — `Show(-1)`
+membungkus indeks dengan modulo, jadi memanggilnya sekadar untuk membaca nama akan
+diam-diam mengganti wajah arena).
+
+Terverifikasi: 9 tombol lahir bernama asli dari aset, klik MALAM → wajah malam, klik HUJAN →
+hujan turun (screenshot `Assets/Screenshots/demo_bar.png`).

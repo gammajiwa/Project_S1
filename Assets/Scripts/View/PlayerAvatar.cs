@@ -68,14 +68,21 @@ namespace Proto
             _smoothSpeed = Mathf.Lerp(_smoothSpeed, speed, 1f - Mathf.Exp(-10f * dt));
 
             _castHold -= dt;
-            float reported = _castHold > 0f ? 0f : _smoothSpeed / Mathf.Max(0.01f, RunThreshold);
+
+            // Pose cast hanya menang saat pemain BERDIRI. Versi pertama menahan Idle tiap kali
+            // ada yang menembak, dan itu menelan animasi lari sepenuhnya: papan penuh menembak
+            // jauh lebih sering daripada 0,45 detik, jadi penahannya tidak pernah lepas dan
+            // pemain melayang berjalan dengan pose diam sepanjang wave.
+            bool moving = _smoothSpeed >= RunThreshold;
+            float reported = !moving && _castHold > 0f
+                ? 0f
+                : _smoothSpeed / Mathf.Max(0.01f, RunThreshold);
 
             _anim.SetFloat(SpeedId, reported);
 
-            // Badan menghadap arah jalan. Saat berhenti (atau sedang menahan pose cast),
-            // hadap terakhir dipertahankan — berputar balik ke "depan" tiap kali diam justru
-            // membuatnya seperti boneka yang di-reset.
-            if (_castHold <= 0f && speed > 0.25f && delta.sqrMagnitude > 0.000001f)
+            // Badan menghadap arah jalan. Saat berhenti, hadap terakhir dipertahankan —
+            // berputar balik ke "depan" tiap kali diam membuatnya seperti boneka yang di-reset.
+            if (speed > 0.25f && delta.sqrMagnitude > 0.000001f)
             {
                 var want = Quaternion.LookRotation(delta.normalized, Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, want, TurnSpeed * dt);

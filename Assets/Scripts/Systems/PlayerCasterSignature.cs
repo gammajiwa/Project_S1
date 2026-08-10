@@ -752,7 +752,11 @@ namespace Proto
                 if (!_orbs[i].Active) return _orbs[i];
             }
 
-            var fresh = new Orb { T = NewPrimitive("Orb", PrimitiveType.Sphere) };
+            var fresh = new Orb
+            {
+                T = Sleeping(NewFx(Fx != null ? Fx.Orb : null, PrimitiveType.Sphere, "Orb", true))
+            };
+
             _orbs.Add(fresh);
             return fresh;
         }
@@ -764,11 +768,13 @@ namespace Proto
                 if (!_strikes[i].Active) return _strikes[i];
             }
 
-            var fresh = new Strike { Ring = NewPrimitive("StrikeRing", PrimitiveType.Cylinder) };
-
             // Telegraf memakai material penanda AOE, bukan unlit pekat: isi tipis supaya musuh
             // yang sedang diincar tetap terlihat, tepi tegas karena tepilah aba-abanya.
-            fresh.Ring.GetComponent<Renderer>().sharedMaterial = _aoeMaterial;
+            var fresh = new Strike
+            {
+                Ring = Sleeping(NewFx(Fx != null ? Fx.StrikeRing : null,
+                    PrimitiveType.Cylinder, "StrikeRing", false))
+            };
 
             _strikes.Add(fresh);
             return fresh;
@@ -781,7 +787,11 @@ namespace Proto
                 if (!_boulders[i].Active) return _boulders[i];
             }
 
-            var fresh = new Boulder { T = NewPrimitive("Boulder", PrimitiveType.Sphere) };
+            var fresh = new Boulder
+            {
+                T = Sleeping(NewFx(Fx != null ? Fx.Boulder : null, PrimitiveType.Sphere, "Boulder", true))
+            };
+
             _boulders.Add(fresh);
             return fresh;
         }
@@ -793,27 +803,23 @@ namespace Proto
                 if (!_twisters[i].Active) return _twisters[i];
             }
 
-            var fresh = new Twister { T = NewPrimitive("Twister", PrimitiveType.Cylinder) };
+            var fresh = new Twister
+            {
+                T = Sleeping(NewFx(Fx != null ? Fx.Twister : null, PrimitiveType.Cylinder, "Twister", true))
+            };
+
             _twisters.Add(fresh);
             return fresh;
         }
 
-        Transform NewPrimitive(string label, PrimitiveType type)
+        /// <summary>
+        /// Lahir dalam keadaan mati. Keempat benda di atas dinyalakan oleh cast yang memakainya,
+        /// dan yang lahir menyala akan berdiri diam di titik nol sampai cast pertama datang.
+        /// </summary>
+        static Transform Sleeping(Transform t)
         {
-            var go = GameObject.CreatePrimitive(type);
-            go.name = label;
-
-            var col = go.GetComponent<Collider>();
-            if (col != null) Destroy(col);
-
-            go.transform.SetParent(_fxRoot, false);
-
-            var r = go.GetComponent<Renderer>();
-            r.sharedMaterial = _fxMaterial;
-            r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-            go.SetActive(false);
-            return go.transform;
+            t.gameObject.SetActive(false);
+            return t;
         }
 
         /// <summary>Sisa detik sebuah buff, nol kalau tidak sedang aktif.</summary>

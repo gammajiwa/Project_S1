@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c66511a0717400843b6a697620abd880, type: 3}
+  m_Name: FxLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.FxLibrary
+  ProjectileCore: {fileID: 8337951073425081804, guid: 28c66f7206d795044aab761e592fa3f8, type: 3}
+  ImpactFlash: {fileID: 8352306785325713038, guid: c490b264db32be04cb9036953120ba2a, type: 3}
+  Descent: {fileID: 276218176471764350, guid: f55e7d33f69c8904283259c9a7cb60ed, type: 3}
+  ZoneDisc: {fileID: 3285506271474079560, guid: 9d45dd83766dee64fa4eda3bfbfae9a7, type: 3}
+  StrikeRing: {fileID: 5760778344591932059, guid: 4e4adb35c2ad6924ab893edcea2e91fc, type: 3}
+  Orb: {fileID: 66285306689195257, guid: bea5a475db8848549aa7be1093cec1f6, type: 3}
+  Boulder: {fileID: 2236224243608252336, guid: 2889197ee2b0804458825bd1ca3ac7e2, type: 3}
+  Twister: {fileID: 3089452501924885178, guid: 24239a3f64c1e6e4fa80e06a777ee740, type: 3}
+  DropPickup: {fileID: 5736557849178189813, guid: 70985fb11ef9c6343aa2e03115cc157f, type: 3}
+  IslandGuardian: {fileID: 5981903714696319958, guid: bd59a31342129a24086ef52b9550ae78, type: 3}

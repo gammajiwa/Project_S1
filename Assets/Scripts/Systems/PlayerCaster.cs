@@ -331,6 +331,49 @@ namespace Proto
         /// <summary>Saklar curang. Null di build normal, dan setiap pembacaan lewat propertinya.</summary>
         public DebugConfig Cheats;
 
+        /// <summary>
+        /// Prefab pengganti untuk benda FX yang dulu primitif. Null = primitif lama, jadi
+        /// aset yang belum diisi tidak pernah membuat sebuah skill jadi tak terlihat.
+        /// </summary>
+        public FxLibrary Fx;
+
+        /// <summary>
+        /// Melahirkan satu benda FX: dari prefab kalau slotnya terisi, dari primitif kalau tidak.
+        ///
+        /// Collider selalu dicabut dan bayangan selalu dimatikan — benda-benda ini muncul
+        /// puluhan sekaligus, dan satu saja yang lupa dimatikan bayangannya membuat wave ramai
+        /// membayar shadow pass untuk kilatan seumur 0,15 detik.
+        /// </summary>
+        Transform NewFx(GameObject prefab, PrimitiveType fallback, string label, bool paintable)
+        {
+            GameObject go;
+
+            if (prefab != null)
+            {
+                go = Instantiate(prefab, _fxRoot);
+            }
+            else
+            {
+                go = GameObject.CreatePrimitive(fallback);
+                go.transform.SetParent(_fxRoot, false);
+
+                var r = go.GetComponent<Renderer>();
+                if (r != null) r.sharedMaterial = paintable ? _fxMaterial : _aoeMaterial;
+            }
+
+            go.name = label;
+
+            foreach (var col in go.GetComponentsInChildren<Collider>(true)) Destroy(col);
+
+            foreach (var r in go.GetComponentsInChildren<Renderer>(true))
+            {
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                r.receiveShadows = false;
+            }
+
+            return go.transform;
+        }
+
         /// <summary>Khusus ruang uji: buku tetap menembak walau tidak ada wave yang berjalan.</summary>
         public bool CastWithoutWave;
 
@@ -981,27 +1024,26 @@ namespace Proto
 
             if (d == null)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                go.name = "Descent";
-                var col = go.GetComponent<Collider>();
-                if (col != null) Destroy(col);
+                var t = NewFx(Fx != null ? Fx.Descent : null, PrimitiveType.Sphere, "Descent", true);
+                t.localScale = Vector3.one * 0.85f;
 
-                go.transform.SetParent(_fxRoot, false);
-                go.transform.localScale = Vector3.one * 0.85f;
+                var r = t.GetComponentInChildren<Renderer>();
 
-                var r = go.GetComponent<Renderer>();
-                r.sharedMaterial = _fxMaterial;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                // Ekornya menempel di prefab kalau prefabnya sudah membawa satu; kalau tidak,
+                // dipasang di sini. Tanpa ekor, tembakan dari langit terbaca menetas di tanah.
+                var trail = t.GetComponentInChildren<TrailRenderer>();
+                if (trail == null)
+                {
+                    trail = t.gameObject.AddComponent<TrailRenderer>();
+                    trail.sharedMaterial = _bolts.Material;
+                    trail.time = 0.22f;
+                    trail.widthMultiplier = 0.7f;
+                    trail.numCapVertices = 2;
+                    trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                    trail.receiveShadows = false;
+                }
 
-                var trail = go.AddComponent<TrailRenderer>();
-                trail.sharedMaterial = _bolts.Material;
-                trail.time = 0.22f;
-                trail.widthMultiplier = 0.7f;
-                trail.numCapVertices = 2;
-                trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                trail.receiveShadows = false;
-
-                d = new Descent { T = go.transform, Trail = trail, R = r };
+                d = new Descent { T = t, Trail = trail, R = r };
                 _descents.Add(d);
             }
 
@@ -1012,6 +1054,12 @@ namespace Proto
             d.Radius = radius;
             d.IsZone = def.Kind == CastKind.Zone;
             d.Active = true;
+
+            // Bola jatuhnya menciut jadi inti kalau skillnya punya efek sendiri: yang bercerita
+            // saat mendarat adalah efek itu, dan bola abu seukuran kepala yang turun mendahuluinya
+            // cuma menandai bahwa ada yang belum diganti. Ekor jejaknya TETAP — itu yang membuat
+            // tembakan terbaca datang dari langit, bukan menetas di tanah.
+            d.T.localScale = Vector3.one * (def.CastVfx != null ? 0.3f : 0.85f);
 
             // A slight slant reads as "thrown from somewhere" rather than spawned directly overhead.
             float angle = Random.Range(0f, Mathf.PI * 2f);
@@ -1090,18 +1138,11 @@ namespace Proto
 
             if (p == null)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                go.name = "Projectile";
-                var col = go.GetComponent<Collider>();
-                if (col != null) Destroy(col);
-                go.transform.SetParent(_fxRoot, false);
-                go.transform.localScale = Vector3.one * 0.45f;
+                var t = NewFx(Fx != null ? Fx.ProjectileCore : null, PrimitiveType.Sphere,
+                    "Projectile", true);
+                t.localScale = Vector3.one * 0.45f;
 
-                var r = go.GetComponent<Renderer>();
-                r.sharedMaterial = _fxMaterial;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-                p = new Projectile { T = go.transform };
+                p = new Projectile { T = t };
                 _projectiles.Add(p);
             }
 
@@ -1162,7 +1203,12 @@ namespace Proto
                 if (hit == null) continue;
 
                 _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points, true, p.SourceName);
-                SpawnFlash(p.T.position, 1.4f, 0.15f, Color.white);
+
+                // Kilatan tumbukan: putih besar kalau peluru ini polos, dan kecil berwarna
+                // kalau ia sudah membawa efeknya sendiri. Bola putih di tiap tumbukan adalah
+                // primitif yang paling sering terlihat di layar — ada belasan per detik.
+                if (p.Vfx != null) SpawnFlash(p.T.position, 0.7f, 0.1f, p.Tint);
+                else SpawnFlash(p.T.position, 1.4f, 0.15f, Color.white);
 
                 if (p.Bounces <= 0)
                 {
@@ -1238,17 +1284,11 @@ namespace Proto
 
             if (f == null)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                go.name = "Flash";
-                var col = go.GetComponent<Collider>();
-                if (col != null) Destroy(col);
-                go.transform.SetParent(_fxRoot, false);
+                f = new Flash
+                {
+                    T = NewFx(Fx != null ? Fx.ImpactFlash : null, PrimitiveType.Sphere, "Flash", true)
+                };
 
-                var r = go.GetComponent<Renderer>();
-                r.sharedMaterial = _fxMaterial;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-                f = new Flash { T = go.transform };
                 _flashes.Add(f);
             }
 
@@ -1315,17 +1355,11 @@ namespace Proto
 
             if (z == null)
             {
-                var go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                go.name = "Zone";
-                var col = go.GetComponent<Collider>();
-                if (col != null) Destroy(col);
+                z = new Zone
+                {
+                    T = NewFx(Fx != null ? Fx.ZoneDisc : null, PrimitiveType.Cylinder, "Zone", false)
+                };
 
-                go.transform.SetParent(_fxRoot, false);
-                var r = go.GetComponent<Renderer>();
-                r.sharedMaterial = _aoeMaterial;
-                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-                z = new Zone { T = go.transform };
                 _zones.Add(z);
             }
 

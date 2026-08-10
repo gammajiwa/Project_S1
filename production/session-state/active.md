@@ -1383,6 +1383,29 @@ Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholde
 - **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
   = edit tabel VfxPass, jangan assign manual (pass menimpa).
 
+## Bayangan, animasi lari, FX jadi prefab, bilah demo (2026-08-10)
+
+Detail: **AI-HANDOFF.md §38**.
+
+- **Bayangan pemain balik**: `BurnAway.shader` cuma punya pass Forward — nol ShadowCaster,
+  jadi memasang materialnya mematikan bayangan tanpa error. Pass ditambah (ikut terkikis
+  saat terbakar). Terukur `passCount=2`, `shadowMode=On`.
+- **Animasi lari main lagi**: aturan "menembak = tahan Idle" menelan Run karena papan penuh
+  menembak lebih sering dari 0,45 dtk. Sekarang gerak MENANG atas pose cast (permintaan:
+  "sambil lari nge-skill juga gpp"). Terukur 5 cast sambil lari, animator tetap Run.
+- **"Rollback" Run→Idle**: rig Generic butuh `motionNodeName` ditunjuk (`mixamorig:Hips`) —
+  tanpa itu Bake Into Pose tercentang tapi nol pengaruh. Plus koreksi: **Bake Into Pose =
+  gerakan DIPERTAHANKAN**, jadi XZ justru TIDAK boleh dipanggang. Runtime: rayapan 0,127 m,
+  sentakan 0,014 m. **Jangan ukur pakai `SampleAnimation`** — ia melewati root motion Animator
+  dan selalu melaporkan rayapan penuh.
+- **Semua benda FX jadi prefab** di `Art/VFX/Core/<Nama>/` (10 buah: Inti Peluru, Kilatan
+  Tumbukan, Meteor Jatuh, Cakram Kubangan, Telegraf Hantaman, Pecahan Mengambang, Bola
+  Menggelinding, Puting Beliung, Barang Jatuh, Penjaga Pulau) lewat `FxLibrary.asset` +
+  `Tools/Grimoire/Build Core FX`. Slot kosong = primitif lama, jadi aman. Siap di-QA satu-satu.
+- **Bilah demo** (`View/DemoBar.cs`): 9 tombol bawah layar — SIANG/MALAM/SENJA/TENGAH MALAM +
+  CERAH/BERANGIN/GERIMIS/HUJAN/BADAI. Saklar `_demoBar` di `_Bootstrap`; **matikan sebelum
+  build dikirim ke klien**.
+
 ## Reaksi punya VFX sendiri (2026-08-10)
 
 Detail: **AI-HANDOFF.md §37**. Sembilan reaksi berhenti jadi bola primitif —

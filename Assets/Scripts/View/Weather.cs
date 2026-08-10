@@ -167,6 +167,40 @@ namespace Proto
                 if (roll <= _cumulative[i]) { pick = i; break; }
             }
 
+            ApplyMood(pick);
+        }
+
+        /// <summary>Berapa rasa cuaca yang dipunyai wajah arena yang sedang tampil.</summary>
+        public int MoodCount => _biome != null && _biome.WeatherMoods != null
+            ? _biome.WeatherMoods.Length
+            : 0;
+
+        /// <summary>Nama rasa cuaca ke-<paramref name="index"/>, buat memberi label tombol.</summary>
+        public string MoodNameAt(int index)
+        {
+            if (index < 0 || index >= MoodCount) return "";
+
+            var mood = _biome.WeatherMoods[index];
+            return mood != null ? mood.Name : "";
+        }
+
+        /// <summary>
+        /// Memasang rasa cuaca TERTENTU sekarang juga, melewati undian wave.
+        ///
+        /// Dipakai bilah demo: memperlihatkan hujan kepada orang lain tidak boleh berarti
+        /// memainkan belasan wave sampai hujannya kebetulan keluar. Wave berikutnya tetap
+        /// mengundi seperti biasa — ini menimpa tampilan, bukan aturannya.
+        /// </summary>
+        public void Force(int index)
+        {
+            if (_biome == null || _biome.WeatherMoods == null || _biome.WeatherMoods.Length == 0) return;
+
+            int count = _biome.WeatherMoods.Length;
+            ApplyMood(((index % count) + count) % count);
+        }
+
+        void ApplyMood(int pick)
+        {
             if (pick == _current) return;
 
             _current = pick;

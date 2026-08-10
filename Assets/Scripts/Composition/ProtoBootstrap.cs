@@ -40,6 +40,13 @@ namespace Proto
         [Tooltip("Avatar pemain (model + animator + cloth). Kosong = kapsul primitif lama.")]
         [SerializeField] GameObject _playerAvatarPrefab;
 
+        [Tooltip("Prefab pengganti benda FX yang dulu primitif. Slot kosong = primitif lama.")]
+        [SerializeField] FxLibrary _fx;
+
+        [Tooltip("Bilah tombol demo di bawah layar: ganti siang/malam & cuaca seketika. " +
+                 "Untuk memperlihatkan game ke orang lain — matikan sebelum build dikirim.")]
+        [SerializeField] bool _demoBar = true;
+
         [Header("Debug")]
         [Tooltip("Saklar curang buat rekaman & tes. Boleh dikosongkan — dan aset ini pun tidak " +
                  "berefek apa pun sampai gerbang 'Enabled' di dalamnya dinyalakan.")]
@@ -90,6 +97,10 @@ namespace Proto
             // belakangan berarti wave pertama sudah lewat sebelum curangnya berlaku.
             enemies.Cheats = _cheats;
             caster.Cheats = _cheats;
+
+            // Sebelum Init: kolam FX dibangun di dalamnya, dan library yang dipasang belakangan
+            // berarti benda-benda yang sudah terlanjur lahir tetap primitif seumur run.
+            caster.Fx = _fx;
 
             // Alasan yang sama: renderernya dibangun di dalam Init dan tidak pernah dibangun
             // ulang, jadi panggangan yang dipasang belakangan tidak akan pernah terpakai.
@@ -169,6 +180,15 @@ namespace Proto
                 weather.Init(_rig, sun, sky, glow, cam);
 
                 dresser.Attach(lamps, glow, sky, gloom, weather, playerGo.transform);
+
+                // Bilah demo: tombol ganti wajah & cuaca di bawah layar. Dibangun DI SINI karena
+                // hanya di sini dresser dan weather dua-duanya sudah ada dan sudah tersambung.
+                if (_demoBar)
+                {
+                    var bar = new GameObject("DemoBar").AddComponent<DemoBar>();
+                    bar.transform.SetParent(transform, false);
+                    bar.Init(dresser, weather, _biomes.Length);
+                }
             }
 
             var audio = new GameObject("Audio").AddComponent<AudioDirector>();
