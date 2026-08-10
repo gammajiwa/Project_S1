@@ -2877,3 +2877,74 @@ ditala tangan pemilik project.
 > importer animasi. Yang menyelesaikannya justru pengukuran yang TIDAK menyentuh animasi sama
 > sekali — posisi pemain di layar. Kalau dua pengukuran berturut-turut membersihkan tersangka
 > utama, berhentilah memperbaiki tersangka itu.
+
+### §40 lanjutan: resep lari-di-tempat yang benar, dari pemilik project
+
+Perbaikan kamera saja belum cukup — "rollback" masih terasa. Pemilik project memberikan resep
+Unity yang benar, dan itu memperbaiki DUA tebakan keliru sesi ini sekaligus. Kuncinya bukan
+"Bake Into Pose" saja, melainkan pasangannya **Based Upon**:
+
+| Sumbu | Setelan | Kenapa |
+|---|---|---|
+| Position **XZ** | Bake Into Pose **ON**, Based Upon **Center of Mass** | pose diukur relatif titik berat → perpindahan mendatar dibatalkan → lari di tempat |
+| **Rotation** | Bake Into Pose **ON** | klip tidak boleh memutar arah karakter; yang menentukan hadap adalah `PlayerAvatar` |
+| Position **Y** | Bake Into Pose **OFF** | pantulan vertikal itu yang membuat larinya hidup; membakukannya membuat lari jadi rata dan mati |
+| Animator | `applyRootMotion` **OFF** | kalau nyala, Unity memindahkan transform mengikuti animasi dan bertabrakan dengan PlayerMotor |
+
+Dua percobaan sebelumnya gagal karena melewatkan kolom "Based Upon": yang pertama memakai
+XZ Bake **ON + Based Upon Original** (tidak membatalkan apa pun — badannya tetap merayap),
+yang kedua malah mematikan Bake XZ sama sekali (motionnya diekstrak lalu dibuang, hasilnya
+sama). Di `ModelImporterClipAnimation`, "Based Upon: Center of Mass" itu
+`keepOriginalPositionXZ = false` — kolom yang tidak pernah disentuh dua putaran sebelumnya.
+
+Terukur sesudah resep ini (Run diputar 3,4 detik, pemain diam):
+
+| | Sebelum | Sesudah |
+|---|---|---|
+| Rentang mendatar panggul | merayap terus | **X 0,054 m · Z 0,051 m** (di tempat) |
+| Pantulan vertikal | — | **0,060 m** (masih hidup, tidak rata) |
+| Lompatan pose saat transisi Run→Idle | 0,224 m | **0,019 m** — sama persis dengan frame biasa saat lari, jadi tidak ada sentakan sama sekali |
+
+### Kamera: dari "lebih cepat" jadi "berhenti total"
+
+Percobaan pertama cuma memendekkan waktu susul (0,35 → 0,12) dan itu masih menyisakan 49 px
+luncuran. Yang menentukan ternyata bukan seberapa cepat melainkan **apakah ada gerakan sama
+sekali**: begitu kecepatan sasaran di bawah `_stillSpeed` (0,25 u/dtk), kamera BEKU — tidak
+melambat, berhenti. Pengecualiannya `_freezeWithin` (3 unit): kalau kamera tertinggal jauh
+(Blink, teleport antar-node) ia tetap menyusul walau pemain diam, kalau tidak pemain
+ditinggal di tepi layar selamanya.
+
+Terukur: rig tetap mengikuti normal selama lari (24,4 unit), dan luncur balik sesudah berhenti
+**49 px → 2 px**.
+
+### §40 lanjutan 2: biang terakhir "balik posisinya" — ANIMATOR FLAPPING (2026-08-10, larut)
+
+Sesudah lari-di-tempat dan kamera-beku, keluhannya masih hidup — dan pemilik project benar
+menyebut pengujiannya salah tempat: semua probe sebelumnya jalan di lapangan sepi/wave 1.
+Di wave 5+ barulah biangnya kelihatan, dan tertangkap oleh LOG BURST, bukan angka agregat:
+
+    burst_5 Run (speed 1,5) -> burst_6 IDLE (speed 1,3!) -> burst_7 Run (1,2)
+
+**Animator bolak-balik Run↔Idle selagi pemain masih berjalan.** Mekanismenya: di kerumunan,
+arah kabur `PlayerMotor` berbalik terus-menerus, dan karena heading digeser `MoveTowards`,
+kecepatan MELEWATI NOL sesaat di tiap balik arah. Setiap lintasan-nol menjatuhkan param di
+bawah ambang → Idle menyala sepersekian detik → pose lari yang condong ke depan disentak ke
+pose diam tegak (≈28 cm mundur secara visual) → "badannya balik ke posisi semula". Makin
+ramai wave, makin sering arah berbalik, makin sering menyentak — persis laporannya.
+
+**Fix — Run itu LENGKET** (`PlayerAvatar`): state Run dipegang di kode, bukan di ambang
+controller. Masuk Run seketika saat `_smoothSpeed >= RunThreshold`; keluar HANYA setelah
+benar-benar lambat (`StopSpeed` 0,35) selama `StopDelay` 0,3 detik penuh; zona tengah
+mempertahankan state. Lintasan nol sesaat tidak pernah cukup lama untuk lolos. Param yang
+dikirim juga tegas (≥1,2 saat Run, ≤0,5 saat tidak) supaya tidak menari di sekitar ambang
+transisi controller. Blend Run→Idle 0,15 → 0,28 dtk supaya berhenti sungguhan mendarat lembut.
+
+Terukur — uji tandingan yang sama dengan yang menangkap bugnya: 20 detik wave 6, 59 musuh,
+pemain kebal: **flip Run↔Idle = 1** (masuk Run pertama kali) — dari flapping konstan.
+
+Dua pelajaran metodologis, keduanya dibayar mahal hari ini:
+1. **Uji di kondisi tempat keluhannya lahir.** Lapangan sepi tidak pernah membalikkan arah
+   kabur, jadi bugnya memang mustahil muncul di sana.
+2. **Probe agregat menyembunyikan kejadian sesaat.** "meshVsTransform maks 0,284 m" terlihat
+   sehat; log burst per-frame yang menunjukkan URUTAN state-lah yang membuka kasus. Kalau
+   gejalanya "kadang menyentak", rekam URUTAN, jangan maksimum.

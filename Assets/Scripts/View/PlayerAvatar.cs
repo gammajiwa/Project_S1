@@ -32,11 +32,26 @@ namespace Proto
 
         static readonly int SpeedId = Animator.StringToHash("Speed");
 
+        /// <summary>
+        /// Baru boleh turun ke Idle setelah selambat ini selama <see cref="StopDelay"/> penuh.
+        /// Sengaja jauh di bawah <see cref="RunThreshold"/>: di kerumunan, arah kabur berbalik
+        /// terus dan kecepatan motor melewati nol SESAAT di tiap baliknya.
+        /// </summary>
+        const float StopSpeed = 0.35f;
+
+        /// <summary>Detik selambat <see cref="StopSpeed"/> sebelum Run dilepas.</summary>
+        const float StopDelay = 0.3f;
+
         Animator _anim;
         PlayerCaster _caster;
         Vector3 _lastPos;
         float _castHold;
         float _smoothSpeed;
+
+        /// <summary>Run itu LENGKET — state di kode, bukan sekadar ambang di controller.</summary>
+        bool _running;
+
+        float _slowTimer;
 
         public void Init(PlayerCaster caster)
         {
@@ -69,14 +84,39 @@ namespace Proto
 
             _castHold -= dt;
 
-            // Pose cast hanya menang saat pemain BERDIRI. Versi pertama menahan Idle tiap kali
-            // ada yang menembak, dan itu menelan animasi lari sepenuhnya: papan penuh menembak
-            // jauh lebih sering daripada 0,45 detik, jadi penahannya tidak pernah lepas dan
-            // pemain melayang berjalan dengan pose diam sepanjang wave.
-            bool moving = _smoothSpeed >= RunThreshold;
-            float reported = !moving && _castHold > 0f
-                ? 0f
-                : _smoothSpeed / Mathf.Max(0.01f, RunThreshold);
+            // RUN ITU LENGKET, dan inilah pemadam "balik posisinya" yang sesungguhnya (2026-08-10).
+            //
+            // Ambang sesaat tidak akan pernah benar di game ini: di kerumunan, arah kabur
+            // berbalik terus-menerus, dan kecepatan motor MELEWATI NOL sesaat di tiap balik
+            // arah (heading digeser MoveTowards). Setiap lintasan-nol itu menjatuhkan param di
+            // bawah ambang → Idle menyala sepersekian detik → pose lari yang condong ke depan
+            // disentak ke pose diam yang tegak → mata membacanya sebagai badan yang MENTAL BALIK.
+            // Terekam di burst: Run(1,5) → Idle(1,3!) → Run(1,2) dalam setengah detik.
+            //
+            // Aturannya sekarang: masuk Run seketika begitu melaju; keluar Run hanya setelah
+            // benar-benar lambat (StopSpeed) selama StopDelay penuh. Lintasan nol sesaat tidak
+            // pernah cukup lama untuk lolos.
+            if (_smoothSpeed >= RunThreshold)
+            {
+                _running = true;
+                _slowTimer = 0f;
+            }
+            else if (_smoothSpeed < StopSpeed)
+            {
+                _slowTimer += dt;
+                if (_slowTimer >= StopDelay) _running = false;
+            }
+            else
+            {
+                // Zona tengah: pertahankan state yang sedang berjalan, jangan hitung mundur.
+                _slowTimer = 0f;
+            }
+
+            // Pose cast hanya menang saat benar-benar BERDIRI (bukan sekadar melambat) —
+            // menembak sambil lari tetap animasi lari, keputusan pemilik project.
+            float reported = _running
+                ? Mathf.Max(1.2f, _smoothSpeed / Mathf.Max(0.01f, RunThreshold))
+                : (_castHold > 0f ? 0f : Mathf.Min(0.5f, _smoothSpeed / Mathf.Max(0.01f, RunThreshold)));
 
             _anim.SetFloat(SpeedId, reported);
 

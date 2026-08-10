@@ -1383,7 +1383,42 @@ Detail teknis: **docs/AI-HANDOFF.md §34**. Permintaan: "gak ada lagi placeholde
 - **Belum dinilai mata** — proporsi & rasa menunggu playtest pemilik project. Ganti pasangan
   = edit tabel VfxPass, jangan assign manual (pass menimpa).
 
-## "Rollback" saat berhenti = KAMERA, bukan animasi (2026-08-10)
+## "Balik posisinya" TUNTAS — tiga lapis, yang terakhir animator flapping (2026-08-10)
+
+Detail: **AI-HANDOFF.md §40 (tiga bagian)**. Kronologi lengkapnya pelajaran mahal:
+
+1. **Lari di tempat** (resep pemilik project): XZ Bake ON + Based Upon **Center of Mass**,
+   Rotation Bake ON, Y Bake OFF, applyRootMotion OFF. Kolom "Based Upon" yang tak pernah
+   kusentuh itulah kuncinya.
+2. **Kamera beku saat pemain diam** (bukan sekadar lebih cepat): `_stillSpeed` 0,25,
+   pengecualian `_freezeWithin` 3 unit untuk Blink/teleport. Luncur balik 49 px → 2 px.
+3. **Animator flapping — biang yang sebenarnya di wave 5+**: arah kabur berbalik terus di
+   kerumunan, kecepatan melewati nol sesaat tiap balik → Idle menyala sekejap → pose lari
+   condong disentak ke pose tegak = "mental balik". Ketangkap log burst
+   (`Run@1,5 → Idle@1,3 → Run@1,2`), bukan probe agregat. Fix: **Run lengket** di
+   `PlayerAvatar` (keluar hanya setelah <0,35 u/dtk selama 0,3 dtk) + blend 0,28.
+   Terukur: 20 dtk wave 6, 59 musuh → **flip = 1**.
+
+> Dua pelajaran yang dibayar mahal: (a) uji di kondisi tempat keluhan lahir — lapangan sepi
+> tidak pernah membalikkan arah, bugnya mustahil muncul di sana; (b) probe agregat
+> menyembunyikan kejadian sesaat — rekam URUTAN state per-frame kalau gejalanya "kadang".
+
+## Arsip: putaran "rollback" sebelumnya
+
+Detail: **AI-HANDOFF.md §40 lanjutan**. Dua sebab, dua-duanya nyata:
+
+1. **Animasi**: resep lari-di-tempat dari pemilik project. Kuncinya kolom **Based Upon**, yang
+   dua putaran sebelumnya tidak pernah kusentuh — Position XZ: Bake Into Pose **ON** + Based
+   Upon **Center of Mass** (`keepOriginalPositionXZ = false`); Rotation: Bake **ON**;
+   Position Y: Bake **OFF** (pantulan vertikal harus hidup); `applyRootMotion` **OFF**.
+   Terukur: mendatar **X 0,054 · Z 0,051 m** selama 3,4 dtk Run (di tempat), pantulan
+   **0,060 m** (tidak rata), lompatan transisi Run→Idle **0,224 → 0,019 m** = sama dengan
+   frame biasa, jadi nol sentakan.
+2. **Kamera**: bukan "lebih cepat" tapi **berhenti total**. Di bawah `_stillSpeed` 0,25 u/dtk
+   kamera BEKU; pengecualian `_freezeWithin` 3 unit supaya Blink/teleport tetap disusul.
+   Terukur luncur balik **49 px → 2 px**, rig tetap mengikuti normal saat lari.
+
+## Arsip: putaran pertama "rollback" (didiagnosis KAMERA saja — belum cukup)
 
 Detail: **AI-HANDOFF.md §40**. Tiga pengukuran memulangkan tersangka animasi: offset avatar
 tetap `(0,−1,0)`, panggul tidak menumpuk selama 4 detik Run (root motion memang sudah

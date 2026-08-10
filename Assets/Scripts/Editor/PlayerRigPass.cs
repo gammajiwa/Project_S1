@@ -235,8 +235,8 @@ namespace Proto.EditorTools
             {
                 var clips = imp.clipAnimations;
                 bool needClip = clips.Length == 0 || clips[0].name != clipName ||
-                                !clips[0].loopTime || clips[0].lockRootPositionXZ ||
-                                !clips[0].lockRootHeightY || !clips[0].lockRootRotation;
+                                !clips[0].loopTime || !clips[0].lockRootPositionXZ ||
+                                clips[0].keepOriginalPositionXZ || clips[0].lockRootHeightY;
 
                 if (needClip)
                 {
@@ -244,21 +244,30 @@ namespace Proto.EditorTools
                     clip.name = clipName;
                     clip.loopTime = true;
 
-                    // Ini yang membetulkan sentakan balik saat Run berganti ke Idle, dan
-                    // arahnya BERLAWANAN dengan tebakan pertama: "Bake Into Pose" berarti
-                    // gerakan itu DIPERTAHANKAN di dalam pose. Dipasang untuk XZ, badannya
-                    // justru merayap maju sepanjang klip lalu ditarik pulang oleh Idle.
+                    // RESEP LARI DI TEMPAT — dari pemilik project, sesudah dua tebakan keliru
+                    // di sesi ini. Yang menentukan bukan cuma "Bake Into Pose" melainkan
+                    // pasangannya, "Based Upon":
                     //
-                    // Yang benar untuk animasi di tempat:
-                    // - XZ TIDAK dipanggang → perpindahannya diekstrak jadi root motion, lalu
-                    //   dibuang karena applyRootMotion mati. Badan diam, kaki tetap melangkah.
-                    // - Y dan rotasi DIPANGGANG → tidak ada root motion vertikal maupun putar,
-                    //   jadi kaki tetap menapak dan model tidak berputar sendiri.
-                    clip.lockRootPositionXZ = false;
-                    clip.lockRootHeightY = true;
-                    clip.keepOriginalPositionY = true;
+                    // - Position XZ: Bake Into Pose ON + Based Upon **Center of Mass**. Pose
+                    //   diukur relatif terhadap titik berat, jadi perpindahan mendatarnya
+                    //   dibatalkan dan karakternya berlari di tempat. Percobaan pertama memakai
+                    //   Bake ON + Based Upon *Original* — itu tidak membatalkan apa pun, badannya
+                    //   tetap merayap. Percobaan kedua mematikan Bake sama sekali — sama saja.
+                    //   (keepOriginalPositionXZ = false ITULAH "Center of Mass".)
+                    //
+                    // - Rotation: Bake Into Pose ON, supaya klipnya tidak memutar arah karakter;
+                    //   yang menentukan hadap adalah PlayerAvatar, bukan animasinya.
+                    //
+                    // - Position Y: Bake Into Pose **OFF** untuk lari. Ini disengaja: pantulan
+                    //   vertikal itu yang membuat larinya hidup, dan membakukannya membuat
+                    //   larinya rata dan mati.
+                    clip.lockRootPositionXZ = true;
+                    clip.keepOriginalPositionXZ = false;
+
                     clip.lockRootRotation = true;
                     clip.keepOriginalOrientation = true;
+
+                    clip.lockRootHeightY = false;
 
                     imp.clipAnimations = new[] { clip };
                     dirty = true;
@@ -326,9 +335,11 @@ namespace Proto.EditorTools
             toRun.duration = 0.12f;
             toRun.AddCondition(AnimatorConditionMode.Greater, 0.9f, "Speed");
 
+            // 0,28, bukan 0,15: pose lari condong ke depan dan pose diam tegak — blend yang
+            // pendek membuat pergantiannya terbaca sebagai badan yang disentak balik.
             var toIdle = runState.AddTransition(idleState);
             toIdle.hasExitTime = false;
-            toIdle.duration = 0.15f;
+            toIdle.duration = 0.28f;
             toIdle.AddCondition(AnimatorConditionMode.Less, 0.6f, "Speed");
 
             return c;

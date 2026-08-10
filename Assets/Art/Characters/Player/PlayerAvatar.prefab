@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &360062158361006703
+--- !u!1 &278335577742042897
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,8 +8,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2114044341310238159}
-  - component: {fileID: 5633971499273103610}
+  - component: {fileID: 5952612955649690714}
+  - component: {fileID: 549238757403763760}
   m_Layer: 0
   m_Name: ClothCollider
   m_TagString: Untagged
@@ -17,123 +17,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2114044341310238159
+--- !u!4 &5952612955649690714
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 360062158361006703}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8275315302671194228}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &5633971499273103610
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 360062158361006703}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.0009705882
-  m_Height: 0.0032828418
-  m_Direction: 1
-  m_Center: {x: 1.7556563e-10, y: 0.0016414209, z: 5.705883e-10}
---- !u!1 &1020702338242584844
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4929883085133702544}
-  - component: {fileID: 429387113447061693}
-  m_Layer: 0
-  m_Name: ClothCollider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4929883085133702544
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1020702338242584844}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5349878363247812091}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &429387113447061693
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1020702338242584844}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.0012352909
-  m_Height: 0.003818187
-  m_Direction: 1
-  m_Center: {x: 4.3891408e-11, y: 0.0019090935, z: 2.304299e-10}
---- !u!1 &1688155091352046084
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3458562747199728812}
-  - component: {fileID: 8641132661681062604}
-  m_Layer: 0
-  m_Name: ClothCollider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3458562747199728812
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1688155091352046084}
+  m_GameObject: {fileID: 278335577742042897}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -142,13 +32,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4783778811937864430}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &8641132661681062604
+--- !u!136 &549238757403763760
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1688155091352046084}
+  m_GameObject: {fileID: 278335577742042897}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -165,7 +55,7 @@ CapsuleCollider:
   m_Height: 0.0015882357
   m_Direction: 1
   m_Center: {x: 0, y: 0.00079411786, z: 0}
---- !u!1 &2779430127095346171
+--- !u!1 &1513695523963418936
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -173,8 +63,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2564676591808052100}
-  - component: {fileID: 1188271345148569889}
+  - component: {fileID: 7003166894969046850}
+  - component: {fileID: 6714528549441963847}
   m_Layer: 0
   m_Name: ClothCollider
   m_TagString: Untagged
@@ -182,13 +72,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2564676591808052100
+--- !u!4 &7003166894969046850
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2779430127095346171}
+  m_GameObject: {fileID: 1513695523963418936}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -197,13 +87,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6209065777463851192}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &1188271345148569889
+--- !u!136 &6714528549441963847
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2779430127095346171}
+  m_GameObject: {fileID: 1513695523963418936}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -220,7 +110,7 @@ CapsuleCollider:
   m_Height: 0.0032970046
   m_Direction: 1
   m_Center: {x: -8.1199103e-10, y: 0.0016485023, z: -0.0000000014923078}
---- !u!1 &2983414137293873519
+--- !u!1 &2277861374123712447
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -228,8 +118,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7980589156962653268}
-  - component: {fileID: 3988766571965477197}
+  - component: {fileID: 5719176594191692124}
+  - component: {fileID: 7158285564077439737}
   m_Layer: 0
   m_Name: ClothCollider
   m_TagString: Untagged
@@ -237,123 +127,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7980589156962653268
+--- !u!4 &5719176594191692124
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2983414137293873519}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3560581232255506552}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &3988766571965477197
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2983414137293873519}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.00079411775
-  m_Height: 0.0015882355
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.00079411775, z: 0}
---- !u!1 &4513601552452111942
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5126753156120550757}
-  - component: {fileID: 1398761287152428207}
-  m_Layer: 0
-  m_Name: ClothCollider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5126753156120550757
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4513601552452111942}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4354025188074743300}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &1398761287152428207
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4513601552452111942}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.00079411763
-  m_Height: 0.003906343
-  m_Direction: 1
-  m_Center: {x: 2.4140273e-10, y: 0.0019531716, z: 2.4140273e-10}
---- !u!1 &4552403962702760306
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3659237050686836204}
-  - component: {fileID: 2287829585752730480}
-  m_Layer: 0
-  m_Name: ClothCollider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &3659237050686836204
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4552403962702760306}
+  m_GameObject: {fileID: 2277861374123712447}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -362,13 +142,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7681086170159315709}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &2287829585752730480
+--- !u!136 &7158285564077439737
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4552403962702760306}
+  m_GameObject: {fileID: 2277861374123712447}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -385,7 +165,7 @@ CapsuleCollider:
   m_Height: 0.004588236
   m_Direction: 1
   m_Center: {x: 2.743213e-11, y: 0.0008275388, z: -1.0972852e-11}
---- !u!1 &5868074430681487447
+--- !u!1 &2278835137899262618
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -393,8 +173,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1753913470106420774}
-  - component: {fileID: 360814587499609635}
+  - component: {fileID: 7862651793168669878}
+  - component: {fileID: 5455004377963468634}
   m_Layer: 0
   m_Name: ClothCollider
   m_TagString: Untagged
@@ -402,68 +182,13 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1753913470106420774
+--- !u!4 &7862651793168669878
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5868074430681487447}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4399310551219648410}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &360814587499609635
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5868074430681487447}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.00079411763
-  m_Height: 0.003865174
-  m_Direction: 1
-  m_Center: {x: -1.5361992e-10, y: 0.001932587, z: 2.4140273e-10}
---- !u!1 &6582506663675500828
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8785603021798326248}
-  - component: {fileID: 7401883420604890611}
-  m_Layer: 0
-  m_Name: ClothCollider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8785603021798326248
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6582506663675500828}
+  m_GameObject: {fileID: 2278835137899262618}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -472,13 +197,13 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6533641299279559346}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &7401883420604890611
+--- !u!136 &5455004377963468634
 CapsuleCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6582506663675500828}
+  m_GameObject: {fileID: 2278835137899262618}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -495,6 +220,281 @@ CapsuleCollider:
   m_Height: 0.00381778
   m_Direction: 1
   m_Center: {x: 1.0972852e-10, y: 0.00190889, z: 2.4140273e-10}
+--- !u!1 &2932508817102838384
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5645608847638227953}
+  - component: {fileID: 7685022537640343161}
+  m_Layer: 0
+  m_Name: ClothCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5645608847638227953
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2932508817102838384}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8275315302671194228}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &7685022537640343161
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2932508817102838384}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.0009705882
+  m_Height: 0.0032828418
+  m_Direction: 1
+  m_Center: {x: 1.7556563e-10, y: 0.0016414209, z: 5.705883e-10}
+--- !u!1 &4560292301232385296
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6567429991602445889}
+  - component: {fileID: 7837891633584105292}
+  m_Layer: 0
+  m_Name: ClothCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6567429991602445889
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4560292301232385296}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4354025188074743300}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &7837891633584105292
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4560292301232385296}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.00079411763
+  m_Height: 0.003906343
+  m_Direction: 1
+  m_Center: {x: 2.4140273e-10, y: 0.0019531716, z: 2.4140273e-10}
+--- !u!1 &7595456432441105757
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6708347897442352314}
+  - component: {fileID: 8850697701570704856}
+  m_Layer: 0
+  m_Name: ClothCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6708347897442352314
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7595456432441105757}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3560581232255506552}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &8850697701570704856
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7595456432441105757}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.00079411775
+  m_Height: 0.0015882355
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.00079411775, z: 0}
+--- !u!1 &7679826319305947597
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8017050054508719472}
+  - component: {fileID: 3355479038646384934}
+  m_Layer: 0
+  m_Name: ClothCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8017050054508719472
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7679826319305947597}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4399310551219648410}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &3355479038646384934
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7679826319305947597}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.00079411763
+  m_Height: 0.003865174
+  m_Direction: 1
+  m_Center: {x: -1.5361992e-10, y: 0.001932587, z: 2.4140273e-10}
+--- !u!1 &8622542816459899630
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 640592779976609212}
+  - component: {fileID: 8417826787422419867}
+  m_Layer: 0
+  m_Name: ClothCollider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &640592779976609212
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8622542816459899630}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5349878363247812091}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!136 &8417826787422419867
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8622542816459899630}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.0012352909
+  m_Height: 0.003818187
+  m_Direction: 1
+  m_Center: {x: 4.3891408e-11, y: 0.0019090935, z: 2.304299e-10}
 --- !u!1001 &4346863733778591467
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -560,45 +560,45 @@ PrefabInstance:
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 7421652549704848473, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 8785603021798326248}
+      addedObject: {fileID: 7862651793168669878}
     - targetCorrespondingSourceObject: {fileID: 8533687493227819792, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4929883085133702544}
+      addedObject: {fileID: 640592779976609212}
     - targetCorrespondingSourceObject: {fileID: 6254262545144894486, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3659237050686836204}
+      addedObject: {fileID: 5719176594191692124}
     - targetCorrespondingSourceObject: {fileID: -3565449141923039585, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2114044341310238159}
+      addedObject: {fileID: 5645608847638227953}
     - targetCorrespondingSourceObject: {fileID: -9124763254483740303, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 1753913470106420774}
+      addedObject: {fileID: 8017050054508719472}
     - targetCorrespondingSourceObject: {fileID: -130519783111257083, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3458562747199728812}
+      addedObject: {fileID: 5952612955649690714}
     - targetCorrespondingSourceObject: {fileID: 7671919230343894611, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2564676591808052100}
+      addedObject: {fileID: 7003166894969046850}
     - targetCorrespondingSourceObject: {fileID: -9205441896935405329, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 5126753156120550757}
+      addedObject: {fileID: 6567429991602445889}
     - targetCorrespondingSourceObject: {fileID: -8270139104983402861, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7980589156962653268}
+      addedObject: {fileID: 6708347897442352314}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
       addedObject: {fileID: 103729466266217883}
     - targetCorrespondingSourceObject: {fileID: -5021055994346705173, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 2387081111570507325}
+      addedObject: {fileID: 4234788547260933565}
   m_SourcePrefab: {fileID: 100100000, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
 --- !u!1 &433059851673321472 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -5021055994346705173, guid: 276610712a9b0e447825ee85d26f9b39, type: 3}
   m_PrefabInstance: {fileID: 4346863733778591467}
   m_PrefabAsset: {fileID: 0}
---- !u!183 &2387081111570507325
+--- !u!183 &4234788547260933565
 Cloth:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -803,15 +803,15 @@ Cloth:
   - maxDistance: 0.0001202877
     collisionSphereDistance: 0.0002
   m_CapsuleColliders:
-  - {fileID: 5633971499273103610}
-  - {fileID: 360814587499609635}
-  - {fileID: 8641132661681062604}
-  - {fileID: 1188271345148569889}
-  - {fileID: 1398761287152428207}
-  - {fileID: 3988766571965477197}
-  - {fileID: 2287829585752730480}
-  - {fileID: 7401883420604890611}
-  - {fileID: 429387113447061693}
+  - {fileID: 7685022537640343161}
+  - {fileID: 3355479038646384934}
+  - {fileID: 549238757403763760}
+  - {fileID: 6714528549441963847}
+  - {fileID: 7837891633584105292}
+  - {fileID: 8850697701570704856}
+  - {fileID: 7158285564077439737}
+  - {fileID: 5455004377963468634}
+  - {fileID: 8417826787422419867}
   m_SphereColliders: []
   m_SelfCollisionDistance: 0
   m_SelfCollisionStiffness: 0.2
