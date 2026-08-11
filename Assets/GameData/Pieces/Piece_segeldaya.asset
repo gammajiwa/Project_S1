@@ -16,7 +16,13 @@ MonoBehaviour:
   DisplayName: Power Sigil
   Stars: 2
   Layer: 1
-  Shape: 6
+  Shape: 21
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.95, g: 0.72, b: 0.45, a: 1}
   Icon: {fileID: 21300000, guid: de1ab33947d6459418d9c6279122bf43, type: 3}
   Kind: 7
@@ -33,6 +39,8 @@ MonoBehaviour:
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
+  CastVfx: {fileID: 0}
+  CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
@@ -42,9 +50,16 @@ MonoBehaviour:
   StatusDuration: 0
   AppliedPoints: 1
   LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
   GrantOnKill: {fileID: 11400000, guid: ff7f45445f9ca9048acbfad36d2de2de, type: 2}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0

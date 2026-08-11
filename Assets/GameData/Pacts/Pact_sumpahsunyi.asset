@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d4bf580b2c587a44a9709e31cc2a857, type: 3}
+  m_Name: Pact_sumpahsunyi
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.WorldModifierDefinition
+  Id: sumpahsunyi
+  DisplayName: SUMPAH SUNYI
+  Color: {r: 0.55, g: 0.6, b: 0.75, a: 1}
+  Icon: {fileID: 21300000, guid: 8a51757c69dc0ae4c8be59bc4b975eba, type: 3}
+  BoonText: Semua skill 45% lebih murah
+  BaneText: "Mana maksimum \u221240"
+  Boon:
+  - Type: 6
+    Value: 0.45
+  Bane:
+  - Type: 4
+    Value: -40
+  EnemyHpMul: 1
+  EnemySpeedMul: 1
+  EnemyDamageMul: 1
+  EnemyCountMul: 1
+  ManaRegenMul: 1
+  HpRegenMul: 1
+  ManaPerKill: 0
+  HpPerKill: 0
+  EchoChance: 0
+  ReviveAt: 0
+  Blurb: '"Wadah yang kecil boleh diisi sesering apa pun."'

@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_riftchain
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: riftchain
-  DisplayName: Rift Chain
+  DisplayName: Segel Rantai Retak
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 20
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.66, g: 0.42, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 1ba92f92cdd36c243a9f8b3f42eb80ec, type: 3}
-  Kind: 2
+  Kind: 7
   Element: 3
-  BaseDamage: 15
-  BaseCooldown: 2
-  Radius: 8
-  Range: 8
-  Hits: 3
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
+  Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 2
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 5853845220389838230, guid: 294fb8246b048a74087b1a7fc865e1e2, type: 3}
+  CastVfx: {fileID: 8954297305342358738, guid: 6882255f9a51f82418bdc53a96f9d4c9, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: b70a8e805fc46194686e600a8788b8b8, type: 2}
-  StatusDuration: 4
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 1
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,11 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 20
+    Value: 1
+  - Type: 10
+    Value: 0.15
   Stat: 0
   StatValue: 0
-  Blurb: Tears from enemy to enemy. Applies BLEED.
+  Blurb: Satu cabang lagi, dan lompatan pertamanya menjangkau lebih jauh.

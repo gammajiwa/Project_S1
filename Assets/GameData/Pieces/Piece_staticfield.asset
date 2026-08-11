@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_staticfield
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: staticfield
-  DisplayName: Static Field
+  DisplayName: Segel Percikan
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 0
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.92, g: 0.86, b: 0.3, a: 1}
   Icon: {fileID: 21300000, guid: 75fdc7c8d75b44549b7b822e081d48e3, type: 3}
-  Kind: 1
+  Kind: 7
   Element: 2
-  BaseDamage: 8
-  BaseCooldown: 2.4
-  Radius: 4.2
-  Range: 4.2
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 2
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 2506793482598195781, guid: f1b0c0ef44a59c14ab38366153a9e4c2, type: 3}
+  CastVfx: {fileID: 2124106241870120053, guid: 5c5556f0681e4ba46b431bfbae4ad55f, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
-  StatusDuration: 4
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 2
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,10 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 19
+    Value: 1
   Stat: 0
   StatValue: 0
-  Blurb: Crackles around you. Heavy SHOCK, light damage.
+  Blurb: Setiap peluru memantul sekali lagi. Sinar memantul menggambar satu ruas
+    lebih panjang di layar.

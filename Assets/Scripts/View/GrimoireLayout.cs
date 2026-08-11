@@ -91,6 +91,18 @@ namespace Proto
         public const float StripDebuffY = -128f;
         public const float StripAilmentY = -160f;
 
+        /// <summary>
+        /// Kolom PAKTA di tepi kanan, dan sengaja jauh di bawah tepi atas.
+        ///
+        /// Percobaan pertama menyejajarkannya dengan strip buff (−96) dan hasilnya terlihat di
+        /// screenshot: bilah demo (pengubah waktu & cuaca) duduk di pojok kanan-atas sampai kira-
+        /// kira −175, dan dua ikon pakta teratas tertimbun di belakangnya. Pakta permanen yang
+        /// tidak terlihat sama saja dengan pakta yang tidak pernah diambil.
+        ///
+        /// Boleh ditimpa lewat kotak PactArea di StatusStripRig.
+        /// </summary>
+        public const float StripPactY = -210f;
+
         public const int SpellPanelW = 380;
         public const int CooldownDiameter = 26;
 

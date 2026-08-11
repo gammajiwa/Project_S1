@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_cinderpatch
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: cinderpatch
-  DisplayName: Cinder Patch
+  DisplayName: Segel Bara
   Stars: 1
   Layer: 1
-  Shape: 1
+  Shape: 0
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.95, g: 0.4, b: 0.14, a: 1}
   Icon: {fileID: 21300000, guid: 515c9dd7bad65764bb7e78353df9138b, type: 3}
-  Kind: 6
+  Kind: 7
   Element: 0
-  BaseDamage: 4
-  BaseCooldown: 4.5
-  Radius: 2.8
-  Range: 9
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 4
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 2426369331579621310, guid: 759d73abda0610443b8e714603b744b9, type: 3}
+  CastVfx: {fileID: 5550354478699541542, guid: 755067fe43a52b54e8b71e13b89fe0ae, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
-  StatusDuration: 4
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 2
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,12 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 16
+    Value: 1
+  - Type: 13
+    Value: 0.15
   Stat: 0
   StatValue: 0
-  Blurb: Leaves smouldering ground. Cheap, constant BURN.
+  Blurb: "Tiap tempelan ailment membawa satu poin lagi \u2014 pemicu jadi lebih cepat
+    penuh."

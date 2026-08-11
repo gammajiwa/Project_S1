@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c66511a0717400843b6a697620abd880, type: 3}
   m_Name: FxLibrary
   m_EditorClassIdentifier: Assembly-CSharp::Proto.FxLibrary
+  ShowBodiesWithVfx: 0
   ProjectileCore: {fileID: 8337951073425081804, guid: 28c66f7206d795044aab761e592fa3f8, type: 3}
   ImpactFlash: {fileID: 8352306785325713038, guid: c490b264db32be04cb9036953120ba2a, type: 3}
   Descent: {fileID: 276218176471764350, guid: f55e7d33f69c8904283259c9a7cb60ed, type: 3}
@@ -20,5 +21,11 @@ MonoBehaviour:
   Orb: {fileID: 66285306689195257, guid: bea5a475db8848549aa7be1093cec1f6, type: 3}
   Boulder: {fileID: 2236224243608252336, guid: 2889197ee2b0804458825bd1ca3ac7e2, type: 3}
   Twister: {fileID: 3089452501924885178, guid: 24239a3f64c1e6e4fa80e06a777ee740, type: 3}
+  Blade: {fileID: 1873967998459645571, guid: 4f657e32989e1b5468e63cdeb08bb761, type: 3}
+  Boomerang: {fileID: 6905618414888413091, guid: 44081dda6d82cf64db07d5626512c012, type: 3}
+  TurretBody: {fileID: 939839045308171838, guid: 6aabacade88c7ec408172c3f07dcd91a, type: 3}
+  ShockRing: {fileID: 221525474843981018, guid: 1ca7d15ecc6b0724ca47d28f32c2c329, type: 3}
+  Missile: {fileID: 38476749818957574, guid: b16d79c28c87a77428b0db86fffb4648, type: 3}
+  OrbitRing: {fileID: 7956926707023818141, guid: ecbd8a950c548084aba0c5fa45c65119, type: 3}
   DropPickup: {fileID: 5736557849178189813, guid: 70985fb11ef9c6343aa2e03115cc157f, type: 3}
   IslandGuardian: {fileID: 5981903714696319958, guid: bd59a31342129a24086ef52b9550ae78, type: 3}

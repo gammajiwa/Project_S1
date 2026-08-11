@@ -18,7 +18,16 @@ MonoBehaviour:
   MinSegments: 3
   Spacing: 0.6
   HeadScale: 1.15
-  TailScale: 0.45
+  TailScale: 0.72
+  HeadMesh: {fileID: 7641001853791997134, guid: ac7e180a27c0a7f4bb0e90d60e081e91, type: 3}
+  BodyMesh: {fileID: -1489127082316723425, guid: af5b432be16ff624b94fae1c3a1e748b, type: 3}
+  TailMesh: {fileID: 1258264036989032260, guid: 91c8e0b18f08fa14b9eec276e84aee29, type: 3}
+  BoneSkin: {fileID: 2800000, guid: b14585ee99704de4f9e2a53fb833a35c, type: 3}
+  HeadMeshScale: 12.605702
+  BodyMeshScale: 16.80672
+  HeadMeshRotation: {x: 0, y: 180, z: 90}
+  BodyMeshRotation: {x: 0, y: 0, z: 90}
+  TailMeshRotation: {x: 0, y: 0, z: 90}
   HpMultiplier: 5
   OrbitRadius: 3
   Speed: 6.5

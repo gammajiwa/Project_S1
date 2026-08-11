@@ -217,6 +217,15 @@ namespace Proto
         Image _eventBBg;
         Text _eventALabel;
         Text _eventBLabel;
+        Image _eventCBg;
+        Text _eventCLabel;
+
+        /// <summary>
+        /// Dua pakta yang sedang ditawarkan. Diundi SEKALI saat pemain mendarat di pulaunya,
+        /// bukan tiap frame gambar: undian per frame berarti kartunya berganti-ganti di depan mata
+        /// pemain yang sedang membacanya, dan yang akhirnya diklik bukan yang dibaca.
+        /// </summary>
+        readonly WorldModifierDefinition[] _pactOffer = new WorldModifierDefinition[2];
 
         Image[] _evoLines;
         List<EvoPreview> _previews = new List<EvoPreview>();
@@ -301,12 +310,23 @@ namespace Proto
         StatusStrip _debuffStrip;
         StatusStrip _ailmentStrip;
 
+        /// <summary>Kolom tegak di tepi kanan: pakta run ini. Terpisah dari tiga strip di kiri.</summary>
+        StatusStrip _pactStrip;
+
+        /// <summary>
+        /// Versi pakta yang terakhir digambar. Strip pakta hanya berubah beberapa kali per RUN,
+        /// jadi menyusunnya ulang tiap frame — bersama string tooltip-nya, yang dirakit dari
+        /// beberapa potongan teks — adalah kerja sampah untuk jawaban yang sama persis.
+        /// </summary>
+        int _pactVersionDrawn = -1;
+
         // Pojok kiri-atas tiap strip, dihitung SEKALI saat dibangun. Kotak penempatnya tidak
         // bergerak saat main, jadi menanyakan sudut dunianya tiap frame cuma menambah kerja untuk
         // jawaban yang sama.
         Vector2 _buffOrigin;
         Vector2 _debuffOrigin;
         Vector2 _ailmentOrigin;
+        Vector2 _pactOrigin;
 
         Text _hudText;
         Image _hpBg;
@@ -1453,6 +1473,11 @@ namespace Proto
 
             _ailmentStrip = new StatusStrip(_canvas.transform, _font, 8, StripIcon,
                 new Color(0.85f, 0.88f, 0.95f));
+
+            // Kapasitas 12: katalognya 22, tapi node kejadian datang beberapa kali per act dan
+            // pakta tidak pernah bisa diambil dua kali. Dua belas adalah run yang sangat panjang.
+            _pactStrip = new StatusStrip(_canvas.transform, _font, 12, StripIcon,
+                new Color(1f, 0.82f, 0.4f), vertical: true);
         }
 
         /// <summary>
@@ -1472,6 +1497,12 @@ namespace Proto
             _buffOrigin = new Vector2(Margin, StripBuffY);
             _debuffOrigin = new Vector2(Margin, StripDebuffY);
             _ailmentOrigin = new Vector2(Margin, StripAilmentY);
+
+            // Tepi KANAN, dan tegak. Tiga strip lain berbaris mendatar di kiri bawah bar mana;
+            // menaruh yang keempat di ujung barisan itu akan membuatnya terbaca sebagai jenis
+            // keempat dari hal yang sama. Pakta bukan hal yang sama — ia dipilih, bukan menimpa,
+            // dan tidak akan pernah hilang. Sisi layar yang berbeda mengatakan itu tanpa satu kata.
+            _pactOrigin = new Vector2(Screen.width - StripIcon - 18f, StripPactY);
 
             if (_theme == null || _theme.StatusStripsPrefab == null) return;
 
@@ -1496,6 +1527,7 @@ namespace Proto
             Vector2 origin;
             if (StatusStripRig.TryOrigin(rig.BuffArea, out origin)) _buffOrigin = origin;
             if (StatusStripRig.TryOrigin(rig.DebuffArea, out origin)) _debuffOrigin = origin;
+            if (StatusStripRig.TryOrigin(rig.PactArea, out origin)) _pactOrigin = origin;
 
             if (StatusStripRig.TryOrigin(rig.AilmentArea, out origin))
             {
@@ -1575,6 +1607,53 @@ namespace Proto
             }
 
             _ailmentStrip.Apply();
+
+            DrawPacts();
+        }
+
+        /// <summary>
+        /// Kolom pakta di tepi kanan. Digambar ulang HANYA saat daftarnya berubah.
+        ///
+        /// Tiga strip di kiri memang harus disusun tiap frame — angkanya hitung mundur. Pakta tidak
+        /// punya angka dan tidak punya batas waktu; isinya berubah beberapa kali sepanjang SATU RUN.
+        /// Merakit ulang string tooltip-nya enam puluh kali per detik untuk teks yang identik adalah
+        /// sampah yang lahir per frame, dan sampah kecil per frame persis bentuk yang menghasilkan
+        /// patah GC di wave yang ramai.
+        /// </summary>
+        void DrawPacts()
+        {
+            var pacts = Player.Pacts;
+
+            if (pacts == null)
+            {
+                if (_pactVersionDrawn == 0) return;
+                _pactVersionDrawn = 0;
+                _pactStrip.Hide();
+                return;
+            }
+
+            if (pacts.Version == _pactVersionDrawn) return;
+            _pactVersionDrawn = pacts.Version;
+
+            _pactStrip.Begin(_pactOrigin);
+
+            var taken = pacts.Taken;
+            for (int i = 0; i < taken.Count; i++)
+            {
+                var p = taken[i];
+                if (p == null) continue;
+
+                _sb.Length = 0;
+                _sb.Append(p.DisplayName).Append("   (PAKTA - permanen)\n");
+                if (!string.IsNullOrEmpty(p.BoonText)) _sb.Append("+ ").Append(p.BoonText).Append('\n');
+                if (!string.IsNullOrEmpty(p.BaneText)) _sb.Append("- ").Append(p.BaneText);
+
+                // Tanpa angka: pakta tidak menghitung mundur, dan kotak angka kosong di sebelah
+                // tiap ikon cuma melebarkan kolomnya ke dalam layar.
+                _pactStrip.Push(p.Icon, p.Color, "", _sb.ToString());
+            }
+
+            _pactStrip.Apply();
         }
 
         void PushSlots(StatusStrip strip, PlayerCaster.BuffSlot[] slots, Vector2 origin)
@@ -1649,7 +1728,8 @@ namespace Proto
 
         /// <summary>Description of whichever strip icon the cursor is over, or null.</summary>
         string StripTooltip(Vector2 mouse) =>
-            _buffStrip.TooltipAt(mouse) ?? _debuffStrip.TooltipAt(mouse) ?? _ailmentStrip.TooltipAt(mouse);
+            _buffStrip.TooltipAt(mouse) ?? _debuffStrip.TooltipAt(mouse) ??
+            _ailmentStrip.TooltipAt(mouse) ?? _pactStrip.TooltipAt(mouse);
 
         void BuildFloaters()
         {
@@ -2380,28 +2460,9 @@ namespace Proto
             {
                 // Modal sungguhan: kejadian menelan SEMUA klik. Pilihan yang bisa tertutup oleh
                 // klik nyasar bukan pilihan.
-                if (EventOptionRect(0).Contains(mouse))
-                {
-                    _gold += _balance.EventGoldGift;
-                    Announce("+" + _balance.EventGoldGift + " KOIN", new Color(1f, 0.84f, 0.32f));
-                    _eventDone = true;
-                    _eventOpen = false;
-                }
-                else if (EventOptionRect(1).Contains(mouse) && _gold >= _balance.EventTradeCost)
-                {
-                    _gold -= _balance.EventTradeCost;
-                    var prize = _db.RandomOfStar(3, 0.25f);
-
-                    if (prize != null)
-                    {
-                        AddLoose(prize, NearScatterPos(PanelRect().center, 2));
-                        Discover(prize);
-                        Announce(prize.DisplayName + "!", new Color(0.75f, 0.5f, 1f));
-                    }
-
-                    _eventDone = true;
-                    _eventOpen = false;
-                }
+                if (EventOptionRect(0).Contains(mouse)) TakePact(0);
+                else if (EventOptionRect(1).Contains(mouse)) TakePact(1);
+                else if (EventRefuseRect().Contains(mouse)) RefusePact();
 
                 return true;
             }
@@ -2911,6 +2972,11 @@ namespace Proto
             {
                 _eventOpen = true;
                 _eventDone = false;
+
+                // Diundi di sini, sekali. Yang sudah dipegang disaring di dalam RollPacts — tawaran
+                // yang berisi pakta yang sudah dimiliki adalah pilihan yang tidak melakukan apa-apa,
+                // dan pemain baru tahu setelah mengkliknya, lalu kehilangan seluruh kejadiannya.
+                _db.RollPacts(Player.Pacts, _pactOffer);
             }
 
             ShowRoomFor(kind);
@@ -3113,10 +3179,18 @@ namespace Proto
                 new Color(0.2f, 0.4f, 0.25f, 0.95f), Vector2.zero);
             _eventBBg = MakeImage("EventB", Vector2.zero, Vector2.zero,
                 new Color(0.4f, 0.24f, 0.45f, 0.95f), Vector2.zero);
-            _eventALabel = MakeText("EventALabel", Vector2.zero, new Vector2(260f, 60f), 16,
+            // Kartu pakta membawa tiga baris — nama, berkah, kutuk — jadi kotaknya lebih tinggi
+            // dan hurufnya lebih kecil dari label tombol biasa. Dua baris pertama boleh dibaca
+            // sekilas; baris kutuk justru yang harus dibaca pelan, dan itu tidak muat di 60 piksel.
+            _eventALabel = MakeText("EventALabel", Vector2.zero, new Vector2(276f, 126f), 13,
                 Color.white, Vector2.zero, TextAnchor.MiddleCenter);
-            _eventBLabel = MakeText("EventBLabel", Vector2.zero, new Vector2(260f, 60f), 16,
+            _eventBLabel = MakeText("EventBLabel", Vector2.zero, new Vector2(276f, 126f), 13,
                 Color.white, Vector2.zero, TextAnchor.MiddleCenter);
+
+            _eventCBg = MakeImage("EventC", Vector2.zero, Vector2.zero,
+                new Color(0.22f, 0.22f, 0.26f, 0.9f), Vector2.zero);
+            _eventCLabel = MakeText("EventCLabel", Vector2.zero, new Vector2(240f, 30f), 13,
+                new Color(0.78f, 0.78f, 0.82f), Vector2.zero, TextAnchor.MiddleCenter);
 
             Centre(_eventBg.rectTransform);
             Centre(_eventTitle.rectTransform);
@@ -3125,6 +3199,8 @@ namespace Proto
             Centre(_eventBBg.rectTransform);
             Centre(_eventALabel.rectTransform);
             Centre(_eventBLabel.rectTransform);
+            Centre(_eventCBg.rectTransform);
+            Centre(_eventCLabel.rectTransform);
 
             _eventBg.enabled = false;
             _eventTitle.enabled = false;
@@ -3133,6 +3209,8 @@ namespace Proto
             _eventBBg.enabled = false;
             _eventALabel.enabled = false;
             _eventBLabel.enabled = false;
+            _eventCBg.enabled = false;
+            _eventCLabel.enabled = false;
         }
 
         /// <summary>Widget yang diposisikan lewat titik TENGAHNYA — pivot bawaan MakeImage ada
@@ -3144,7 +3222,21 @@ namespace Proto
             var panel = PanelRect();
             float w = (panel.width - 48f) * 0.5f;
             float x = side == 0 ? panel.xMin + 16f : panel.xMax - 16f - w;
-            return new Rect(x, panel.yMin + 18f, w, 64f);
+            return new Rect(x, panel.yMin + 58f, w, 132f);
+        }
+
+        /// <summary>
+        /// Tombol MENOLAK, di bawah kedua kartu pakta.
+        ///
+        /// Ada supaya pakta tetap sebuah PILIHAN. Dua pakta tanpa jalan keluar bukan keputusan
+        /// melainkan pungutan: pemain yang kebetulan diundikan dua pakta yang keduanya mematahkan
+        /// build-nya tidak sedang memilih apa pun, ia cuma memilih cara run-nya berakhir.
+        /// Bayarannya kecil dengan sengaja — menolak harus terasa seperti melewatkan sesuatu.
+        /// </summary>
+        static Rect EventRefuseRect()
+        {
+            var panel = PanelRect();
+            return new Rect(panel.center.x - 118f, panel.yMin + 16f, 236f, 32f);
         }
 
         void DrawRunPanels(float dt)
@@ -4039,6 +4131,44 @@ namespace Proto
                 win ? new Color(1f, 0.84f, 0.32f) : new Color(0.7f, 0.7f, 0.75f));
         }
 
+        /// <summary>
+        /// Mengambil pakta yang ditawarkan. Berkah dan kutuknya masuk BERSAMAAN — tidak ada jalan
+        /// mengambil separuhnya, dan itu seluruh isi mekanik ini.
+        /// </summary>
+        void TakePact(int slot)
+        {
+            var pact = slot >= 0 && slot < _pactOffer.Length ? _pactOffer[slot] : null;
+
+            // Katalog habis (semua sudah dipegang) — kartunya menampilkan tawaran koin, jadi
+            // kliknya harus membayar koin itu, bukan diam saja.
+            if (pact == null)
+            {
+                RefusePact();
+                return;
+            }
+
+            if (Player.Pacts == null || !Player.Pacts.Take(pact)) return;
+
+            Announce(pact.DisplayName, pact.Color);
+
+            _pactOffer[0] = null;
+            _pactOffer[1] = null;
+            _eventDone = true;
+            _eventOpen = false;
+        }
+
+        /// <summary>Menolak keduanya. Bayarannya koin — kecil, karena melewatkan harus terasa.</summary>
+        void RefusePact()
+        {
+            _gold += _balance.EventGoldGift;
+            Announce("+" + _balance.EventGoldGift + " KOIN", new Color(1f, 0.84f, 0.32f));
+
+            _pactOffer[0] = null;
+            _pactOffer[1] = null;
+            _eventDone = true;
+            _eventOpen = false;
+        }
+
         void DrawEvent()
         {
             bool open = _eventOpen && _run != null;
@@ -4051,33 +4181,66 @@ namespace Proto
             _eventBBg.enabled = open;
             _eventALabel.enabled = open;
             _eventBLabel.enabled = open;
+            _eventCBg.enabled = open;
+            _eventCLabel.enabled = open;
 
             if (!open) return;
 
             var panel = PanelRect();
             _eventBg.rectTransform.anchoredPosition = panel.center;
+
             _eventTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
             _eventTitle.text = "PERTAPA HUTAN";
-            _eventBody.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.center.y + 30f);
-            _eventBody.text = "Sesosok pertapa duduk menghadap api unggun.\n\n" +
-                              "\"Jalan di depanmu tidak gratis, penyihir.\nPilih bekalmu.\"";
 
-            var a = EventOptionRect(0);
-            var b = EventOptionRect(1);
+            _eventBody.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 92f);
+            _eventBody.text = "\"Aku tidak menjual berkah, penyihir.\n" +
+                              "Aku menukarnya. Satu untuk satu, dan keduanya seumur hidupmu.\"";
 
-            _eventABg.rectTransform.anchoredPosition = a.center;
-            _eventABg.rectTransform.sizeDelta = a.size;
-            _eventALabel.rectTransform.anchoredPosition = a.center;
-            _eventALabel.text = "AMBIL BERKAH\n+" + _balance.EventGoldGift + " koin";
+            PaintPactCard(0, EventOptionRect(0), _eventABg, _eventALabel);
+            PaintPactCard(1, EventOptionRect(1), _eventBBg, _eventBLabel);
 
-            bool affordable = _gold >= _balance.EventTradeCost;
-            _eventBBg.rectTransform.anchoredPosition = b.center;
-            _eventBBg.rectTransform.sizeDelta = b.size;
-            _eventBBg.color = affordable
-                ? new Color(0.4f, 0.24f, 0.45f, 0.95f)
-                : new Color(0.25f, 0.22f, 0.27f, 0.8f);
-            _eventBLabel.rectTransform.anchoredPosition = b.center;
-            _eventBLabel.text = "TUKAR NASIB\n-" + _balance.EventTradeCost + " koin  >  piece *3";
+            var c = EventRefuseRect();
+            _eventCBg.rectTransform.anchoredPosition = c.center;
+            _eventCBg.rectTransform.sizeDelta = c.size;
+            _eventCLabel.rectTransform.anchoredPosition = c.center;
+            _eventCLabel.text = "PERGI SAJA   (+" + _balance.EventGoldGift + " koin)";
+        }
+
+        /// <summary>
+        /// Satu kartu pakta: nama, sisi untung, sisi rugi.
+        ///
+        /// Warnanya diambil dari paktanya sendiri dan DIGELAPKAN, bukan dipakai apa adanya — warna
+        /// pakta dipilih supaya terbaca sebagai ikon 26 piksel di atas latar gelap, dan bidang
+        /// seluas 292x132 dengan warna yang sama menelan tulisan putih di atasnya.
+        /// </summary>
+        void PaintPactCard(int slot, Rect area, Image bg, Text label)
+        {
+            bg.rectTransform.anchoredPosition = area.center;
+            bg.rectTransform.sizeDelta = area.size;
+            label.rectTransform.anchoredPosition = area.center;
+
+            var pact = slot < _pactOffer.Length ? _pactOffer[slot] : null;
+
+            // Katalog kehabisan pakta yang belum dipegang. Kartunya tidak dikosongkan — kartu kosong
+            // terbaca sebagai panel yang rusak. Ia jatuh kembali ke tawaran koin lama, dan kliknya
+            // memang membayar koin itu.
+            if (pact == null)
+            {
+                bg.color = new Color(0.25f, 0.22f, 0.27f, 0.9f);
+                label.text = "TIDAK ADA LAGI YANG\nBISA DITAWARKAN\n\n+" +
+                             _balance.EventGoldGift + " koin";
+                return;
+            }
+
+            var tone = pact.Color;
+            bg.color = new Color(tone.r * 0.32f, tone.g * 0.32f, tone.b * 0.32f, 0.96f);
+
+            _sb.Length = 0;
+            _sb.Append(pact.DisplayName).Append("\n\n");
+            _sb.Append("+  ").Append(pact.BoonText).Append("\n\n");
+            _sb.Append("-  ").Append(pact.BaneText);
+
+            label.text = _sb.ToString();
         }
 
         void Redraw()

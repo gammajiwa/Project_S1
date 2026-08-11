@@ -27,12 +27,12 @@ namespace Proto.EditorTools
     public static class VfxPass
     {
         const string PieceFolder = "Assets/GameData/Pieces";
-        const string SkillRoot = "Assets/Art/VFX/Skills";
+        const string SkillRoot = "Assets/Prefabs/Skills";
 
         const string Ga = "Assets/Art/VFX/Packs/GabrielAguiarProductions/UniqueMagicAbilitiesVol_2/Prefabs/";
         const string Cfxr = "Assets/Art/VFX/Packs/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/";
         const string Vf = "Assets/Art/VFX/Packs/Vefects/Trails VFX URP/VFX/Particles/";
-        const string Lana = "Assets/Art/VFX/Prefabs/Skill/";
+        const string Lana = "Assets/Prefabs/Effects/";
 
         /// <summary>
         /// (nama file piece, prefab paket default, CastVfxScale, skala anak di dalam wrapper).
@@ -155,7 +155,162 @@ namespace Proto.EditorTools
 
             // ---------- FORCE PUSH ----------
             ("shove", Cfxr + "Explosions/CFXR4 Wave Explosion Purple.prefab", 1f, 1f),
+
+            // =========================================================================
+            //  DELAPAN PERILAKU BARU
+            //
+            //  Semuanya diambil dari SATU paket — GabrielAguiar — dan itu keputusan, bukan
+            //  kemalasan. Audit menyebut tiga sebab efek lama terbaca jelek, dan yang pertama
+            //  adalah gaya paket yang campur aduk: CFXR itu kartun terang ala mobile, GA itu
+            //  stylized RPG, dan keduanya di satu layar membuat keduanya terlihat salah.
+            //  GA punya bentuk yang sama untuk DELAPAN elemen, jadi satu keluarga skill bisa
+            //  konsisten elemennya tanpa pernah keluar dari satu bahasa visual.
+            // =========================================================================
+
+            // ---------- ORBITAL: aura melingkar di kaki, dilebarkan ke radius cincinnya ----------
+            ("bladedance",  Ga + "vfx_BuffAoE07_Arcane.prefab",      0.9f, 1f),
+            ("stormcircle", Ga + "vfx_BuffAoE05_Electricity.prefab", 1f,   1f),
+            ("ringofruin",  Ga + "vfx_BuffAoE01_Fire.prefab",        1.1f, 1f),
+
+            // ---------- BOOMERANG: badan yang terbang, jadi komet ----------
+            ("chakram",    Ga + "vfx_SingleComet07_Arcane.prefab", 0.6f, 1f),
+            ("moonglaive", Ga + "vfx_SingleComet02_Ice.prefab",    0.75f, 1f),
+
+            // ---------- RICOCHET: disembur di titik pantul, bukan di sepanjang garis ----------
+            ("prismray",    Ga + "vfx_ImpactAoE02_Ice.prefab",         0.45f, 1f),
+            ("mirrorlance", Ga + "vfx_ImpactAoE05_Electricity.prefab", 0.5f,  1f),
+            ("runescrawl",  Ga + "vfx_ImpactAoE07_Arcane.prefab",      0.55f, 1f),
+
+            // ---------- TURRET: berdiri di tanah selama beberapa detik, jadi harus LOOP ----------
+            ("sentryeye", Ga + "vfx_DebuffVertical07_Arcane.prefab", 0.8f, 1f),
+            ("obelisk",   Ga + "vfx_DebuffVertical01_Fire.prefab",   0.9f, 1f),
+
+            // ---------- SHOCKWAVE: cincin yang melebar ----------
+            ("ripple", Ga + "vfx_ImpactAoE08_Speed.prefab", 0.8f, 1f),
+            ("quake",  Ga + "vfx_ImpactAoE01_Fire.prefab",  0.9f, 1f),
+
+            // ---------- SEEKER: satu efek per rudal, jadi harus KECIL ----------
+            ("hexbolts", Ga + "vfx_SingleComet06_Void.prefab",        0.45f, 1f),
+            ("hexstorm", Ga + "vfx_SingleComet05_Electricity.prefab", 0.5f,  1f),
+
+            // ---------- TETHER: disembur di ujung sinar tiap denyut, jadi harus kecil & cepat ----------
+            ("siphonbeam", Ga + "vfx_ImpactAoE09_Heal.prefab",  0.4f, 1f),
+            ("soulchain",  Ga + "vfx_ImpactAoE04_Poison.prefab", 0.5f, 1f),
+
+            // ---------- BARRAGE: hujan berurutan, satu semburan per hantaman ----------
+            ("starfall",  Ga + "vfx_MeteorRain02_Ice.prefab",  0.5f, 1f),
+            ("judgement", Ga + "vfx_ArrowRain01_Fire.prefab",  0.6f, 1f),
         };
+
+        /// <summary>
+        /// Sumber yang DIGANTI karena tidak nyambung dengan skillnya, bukan karena jelek.
+        ///
+        /// Audit 2026-08-11 menamai satu per satu, dan semuanya jenis kesalahan yang sama: prefab
+        /// dipilih karena kebetulan ada, bukan karena menggambarkan skillnya. Guruh yang keluar
+        /// sebagai percikan generik dan peledak darah yang menyemburkan cipratan darah beneran
+        /// membuat pemain membaca kejadian yang salah, dan itu lebih mahal daripada sekadar jelek.
+        ///
+        /// Dipisah dari <see cref="Map"/> supaya bisa dijalankan SENDIRI: wrapper-nya sudah
+        /// terlanjur ada, dan kontrak pass utama adalah tidak pernah menimpanya. Yang di sini
+        /// memang harus menimpa — itu seluruh gunanya.
+        /// </summary>
+        static readonly (string piece, string path, float scale)[] Corrections =
+        {
+            // Percikan generik -> sambaran petir sungguhan.
+            ("thunderclap", Cfxr + "Electric/CFXR Lightning Strike + Impact.prefab", 1f),
+
+            // Cipratan DARAH untuk peledak BLEED terdengar masuk akal sampai dilihat: yang
+            // tergambar organ, bukan ledakan. Peledak harus terbaca sebagai LEDAKAN.
+            ("rupture", Cfxr + "Explosions/CFXR4 Explosion Quick.prefab", 1f),
+
+            // Gelembung ramuan -> kubangan racun sungguhan yang betah di tanah.
+            ("kubanganracun", Ga + "vfx_DebuffAoE04_Poison.prefab", 0.9f),
+
+            // Awan lalat -> mekar wabah. Lalatnya lucu, dan skill ini bukan lelucon.
+            ("plaguebloom", Ga + "vfx_DebuffAoE04_Poison.prefab", 1f),
+
+            // Tornado PASIR untuk skill yang bukan pasir, dan tornado SALJU untuk yang bukan salju.
+            // Keduanya petir/angin — dijadikan satu keluarga angin yang konsisten.
+            ("tornado",   Ga + "vfx_DebuffAoE08_Speed.prefab", 1.1f),
+            ("maelstrom", Ga + "vfx_DebuffAoE05_Electricity.prefab", 1.2f),
+
+            // Asap poof untuk ledakan uap: uapnya benar, ledakannya hilang.
+            ("steamburst", Ga + "vfx_ImpactAoE03_Water.prefab", 0.8f),
+
+            // Ledakan monster ungu -> tusukan void. Skillnya TOMBAK, bukan monster meledak.
+            ("voidlance", Ga + "vfx_DebuffVertical06_Void.prefab", 0.8f),
+        };
+
+        /// <summary>
+        /// Menimpa isi wrapper untuk piece yang sumbernya salah pilih. Terpisah dari
+        /// <see cref="Run"/> karena ini SATU-SATUNYA jalur di pass ini yang membuang art yang
+        /// sudah ada — dan itu harus jadi keputusan sadar, bukan efek samping menjalankan menu
+        /// yang lain.
+        /// </summary>
+        [MenuItem("Tools/Grimoire/Fix Mismatched Skill VFX (TIMPA wrapper)")]
+        public static void FixMismatched()
+        {
+            bool ok = EditorUtility.DisplayDialog(
+                "Timpa wrapper yang sumbernya meleset?",
+                Corrections.Length + " wrapper VFX akan diisi ulang dengan prefab yang cocok " +
+                "dengan skillnya.\n\nKalau kamu sudah mengganti salah satunya sendiri, " +
+                "gantinya akan HILANG.",
+                "Timpa", "Batal");
+
+            if (!ok) return;
+
+            ApplyCorrections();
+        }
+
+        /// <summary>
+        /// Badan <see cref="FixMismatched"/> tanpa dialognya. Terpisah supaya bisa dijalankan dari
+        /// skrip — dialog modal membekukan editor sampai ada yang mengklik, dan itu berarti
+        /// jalur ini tidak akan pernah bisa diuji otomatis.
+        /// </summary>
+        public static void ApplyCorrections()
+        {
+            int fixedCount = 0;
+            var problems = new List<string>();
+
+            foreach (var (piece, path, scale) in Corrections)
+            {
+                var def = AssetDatabase.LoadAssetAtPath<PieceDefinition>(
+                    $"{PieceFolder}/Piece_{piece}.asset");
+
+                if (def == null)
+                {
+                    problems.Add($"piece hilang: {piece}");
+                    continue;
+                }
+
+                // Piece yang sudah berubah jadi segel tidak punya cast untuk digambar. Dilewati
+                // diam-diam bukan pilihan — yang menjalankan ini harus tahu kenapa jumlahnya kurang.
+                if (def.IsPassive || def.IsRune)
+                {
+                    problems.Add($"{piece} sekarang bukan skill lagi, dilewati");
+                    continue;
+                }
+
+                string folder = Sanitize(def.DisplayName);
+                string wrapperPath = $"{SkillRoot}/{folder}/Vfx_{folder}.prefab";
+
+                AssetDatabase.DeleteAsset(wrapperPath);
+
+                var wrapper = BuildWrapper(wrapperPath, folder, path, 1f, problems);
+                if (wrapper == null) continue;
+
+                def.CastVfx = wrapper;
+                def.CastVfxScale = scale;
+                EditorUtility.SetDirty(def);
+                fixedCount++;
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[VfxPass] {fixedCount} sumber VFX diluruskan." +
+                      (problems.Count > 0 ? "\n - " + string.Join("\n - ", problems) : ""));
+        }
 
         [MenuItem("Tools/Grimoire/Assign Skill VFX")]
         public static void Run()

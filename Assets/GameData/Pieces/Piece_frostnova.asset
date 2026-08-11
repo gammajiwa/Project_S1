@@ -16,7 +16,13 @@ MonoBehaviour:
   DisplayName: Frost Nova
   Stars: 1
   Layer: 1
-  Shape: 5
+  Shape: 0
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.42, g: 0.78, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 5608a9553edec464e9a32d5adbd36ae4, type: 3}
   Kind: 1
@@ -29,7 +35,7 @@ MonoBehaviour:
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 3
+  ManaCost: 2
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0

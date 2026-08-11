@@ -14,12 +14,23 @@ namespace Proto
     /// Itu penting supaya aset yang belum diisi tidak pernah membuat skill jadi tak terlihat.
     ///
     /// Prefab bawaannya dibangkitkan <c>Tools/Grimoire/Build Core FX</c> ke
-    /// <c>Assets/Art/VFX/Core/&lt;Nama&gt;/</c> — isinya SAMA dengan primitif lama, jadi
+    /// <c>Assets/Prefabs/FX_Core/&lt;Nama&gt;/</c> — isinya SAMA dengan primitif lama, jadi
     /// memasangnya tidak mengubah apa pun sampai isinya benar-benar diganti.
     /// </summary>
     [CreateAssetMenu(fileName = "FxLibrary", menuName = "Grimoire/FX Library")]
     public class FxLibrary : ScriptableObject
     {
+        [Tooltip("Tampilkan BADAN benda FX walau skillnya sudah punya efek partikel sendiri.\n\n" +
+                 "MATI secara bawaan, dan itu permintaan langsung pemilik project: \"buang semua " +
+                 "primitif object, gw gak mau lihat kalo masih ada\". Selama isi prefab di " +
+                 "slot-slot bawah masih bentuk primitif bawaan (kubus, bola, silinder), badan itu " +
+                 "cuma menempel di atas efek dan membuat seluruh layar terbaca sebagai placeholder.\n\n" +
+                 "NYALAKAN begitu slot-slotnya sudah diisi model sungguhan — bola api yang " +
+                 "digambar tangan memang harus terlihat, bukan disembunyikan.\n\n" +
+                 "Benda yang TIDAK punya efek partikel tetap digambar apa pun nilai ini: tidak " +
+                 "menggambar apa-apa lebih buruk daripada menggambar kotak.")]
+        public bool ShowBodiesWithVfx;
+
         [Header("Peluru & tumbukan")]
         [Tooltip("Inti peluru. Menciut sendiri jadi titik kalau skillnya punya CastVfx — " +
                  "yang diuji tabrakannya benda ini, efeknya cuma menumpang di posisinya.")]
@@ -49,6 +60,33 @@ namespace Proto
 
         [Tooltip("Badan puting beliung (CastKind.Vortex). Menandai jangkauan seret.")]
         public GameObject Twister;
+
+        [Header("Perilaku gelombang kedua")]
+        [Tooltip("Satu bilah yang mengitari badan pemain (CastKind.Orbital). Satu skill memakai " +
+                 "beberapa sekaligus, jadi prefabnya harus MURAH — ada sampai delapan di layar " +
+                 "sepanjang durasi, bukan sekejap seperti kilatan.")]
+        public GameObject Blade;
+
+        [Tooltip("Bumerang yang dilempar dan kembali (CastKind.Boomerang).")]
+        public GameObject Boomerang;
+
+        [Tooltip("Badan menara yang ditanam dan menembak sendiri (CastKind.Turret).")]
+        public GameObject TurretBody;
+
+        [Tooltip("Cincin gelombang yang melebar (CastKind.Shockwave). Memakai shader " +
+                 "Grimoire/AoeRing seperti penanda tanah lain — yang harus terbaca TEPINYA, " +
+                 "karena cuma tepi itu yang melukai.")]
+        public GameObject ShockRing;
+
+        [Tooltip("Rudal pengejar (CastKind.Seeker).")]
+        public GameObject Missile;
+
+        [Tooltip("Penanda tanah jangkauan Orbital — cakram tipis di kaki pemain. Memakai shader " +
+                 "Grimoire/AoeRing seperti penanda tanah lain.\n\n" +
+                 "Ini yang menjawab \"kok areanya besar tapi tidak melukai apa-apa\": efek " +
+                 "partikel sebuah Orbital hampir selalu jauh lebih lebar dari radius damage-nya, " +
+                 "dan tanpa cakram ini tidak ada apa pun di layar yang menyebut batas sebenarnya.")]
+        public GameObject OrbitRing;
 
         [Header("Dunia")]
         [Tooltip("Barang jatuh yang bisa dipungut.")]

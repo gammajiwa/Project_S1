@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_hexstorm
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: hexstorm
+  DisplayName: Hex Storm
+  Stars: 4
+  Layer: 1
+  Shape: 29
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.7, g: 0.8, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 70c9c469422ec6c42a24cd5ee2ab1ad3, type: 3}
+  Kind: 26
+  Element: 2
+  BaseDamage: 315
+  BaseCooldown: 4
+  Radius: 0
+  Range: 16
+  Hits: 8
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 8
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 5303996373093396195, guid: d3c4a2ec5cc3b5c46b9866efe3c202b3, type: 3}
+  CastVfxScale: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
+  StatusDuration: 4
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 0
+  LiftDuration: 1.6
+  TravelSpeed: 13
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: Delapan rudal berangkat ke delapan arah lalu berbelok bersamaan. Jawaban
+    untuk gerombolan yang berpencar.

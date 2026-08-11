@@ -40,6 +40,12 @@ namespace Proto
                  "menggantung di tempat strip yang sudah pindah.")]
         public RectTransform AilmentArea;
 
+        [Tooltip("Kotak untuk strip PAKTA — berkah & kutuk permanen yang kamu pilih sendiri di " +
+                 "node kejadian. Kosong = kolom TEGAK di tepi kanan layar.\n\n" +
+                 "Strip ini satu-satunya yang tumbuh KE BAWAH, jadi yang dipakai dari kotak ini " +
+                 "tetap pojok kiri-atasnya, dan ikon berikutnya turun dari sana.")]
+        public RectTransform PactArea;
+
         [Header("Bantuan menata (editor saja)")]
         [Tooltip("Gambar kotak ketiga strip di Scene view. RectTransform kosong tidak menggambar " +
                  "apa pun — tanpa garis bantu ini, yang menatanya harus masuk play mode dulu " +
@@ -79,6 +85,7 @@ namespace Proto
             DrawArea(BuffArea, GuideInk);
             DrawArea(DebuffArea, new Color(1f, 0.5f, 0.5f, GuideInk.a));
             DrawArea(AilmentArea, new Color(0.85f, 0.88f, 0.95f, GuideInk.a));
+            DrawArea(PactArea, new Color(1f, 0.8f, 0.35f, GuideInk.a));
         }
 
         static void DrawArea(RectTransform area, Color ink)

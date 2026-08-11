@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_tempest
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: tempest
-  DisplayName: Tempest
+  DisplayName: Segel Amuk Angin
   Stars: 3
   Layer: 1
-  Shape: 10
+  Shape: 3
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.9408, g: 0.89640003, b: 0.482, a: 1}
   Icon: {fileID: 21300000, guid: 9e0f7f2b22b145744881c9d4ab1a7b88, type: 3}
-  Kind: 4
+  Kind: 7
   Element: 2
-  BaseDamage: 40
-  BaseCooldown: 3
-  Radius: 6.2
-  Range: 12
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 7
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 8941392517797105984, guid: 3ecccc79e8ccc524d915b8bf93abc4c8, type: 3}
+  CastVfx: {fileID: 3201490785306658205, guid: 5b3b4bb528f94b941adc489eff462312, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
-  StatusDuration: 5
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 3
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,12 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 20
+    Value: 1
+  - Type: 15
+    Value: 0.18
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Calls the storm down onto the densest pack.
+  Blurb: Satu cabang petir lagi berangkat, dan cabang tidak pernah menyambar musuh
+    yang sama.

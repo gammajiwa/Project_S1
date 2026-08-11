@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d4bf580b2c587a44a9709e31cc2a857, type: 3}
+  m_Name: Pact_sarang
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.WorldModifierDefinition
+  Id: sarang
+  DisplayName: SARANG
+  Color: {r: 0.65, g: 0.6, b: 0.3, a: 1}
+  Icon: {fileID: 21300000, guid: 06b970926b4d407439cc5b9ca8e4c86a, type: 3}
+  BoonText: Musuh bernyawa 45% lebih tipis dan bergerak 15% lebih lambat
+  BaneText: Musuh yang datang DUA KALI LIPAT
+  Boon: []
+  Bane: []
+  EnemyHpMul: 0.55
+  EnemySpeedMul: 0.85
+  EnemyDamageMul: 1
+  EnemyCountMul: 2
+  ManaRegenMul: 1
+  HpRegenMul: 1
+  ManaPerKill: 0
+  HpPerKill: 0
+  EchoChance: 0
+  ReviveAt: 0
+  Blurb: '"Bukan yang kuat. Yang banyak."'

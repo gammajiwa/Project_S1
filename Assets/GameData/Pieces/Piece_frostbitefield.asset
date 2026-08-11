@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_frostbitefield
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: frostbitefield
-  DisplayName: Frostbite Field
+  DisplayName: Segel Gigit Beku
   Stars: 2
   Layer: 1
-  Shape: 8
+  Shape: 20
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.5215, g: 0.80859995, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 14ae74c9a7dab0f488deed80a608ac19, type: 3}
-  Kind: 6
+  Kind: 7
   Element: 1
-  BaseDamage: 5
-  BaseCooldown: 5.5
-  Radius: 4.2
-  Range: 10
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 9
-  ZoneDuration: 5
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 8771378796884544363, guid: 51060951076b1044d817c754e6cab2d3, type: 3}
+  CastVfx: {fileID: 8694082883840878875, guid: 8550fcfefc958c9449e4996e721b532d, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
-  StatusDuration: 5
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 2
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,11 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 21
+    Value: 1
+  - Type: 11
+    Value: 0.08
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Freezes the ground itself. Everything inside crawls.
+  Blurb: Satu lagi di semua yang dihitung banyaknya.

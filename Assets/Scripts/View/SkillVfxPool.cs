@@ -183,7 +183,18 @@ namespace Proto
         /// </summary>
         static void Strip(GameObject go)
         {
-            foreach (var light in go.GetComponentsInChildren<Light>(true)) Object.Destroy(light);
+            // Lampu DIMATIKAN, bukan dihancurkan.
+            //
+            // URP menempelkan UniversalAdditionalLightData ke tiap Light, dan komponen itu
+            // ber-RequireComponent terhadap Light-nya — jadi Destroy(light) selalu ditolak, dan
+            // yang terjadi bukan lampunya hilang melainkan satu baris error PER LAMPU PER PREFAB
+            // ke console. Lampunya tetap menyala, dan console-nya banjir sampai kesalahan
+            // sungguhan tenggelam di dalamnya.
+            //
+            // Mematikannya membeli persis yang diinginkan (efek tidak boleh menerangi arena, dan
+            // puluhan lampu titik sekaligus mahal) tanpa melawan aturan komponen URP sama sekali.
+            foreach (var light in go.GetComponentsInChildren<Light>(true)) light.enabled = false;
+
             foreach (var audio in go.GetComponentsInChildren<AudioSource>(true)) Object.Destroy(audio);
 
             foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))

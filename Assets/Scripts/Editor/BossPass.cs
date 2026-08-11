@@ -58,8 +58,24 @@ namespace Proto.EditorTools
             boss.BiteRange = 2.8f;
             boss.Curse = FindCurse(db, "leaden");
 
-            boss.HeadColor = new Color(0.95f, 0.32f, 0.28f);
-            boss.BodyColor = new Color(0.42f, 0.16f, 0.32f);
+            // Putih, dan itu keputusan — bukan "belum diwarnai".
+            //
+            // Kedua angka ini dikalikan ke _BaseColor, DI ATAS tekstur tulang. Merah-ungu di sini
+            // ditulis waktu boss masih kapsul polos, ketika warna memang seluruh penampilannya.
+            // Begitu ada tekstur di bawahnya, mengalikannya dengan merah pekat tidak menghasilkan
+            // "tulang bernuansa merah" — ia menghapus teksturnya dan menyisakan plastik.
+            //
+            // Kepala dibuat putih penuh dan badan sedikit lebih redup: pemain tetap harus bisa
+            // menemukan kepala dalam sekejap, dan sekarang bentuknya sendiri (tengkorak vs ruas)
+            // sudah melakukan sebagian besar pekerjaan itu — jadi bedanya cukup terang-redup,
+            // tidak perlu beda warna.
+            //
+            // Yang MENYALA merah adalah varian crimson, dan itu memang inti bedanya.
+            boss.HeadColor = Color.white;
+            boss.BodyColor = new Color(0.78f, 0.76f, 0.72f);
+
+            boss.HeadEmission = Color.black;
+            boss.BodyEmission = Color.black;
 
             EditorUtility.SetDirty(boss);
 

@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82976f149c28c5b488e14268b4584f06, type: 3}
+  m_Name: Recipe_runescrawl_a
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.RecipeDefinition
+  Ingredients:
+  - {fileID: 11400000, guid: 89555cb3b15f2f54cb9dd22d46af0666, type: 2}
+  - {fileID: 11400000, guid: 63d9728e2578ff349ade036776f934e4, type: 2}
+  Result: {fileID: 11400000, guid: fe46c2897c55f8448b48ef3485c014cb, type: 2}

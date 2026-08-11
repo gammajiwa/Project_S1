@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_thunderclap
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: thunderclap
-  DisplayName: Thunderclap
+  DisplayName: Segel Guruh
   Stars: 2
   Layer: 1
-  Shape: 8
+  Shape: 20
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.9304, g: 0.8782, b: 0.391, a: 1}
   Icon: {fileID: 21300000, guid: 2757758c4d75b364897970f68e36cf5d, type: 3}
-  Kind: 1
+  Kind: 7
   Element: 2
-  BaseDamage: 17
-  BaseCooldown: 2.8
-  Radius: 5.5
-  Range: 5.5
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 5
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 5003422846157383709, guid: 6a32f8a8332384442986a517055dabb9, type: 3}
+  CastVfx: {fileID: 7816736698749333163, guid: 37ce3966064075d48979077f90f3579b, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
-  StatusDuration: 4
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 2
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,11 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 21
+    Value: 1
+  - Type: 15
+    Value: 0.15
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. A blast centred on you, wide enough to clear a ring.
+  Blurb: Satu arah semburan lagi, satu bilah lagi, satu rudal lagi.

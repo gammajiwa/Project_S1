@@ -16,7 +16,13 @@ MonoBehaviour:
   DisplayName: Maelstrom
   Stars: 5
   Layer: 1
-  Shape: 15
+  Shape: 4
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.5, g: 0.8, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 4fe774ab03ce4eb4388ac8e25878cd81, type: 3}
   Kind: 19
@@ -29,11 +35,11 @@ MonoBehaviour:
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 36
+  ManaCost: 22
   ZoneDuration: 7
   ZoneTickInterval: 0.5
   ZoneDrift: 2.6
-  CastVfx: {fileID: 6901055865101894827, guid: 138112376bc84eb4ea4f75c8d9235c49, type: 3}
+  CastVfx: {fileID: 169358617951471578, guid: 138112376bc84eb4ea4f75c8d9235c49, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}

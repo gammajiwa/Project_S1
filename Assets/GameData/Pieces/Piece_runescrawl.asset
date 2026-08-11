@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_runescrawl
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: runescrawl
+  DisplayName: Runescrawl
+  Stars: 5
+  Layer: 1
+  Shape: 11
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.85, g: 0.6, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 6352efbaeb6d6994ea08589e7d1b809d, type: 3}
+  Kind: 23
+  Element: 3
+  BaseDamage: 545
+  BaseCooldown: 4.4
+  Radius: 0.7
+  Range: 16
+  Hits: 1
+  Forks: 1
+  Bounces: 18
+  BounceRange: 11
+  ManaCost: 10
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 7084250754629650650, guid: c3b740b9abe88e94fab34c4b0665e305, type: 3}
+  CastVfxScale: 0.55
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 6a0f41a3c9ed7e345bbc3ea985715508, type: 2}
+  StatusDuration: 5
+  AppliedPoints: 2
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 0
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: Delapan belas pantulan. Satu tembakan meninggalkan coretan yang menutupi
+    seluruh layar, dan semua yang disentuh garisnya ikut hangus.

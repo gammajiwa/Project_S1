@@ -16,7 +16,13 @@ MonoBehaviour:
   DisplayName: Absolute Zero
   Stars: 5
   Layer: 1
-  Shape: 14
+  Shape: 30
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.72, g: 0.95, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 5f33c78734d2df141ab7f3b4199e39f9, type: 3}
   Kind: 10
@@ -29,7 +35,7 @@ MonoBehaviour:
   Forks: 1
   Bounces: 4
   BounceRange: 8
-  ManaCost: 9
+  ManaCost: 6
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
@@ -60,7 +66,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 'EVOLVED. Tidak membidik siapa pun. Enam belas pecahan es menyembur ke SEGALA
-    ARAH, dan polanya berputar acak tiap tembakan.
-
-    PANEN: tiap kill +0.5 HP.'
+  Blurb: EVOLVED. Reaches further than anything else in the book. Applies CHILL.

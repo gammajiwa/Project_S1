@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_soulchain
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: soulchain
+  DisplayName: Soul Chain
+  Stars: 4
+  Layer: 1
+  Shape: 28
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.85, g: 0.4, b: 0.55, a: 1}
+  Icon: {fileID: 21300000, guid: d646c0cd79aa4954493d5c5cb2398075, type: 3}
+  Kind: 27
+  Element: 3
+  BaseDamage: 170
+  BaseCooldown: 6.5
+  Radius: 0.45
+  Range: 14
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 12
+  ZoneDuration: 5
+  ZoneTickInterval: 0.2
+  ZoneDrift: 0
+  CastVfx: {fileID: 1621383918296762409, guid: 45bc72c70ec6ed040ac7badd6286c50a, type: 3}
+  CastVfxScale: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: b70a8e805fc46194686e600a8788b8b8, type: 2}
+  StatusDuration: 5
+  AppliedPoints: 2
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 5
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: "Rantai jiwa yang menempel 5 detik penuh dan menagih empat kali per detik.
+    Dibuat untuk yang bernyawa tebal \u2014 dan di buku ini itu berarti boss."

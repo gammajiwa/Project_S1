@@ -101,6 +101,27 @@ namespace Proto.EditorTools
             linked += LinkBuffs(db.Buffs, overwrite, ref written, ref kept);
             linked += LinkBuffs(db.Debuffs, overwrite, ref written, ref kept);
 
+            // Pakta memakai glyph pip yang sama dengan buff, dan sengaja dibedakan cuma lewat
+            // warnanya sendiri. Bentuknya boleh sama karena letaknya berbeda: pakta punya strip
+            // sendiri di HUD, jadi mata tidak pernah harus memisahkan pakta dari buff di dalam
+            // satu barisan — yang harus dipisahkan cuma pakta dari pakta lain.
+            for (int i = 0; i < db.PactCatalogue.Count; i++)
+            {
+                var pact = db.PactCatalogue[i];
+                if (pact == null || string.IsNullOrEmpty(pact.Id)) continue;
+
+                var captured = pact;
+                int pips = i;
+                var sprite = Ensure($"Icon_pact_{pact.Id}", () => Glyph(captured.Color, pips),
+                    overwrite, ref written, ref kept);
+
+                if (sprite == null || pact.Icon == sprite) continue;
+
+                pact.Icon = sprite;
+                EditorUtility.SetDirty(pact);
+                linked++;
+            }
+
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 

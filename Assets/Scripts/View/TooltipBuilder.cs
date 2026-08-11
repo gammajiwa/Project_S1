@@ -178,8 +178,15 @@ namespace Proto
                 case StatKind.AilmentPoints: return "+" + mod.Value.ToString("0") + " poin ailment per tempel";
                 case StatKind.MoveSpeed: return Sign(mod.Value) + mod.Value.ToString("0.0") + " kecepatan menghindar";
                 case StatKind.DebuffResist: return Sign(mod.Value) + Pct(mod.Value) + "% tahan kutukan";
-                case StatKind.ManaCostPct: return "-" + Pct(mod.Value) + "% biaya mana";
-                case StatKind.CooldownPct: return "-" + Pct(mod.Value) + "% cooldown";
+                // Tandanya DIBACA, bukan diasumsikan. Keduanya dipakai sebagai `1 − nilai`, jadi
+                // nilai negatif berarti LEBIH MAHAL / LEBIH LAMBAT — dan baris yang selalu menulis
+                // "−" mengabarkan kebalikan persis dari yang sedang terjadi. Sebelum ada kutukan
+                // dan pakta, tidak ada yang pernah negatif, jadi kebohongannya belum bisa muncul.
+                case StatKind.ManaCostPct:
+                    return (mod.Value < 0f ? "+" : "-") + Pct(mod.Value) + "% biaya mana";
+
+                case StatKind.CooldownPct:
+                    return (mod.Value < 0f ? "+" : "-") + Pct(mod.Value) + "% cooldown";
                 case StatKind.DamagePct: return "+" + Pct(mod.Value) + "% damage";
                 case StatKind.AreaPct: return "+" + Pct(mod.Value) + "% area";
                 case StatKind.RangePct: return "+" + Pct(mod.Value) + "% jangkauan";
@@ -188,6 +195,19 @@ namespace Proto
                 case StatKind.FireDamagePct: return "+" + Pct(mod.Value) + "% damage skill API";
                 case StatKind.IceDamagePct: return "+" + Pct(mod.Value) + "% damage skill ES";
                 case StatKind.LightningDamagePct: return "+" + Pct(mod.Value) + "% damage skill PETIR";
+
+                // Stat perilaku. Ditulis sebagai kalimat, bukan sebagai angka bertanda: yang dibeli
+                // bukan besaran melainkan kata kerja, dan "+2 BonusBounces" tidak memberi tahu
+                // pemain bahwa pelurunya sekarang MEMANTUL.
+                case StatKind.BonusBounces:
+                    return "peluru & sinar MEMANTUL " + mod.Value.ToString("0") + "x lagi";
+
+                case StatKind.BonusForks:
+                    return "rantai petir bercabang " + mod.Value.ToString("0") + " lagi";
+
+                case StatKind.BonusHits:
+                    return "+" + mod.Value.ToString("0") + " semburan / bilah / rudal / hantaman";
+
                 default: return mod.Type + " " + mod.Value.ToString("0.##");
             }
         }

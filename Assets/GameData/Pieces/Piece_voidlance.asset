@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_voidlance
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: voidlance
-  DisplayName: Void Lance
+  DisplayName: Segel Tombak Hampa
   Stars: 2
   Layer: 1
-  Shape: 3
+  Shape: 1
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.7042, g: 0.49539998, b: 0.9565, a: 1}
   Icon: {fileID: 21300000, guid: 0182ed3fbe504cd4888dcfcc539ce719, type: 3}
-  Kind: 5
+  Kind: 7
   Element: 3
-  BaseDamage: 36
-  BaseCooldown: 2
-  Radius: 1.4
-  Range: 11
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 3
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 3786208302304921415, guid: 24ba3aaee81bae444b4b61d3ed8f4048, type: 3}
+  CastVfx: {fileID: 474531359901401050, guid: 110339a63be74654d97c76707ce8a7b9, type: 3}
   CastVfxScale: 0.9
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: b70a8e805fc46194686e600a8788b8b8, type: 2}
-  StatusDuration: 4
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 2
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,11 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 19
+    Value: 2
+  - Type: 4
+    Value: -10
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Opens a seam across the field. Applies BLEED.
+  Blurb: Dua pantulan lagi, ditukar dengan wadah mana yang lebih kecil.

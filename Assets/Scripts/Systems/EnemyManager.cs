@@ -176,6 +176,14 @@ namespace Proto
         readonly Dictionary<EnemyArchetype, int> _modelOf = new Dictionary<EnemyArchetype, int>();
 
         EnemyRenderer _shotRenderer;
+
+        /// <summary>
+        /// Penggambar per boss, dibuat saat pertama dibutuhkan. Entri yang bernilai null berarti
+        /// def itu SUDAH diperiksa dan memang belum diberi mesh — disimpan justru supaya
+        /// pemeriksaannya tidak diulang setiap frame untuk setiap ruas.
+        /// </summary>
+        readonly Dictionary<BossDefinition, BossVisual> _bossVisuals =
+            new Dictionary<BossDefinition, BossVisual>();
         readonly Dictionary<EnemyArchetype, int> _shotTint = new Dictionary<EnemyArchetype, int>();
         readonly Dictionary<EnemyArchetype, int> _archetypeTint = new Dictionary<EnemyArchetype, int>();
         /// <summary>Saklar curang. Null di build normal, dan setiap pembacaan lewat propertinya.</summary>
@@ -194,6 +202,17 @@ namespace Proto
         float _nextBossHpMul = 1f;
         float _nextBossAggro = 1f;
         bool _nextBossAllKinds;
+
+        /// <summary>
+        /// Pakta run ini. Boleh null — dan setiap pembacaan lewat empat properti di bawah, bukan
+        /// lewat field-nya langsung, supaya tidak ada satu pun jalur yang lupa menjaga null-nya.
+        /// </summary>
+        public WorldPacts Pacts;
+
+        float PactHpMul => Pacts != null ? Pacts.EnemyHpMul : 1f;
+        float PactSpeedMul => Pacts != null ? Pacts.EnemySpeedMul : 1f;
+        float PactDamageMul => Pacts != null ? Pacts.EnemyDamageMul : 1f;
+        float PactCountMul => Pacts != null ? Pacts.EnemyCountMul : 1f;
 
         /// <summary>Pengali wave BERIKUTNYA (node elite). Berlaku sekali, reset saat wave beres.</summary>
         public void SetNextWaveMods(float hpMul, float countMul, float damageMul)
@@ -532,6 +551,32 @@ namespace Proto
             return kind != null && _modelOf.TryGetValue(kind, out index) ? index : 0;
         }
 
+        /// <summary>
+        /// Penggambar milik boss ini, dibangun saat pertama dibutuhkan.
+        ///
+        /// Dibangun malas, bukan di <see cref="Bind"/>, karena boss yang tidak pernah muncul di
+        /// satu run tidak boleh membayar tiga renderer beserta materialnya. Null yang dikembalikan
+        /// ikut disimpan: itu jawaban "def ini memang tanpa mesh", bukan "belum sempat dicoba".
+        /// </summary>
+        BossVisual VisualFor(BossDefinition def)
+        {
+            if (def == null) return null;
+
+            if (!_bossVisuals.TryGetValue(def, out var visual))
+            {
+                // Paletnya dibangun DULU, slot tintnya dibaca SESUDAH. BuildPalette sendiri yang
+                // menetapkan _bossHeadTint dan _bossBodyTint, jadi membaca keduanya di baris yang
+                // sama akan bergantung pada urutan evaluasi argumen — kebetulan benar di C#, tapi
+                // tidak terbaca benar oleh siapa pun yang mengeditnya nanti.
+                var palette = BuildPalette();
+
+                visual = BossVisual.TryBuild(def, palette, Capacity, _bossHeadTint, _bossBodyTint);
+                _bossVisuals[def] = visual;
+            }
+
+            return visual;
+        }
+
         /// <summary>One shot colour per shooting archetype, so different shooters read apart.</summary>
         Color[] BuildShotPalette()
         {
@@ -649,7 +694,7 @@ namespace Proto
             // still exists, but it only decides how fast that count arrives.
             WaveTotal = Mathf.Max(1, Mathf.RoundToInt(
                 _balance.EnemyCountFor(wave) * (Cheats != null ? Cheats.EnemyCountScale : 1f)
-                * _nextCountMul));
+                * _nextCountMul * PactCountMul));
             PendingSpawns = WaveTotal;
             Closing = false;
 
@@ -782,7 +827,11 @@ namespace Proto
             Vector3 at = SpawnPoint(1f);
             at.y = 0.9f;
 
-            snake.Begin(def, at, _balance.EnemyHpFor(wave) * def.HpMultiplier * hpMul);
+            // Pakta ikut menebalkan BOSS, bukan cuma gerombolan. Kalau tidak, pakta "musuh lebih
+            // tebal" justru membuat boss terasa lebih lemah relatif terhadap build yang sudah
+            // dibayar untuk melawannya — dan puncak act adalah tempat harga sebuah pakta paling
+            // harus terasa.
+            snake.Begin(def, at, _balance.EnemyHpFor(wave) * def.HpMultiplier * hpMul * PactHpMul);
             snake.Aggro = Mathf.Max(0.25f, aggro);
             snake.OnSpit += (from, dir) => SpitShot(snake, from, dir, wave);
 
@@ -922,8 +971,15 @@ namespace Proto
                 float t = segments.Count <= 1 ? 0f : i / (float)(segments.Count - 1);
                 e.Scale = i == 0 ? def.HeadScale : Mathf.Lerp(def.HeadScale * 0.72f, def.TailScale, t);
 
-                Vector3 ahead = i == 0 ? boss.HeadPos : boss.SegmentPoint(i - 1);
-                Vector3 forward = ahead - e.Pos;
+                // Kepala memakai ARAH HADAP boss, bukan selisih posisi.
+                //
+                // Selisihnya di ruas nol adalah HeadPos dikurangi SegmentPoint(0), dan keduanya
+                // titik yang sama: jejak disisipkan di indeks 0 setiap kepala bergerak sejauh
+                // TrailStep. Jadi selisihnya nyaris nol, penjaga di bawah menolaknya, dan yaw
+                // kepala tidak pernah ditulis sekali pun — kepalanya menatap utara dunia seumur
+                // pertarungan sementara seluruh badannya meliuk dengan benar.
+                Vector3 forward = i == 0 ? boss.Heading : boss.SegmentPoint(i - 1) - e.Pos;
+
                 if (forward.sqrMagnitude > 0.0001f) e.Yaw = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
 
                 Paint(e);
@@ -1061,10 +1117,16 @@ namespace Proto
             e.Kind = kind;
 
             e.Pos = SpawnPoint(distanceScale);
+
+            // Tiga lapis pengali, dan ketiganya DIKALIKAN bukan saling menimpa: saklar curang,
+            // modifier node peta (elite — sekali pakai), dan pakta (permanen seumur run). Elite
+            // yang dijalani di bawah pakta "darah tebal" memang harus lebih tebal dari keduanya
+            // sendiri-sendiri — itu seluruh gunanya menumpuk pakta.
             e.MaxHp = _balance.EnemyHpFor(Wave) * (Cheats != null ? Cheats.EnemyHpScale : 1f)
-                      * _nextHpMul;
-            e.Speed = Random.Range(_balance.EnemySpeedMin, _balance.EnemySpeedMax) +
-                      Wave * _balance.EnemySpeedPerWave;
+                      * _nextHpMul * PactHpMul;
+
+            e.Speed = (Random.Range(_balance.EnemySpeedMin, _balance.EnemySpeedMax) +
+                       Wave * _balance.EnemySpeedPerWave) * PactSpeedMul;
             e.Scale = 1f;
             e.AttackTimer = 0f;
 
@@ -1345,7 +1407,7 @@ namespace Proto
 
                 if (sqr < 0.85f)
                 {
-                    _caster.TakeDamage(_balance.ContactDpsFor(Wave) * _nextDamageMul * dt);
+                    _caster.TakeDamage(_balance.ContactDpsFor(Wave) * _nextDamageMul * PactDamageMul * dt);
 
                     // Refreshed on every frame of contact, so a curse lasts as long as you are in
                     // the crowd plus its duration. Getting out is the counter-play; resistance and
@@ -1477,7 +1539,8 @@ namespace Proto
 
             shot.Pos = from.Pos;
             shot.Velocity = aim.normalized * speed;
-            shot.Damage = from.Kind.AttackDamage * _balance.EnemyDamageScale(Wave) * _nextDamageMul;
+            shot.Damage = from.Kind.AttackDamage * _balance.EnemyDamageScale(Wave)
+                          * _nextDamageMul * PactDamageMul;
             shot.Tint = _shotTint.TryGetValue(from.Kind, out int tint) ? tint : 0;
             shot.Curse = null;
 
@@ -1514,7 +1577,10 @@ namespace Proto
 
             shot.Pos = from;
             shot.Velocity = dir * speed;
-            shot.Damage = def.SpitDamage * _balance.EnemyDamageScale(wave);
+            // Ludah boss lewat pakta juga. Ia sempat terlewat sekali — dan yang terjadi adalah
+            // pakta "musuh memukul lebih keras" yang diam saja terhadap satu-satunya lawan yang
+            // pukulannya paling diperhatikan pemain.
+            shot.Damage = def.SpitDamage * _balance.EnemyDamageScale(wave) * PactDamageMul;
             shot.Tint = 0;
             shot.Curse = def.SpitCurse;
             shot.Life = 2.4f;
@@ -1568,6 +1634,8 @@ namespace Proto
 
             for (int r = 0; r < _renderers.Length; r++) _renderers[r].Begin();
 
+            foreach (var visual in _bossVisuals.Values) { if (visual != null) visual.Begin(); }
+
             for (int i = 0; i < _pool.Count; i++)
             {
                 var e = _pool[i];
@@ -1577,6 +1645,24 @@ namespace Proto
                 // saja tidak cukup: lantai tidak menutupi apa pun dari kamera yang menunduk, dan
                 // yang terlihat adalah kelabang yang berenang di dalam tanah kaca.
                 if (e.Boss != null && e.Pos.y < BuriedDepth) continue;
+
+                // Ruas boss punya penggambarnya sendiri, dan mesh-nya dipilih dari URUTAN ruas —
+                // bukan dari archetype, karena ruas boss sengaja dibuat tanpa archetype (Kind null)
+                // supaya ia tidak ikut jalur AI gerombolan. Tanpa cabang ini seluruh badan boss
+                // jatuh ke model bawaan gerombolan dan tergambar sebagai barisan kapsul.
+                if (e.Boss != null)
+                {
+                    var visual = VisualFor(e.Boss.Def);
+
+                    if (visual != null)
+                    {
+                        // Tanpa pengangkatan kapsul: pivot ketiga mesh boss sudah di TENGAH keping,
+                        // jadi menaikkannya setengah badan justru membuat ularnya melayang.
+                        visual.Add(e.BossIndex, e.Boss.Segments.Count,
+                            e.Pos, e.Yaw, e.Phase, e.Tint, e.Scale);
+                        continue;
+                    }
+                }
 
                 // Kecepatannya ikut dikirim: itu yang memilih antara diam, jalan, dan lari di
                 // animasi panggangan. Renderer kapsul mengabaikannya.
@@ -1601,6 +1687,8 @@ namespace Proto
             // Renderer yang tidak kebagian satu pun musuh keluar lebih awal tanpa menggambar,
             // jadi model yang belum muncul di wave ini tidak membayar apa-apa.
             for (int r = 0; r < _renderers.Length; r++) _renderers[r].Draw(Time.time);
+
+            foreach (var visual in _bossVisuals.Values) { if (visual != null) visual.Draw(Time.time); }
 
             _shotRenderer.Begin();
             for (int i = 0; i < _shots.Count; i++)
@@ -1631,6 +1719,11 @@ namespace Proto
                 for (int i = 0; i < _renderers.Length; i++)
                 {
                     if (_renderers[i] != null) total += _renderers[i].Batches;
+                }
+
+                foreach (var visual in _bossVisuals.Values)
+                {
+                    if (visual != null) total += visual.Batches;
                 }
 
                 return total;
@@ -2001,6 +2094,119 @@ namespace Proto
         }
 
         /// <summary>
+        /// Melukai CINCIN, bukan cakram: yang lebih dekat dari <paramref name="inner"/> dilewati.
+        ///
+        /// Ada karena gelombang yang melebar harus menagih tiap musuh SEKALI, di detik tepinya
+        /// menyapunya. Memakai <see cref="DamageArea"/> berulang kali dengan radius yang membesar
+        /// akan menagih musuh di tengah setiap frame — sebuah skill "buka ruang" akan diam-diam
+        /// jadi damage terbesar di buku, dan besarnya tergantung framerate.
+        /// </summary>
+        public void DamageRing(Vector3 center, float inner, float outer, float damage,
+            StatusDefinition status, float duration, int points = 1, bool allowReaction = true,
+            string sourceName = null)
+        {
+            if (outer <= 0f) return;
+
+            float sqrInner = Mathf.Max(0f, inner) * Mathf.Max(0f, inner);
+            float sqrOuter = outer * outer;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                Vector3 d = e.Pos - center;
+                d.y = 0f;
+
+                float sqr = d.sqrMagnitude;
+                if (sqr <= sqrInner || sqr > sqrOuter) continue;
+
+                Damage(e, damage, status, duration, points, allowReaction, sourceName, center);
+            }
+        }
+
+        /// <summary>
+        /// Melontar CINCIN. Pasangan <see cref="DamageRing"/>, dengan alasan yang sama: gelombang
+        /// yang melebar harus mendorong tiap musuh sekali, di detik tepinya lewat. Memakai
+        /// <see cref="Push"/> tiap frame akan menumpuk dorongan pada yang berdiri di tengah sampai
+        /// mereka terlempar keluar layar.
+        /// </summary>
+        public void PushRing(Vector3 center, float inner, float outer, float force)
+        {
+            if (outer <= 0f) return;
+
+            float sqrInner = Mathf.Max(0f, inner) * Mathf.Max(0f, inner);
+            float sqrOuter = outer * outer;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive) continue;
+
+                Vector3 d = e.Pos - center;
+                d.y = 0f;
+
+                float sqr = d.sqrMagnitude;
+                if (sqr <= sqrInner || sqr > sqrOuter) continue;
+
+                Vector3 away = sqr < 0.01f
+                    ? new Vector3(Random.value - 0.5f, 0f, Random.value - 0.5f).normalized
+                    : d / Mathf.Sqrt(sqr);
+
+                e.Knock += away * force;
+            }
+        }
+
+        /// <summary>
+        /// Musuh PERTAMA yang tertusuk sinar dari <paramref name="from"/> ke arah
+        /// <paramref name="dir"/>, dalam radius <paramref name="radius"/> dari garisnya.
+        ///
+        /// Satu lintasan linear, bukan sampling titik demi titik. Bedanya bukan gaya melainkan
+        /// ongkos: sinar memantul dua puluh kali per cast, dan menanyakan "siapa yang terdekat"
+        /// di dua puluh titik per ruas berarti dua puluh kali dua puluh kali seluruh gerombolan —
+        /// di 500 musuh itu 200 ribu perbandingan untuk satu tembakan.
+        /// </summary>
+        /// <param name="hitDistance">Jarak sepanjang sinar ke musuh yang ketemu. Tidak berarti apa-apa kalau hasilnya null.</param>
+        public Enemy FirstAlongRay(Vector3 from, Vector3 dir, float maxDistance, float radius,
+            Enemy skip, out float hitDistance)
+        {
+            hitDistance = maxDistance;
+
+            Vector3 heading = dir;
+            heading.y = 0f;
+            if (heading.sqrMagnitude < 0.0001f) return null;
+            heading.Normalize();
+
+            Enemy best = null;
+            float bestAlong = maxDistance;
+            float sqrRadius = radius * radius;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive || e == skip) continue;
+
+                Vector3 d = e.Pos - from;
+                d.y = 0f;
+
+                // Di belakang pangkalnya tidak dihitung: sinar yang menyambar ke belakang bukan
+                // sinar, itu ledakan.
+                float along = Vector3.Dot(d, heading);
+                if (along <= 0f || along >= bestAlong) continue;
+
+                // Jarak tegak lurus ke garisnya. Kuadrat, jadi tidak ada akar di dalam loop.
+                float side = (d - heading * along).sqrMagnitude;
+                if (side > sqrRadius) continue;
+
+                bestAlong = along;
+                best = e;
+            }
+
+            if (best != null) hitDistance = bestAlong;
+            return best;
+        }
+
+        /// <summary>
         /// Melontarkan semua musuh di dalam radius MENJAUH dari titik pusat. Tidak melukai —
         /// yang dibeli pemain di sini adalah ruang, bukan kill.
         /// </summary>
@@ -2172,6 +2378,85 @@ namespace Proto
             }
 
             return push.sqrMagnitude > 1f ? push.normalized : push;
+        }
+
+        /// <summary>
+        /// Musuh terdekat yang TIDAK ADA di dalam <paramref name="skip"/>.
+        ///
+        /// Bedanya dengan <see cref="NearestExcluding"/> bukan kenyamanan melainkan benar-salah.
+        /// Mengecualikan satu musuh cukup untuk peluru yang memantul SEKALI. Untuk sinar yang
+        /// memantul delapan belas kali, itu menghasilkan ping-pong: dari A ia memilih B, dari B ia
+        /// memilih A, dan seluruh pantulannya habis bolak-balik di sepasang musuh yang sama.
+        /// Terukur sebelum diperbaiki — dua puluh titik lintasan, hanya DUA posisi berbeda.
+        /// </summary>
+        public Enemy NearestOutside(Vector3 from, float maxDistance, Enemy[] skip, int skipCount)
+        {
+            Enemy best = null;
+            float bestSqr = maxDistance * maxDistance;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive || Contains(skip, skipCount, e)) continue;
+
+                Vector3 d = e.Pos - from;
+                d.y = 0f;
+
+                float sqr = d.sqrMagnitude;
+                if (sqr >= bestSqr) continue;
+
+                bestSqr = sqr;
+                best = e;
+            }
+
+            return best;
+        }
+
+        /// <summary>Versi <see cref="FirstAlongRay"/> yang mengecualikan sekumpulan musuh sekaligus.</summary>
+        public Enemy FirstAlongRayOutside(Vector3 from, Vector3 dir, float maxDistance, float radius,
+            Enemy[] skip, int skipCount, out float hitDistance)
+        {
+            hitDistance = maxDistance;
+
+            Vector3 heading = dir;
+            heading.y = 0f;
+            if (heading.sqrMagnitude < 0.0001f) return null;
+            heading.Normalize();
+
+            Enemy best = null;
+            float bestAlong = maxDistance;
+            float sqrRadius = radius * radius;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive || Contains(skip, skipCount, e)) continue;
+
+                Vector3 d = e.Pos - from;
+                d.y = 0f;
+
+                float along = Vector3.Dot(d, heading);
+                if (along <= 0f || along >= bestAlong) continue;
+
+                float side = (d - heading * along).sqrMagnitude;
+                if (side > sqrRadius) continue;
+
+                bestAlong = along;
+                best = e;
+            }
+
+            if (best != null) hitDistance = bestAlong;
+            return best;
+        }
+
+        static bool Contains(Enemy[] list, int count, Enemy e)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (list[i] == e) return true;
+            }
+
+            return false;
         }
 
         /// <summary>Nearest living enemy that is not <paramref name="skip"/>. For ricochets.</summary>

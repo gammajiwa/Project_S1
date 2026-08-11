@@ -24,13 +24,30 @@ namespace Proto
 
         readonly float _slot;
         readonly float _icon;
+
+        /// <summary>
+        /// Tumbuh ke BAWAH, bukan ke kanan. Dipakai strip pakta.
+        ///
+        /// Arah bukan urusan gaya di sini melainkan urusan arti: buff, kutukan, dan tally ailment
+        /// datang dan pergi terus-menerus, dan barisan mendatar di bawah bar mana adalah tempat
+        /// mata sudah terbiasa mencari hal-hal sementara. Pakta tidak pernah pergi. Menaruhnya di
+        /// baris yang sama membuatnya terbaca seperti sesuatu yang sebentar lagi hilang — dan
+        /// seluruh beratnya justru pada kenyataan bahwa ia tidak akan.
+        /// </summary>
+        readonly bool _vertical;
+
         Vector2 _origin;
         int _used;
 
-        public StatusStrip(Transform canvas, Font font, int capacity, float iconSize, Color numberColor)
+        public StatusStrip(Transform canvas, Font font, int capacity, float iconSize,
+            Color numberColor, bool vertical = false)
         {
             _icon = iconSize;
-            _slot = iconSize + 26f;
+            _vertical = vertical;
+
+            // Yang mendatar butuh ruang untuk angka di sebelah ikonnya; yang menurun tidak — ia
+            // memang tidak membawa angka, karena pakta tidak punya hitungan mundur untuk dibaca.
+            _slot = iconSize + (vertical ? 8f : 26f);
 
             _icons = new Image[capacity];
             _frames = new Image[capacity];
@@ -98,8 +115,8 @@ namespace Proto
         {
             if (_used >= _icons.Length) return;
 
-            float x = _origin.x + _used * _slot;
-            float y = _origin.y;
+            float x = _vertical ? _origin.x : _origin.x + _used * _slot;
+            float y = _vertical ? _origin.y - _used * _slot : _origin.y;
 
             _frames[_used].enabled = true;
             _frames[_used].sprite = null;

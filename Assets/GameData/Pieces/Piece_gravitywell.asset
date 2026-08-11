@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_gravitywell
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: gravitywell
-  DisplayName: Gravity Well
+  DisplayName: Segel Gravitasi
   Stars: 2
   Layer: 1
-  Shape: 7
+  Shape: 20
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.7042, g: 0.49539998, b: 0.9565, a: 1}
   Icon: {fileID: 21300000, guid: c2372d58e5d2b2047a5ab0f7b5308e08, type: 3}
-  Kind: 4
+  Kind: 7
   Element: 3
-  BaseDamage: 26
-  BaseCooldown: 3
-  Radius: 4.5
-  Range: 11
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 5
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 3545731104899013941, guid: 2690f63a2038ae74dac598489ba0f554, type: 3}
+  CastVfx: {fileID: 561654397507857966, guid: da2ba51ee19115c4083f4789d99cd816, type: 3}
   CastVfxScale: 0.8
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 5f75104041d796e438061522b1f08f0d, type: 2}
-  StatusDuration: 2
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 2
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,11 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 19
+    Value: 1
+  - Type: 10
+    Value: 0.2
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Hauls the pack together. The setup every reaction wants.
+  Blurb: Pantulan mencari sasaran dari lebih jauh.

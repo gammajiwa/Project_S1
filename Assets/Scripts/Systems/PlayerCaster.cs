@@ -77,10 +77,33 @@ namespace Proto
         public float Mana = 60f;
         public bool Alive = true;
 
-        public float MaxHp => BaseMaxHp + Total(StatKind.MaxHp);
-        public float MaxMana => BaseMaxMana + Total(StatKind.MaxMana);
-        public float ManaRegen => BaseManaRegen + Total(StatKind.ManaRegen);
-        public float HpRegen => BaseHpRegen + Total(StatKind.HpRegen);
+        // Berlantai, dan lantainya baru diperlukan sejak PAKTA ada.
+        //
+        // Sebelum pakta, satu-satunya yang menyentuh MaxHp adalah segel dan rune, dan semuanya
+        // menambah. Pakta mengurangi — dan tiga pakta pengurang nyawa yang bertumpuk membawa
+        // maksimumnya ke bawah nol. Yang terjadi kalau dibiarkan bukan pemain lemah melainkan
+        // pemain yang MUSTAHIL hidup: Mathf.Min(MaxHp, ...) menjepit nyawa ke angka negatif di
+        // frame pertama, dan run-nya berakhir sebelum satu musuh pun lahir.
+        public float MaxHp => Mathf.Max(1f, BaseMaxHp + Total(StatKind.MaxHp));
+        public float MaxMana => Mathf.Max(1f, BaseMaxMana + Total(StatKind.MaxMana));
+
+        // Pengali pakta ada DI PROPERTINYA, bukan di titik pakai.
+        //
+        // Kedua properti ini juga dibaca UI untuk kartu "pulih N per detik". Kalau pengalinya
+        // dipasang belakangan di Update, pemain yang baru mengambil pakta yang MEMATIKAN regen
+        // akan tetap membaca "pulih 13 per detik" di tooltipnya, lalu menunggu isian yang tidak
+        // akan pernah datang. Satu tempat berarti angka di layar dan angka yang dijalankan
+        // tidak bisa berbeda.
+        //
+        // Dijepit di nol: pengalinya boleh nol (itu gunanya), tapi penjumlahan stat di dalamnya
+        // boleh negatif, dan regen negatif adalah damage yang tidak lewat perisai maupun Defense.
+        public float ManaRegen =>
+            Mathf.Max(0f, BaseManaRegen + Total(StatKind.ManaRegen)) *
+            (Pacts != null ? Pacts.ManaRegenMul : 1f);
+
+        public float HpRegen =>
+            Mathf.Max(0f, BaseHpRegen + Total(StatKind.HpRegen)) *
+            (Pacts != null ? Pacts.HpRegenMul : 1f);
 
         // ---------- buff pemain ----------
 
@@ -113,9 +136,29 @@ namespace Proto
         public BuffSlot[] Buffs => _buffs;
         public BuffSlot[] Debuffs => _debuffs;
 
-        /// <summary>Stat akhir: grimoire (permanen selama tersusun) + buff + debuff (sementara).</summary>
-        public float Total(StatKind kind) =>
-            Book.Stat(kind) + _buffStats[(int)kind] + _debuffStats[(int)kind];
+        /// <summary>
+        /// Pakta yang berlaku di run ini. Boleh null — build tanpa sutradara run (ruang uji) tidak
+        /// punya satu pun, dan setiap pembacaan di bawah sudah menjaganya.
+        /// </summary>
+        public WorldPacts Pacts;
+
+        /// <summary>
+        /// Lapisan stat yang BUKAN dari papan: buff, kutukan, dan pakta.
+        ///
+        /// Ada sebagai satu fungsi karena empat pengali cast di bawah dulu membaca
+        /// <c>_buffStats</c> dan <c>_debuffStats</c> LANGSUNG, tidak lewat <see cref="Total"/>.
+        /// Menyambung pakta hanya ke Total akan membuat pakta ber-DamagePct tampil di HUD,
+        /// terbaca benar di kartunya, dan tidak mengubah satu pun angka damage — persis bentuk bug
+        /// yang dulu memakan <c>BuffCooldownMul</c>, dan yang butuh sebuah audit untuk ketahuan.
+        /// </summary>
+        float Temp(StatKind kind)
+        {
+            float sum = _buffStats[(int)kind] + _debuffStats[(int)kind];
+            return Pacts == null ? sum : sum + Pacts.Stat(kind);
+        }
+
+        /// <summary>Stat akhir: grimoire (permanen selama tersusun) + buff + kutukan + pakta.</summary>
+        public float Total(StatKind kind) => Book.Stat(kind) + Temp(kind);
 
         public void ApplyBuff(BuffDefinition def)
         {
@@ -317,8 +360,15 @@ namespace Proto
             // dan hanya selagi hidup: mayat tidak ikut memanen kill dari zone yang masih menyala.
             if (!Alive) return;
 
-            if (Book.KillRestoreMana > 0f) Mana = Mathf.Min(MaxMana, Mana + Book.KillRestoreMana);
-            if (Book.KillRestoreHp > 0f) Hp = Mathf.Min(MaxHp, Hp + Book.KillRestoreHp);
+            // Panen papan DAN panen pakta lewat jalur yang sama. Beberapa pakta ekstrem mematikan
+            // regen pasif sepenuhnya dan menggantinya dengan ini — kalau keduanya tidak dijumlahkan
+            // di satu titik, pakta seperti itu terasa seperti kesalahan alih-alih seperti tukar
+            // tambah, karena mananya tidak pernah kembali dari mana pun.
+            float mana = Book.KillRestoreMana + (Pacts != null ? Pacts.ManaPerKill : 0f);
+            float hp = Book.KillRestoreHp + (Pacts != null ? Pacts.HpPerKill : 0f);
+
+            if (mana > 0f) Mana = Mathf.Min(MaxMana, Mana + mana);
+            if (hp > 0f) Hp = Mathf.Min(MaxHp, Hp + hp);
         }
 
         // Buff berubah saat wave berjalan, jadi ini dipakai SAAT CAST — bukan saat kompilasi grid.
@@ -336,6 +386,19 @@ namespace Proto
         /// aset yang belum diisi tidak pernah membuat sebuah skill jadi tak terlihat.
         /// </summary>
         public FxLibrary Fx;
+
+        /// <summary>
+        /// Kamera arena. Dipakai HANYA oleh <see cref="CastKind.Ricochet"/>, untuk tahu di mana
+        /// tepi layar berada — sinarnya memantul dari batas pandang, bukan dari batas arena.
+        ///
+        /// Bukan batas arena, dan itu keputusan: lapangan sudah tak berujung, jadi "memantul di
+        /// dinding" tidak punya dinding untuk dipantuli. Yang dijanjikan skill ini adalah coretan
+        /// di LAYAR, dan layar adalah satu-satunya kotak yang benar-benar dilihat pemain.
+        ///
+        /// Boleh null: tanpa kamera, sinarnya memantul di kotak seluas jangkauannya sendiri di
+        /// sekeliling pemain — lebih kecil, tapi tidak pernah membuat skill ini mati.
+        /// </summary>
+        public Camera Lens;
 
         /// <summary>
         /// Melahirkan satu benda FX: dari prefab kalau slotnya terisi, dari primitif kalau tidak.
@@ -377,18 +440,54 @@ namespace Proto
         /// <summary>Khusus ruang uji: buku tetap menembak walau tidak ada wave yang berjalan.</summary>
         public bool CastWithoutWave;
 
+        /// <summary>
+        /// Menyalakan atau MEMATIKAN badan primitif sebuah benda FX.
+        ///
+        /// Sebelumnya tiap benda yang punya <c>CastVfx</c> cuma DIKECILKAN — bolanya jadi 0,12,
+        /// tabung puting beliung jadi 22% transparan. Niatnya masuk akal: primitif itu penanda
+        /// jangkauan damage yang sesungguhnya, dan partikel hampir tidak pernah seukuran radiusnya.
+        ///
+        /// Pemilik project menolaknya dua kali, dan alasannya sah: yang dikecilkan itu TETAP
+        /// TERLIHAT — bola abu dan tabung tembus pandang menempel di tiap efek, dan itulah yang
+        /// membuat seluruh layar terbaca sebagai placeholder. Sekarang dimatikan betulan.
+        ///
+        /// Yang dimatikan RENDERER-nya, bukan GameObject-nya: posisi benda ini dibaca dan ditulis
+        /// tiap frame oleh uji tabrakan, ekor, dan pelepasan efek. Mematikan objeknya berarti
+        /// seluruh jalur itu harus belajar menangani benda mati.
+        /// </summary>
+        static void ShowBody(Transform t, bool visible)
+        {
+            if (t == null) return;
+
+            var renderers = t.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++) renderers[i].enabled = visible;
+        }
+
+        /// <summary>
+        /// Badan benda ini layak ditampilkan?
+        ///
+        /// Percobaan pertama memakai "slot FxLibrary sudah diisi = itu art sungguhan". Terukur
+        /// salah: <c>CoreFxPass</c> sudah mengisi KESELURUHAN 16 slot dengan prefab yang isinya
+        /// masih bentuk primitif bawaan, jadi "terisi" tidak lagi membedakan art dari placeholder
+        /// sama sekali — dan tabung Tornado tetap terlihat persis seperti sebelum diperbaiki.
+        ///
+        /// Sekarang satu saklar tegas di <see cref="FxLibrary"/>, mati secara bawaan. Benda yang
+        /// tidak punya efek partikel tetap digambar apa pun nilainya: tidak menggambar apa-apa
+        /// lebih buruk daripada menggambar kotak.
+        /// </summary>
+        bool BodyVisible(PieceDefinition def) =>
+            def.CastVfx == null || (Fx != null && Fx.ShowBodiesWithVfx);
+
         float BuffDamageMul => (Cheats != null ? Cheats.DamageScale : 1f) *
-                               Mathf.Max(0.05f, 1f + _buffStats[(int)StatKind.DamagePct]
-                                                  + _debuffStats[(int)StatKind.DamagePct]
-                                                  + _chargeBonus);
+                               Mathf.Max(0.05f, 1f + Temp(StatKind.DamagePct) + _chargeBonus);
+
         float BuffCooldownMul => Cheats != null && Cheats.CheatNoCooldowns
             ? 0.01f
-            : Mathf.Clamp(1f - _buffStats[(int)StatKind.CooldownPct]
-                             - _debuffStats[(int)StatKind.CooldownPct], 0.25f, 2f);
-        float BuffAreaMul => Mathf.Max(0.2f, 1f + _buffStats[(int)StatKind.AreaPct]
-                                                + _debuffStats[(int)StatKind.AreaPct]);
-        float BuffRangeMul => Mathf.Max(0.2f, 1f + _buffStats[(int)StatKind.RangePct]
-                                                 + _debuffStats[(int)StatKind.RangePct]);
+            : Mathf.Clamp(1f - Temp(StatKind.CooldownPct), 0.25f, 2f);
+
+        float BuffAreaMul => Mathf.Max(0.2f, 1f + Temp(StatKind.AreaPct));
+
+        float BuffRangeMul => Mathf.Max(0.2f, 1f + Temp(StatKind.RangePct));
 
         /// <summary>Mana cost from the temporary layer. The grid's own share lives on Grimoire.</summary>
         /// <summary>
@@ -401,8 +500,7 @@ namespace Proto
         /// </summary>
         float ManaCostScale => _balance != null ? Mathf.Max(0f, _balance.ManaCostScale) : 1f;
 
-        float BuffManaCostMul => Mathf.Clamp(1f - _buffStats[(int)StatKind.ManaCostPct]
-                                                - _debuffStats[(int)StatKind.ManaCostPct], 0.2f, 2f);
+        float BuffManaCostMul => Mathf.Clamp(1f - Temp(StatKind.ManaCostPct), 0.2f, 2f);
 
         /// <summary>Satu lemparan crit. Dipanggil sekali per cast, bukan per musuh.</summary>
         float RollCrit()
@@ -609,6 +707,7 @@ namespace Proto
             TickDescents(dt);
             TickZones(dt);
             TickSignature(dt);
+            TickBehaviour(dt);
             TickFlashes(dt);
             _bolts.Tick(dt);
             _vfx.Tick(dt);
@@ -658,6 +757,21 @@ namespace Proto
                 Mana -= cost;
                 s.Source.CdTimer = s.Cooldown * BuffCooldownMul;
                 OnCast?.Invoke(s.Source);
+
+                // Gema pakta: tembakan yang sama berangkat sekali lagi, gratis.
+                //
+                // SESUDAH _chargeBonus dinolkan dengan sengaja — muatan charge sudah dibelanjakan
+                // oleh tembakan pertama, dan menggemakan bonusnya berarti satu tumpukan dibayar
+                // sekali lalu ditagih dua kali. Cooldown dan mana juga tidak disentuh lagi: yang
+                // digemakan adalah TEMBAKANNYA, bukan seluruh giliran cast-nya.
+                //
+                // Tidak bisa berantai. Cast() tidak pernah memanggil TickSpells, jadi gema tidak
+                // punya jalan untuk menggemakan dirinya sendiri berapa pun banyak pakta gema
+                // yang ditumpuk.
+                if (Pacts != null && Pacts.EchoChance > 0f && Random.value < Pacts.EchoChance)
+                {
+                    Cast(s);
+                }
             }
         }
 
@@ -874,12 +988,36 @@ namespace Proto
                 case CastKind.RollingBall: return CastRollingBall(spell, def);
                 case CastKind.Vortex: return CastVortex(spell, def);
                 case CastKind.ForcePush: return CastForcePush(spell, def);
+
+                case CastKind.Orbital: return CastOrbital(spell, def);
+                case CastKind.Boomerang: return CastBoomerang(spell, def);
+                case CastKind.Ricochet: return CastRicochet(spell, def);
+                case CastKind.Turret: return CastTurret(spell, def);
+                case CastKind.Shockwave: return CastShockwave(spell, def);
+                case CastKind.Seeker: return CastSeeker(spell, def);
+                case CastKind.Tether: return CastTether(spell, def);
+                case CastKind.Barrage: return CastBarrage(spell, def);
             }
 
             return false;
         }
 
         int AilmentPoints(PieceDefinition def) => def.AppliedPoints + Book.BonusAilmentPoints;
+
+        // ---------- stat yang mengubah perilaku ----------
+        //
+        // Dibaca SAAT CAST, bukan saat kompilasi papan, dan itu wajib: sebagiannya bisa datang dari
+        // buff dan pakta yang hidup-mati sepanjang wave, dan angka yang dibekukan saat piece
+        // didudukkan akan mengabaikan semuanya sampai papan disentuh lagi.
+        //
+        // Dibulatkan ke BAWAH. Setengah pantulan bukan apa-apa, dan membulatkannya ke atas berarti
+        // segel bernilai 0,5 memberi pantulan penuh — lalu dua segel yang sama memberi... juga dua.
+
+        int BonusBounces => Mathf.Max(0, Mathf.FloorToInt(Total(StatKind.BonusBounces)));
+
+        int BonusForks => Mathf.Max(0, Mathf.FloorToInt(Total(StatKind.BonusForks)));
+
+        int BonusHits => Mathf.Max(0, Mathf.FloorToInt(Total(StatKind.BonusHits)));
 
         // ---------- chain lightning ----------
 
@@ -890,7 +1028,7 @@ namespace Proto
         bool CastChain(CompiledSpell spell, PieceDefinition def, Vector3 origin, float damage)
         {
             int points = AilmentPoints(def);
-            int forks = Mathf.Max(1, def.Forks);
+            int forks = Mathf.Max(1, def.Forks + BonusForks);
             int taken = 0;
 
             for (int fork = 0; fork < forks; fork++)
@@ -941,7 +1079,7 @@ namespace Proto
             // Still refuses to fire into an empty field: untargeted is not the same as wasteful.
             if (_enemies.Nearest(transform.position, spell.Range) == null) return false;
 
-            int arms = Mathf.Max(2, def.Hits);
+            int arms = Mathf.Max(2, def.Hits + BonusHits);
             float damage = spell.Damage * BuffDamageMul * RollCrit();
 
             // Rolled per cast, so two shots never lay down the same pattern.
@@ -1059,7 +1197,8 @@ namespace Proto
             // saat mendarat adalah efek itu, dan bola abu seukuran kepala yang turun mendahuluinya
             // cuma menandai bahwa ada yang belum diganti. Ekor jejaknya TETAP — itu yang membuat
             // tembakan terbaca datang dari langit, bukan menetas di tanah.
-            d.T.localScale = Vector3.one * (def.CastVfx != null ? 0.3f : 0.85f);
+            d.T.localScale = Vector3.one * 0.85f;
+            ShowBody(d.T, BodyVisible(def));
 
             // A slight slant reads as "thrown from somewhere" rather than spawned directly overhead.
             float angle = Random.Range(0f, Mathf.PI * 2f);
@@ -1124,7 +1263,19 @@ namespace Proto
             SpawnFlash(at, 2.2f, 0.18f, new Color(0.95f, 0.72f, 0.55f));
         }
 
-        void FireProjectile(Vector3 dir, float damage, PieceDefinition source, Color color)
+        void FireProjectile(Vector3 dir, float damage, PieceDefinition source, Color color) =>
+            FireProjectileFrom(transform.position, dir, damage, source, color);
+
+        /// <summary>
+        /// Peluru yang berangkat dari titik mana pun, bukan cuma dari badan pemain.
+        ///
+        /// Dipisah begitu menara muncul: menara menembak dari tempat ia ditanam, dan pemain boleh
+        /// sudah lari jauh dari situ. Selama pangkalnya masih dibaca dari <c>transform.position</c>,
+        /// peluru menara akan menetas di pemain dan terbang ke sasaran menara — dua tempat yang
+        /// tidak berhubungan, dan tidak ada yang error.
+        /// </summary>
+        void FireProjectileFrom(Vector3 from, Vector3 dir, float damage, PieceDefinition source,
+            Color color)
         {
             Projectile p = null;
             for (int i = 0; i < _projectiles.Count; i++)
@@ -1149,7 +1300,7 @@ namespace Proto
             _mpb.SetColor(BaseColorId, color);
             p.T.GetComponent<Renderer>().SetPropertyBlock(_mpb);
 
-            p.T.position = transform.position;
+            p.T.position = from;
 
             // Prefab efek menjadi badan peluru; bola primitifnya menciut jadi inti nyaris tak
             // terlihat. Tetap ada karena dialah yang dites tabrakannya — efek cuma bajunya.
@@ -1158,12 +1309,10 @@ namespace Proto
                 p.Vfx = _vfx.Attach(source.CastVfx, p.T.position,
                     Quaternion.LookRotation(dir), source.CastVfxScale);
                 p.VfxSrc = source.CastVfx;
-                p.T.localScale = Vector3.one * 0.12f;
             }
-            else
-            {
-                p.T.localScale = Vector3.one * 0.45f;
-            }
+
+            p.T.localScale = Vector3.one * 0.45f;
+            ShowBody(p.T, BodyVisible(source));
 
             p.T.gameObject.SetActive(true);
             p.Dir = dir;
@@ -1173,7 +1322,11 @@ namespace Proto
             p.StatusDuration = source.StatusDuration;
             p.Points = source.AppliedPoints + Book.BonusAilmentPoints;
             p.SourceName = source.DisplayName;
-            p.Bounces = source.Bounces;
+
+            // Pantulan dari segel berlaku juga untuk peluru yang aslinya TIDAK memantul sama
+            // sekali. Itu memang yang dibeli: sebuah Fireball yang mulai memantul bukan Fireball
+            // yang lebih besar, ia skill yang membaca lapangan dengan cara berbeda.
+            p.Bounces = source.Bounces + BonusBounces;
             p.BounceRange = source.BounceRange;
             p.Tint = color;
             p.LastHit = null;
@@ -1535,9 +1688,32 @@ namespace Proto
 
             if (Hp > 0f) return;
 
+            // Pakta kebangkitan. Jatahnya dipegang WorldPacts, bukan aset paktanya — aset itu
+            // dipakai bersama tiap run yang pernah dimainkan, dan menandainya "sudah dipakai"
+            // akan membuat run berikutnya lahir tanpa jatah yang sudah dibayar pemiliknya.
+            float revive = Pacts != null ? Pacts.SpendRevive() : 0f;
+
+            if (revive > 0f)
+            {
+                Hp = MaxHp * revive;
+                Shield = 0f;
+
+                // Lapangan dibersihkan sekalian. Bangkit lalu langsung mati lagi di frame yang
+                // sama — karena kerumunan yang membunuh masih menempel — bukan kebangkitan,
+                // itu jeda seperempat detik yang berbiaya satu pakta.
+                if (_enemies != null) _enemies.Push(transform.position, 9f, 26f);
+
+                SpawnFlash(transform.position, 9f, 0.6f, new Color(1f, 0.9f, 0.5f));
+                OnRevived?.Invoke();
+                return;
+            }
+
             Hp = 0f;
             Alive = false;
             if (_enemies != null) _enemies.Running = false;
         }
+
+        /// <summary>Menyala saat pakta kebangkitan membatalkan kematian. UI mengumumkannya.</summary>
+        public System.Action OnRevived;
     }
 }

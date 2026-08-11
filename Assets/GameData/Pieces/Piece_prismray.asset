@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_prismray
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: prismray
+  DisplayName: Prism Ray
+  Stars: 2
+  Layer: 1
+  Shape: 1
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.75, g: 0.95, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 1cd3d15a4ae551a449e5fbcd94f2441f, type: 3}
+  Kind: 23
+  Element: 1
+  BaseDamage: 58
+  BaseCooldown: 2.4
+  Radius: 0.5
+  Range: 11
+  Hits: 1
+  Forks: 1
+  Bounces: 4
+  BounceRange: 7
+  ManaCost: 3
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 4307970420702600606, guid: e1f28d165cc5e2c41bd86615e0b1944b, type: 3}
+  CastVfxScale: 0.45
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
+  StatusDuration: 3
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 0
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: "Sinar yang memantul 4 kali \u2014 dari musuh ke musuh, dan dari tepi layar
+    kalau tidak ada yang bisa disambar."

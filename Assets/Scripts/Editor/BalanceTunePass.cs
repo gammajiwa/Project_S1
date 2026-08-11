@@ -48,10 +48,19 @@ namespace Proto.EditorTools
         /// How many skills a filled board runs at once. The per-tier budget above is divided by
         /// this, because it describes the whole book's appetite rather than one page of it.
         ///
-        /// Measured, not assumed: a 7x7 skill layer is 49 cells and 5-star footprints are 8-9, so
-        /// four of them fill it. Smaller pieces push it toward six.
+        /// Diukur, bukan ditebak — dan diukur ULANG saat tangga footprint dikecilkan.
+        ///
+        /// Angka lamanya 5, dan itu benar untuk tangga lama: lapisan skill 7x7 itu 49 petak dan
+        /// footprint bintang 5 memakan 8-9, jadi empat saja sudah memenuhinya. Tangga baru
+        /// (★1 satu petak, ★2 dua, ★3 tiga) menurunkan rata-rata footprint dari ~4,3 petak
+        /// menjadi <b>2,67</b> — papan yang sama sekarang menampung sekitar 1,6 kali lebih banyak
+        /// piece, jadi nafsu mana seluruh papan naik sebesar itu juga.
+        ///
+        /// Membiarkannya di 5 berarti mengulang persis bug yang dulu membuat build bintang 5
+        /// terbaik di game menembak di 10% laju nominalnya dan mati di wave 20 sementara angka
+        /// damage-nya bilang ia harusnya menyapu.
         /// </summary>
-        const float SkillsOnAFullBoard = 5f;
+        const float SkillsOnAFullBoard = 8f;
 
         /// <summary>Charges a spender is assumed to be holding when it finally fires.</summary>
         const float AssumedCharges = 4f;
@@ -86,6 +95,7 @@ namespace Proto.EditorTools
             Cap(db, "reckoning", 22);
 
             int tuned = 0;
+            int unknown = 0;
 
             for (int i = 0; i < db.Pieces.Count; i++)
             {
@@ -95,6 +105,22 @@ namespace Proto.EditorTools
 
                 int star = Mathf.Clamp(p.Stars, 1, 5);
                 float targets = ExpectedTargets(p);
+
+                // Kind yang belum punya baris di ExpectedTargets. Dilewati DAN diteriakkan:
+                // melewatinya diam-diam berarti angkanya tetap apa adanya di aset, dan itu
+                // terlihat persis seperti solver yang sudah menyetujuinya.
+                if (targets < 0f)
+                {
+                    Debug.LogError(
+                        $"[BalanceTune] '{p.Id}' memakai CastKind.{p.Kind} yang BELUM didaftarkan " +
+                        "di ExpectedTargets/RoleMultiplier. Damage-nya tidak dihitung ulang. " +
+                        "Daftarkan dulu, jangan dibiarkan — angka yang tidak disolusikan tidak " +
+                        "sebanding dengan satu pun skill lain di tiernya.", p);
+
+                    unknown++;
+                    continue;
+                }
+
                 if (targets <= 0f || p.BaseCooldown <= 0f) continue;
 
                 float wanted = TargetDps[star] * RoleMultiplier(p);
@@ -118,7 +144,8 @@ namespace Proto.EditorTools
             AssetDatabase.Refresh();
 
             Debug.Log($"[BalanceTune] {tuned} skill dihitung ulang dari throughput target " +
-                      $"{TargetDps[1]}/{TargetDps[2]}/{TargetDps[3]}/{TargetDps[4]}/{TargetDps[5]} dps.");
+                      $"{TargetDps[1]}/{TargetDps[2]}/{TargetDps[3]}/{TargetDps[4]}/{TargetDps[5]} dps." +
+                      (unknown > 0 ? $"  {unknown} DILEWATI karena kind-nya belum terdaftar." : ""));
             Selection.activeObject = db;
         }
 
@@ -188,11 +215,44 @@ namespace Proto.EditorTools
                 // Sold on the knockback. The damage is a courtesy.
                 case CastKind.ForcePush: return 0.55f;
 
+                // --- gelombang kedua perilaku ---
+
+                // Jangkauannya badan pemain sendiri: tidak bisa dibidik, dan memakainya berarti
+                // berdiri di tempat yang paling berbahaya di lapangan. Yang dibayar bukan
+                // ketidakandalannya melainkan harganya — dia menuntut posisi, bukan cuma petak.
+                case CastKind.Orbital: return 0.8f;
+
+                // Menara boleh ditinggal, dan gerombolan boleh pindah dari tempat ia berdiri.
+                // Separuh nilainya bergantung pada tebakan pemain soal ke mana musuh akan datang.
+                case CastKind.Turret: return 0.75f;
+
+                // Tidak pernah meleset — rudalnya membelok mengejar. Sama dengan Projectile.
+                case CastKind.Seeker: return 1.15f;
+
+                // SATU sasaran, seumur hidup buku yang seluruhnya dituning untuk gerombolan.
+                // Tanpa premi ini ia bukan pilihan melainkan kesalahan, dan boss — satu-satunya
+                // hal yang ia jawab — tidak akan pernah punya jawaban khusus.
+                case CastKind.Tether: return 1.25f;
+
+                // Beraba-aba, jadi bisa MELESET setelah dibayar. Aturan yang sama dengan SunStrike.
+                case CastKind.Barrage: return 1.2f;
+
+                // Tepinya berjalan, jadi yang cepat bisa lari mendahuluinya.
+                case CastKind.Shockwave: return 0.95f;
+
+                // Ruas yang tidak menemukan siapa-siapa memantul di tepi layar dan hangus.
+                case CastKind.Ricochet: return 1.05f;
+
                 default: return 1f;
             }
         }
 
-        static float ExpectedTargets(PieceDefinition p)
+        /// <summary>
+        /// Berapa musuh yang disentuh sekali cast. Publik karena <see cref="FootprintPass"/> ikut
+        /// memakainya: jumlah petak bintang 4-5 diturunkan dari seberapa OP sebuah skill, dan
+        /// "berapa yang kena" adalah setengah dari jawaban itu.
+        /// </summary>
+        public static float ExpectedTargets(PieceDefinition p)
         {
             switch (p.Kind)
             {
@@ -230,7 +290,68 @@ namespace Proto.EditorTools
                     return InRadius(p.Radius) * ticks;
                 }
 
-                default: return 1f;
+                // ---------------------------------------------------------------------------
+                //  gelombang kedua perilaku
+                //
+                //  Tiap kind WAJIB punya baris di sini. Yang tidak punya jatuh ke `default: 1`,
+                //  dan itu bukan nilai netral melainkan pernyataan "skill ini mengenai satu
+                //  musuh" — sebuah hujan hantaman yang menyapu tiga puluh musuh akan dikasih
+                //  damage milik peluru tunggal, yaitu tiga puluh kali terlalu besar. Gagalnya
+                //  senyap total: aset tersimpan rapi, kartunya terlihat wajar, dan yang meledak
+                //  adalah keseimbangan seluruh tier.
+                // ---------------------------------------------------------------------------
+
+                // Cakram di badan pemain yang menagih berulang sepanjang durasinya. Bentuknya
+                // sama persis dengan Zone; yang berbeda cuma bahwa pusatnya ikut berjalan.
+                case CastKind.Orbital:
+                {
+                    float ticks = p.ZoneTickInterval <= 0f ? 1f : p.ZoneDuration / p.ZoneTickInterval;
+                    return InRadius(p.Radius) * ticks;
+                }
+
+                // Membajak satu jalur, dua kali: pergi dan pulang. Bukan tepat dua — jalur
+                // pulangnya tumpang tindih dengan jalur pergi, dan sebagian korbannya sudah mati.
+                case CastKind.Boomerang:
+                    return Mathf.Min(MaxTargets,
+                        p.Range * Mathf.Max(0.8f, p.Radius) * Density * 2f) * 1.8f;
+
+                // Satu ruas per pantulan. Sebagian ruas tidak menemukan musuh dan berakhir di
+                // tepi layar — itu yang membuat angkanya di bawah jumlah pantulannya.
+                case CastKind.Ricochet: return (1f + p.Bounces) * 0.6f;
+
+                // Berapa kali ia menembak dikali berapa peluru per tembakan. Pantulan peluru ikut
+                // dihitung karena menara memakai peluru yang sama dengan Projectile.
+                case CastKind.Turret:
+                {
+                    float volleys = p.ZoneTickInterval <= 0f ? 1f : p.ZoneDuration / p.ZoneTickInterval;
+                    return volleys * Mathf.Max(1, p.Hits) * (1f + p.Bounces);
+                }
+
+                // Tepinya menyapu seluruh cakram tepat sekali sepanjang perjalanannya keluar.
+                case CastKind.Shockwave: return InRadius(p.Radius);
+
+                // Satu rudal satu musuh, dan mereka dilarang mengejar sasaran yang sama.
+                case CastKind.Seeker: return Mathf.Max(1, p.Hits) * 0.95f;
+
+                // Satu sasaran, berkali-kali. Angkanya JUMLAH DENYUT, bukan jumlah musuh — dan
+                // itu memang yang benar: throughput target dibagi ini menghasilkan damage per
+                // denyut, dan denyut-denyut itu semuanya jatuh di satu makhluk.
+                case CastKind.Tether:
+                    return p.ZoneTickInterval <= 0f ? 1f : p.ZoneDuration / p.ZoneTickInterval;
+
+                // Beberapa lingkaran yang saling bertindih. Sebarannya cuma 2,2 kali radius, jadi
+                // hantaman kelima jatuh sebagian besar di tanah yang sudah dihantam.
+                case CastKind.Barrage:
+                    return InRadius(p.Radius) * Mathf.Max(2, p.Hits) * 0.6f;
+
+                // BELUM DIDAFTARKAN. Sengaja negatif, bukan 1.
+                //
+                // Dulu barisnya `return 1f`, dan itu diam-diam berarti "skill ini mengenai satu
+                // musuh". Tiap kind baru yang lupa didaftarkan otomatis mewarisi arti itu, lalu
+                // dikasih damage milik peluru tunggal walaupun ia menyapu tiga puluh musuh. Tidak
+                // ada error, tidak ada aset rusak, dan angkanya baru ketahuan salah setelah
+                // seseorang memainkannya dan merasa satu skill mematahkan seluruh game.
+                default: return -1f;
             }
         }
 

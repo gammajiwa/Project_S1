@@ -16,7 +16,13 @@ MonoBehaviour:
   DisplayName: Poison Pool
   Stars: 1
   Layer: 1
-  Shape: 5
+  Shape: 0
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.5, g: 0.85, b: 0.35, a: 1}
   Icon: {fileID: 21300000, guid: 97f67842ca92d8547b29650ea7fc836e, type: 3}
   Kind: 6
@@ -29,11 +35,11 @@ MonoBehaviour:
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 5
+  ManaCost: 3
   ZoneDuration: 5
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 2033098651686271700, guid: 244fbe42da01ed04c8b4f8b5280e23dc, type: 3}
+  CastVfx: {fileID: 8124987399723840664, guid: 244fbe42da01ed04c8b4f8b5280e23dc, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}

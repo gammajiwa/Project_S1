@@ -25,6 +25,10 @@ namespace Proto
         [Tooltip("Jenis-jenis boss. Tiap wave boss memilih dari daftar ini.")]
         [SerializeField] List<BossDefinition> _bosses = new List<BossDefinition>();
 
+        [Tooltip("Katalog PAKTA — berkah permanen berpasangan dengan kutuk permanen. Node kejadian " +
+                 "mengundi dari daftar ini.")]
+        [SerializeField] List<WorldModifierDefinition> _pacts = new List<WorldModifierDefinition>();
+
         readonly Dictionary<string, PieceDefinition> _byId = new Dictionary<string, PieceDefinition>();
         readonly List<PieceDefinition> _runes = new List<PieceDefinition>();
         readonly List<PieceDefinition> _droppableSkills = new List<PieceDefinition>();
@@ -55,6 +59,52 @@ namespace Proto
         public IReadOnlyList<HeroLoadout> Heroes => _heroes;
 
         public IReadOnlyList<BossDefinition> BossKinds => _bosses;
+
+        /// <summary>
+        /// Seluruh pakta yang pernah ditulis. Dinamai KATALOG, bukan "Pacts", supaya tidak pernah
+        /// tertukar dengan <see cref="WorldPacts"/> — yang itu adalah pakta yang sedang DIPEGANG
+        /// pemain di run ini, dan keduanya dibaca di file yang sama.
+        /// </summary>
+        public IReadOnlyList<WorldModifierDefinition> PactCatalogue => _pacts;
+
+        /// <summary>
+        /// Menawarkan beberapa pakta berbeda yang belum dimiliki, diacak.
+        ///
+        /// Menyaring yang sudah dimiliki di sini, bukan di UI: satu tawaran yang berisi pakta yang
+        /// sudah dipegang adalah pilihan yang tidak melakukan apa-apa, dan pemain baru tahu setelah
+        /// mengkliknya — lalu kehilangan seluruh kejadiannya.
+        /// </summary>
+        public int RollPacts(WorldPacts held, WorldModifierDefinition[] into)
+        {
+            if (into == null || into.Length == 0) return 0;
+
+            _pool.Clear();
+
+            for (int i = 0; i < _pacts.Count; i++)
+            {
+                var p = _pacts[i];
+                if (p == null || (held != null && held.Has(p))) continue;
+                _pool.Add(p);
+            }
+
+            int wanted = Mathf.Min(into.Length, _pool.Count);
+
+            // Fisher-Yates sebagian: mengambil acak lalu mencoret, bukan mengundi berulang sampai
+            // dapat yang belum terpakai. Yang kedua bisa berputar lama justru saat pool-nya tinggal
+            // sedikit — dan pool memang menipis persis di akhir run, saat pemain sudah mengambil
+            // banyak pakta.
+            for (int i = 0; i < wanted; i++)
+            {
+                int pick = Random.Range(i, _pool.Count);
+                (_pool[i], _pool[pick]) = (_pool[pick], _pool[i]);
+                into[i] = _pool[i];
+            }
+
+            for (int i = wanted; i < into.Length; i++) into[i] = null;
+            return wanted;
+        }
+
+        readonly List<WorldModifierDefinition> _pool = new List<WorldModifierDefinition>(24);
 
         /// <summary>Satu jenis boss acak, atau null kalau belum ada yang dibuat.</summary>
         public BossDefinition Boss =>
@@ -338,6 +388,12 @@ namespace Proto
         public void EditorSetHeroes(List<HeroLoadout> heroes)
         {
             _heroes = heroes;
+            _indexed = false;
+        }
+
+        public void EditorSetPacts(List<WorldModifierDefinition> pacts)
+        {
+            _pacts = pacts;
             _indexed = false;
         }
 #endif

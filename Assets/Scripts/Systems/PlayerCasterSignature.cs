@@ -160,7 +160,7 @@ namespace Proto
         /// </summary>
         bool CastOrbit(CompiledSpell spell, PieceDefinition def)
         {
-            int wanted = Mathf.Max(1, def.Hits);
+            int wanted = Mathf.Max(1, def.Hits + BonusHits);
 
             // Menolak menambah kalau langit-langitnya sudah penuh. Tanpa ini dia terus membakar mana
             // untuk pecahan yang tidak pernah terpakai selama lapangan lengang.
@@ -209,8 +209,9 @@ namespace Proto
                     o.Vfx = _vfx.Attach(def.CastVfx, o.T.position, Quaternion.identity,
                         def.CastVfxScale * 0.6f);
                     o.VfxSrc = def.CastVfx;
-                    o.T.localScale = Vector3.one * 0.1f;
                 }
+
+                ShowBody(o.T, BodyVisible(def));
             }
 
             return true;
@@ -409,9 +410,9 @@ namespace Proto
                 b.Vfx = _vfx.Attach(def.CastVfx, b.T.position,
                     Quaternion.LookRotation(b.Dir), def.CastVfxScale * Mathf.Max(0.6f, b.Radius / 1.4f));
                 b.VfxSrc = def.CastVfx;
-                b.T.localScale = Vector3.one * (b.Radius * 0.3f);
             }
 
+            ShowBody(b.T, BodyVisible(def));
             return true;
         }
 
@@ -443,15 +444,20 @@ namespace Proto
             t.Heading = Random.Range(0f, Mathf.PI * 2f);
             t.Active = true;
 
-            // Badan primitifnya ditipiskan saat ada prefab: tugasnya berubah dari MENJADI puting
-            // beliung menjadi penanda jangkauan seret. Dibiarkan pekat, ia menelan efeknya.
+            // TABUNGNYA DIMATIKAN kalau skill ini punya efeknya sendiri.
+            //
+            // Dulu cuma ditipiskan jadi 22% — dan itu justru yang diprotes: tabung silinder
+            // tembus pandang setinggi 2,4 unit MASIH TERLIHAT membungkus setiap tornado, dan
+            // tidak ada partikel sebagus apa pun yang bisa menang melawan bentuk primitif yang
+            // menyelimutinya. Tornado adalah contoh yang disebut namanya.
             var tone = def.Color;
-            if (def.CastVfx != null) tone.a *= 0.22f;
+            tone.a = 1f;
 
             Paint(t.T, tone);
             t.T.position = t.Pos + Vector3.up * 1.2f;
             t.T.localScale = new Vector3(t.Radius * 1.1f, 2.4f, t.Radius * 1.1f);
             t.T.gameObject.SetActive(true);
+            ShowBody(t.T, BodyVisible(def));
 
             AttachTwisterVfx(t, def);
             return true;

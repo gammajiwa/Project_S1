@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d4bf580b2c587a44a9709e31cc2a857, type: 3}
+  m_Name: Pact_darahtebal
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.WorldModifierDefinition
+  Id: darahtebal
+  DisplayName: DARAH TEBAL
+  Color: {r: 0.75, g: 0.2, b: 0.22, a: 1}
+  Icon: {fileID: 21300000, guid: 0496ed01fdad570439bf5116387dcfb0, type: 3}
+  BoonText: Damage seluruh bukumu +35%
+  BaneText: Semua musuh bernyawa +40%
+  Boon:
+  - Type: 7
+    Value: 0.35
+  Bane: []
+  EnemyHpMul: 1.4
+  EnemySpeedMul: 1
+  EnemyDamageMul: 1
+  EnemyCountMul: 1
+  ManaRegenMul: 1
+  HpRegenMul: 1
+  ManaPerKill: 0
+  HpPerKill: 0
+  EchoChance: 0
+  ReviveAt: 0
+  Blurb: '"Kutebalkan darah mereka. Kutebalkan juga tanganmu. Adil, bukan?"'

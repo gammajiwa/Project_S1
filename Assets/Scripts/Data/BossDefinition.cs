@@ -34,6 +34,48 @@ namespace Proto
         [Tooltip("Ukuran ruas terakhir. Yang di antaranya diinterpolasi, jadi badannya meruncing.")]
         public float TailScale = 0.9f;
 
+        [Header("Model")]
+        [Tooltip("Mesh kepala. Dikosongkan = boss ini digambar dengan kapsul seperti sebelumnya, " +
+                 "dan dua mesh di bawah ikut diabaikan.")]
+        public Mesh HeadMesh;
+
+        [Tooltip("Mesh SATU ruas badan. Diulang sebanyak ruas yang sedang hidup, jadi bentuknya " +
+                 "harus menyambung ke dirinya sendiri di kedua ujung.")]
+        public Mesh BodyMesh;
+
+        [Tooltip("Mesh penutup di ujung ekor.")]
+        public Mesh TailMesh;
+
+        [Tooltip("Tekstur warna untuk ketiga mesh di atas. UV-nya keluar dari rentang 0..1, jadi " +
+                 "importer teksturnya HARUS Wrap Mode = Repeat, bukan Clamp.")]
+        public Texture2D BoneSkin;
+
+        [Tooltip("Pembetulan ukuran ASET kepala — berapa kali mesh mentahnya harus dibesarkan. " +
+                 "Terpisah dari HeadScale, yang mengatur ukuran yang dilihat pemain.")]
+        public float HeadMeshScale = 12f;
+
+        [Tooltip("Pembetulan ukuran aset badan DAN ekor. Keduanya sengaja dipotong sama panjang, " +
+                 "jadi satu angka cukup untuk dua-duanya.")]
+        public float BodyMeshScale = 21f;
+
+        [Header("Koreksi orientasi model")]
+        // Model tidak selalu diekspor menghadap ke arah yang diasumsikan kode. Kode menganggap
+        // +Z = arah jalan dan +Y = atas; SnakeBoss dibuat BERDIRI (dilihat kamera atas ia tampil
+        // dari samping) dan kepalanya menghadap berlawanan dengan ekornya.
+        //
+        // Dibiarkan sebagai DATA, bukan dipatok di kode: begitu art ditukar, yang perlu diubah
+        // cuma tiga angka di aset ini — dan tiga slot terpisah karena tidak ada jaminan pengekspor
+        // meletakkan ketiga mesh menghadap arah yang sama. Terbukti di aset pertama: memang tidak.
+
+        [Tooltip("Koreksi rotasi mesh KEPALA, dalam derajat. Dipasang sebelum arah hadapnya.")]
+        public Vector3 HeadMeshRotation;
+
+        [Tooltip("Koreksi rotasi mesh RUAS BADAN.")]
+        public Vector3 BodyMeshRotation;
+
+        [Tooltip("Koreksi rotasi mesh EKOR.")]
+        public Vector3 TailMeshRotation;
+
         [Header("Nyawa")]
         [Tooltip("Dikali HP musuh biasa di wave itu. Boss harus bertahan cukup lama untuk sempat " +
                  "menunjukkan perilakunya, bukan cuma HP besar yang berdiri diam.")]
@@ -139,6 +181,40 @@ namespace Proto
         [Header("Warna")]
         public Color HeadColor = new Color(0.85f, 0.25f, 0.35f);
         public Color BodyColor = new Color(0.45f, 0.18f, 0.3f);
+
+        // Emisi, dan HDR-nya bukan hiasan.
+        //
+        // Ambang bloom di seluruh look profile ada di 0,8–1,25. Warna emisi bernilai 1,0 tidak
+        // akan pernah menyala — ia cuma jadi lebih terang. Yang MENYALA harus lewat ambang itu,
+        // dan satu-satunya cara adalah HDR di atas satu. Karena itu pickernya dibuka HDR.
+        //
+        // Hitam = mati, jadi boss lama tidak berubah tanpa disentuh.
+        [Tooltip("Pendar kepala. Hitam = tidak menyala. Perlu HDR di atas 1 supaya kena bloom.")]
+        [ColorUsage(false, true)] public Color HeadEmission = Color.black;
+
+        [Tooltip("Pendar ruas badan dan ekor.")]
+        [ColorUsage(false, true)] public Color BodyEmission = Color.black;
+
+        // Nama file mesh, bukan referensi mesh.
+        //
+        // Referensinya sendiri sudah ada di HeadMesh/BodyMesh/TailMesh — tapi BossModelPass
+        // menimpanya untuk SEMUA boss tiap kali dijalankan, jadi boss yang memakai model lain
+        // akan kehilangan modelnya pada klik menu berikutnya. Yang bertahan harus berupa niat
+        // yang tersimpan di aset, bukan hasil yang tersimpan di aset.
+        //
+        // Kosong = pakai file bawaan. Tanpa ekstensi.
+        [Header("Model: berkas khusus (opsional)")]
+        [Tooltip("Nama file mesh kepala tanpa .fbx, mis. SK_Snake_Head_Horned. Kosong = bawaan.")]
+        public string HeadMeshFile;
+
+        [Tooltip("Nama file mesh ruas badan tanpa .fbx. Kosong = bawaan.")]
+        public string BodyMeshFile;
+
+        [Tooltip("Nama file mesh ekor tanpa .fbx. Kosong = bawaan.")]
+        public string TailMeshFile;
+
+        [Tooltip("Nama file tekstur tanpa .png, mis. SnakeBoss_Albedo_Charred. Kosong = bawaan.")]
+        public string BoneSkinFile;
 
         void OnValidate()
         {

@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_firestormcore
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: firestormcore
-  DisplayName: Firestorm Core
+  DisplayName: Segel Inti Badai
   Stars: 3
   Layer: 1
-  Shape: 11
+  Shape: 5
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.963, g: 0.556, b: 0.3636, a: 1}
   Icon: {fileID: 21300000, guid: d2318b6538cce1d449bc22cabc821c71, type: 3}
-  Kind: 4
+  Kind: 7
   Element: 0
-  BaseDamage: 42
-  BaseCooldown: 3
-  Radius: 6
-  Range: 12
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 7
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 6897353445731520832, guid: 0b122b25b501dc04c985b4da3b68dd08, type: 3}
+  CastVfx: {fileID: 7260399523794476945, guid: 9a9c57a0b3e86ae4f845dced2630499e, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
-  StatusDuration: 5
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 2
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,12 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 21
+    Value: 2
+  - Type: 8
+    Value: -0.1
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Drops a burning core into the thick of them.
+  Blurb: Dua lagi, di semua yang dihitung banyaknya. Menahannya membuat semua cooldown
+    sedikit lebih panjang.

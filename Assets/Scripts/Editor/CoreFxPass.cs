@@ -18,7 +18,7 @@ namespace Proto.EditorTools
     /// </summary>
     public static class CoreFxPass
     {
-        const string Root = "Assets/Art/VFX/Core";
+        const string Root = "Assets/Prefabs/FX_Core";
         const string LibraryPath = "Assets/GameData/FxLibrary.asset";
 
         /// <summary>(nama slot di FxLibrary, nama folder, bentuk, skala, material AOE?).</summary>
@@ -34,6 +34,25 @@ namespace Proto.EditorTools
             ("Twister",         "Puting Beliung",     PrimitiveType.Cylinder, 1f,    false),
             ("DropPickup",      "Barang Jatuh",       PrimitiveType.Cube,     0.42f, false),
             ("IslandGuardian",  "Penjaga Pulau",      PrimitiveType.Capsule,  1f,    false),
+
+            // --- benda perilaku gelombang kedua ---
+            //
+            // Kelimanya SEMPAT lahir sebagai CreatePrimitive murni tanpa prefab sama sekali:
+            // slotnya ditambahkan ke FxLibrary tapi tidak pernah ada aset yang mengisinya, jadi
+            // yang muncul di layar kotak putih yang tidak bisa dibuka, tidak bisa diseret, dan
+            // tidak bisa diganti tanpa menyunting C#. Persis yang seluruh pass ini ada untuk
+            // mencegahnya.
+            ("Blade",       "Bilah Berputar",   PrimitiveType.Cube,     1f, false),
+            ("Boomerang",   "Bumerang",         PrimitiveType.Cube,     1f, false),
+            ("TurretBody",  "Menara",           PrimitiveType.Cylinder, 1f, false),
+            ("ShockRing",   "Cincin Gelombang", PrimitiveType.Cylinder, 1f, true),
+            ("Missile",     "Rudal Pengejar",   PrimitiveType.Sphere,   1f, false),
+
+            // Penanda jangkauan Orbital. Cakram tipis di kaki pemain yang menggambar radius
+            // SESUNGGUHNYA — tanpa ini bilah yang berputar adalah satu-satunya petunjuk seberapa
+            // jauh skill itu menyapu, dan efek partikelnya (yang hampir selalu jauh lebih lebar
+            // dari radius damage) membaca sebagai janji area yang tidak pernah ditepati.
+            ("OrbitRing",   "Cincin Orbital",   PrimitiveType.Cylinder, 1f, true),
         };
 
         [MenuItem("Tools/Grimoire/Build Core FX")]

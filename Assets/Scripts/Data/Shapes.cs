@@ -37,7 +37,59 @@ namespace Proto
         Zed,
         Aitch,
         Ess,
-        Fork
+        Fork,
+
+        // =================================================================================
+        //  Gelombang ketiga. Ditambahkan supaya bentuk piece BERAGAM, bukan satu bentuk per
+        //  bintang — permintaan pemilik project: "gw mau bentuknya bisa beda-beda, gak harus
+        //  ada rule, se aneh apa pun bentuk gridnya itu posibel."
+        //
+        //  Dua di antaranya TERPUTUS (Diag3, Twin) — petaknya tidak bersentuhan sama sekali.
+        //  Itu sah: papan cuma memeriksa tiap petak satu per satu, tidak pernah menuntut
+        //  bentuknya menyatu. Yang terputus justru paling menyulitkan dipak, dan itu gunanya.
+        //
+        //  Semua tetap muat di kotak 3x3 dan maksimal 9 petak. Itu batas keras, bukan gaya:
+        //  siluet codex kotak 3x3 dan kolam petak piece tercecer berukuran sembilan.
+        // =================================================================================
+
+        /// <summary>2 petak, DIAGONAL dan terputus. Sepasang petak yang cuma bersentuhan di sudut.</summary>
+        Diag2,
+
+        /// <summary>3 petak diagonal, terputus semua. Paling sulit dipak dari seluruh bentuk 3 petak.</summary>
+        Diag3,
+
+        /// <summary>4 petak — cermin dari SBend. Rotasi tidak pernah bisa menghasilkan cermin.</summary>
+        Zee,
+
+        /// <summary>4 petak — cermin dari Ell.</summary>
+        Jay,
+
+        /// <summary>4 petak — T pendek yang batangnya di tengah sisi panjang.</summary>
+        Nub,
+
+        /// <summary>5 petak — empat sudut plus pusat. Menyisakan empat petak tunggal di sisi-sisinya.</summary>
+        Ex,
+
+        /// <summary>5 petak — anak panah.</summary>
+        Arrow,
+
+        /// <summary>5 petak — kilat zig-zag.</summary>
+        Bolt,
+
+        /// <summary>6 petak — dua tiang terpisah, tidak pernah bersentuhan.</summary>
+        Twin,
+
+        /// <summary>6 petak — tangga naik.</summary>
+        Stair,
+
+        /// <summary>7 petak — sisir E: tiga gigi dari satu punggung.</summary>
+        Comb,
+
+        /// <summary>7 petak — pusaran yang melingkar setengah putaran.</summary>
+        Spiral,
+
+        /// <summary>8 petak — 3x3 kurang satu petak TENGAH SISI, bukan sudut.</summary>
+        Maw
     }
 
     /// <summary>Pure geometry helpers. No game data lives here.</summary>
@@ -191,6 +243,134 @@ namespace Proto
                                                         new Vector2Int(2, 0)
         };
 
+        // ---- gelombang ketiga ----
+
+        //   . X
+        //   X .
+        static readonly Vector2Int[] Diag2Cells =
+        {
+            new Vector2Int(0, 0), new Vector2Int(1, 1)
+        };
+
+        //   . . X
+        //   . X .
+        //   X . .
+        static readonly Vector2Int[] Diag3Cells =
+        {
+            new Vector2Int(0, 0), new Vector2Int(1, 1), new Vector2Int(2, 2)
+        };
+
+        //   X X .
+        //   . X X
+        static readonly Vector2Int[] ZeeCells =
+        {
+            new Vector2Int(1, 0), new Vector2Int(2, 0),
+            new Vector2Int(0, 1), new Vector2Int(1, 1)
+        };
+
+        // CERMIN dari Ell, bukan putarannya — huruf L dan J memang dua tetromino berbeda, dan
+        // memutar L berapa kali pun tidak pernah menghasilkan J.
+        //   . X
+        //   . X
+        //   X X
+        static readonly Vector2Int[] JayCells =
+        {
+                                  new Vector2Int(1, 2),
+                                  new Vector2Int(1, 1),
+            new Vector2Int(0, 0), new Vector2Int(1, 0)
+        };
+
+        // TERPUTUS. Di dalam kotak 3x3 cuma ada enam tetromino yang muat (I butuh 4 melintang),
+        // dan keenamnya sudah terpakai — jadi bentuk 4 petak ketujuh HARUS yang tidak menyatu.
+        //   X . X
+        //   X . X
+        static readonly Vector2Int[] NubCells =
+        {
+            new Vector2Int(0, 1),                       new Vector2Int(2, 1),
+            new Vector2Int(0, 0),                       new Vector2Int(2, 0)
+        };
+
+        //   X . X
+        //   . X .
+        //   X . X
+        static readonly Vector2Int[] ExCells =
+        {
+            new Vector2Int(0, 2),                       new Vector2Int(2, 2),
+                                  new Vector2Int(1, 1),
+            new Vector2Int(0, 0),                       new Vector2Int(2, 0)
+        };
+
+        //   . . X
+        //   X X X
+        //   . . X   -> kepala panah menumpu di SATU sisi, bukan simetris seperti Cross
+        static readonly Vector2Int[] ArrowCells =
+        {
+                                                        new Vector2Int(2, 2),
+            new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1),
+                                                        new Vector2Int(2, 0)
+        };
+
+        //   . X X
+        //   . X .
+        //   X X .
+        static readonly Vector2Int[] BoltCells =
+        {
+                                  new Vector2Int(1, 2), new Vector2Int(2, 2),
+                                  new Vector2Int(1, 1),
+            new Vector2Int(0, 0), new Vector2Int(1, 0)
+        };
+
+        //   X . X
+        //   X . X
+        //   X . X
+        static readonly Vector2Int[] TwinCells =
+        {
+            new Vector2Int(0, 2),                       new Vector2Int(2, 2),
+            new Vector2Int(0, 1),                       new Vector2Int(2, 1),
+            new Vector2Int(0, 0),                       new Vector2Int(2, 0)
+        };
+
+        //   . . X
+        //   . X X
+        //   X X .
+        static readonly Vector2Int[] StairCells =
+        {
+                                                        new Vector2Int(2, 2),
+                                  new Vector2Int(1, 1), new Vector2Int(2, 1),
+            new Vector2Int(0, 0), new Vector2Int(1, 0)
+        };
+
+        //   X X X
+        //   X X .
+        //   X . X   -> coakannya di dua tempat berbeda, jadi tidak pernah sama dengan Zed
+        //               diputar berapa kali pun
+        static readonly Vector2Int[] CombCells =
+        {
+            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(2, 2),
+            new Vector2Int(0, 1), new Vector2Int(1, 1),
+            new Vector2Int(0, 0),                       new Vector2Int(2, 0)
+        };
+
+        //   X X X
+        //   X . X
+        //   X X .
+        static readonly Vector2Int[] SpiralCells =
+        {
+            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(2, 2),
+            new Vector2Int(0, 1),                       new Vector2Int(2, 1),
+            new Vector2Int(0, 0), new Vector2Int(1, 0)
+        };
+
+        //   X X X
+        //   X X X
+        //   X . X   -> coakan di TENGAH sisi, jadi lubangnya terjepit dua sisi
+        static readonly Vector2Int[] MawCells =
+        {
+            new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(2, 2),
+            new Vector2Int(0, 1), new Vector2Int(1, 1), new Vector2Int(2, 1),
+            new Vector2Int(0, 0),                       new Vector2Int(2, 0)
+        };
+
         public static Vector2Int[] Of(ShapeKind kind)
         {
             switch (kind)
@@ -214,6 +394,21 @@ namespace Proto
                 case ShapeKind.Aitch: return AitchCells;
                 case ShapeKind.Ess: return EssCells;
                 case ShapeKind.Fork: return ForkCells;
+
+                case ShapeKind.Diag2: return Diag2Cells;
+                case ShapeKind.Diag3: return Diag3Cells;
+                case ShapeKind.Zee: return ZeeCells;
+                case ShapeKind.Jay: return JayCells;
+                case ShapeKind.Nub: return NubCells;
+                case ShapeKind.Ex: return ExCells;
+                case ShapeKind.Arrow: return ArrowCells;
+                case ShapeKind.Bolt: return BoltCells;
+                case ShapeKind.Twin: return TwinCells;
+                case ShapeKind.Stair: return StairCells;
+                case ShapeKind.Comb: return CombCells;
+                case ShapeKind.Spiral: return SpiralCells;
+                case ShapeKind.Maw: return MawCells;
+
                 default: return DotCells;
             }
         }
@@ -243,6 +438,21 @@ namespace Proto
                 case ShapeKind.Aitch: return "HURUF H";
                 case ShapeKind.Ess: return "HURUF S";
                 case ShapeKind.Fork: return "TRISULA";
+
+                case ShapeKind.Diag2: return "SERONG 2";
+                case ShapeKind.Diag3: return "SERONG 3";
+                case ShapeKind.Zee: return "BENGKOK Z";
+                case ShapeKind.Jay: return "HURUF J";
+                case ShapeKind.Nub: return "TONJOLAN";
+                case ShapeKind.Ex: return "SILANG X";
+                case ShapeKind.Arrow: return "PANAH";
+                case ShapeKind.Bolt: return "KILAT";
+                case ShapeKind.Twin: return "TIANG KEMBAR";
+                case ShapeKind.Stair: return "TANGGA";
+                case ShapeKind.Comb: return "SISIR";
+                case ShapeKind.Spiral: return "PUSARAN";
+                case ShapeKind.Maw: return "RAHANG";
+
                 default: return kind.ToString();
             }
         }

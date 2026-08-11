@@ -20,7 +20,7 @@ namespace Proto.EditorTools
     public static class ReactionVfxPass
     {
         const string ReactionFolder = "Assets/GameData/Reactions";
-        const string VfxRoot = "Assets/Art/VFX/Reactions";
+        const string VfxRoot = "Assets/Prefabs/Reactions";
 
         const string Ga = "Assets/Art/VFX/Packs/GabrielAguiarProductions/UniqueMagicAbilitiesVol_2/Prefabs/";
         const string Cfxr = "Assets/Art/VFX/Packs/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/";

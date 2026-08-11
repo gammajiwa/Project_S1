@@ -38,6 +38,8 @@ namespace Proto
         readonly Material[] _materials;
         readonly RenderParams[] _params;
 
+        readonly Quaternion _meshRotation;
+
         readonly Vector3[] _stagePos;
         readonly float[] _stageYaw;
         readonly float[] _stagePhase;
@@ -82,9 +84,31 @@ namespace Proto
         /// Same batching for enemies and for the shots they fire — different mesh, different
         /// palette, different size, and shots do not breathe.
         /// </summary>
+        /// <param name="meshRotation">
+        /// Koreksi orientasi ASET, dipasang di dalam matriks tiap instans SEBELUM yaw.
+        ///
+        /// Ada karena model tidak selalu diekspor menghadap ke arah yang diasumsikan kode. Model
+        /// SnakeBoss dibuat BERDIRI — dilihat kamera atas ia tampil dari samping alih-alih dari
+        /// punggung — dan kepalanya menghadap berlawanan dengan ekornya, jadi satu koreksi untuk
+        /// ketiganya pun tidak cukup.
+        ///
+        /// Ditaruh di renderer, bukan diperbaiki di aset FBX: memutar mesh di importer akan
+        /// mengubah bounds-nya, dan seluruh perhitungan ukuran di BossModelPass diturunkan dari
+        /// bounds itu.
+        /// </param>
         public EnemyRenderer(Mesh mesh, Color[] palette, int capacity, float bodyScale, bool animate,
-            VatClipSet vat = null, bool castShadows = false)
+            VatClipSet vat = null, bool castShadows = false, Texture baseMap = null,
+            Vector3 meshEuler = default, Color emission = default)
         {
+            // Diterima sebagai EULER, bukan Quaternion, dan itu bukan selera.
+            //
+            // `default(Quaternion)` adalah (0,0,0,0) — BUKAN identitas — dan mengalikannya
+            // meruntuhkan tiap matriks jadi nol. Menjaganya butuh sentinel, dan sentinel itu
+            // sendiri tidak bisa diperiksa dengan `==`: operator Quaternion Unity memakai dot
+            // product, jadi `default == default` justru mengembalikan FALSE. Euler tidak punya
+            // lubang itu sama sekali: Euler(0,0,0) memang identitas.
+            _meshRotation = Quaternion.Euler(meshEuler);
+
             _vat = vat != null && vat.Mesh != null && vat.Positions != null ? vat : null;
 
             // Mesh panggangan menggantikan kapsulnya. Bentuknya pose netral — vertexnya digeser
@@ -125,6 +149,34 @@ namespace Proto
                     // tergambar polos, dan seluruh gunanya memakai model 3D hilang.
                     var skin = SkinOf(_vat.SourceMaterial);
                     if (skin != null) _materials[i].SetTexture("_BaseMap", skin);
+                }
+                else if (baseMap != null)
+                {
+                    // Jalur mesh STATIS. Tanpa cabang ini _BaseMap hanya terpasang untuk model
+                    // panggangan, jadi mesh ber-UV apa pun yang lewat sini — termasuk kerangka
+                    // boss — tergambar polos meski teksturnya sudah ada di project.
+                    _materials[i].SetTexture("_BaseMap", baseMap);
+                    _materials[i].SetTexture("_MainTex", baseMap);
+                }
+
+                // Emisi. `default(Color)` adalah (0,0,0,0) — hitam — jadi renderer yang tidak
+                // memintanya tidak membayar apa pun dan tidak butuh sentinel terpisah.
+                //
+                // Keyword-nya dinyalakan MANUAL. Material yang dibuat lewat kode tidak pernah
+                // melewati shader GUI URP, dan tanpa _EMISSION nilainya tersimpan rapi tapi tidak
+                // pernah dibaca shader — gejalanya paling menyesatkan: inspector menunjukkan warna
+                // yang benar sementara layar tidak berubah sama sekali.
+                //
+                // Ambang bloom di look profile ada di 0,8–1,25, jadi warna yang mau MENYALA harus
+                // HDR di atas satu. Merah 1,0 tidak akan menyala; ia cuma merah.
+                if (emission.maxColorComponent > 0.001f)
+                {
+                    _materials[i].EnableKeyword("_EMISSION");
+                    _materials[i].SetColor("_EmissionColor", emission);
+
+                    // Musuh bergerak, jadi tak satu pun ikut lightmap. Membiarkan flag bawaannya
+                    // membuat Unity memasukkan mereka ke perhitungan GI yang hasilnya dibuang.
+                    _materials[i].globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
                 }
 
                 // Matte, disetel eksplisit. URP/Lit lahir dengan smoothness 0,5 — material yang
@@ -300,7 +352,7 @@ namespace Proto
             {
                 int slot = _bucketCursor[_stageTint[i]]++;
                 _instances[slot] = Compose(_stagePos[i], _stageYaw[i], _stagePhase[i],
-                    _stageScale[i], _animate ? time : 0f, _bodyScale, _animate);
+                    _stageScale[i], _animate ? time : 0f, _bodyScale, _animate, _meshRotation);
 
                 // Ditulis di slot yang SAMA dengan matriksnya. Pengurutan ember mengacak urutan
                 // musuh, dan data animasi yang tetap memakai urutan masuk akan memasangkan
@@ -373,13 +425,19 @@ namespace Proto
         /// has to change.
         /// </summary>
         static Matrix4x4 Compose(Vector3 position, float yaw, float phase, Vector3 scale, float time,
-            float bodyScale, bool animate)
+            float bodyScale, bool animate, Quaternion meshRotation)
         {
             Vector3 body = scale * bodyScale;
 
+            // Yaw DULU, koreksi aset belakangan. Urutan ini bukan selera: yang kiri berputar di
+            // ruang dunia dan yang kanan di ruang mesh, jadi membaliknya membuat koreksi "rebahkan
+            // model" ikut berputar bersama arah hadap — modelnya akan berguling tiap kali boss
+            // membelok.
+            Quaternion facing = Quaternion.Euler(0f, yaw, 0f) * meshRotation;
+
             if (!animate)
             {
-                return Matrix4x4.TRS(position, Quaternion.Euler(0f, yaw, 0f), body);
+                return Matrix4x4.TRS(position, facing, body);
             }
 
             float wobble = Mathf.Sin(time * 7f + phase);
@@ -391,7 +449,7 @@ namespace Proto
             // Bigger bodies sit higher, or a scaled-up enemy sinks halfway into the floor.
             position.y += wobble * 0.06f + (scale.y - 1f) * bodyScale;
 
-            return Matrix4x4.TRS(position, Quaternion.Euler(0f, yaw, 0f),
+            return Matrix4x4.TRS(position, facing,
                 new Vector3(body.x * squash, body.y * stretch, body.z * squash));
         }
     }

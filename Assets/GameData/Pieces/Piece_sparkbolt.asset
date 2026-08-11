@@ -17,6 +17,12 @@ MonoBehaviour:
   Stars: 1
   Layer: 1
   Shape: 0
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.92, g: 0.86, b: 0.3, a: 1}
   Icon: {fileID: 21300000, guid: 143a29c90dfdb194780110579e3eec03, type: 3}
   Kind: 0

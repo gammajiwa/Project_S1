@@ -26,7 +26,7 @@ namespace Proto
         const string GameScenePath = "Assets/Scenes/Proto.unity";
         const string ThemePath = "Assets/GameData/MenuTheme.asset";
         const string UiThemePath = "Assets/GameData/UiTheme.asset";
-        const string StarterPrefabPath = "Assets/Art/UI/Prefabs/StarterPanel.prefab";
+        const string StarterPrefabPath = "Assets/Prefabs/UI/StarterPanel.prefab";
         const string MenuLookPath = "Assets/GameData/SceneLook_Menu.asset";
         const string MenuAssetDir = "Assets/GameData/Menu";
 
@@ -817,7 +817,7 @@ namespace Proto
         /// </summary>
         static void SaveSettingsPrefab(GameObject page)
         {
-            const string Path = "Assets/Art/UI/Prefabs/SettingsPage.prefab";
+            const string Path = "Assets/Prefabs/UI/SettingsPage.prefab";
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(page, Path);
 

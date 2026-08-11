@@ -98,9 +98,21 @@ namespace Proto
             enemies.Cheats = _cheats;
             caster.Cheats = _cheats;
 
+            // Satu wadah pakta, DIPAKAI BERSAMA. Sengaja bukan dua salinan: separuh isi sebuah
+            // pakta menggeser stat pemain dan separuhnya lagi menggeser gerombolan, dan dua salinan
+            // yang menyimpang satu sama lain akan menghasilkan pakta yang berkahnya berlaku tapi
+            // kutuknya tidak — bug yang tidak akan pernah dilaporkan siapa pun.
+            var pacts = new WorldPacts();
+            enemies.Pacts = pacts;
+            caster.Pacts = pacts;
+
             // Sebelum Init: kolam FX dibangun di dalamnya, dan library yang dipasang belakangan
             // berarti benda-benda yang sudah terlanjur lahir tetap primitif seumur run.
             caster.Fx = _fx;
+
+            // Dipakai HANYA oleh sinar memantul, untuk tahu di mana tepi layar berada. Boleh
+            // kosong — tanpa kamera, sinarnya memantul di kotak seluas jangkauannya sendiri.
+            caster.Lens = cam;
 
             // Alasan yang sama: renderernya dibangun di dalam Init dan tidak pernah dibangun
             // ulang, jadi panggangan yang dipasang belakangan tidak akan pernah terpakai.

@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d4bf580b2c587a44a9709e31cc2a857, type: 3}
+  m_Name: Pact_kebangkitan
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.WorldModifierDefinition
+  Id: kebangkitan
+  DisplayName: KEBANGKITAN
+  Color: {r: 1, g: 0.85, b: 0.4, a: 1}
+  Icon: {fileID: 21300000, guid: 7bf55bfeed0e2f94bbed519c5e9ed8a5, type: 3}
+  BoonText: "SEKALI per run, kematian dibatalkan \u2014 bangkit di separuh nyawa"
+  BaneText: Musuh bernyawa +50% DAN memukul 40% lebih keras
+  Boon: []
+  Bane: []
+  EnemyHpMul: 1.5
+  EnemySpeedMul: 1
+  EnemyDamageMul: 1.4
+  EnemyCountMul: 1
+  ManaRegenMul: 1
+  HpRegenMul: 1
+  ManaPerKill: 0
+  HpPerKill: 0
+  EchoChance: 0
+  ReviveAt: 0.5
+  Blurb: '"Satu nyawa lagi. Kubuat sisanya lebih pantas kau bayar."'

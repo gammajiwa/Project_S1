@@ -25,6 +25,43 @@ namespace Proto
 
         public ShapeKind Shape = ShapeKind.Line2;
 
+        [Tooltip("Bentuk GAMBARAN TANGAN, digambar lewat Tools/Grimoire/Editor Bentuk Grid.\n\n" +
+                 "Kosong = pakai Shape di atas. Terisi = Shape DIABAIKAN sepenuhnya, dan pass " +
+                 "Footprint by Rarity tidak akan menimpanya — bentuk yang digambar tangan adalah " +
+                 "keputusan, dan generator tidak boleh membatalkan keputusan.\n\n" +
+                 "Boleh bentuk apa pun, termasuk yang petaknya TIDAK BERSENTUHAN. Papan cuma " +
+                 "memeriksa tiap petak satu per satu; ia tidak pernah menuntut bentuknya menyatu.")]
+        public Vector2Int[] CustomCells;
+
+        /// <summary>Bentuk ini digambar tangan, bukan diundi generator.</summary>
+        public bool HasCustomShape => CustomCells != null && CustomCells.Length > 0;
+
+        [Header("Art di papan")]
+        [Tooltip("Gambar yang dibentangkan di atas footprint piece ini saat ia duduk di papan.\n\n" +
+                 "Beda dari Icon: Icon itu gambar kecil untuk kartu, strip, dan codex — selalu " +
+                 "kotak. Yang ini menutupi BENTUK ASLINYA di papan, jadi ia digambar mengikuti " +
+                 "petak-petaknya. Kosong = papan kembali menggambar petak berwarna seperti biasa.")]
+        public Sprite Art;
+
+        [Tooltip("Geser art terhadap petak paling kiri-bawah footprint, dalam satuan PETAK. " +
+                 "0,5 = setengah petak. Ada karena art yang digambar terpisah hampir tidak pernah " +
+                 "punya pivot yang persis sama dengan petak nol.")]
+        public Vector2 ArtOffset;
+
+        [Tooltip("Ukuran art dalam satuan PETAK. Nol berarti \"seukuran kotak pembatas " +
+                 "footprint\" — itu tebakan yang benar untuk art yang digambar mengikuti bentuknya, " +
+                 "dan titik awal yang masuk akal sebelum digeser tangan.")]
+        public Vector2 ArtSize;
+
+        [Tooltip("Putaran art dalam derajat. Terpisah dari rotasi piece di papan — yang ini " +
+                 "meluruskan GAMBARNYA terhadap footprint, sekali, dan tidak ikut berputar saat " +
+                 "pemain memutar piece-nya.")]
+        [Range(-180f, 180f)] public float ArtRotation;
+
+        [Tooltip("Art digambar DI BAWAH warna petak, bukan di atas. Untuk art yang ingin " +
+                 "diwarnai ulang oleh warna piece alih-alih menutupinya.")]
+        public bool ArtBehindCells;
+
         public Color Color = Color.white;
 
         [Tooltip("Placeholder digenerate lewat Tools/Grimoire/Generate Placeholder Icons. " +
@@ -190,7 +227,10 @@ namespace Proto
         [TextArea(2, 4)]
         public string Blurb;
 
-        public Vector2Int[] Cells => Shapes.Of(Shape);
+        // Gambaran tangan menang atas Shape. Satu-satunya titik baca bentuk di seluruh game, jadi
+        // menaruh aturannya di sini berarti papan, tas, codex, ikon, dan preview evolusi semuanya
+        // ikut tanpa satu pun dari mereka perlu tahu bahwa bentuk gambaran tangan itu ada.
+        public Vector2Int[] Cells => HasCustomShape ? CustomCells : Shapes.Of(Shape);
 
         public bool IsRune => Layer == Layer.Rune;
 

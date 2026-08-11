@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_ripple
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: ripple
+  DisplayName: Ripple
+  Stars: 1
+  Layer: 1
+  Shape: 0
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.8, g: 0.9, b: 0.95, a: 1}
+  Icon: {fileID: 21300000, guid: 6b8f3f90af3c1ec4298e6589c3cf1e1a, type: 3}
+  Kind: 25
+  Element: 3
+  BaseDamage: 8
+  BaseCooldown: 3
+  Radius: 4.5
+  Range: 0
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 2
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 5194781812109585504, guid: 489830fb4b5da794eb1dcf8fc9edf3d0, type: 3}
+  CastVfxScale: 0.8
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 5
+  LiftDuration: 1.6
+  TravelSpeed: 11
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: Gelombang yang melebar keluar dari kakimu dan MELONTARKAN yang disapunya.
+    Sampai ke tepi belakangan, jadi ia mengejar yang sudah kabur.

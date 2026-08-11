@@ -16,7 +16,13 @@ MonoBehaviour:
   DisplayName: Tornado
   Stars: 4
   Layer: 1
-  Shape: 14
+  Shape: 31
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.62, g: 0.88, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 87754848880a3624ea7bcd0751648e18, type: 3}
   Kind: 19
@@ -29,11 +35,11 @@ MonoBehaviour:
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 24
+  ManaCost: 15
   ZoneDuration: 5
   ZoneTickInterval: 0.5
   ZoneDrift: 2.3
-  CastVfx: {fileID: 6287072018656545884, guid: e0b844635fb039444a96bfcfb71db551, type: 3}
+  CastVfx: {fileID: 5487117703562016937, guid: e0b844635fb039444a96bfcfb71db551, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 0}

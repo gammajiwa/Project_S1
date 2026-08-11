@@ -28,6 +28,20 @@ namespace Proto
         public float HpFraction => MaxHp <= 0f ? 0f : Mathf.Clamp01(Hp / MaxHp);
         public Vector3 HeadPos => _head;
 
+        /// <summary>
+        /// Ke mana kepala sedang MENGHADAP.
+        ///
+        /// Harus dibuka keluar, dan sebabnya bug yang nyata: yang menggambar ruas menurunkan arah
+        /// hadap tiap ruas dari selisih posisinya dengan ruas di depannya, dan untuk ruas nomor nol
+        /// "ruas di depannya" adalah kepala itu sendiri. Selisihnya nyaris nol — jejak disisipkan
+        /// di indeks 0 tiap kali kepala bergerak sejauh TrailStep — jadi penjaga anti-nol di sana
+        /// menolak menghitung, dan kepala mempertahankan arah hadap lamanya SELAMANYA.
+        ///
+        /// Yang terlihat: seluruh badan meliuk mengikuti jalurnya dengan benar sementara kepalanya
+        /// menatap utara dunia sepanjang pertarungan.
+        /// </summary>
+        public Vector3 Heading => _heading;
+
         readonly List<EnemyManager.Enemy> _segments = new List<EnemyManager.Enemy>();
 
         /// <summary>Jejak kepala, terbaru di indeks 0.</summary>
@@ -278,23 +292,68 @@ namespace Proto
             _heading.Normalize();
         }
 
+        /// <summary>
+        /// Merekam jejak kepala pada jarak yang SELALU tepat <see cref="TrailStep"/>.
+        ///
+        /// Versi lama menyisipkan SATU titik tiap kali kepala sudah bergerak sejauh TrailStep —
+        /// dan itu diam-diam salah begitu kepalanya bergerak lebih jauh dari itu dalam satu frame.
+        /// Saat menerjang ia melaju 15 unit/detik, jadi di frame yang berat satu langkah bisa
+        /// 0,8 unit sementara jejaknya cuma bertambah satu titik. <see cref="SegmentPoint"/>
+        /// mencari ruas dengan MENGHITUNG INDEKS dan mengalikannya dengan TrailStep, jadi begitu
+        /// jarak antar titik tidak lagi seragam, seluruh perhitungan itu berbohong.
+        ///
+        /// Yang terlihat pemain: badan ular MERENGGANG saat ia menerjang — persis di detik yang
+        /// paling diperhatikan — lalu merapat lagi setelahnya. Terukur sebelum diperbaiki: jarak
+        /// antar ruas terjauh 1,96 unit padahal ruasnya sendiri cuma 1,26 panjangnya.
+        ///
+        /// Sekarang titik-titik antaranya diisi. Jejaknya jadi punya jarak seragam menurut
+        /// definisi, dan aritmetika indeks di SegmentPoint kembali benar tanpa disentuh.
+        /// </summary>
         void RecordTrail()
         {
-            if (_trail.Count > 0 && (_trail[0] - _head).sqrMagnitude < TrailStep * TrailStep) return;
+            if (_trail.Count == 0)
+            {
+                _trail.Insert(0, _head);
+                return;
+            }
 
-            _trail.Insert(0, _head);
+            Vector3 last = _trail[0];
+            float gap = Vector3.Distance(last, _head);
+            if (gap < TrailStep) return;
+
+            // Dibatasi supaya teleport (pindah act, boss dilahirkan ulang) tidak melahirkan
+            // ribuan titik dalam satu frame. Lompatan sebesar itu memang bukan gerakan.
+            int fill = Mathf.Min(Mathf.FloorToInt(gap / TrailStep), 64);
+
+            for (int i = 1; i <= fill; i++)
+            {
+                _trail.Insert(0, Vector3.Lerp(last, _head, i * TrailStep / gap));
+            }
 
             int needed = Mathf.CeilToInt(Def.MaxSegments * Def.Spacing / TrailStep) + 8;
             while (_trail.Count > needed) _trail.RemoveAt(_trail.Count - 1);
         }
 
-        /// <summary>Posisi ruas ke-<paramref name="index"/> di belakang kepala.</summary>
+        /// <summary>
+        /// Posisi ruas ke-<paramref name="index"/> di belakang kepala, DIINTERPOLASI di antara dua
+        /// titik jejak.
+        ///
+        /// Versi lama membulatkan ke titik jejak terdekat, dan pembulatan itu mengkuantisasi jarak
+        /// antar ruas ke kelipatan <see cref="TrailStep"/> (0,28). Untuk boss ber-Spacing 0,6 itu
+        /// berarti jarak nyatanya melompat-lompat antara 0,56 dan 0,84 — variasi 50%, dan yang
+        /// 0,84 lebih panjang dari ruasnya sendiri. Terukur: badan `grub` masih berlubang bahkan
+        /// setelah jejaknya dibuat berjarak seragam.
+        /// </summary>
         public Vector3 SegmentPoint(int index)
         {
             if (_trail.Count == 0) return _head;
 
-            int step = Mathf.RoundToInt(index * Def.Spacing / TrailStep);
-            return _trail[Mathf.Clamp(step, 0, _trail.Count - 1)];
+            float steps = index * Def.Spacing / TrailStep;
+
+            int lo = Mathf.Clamp(Mathf.FloorToInt(steps), 0, _trail.Count - 1);
+            int hi = Mathf.Clamp(lo + 1, 0, _trail.Count - 1);
+
+            return Vector3.Lerp(_trail[lo], _trail[hi], steps - lo);
         }
 
         public List<EnemyManager.Enemy> Segments => _segments;

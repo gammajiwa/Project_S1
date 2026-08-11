@@ -16,7 +16,13 @@ MonoBehaviour:
   DisplayName: Rupture
   Stars: 3
   Layer: 1
-  Shape: 10
+  Shape: 2
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.9, g: 0.35, b: 0.4, a: 1}
   Icon: {fileID: 21300000, guid: b74511d05a37a9249a68409356180bb4, type: 3}
   Kind: 11
@@ -29,11 +35,11 @@ MonoBehaviour:
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 9
+  ManaCost: 5
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 3538166143945780486, guid: 130ff6b8f3740524da9ca38f2d0ce502, type: 3}
+  CastVfx: {fileID: 6909580771340058351, guid: 130ff6b8f3740524da9ca38f2d0ce502, type: 3}
   CastVfxScale: 1
   Trigger: 0
   TriggerStatus: {fileID: 11400000, guid: b70a8e805fc46194686e600a8788b8b8, type: 2}

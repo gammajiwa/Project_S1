@@ -13,42 +13,48 @@ MonoBehaviour:
   m_Name: Piece_rimenova
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: rimenova
-  DisplayName: Rime Nova
+  DisplayName: Segel Embun Beku
   Stars: 3
   Layer: 1
-  Shape: 9
+  Shape: 2
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.593, g: 0.8372, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: dbbe231692d722a4a9f007410d5d27d4, type: 3}
-  Kind: 1
+  Kind: 7
   Element: 1
-  BaseDamage: 32
-  BaseCooldown: 3.2
-  Radius: 7
-  Range: 7
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
-  ManaCost: 8
-  ZoneDuration: 4
+  ManaCost: 0
+  ZoneDuration: 0
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 8208503663333379685, guid: 347df6ad82ae131439f339837a151bef, type: 3}
+  CastVfx: {fileID: 3616533344728722876, guid: ab2f5289a06590446a67b59464bd7066, type: 3}
   CastVfxScale: 0.8
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
   ConsumeTriggerPoints: 1
   MaxDetonations: 8
-  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
-  StatusDuration: 5
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
   AppliedPoints: 3
   LegacyStatus: 0
   GrantOnCast: {fileID: 0}
   TelegraphDelay: 0.9
-  PushForce: 12
-  LiftDuration: 1.6
-  TravelSpeed: 9
+  PushForce: 0
+  LiftDuration: 0
+  TravelSpeed: 0
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
@@ -57,7 +63,11 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 21
+    Value: 1
+  - Type: 9
+    Value: 0.12
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Everything within seven metres freezes solid.
+  Blurb: Menambah satu ke apa pun yang dihitung banyaknya, dan melebarkan semuanya.
