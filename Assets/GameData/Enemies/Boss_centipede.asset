@@ -53,5 +53,11 @@ MonoBehaviour:
   Minion: 0
   MinionFromWave: 6
   MinionCount: 2
-  HeadColor: {r: 0.75, g: 0.85, b: 0.3, a: 1}
-  BodyColor: {r: 0.35, g: 0.42, b: 0.18, a: 1}
+  HeadColor: {r: 1, g: 0.22, b: 0.18, a: 1}
+  BodyColor: {r: 0.16, g: 0.16, b: 0.19, a: 1}
+  HeadEmission: {r: 0, g: 0, b: 0, a: 1}
+  BodyEmission: {r: 0, g: 0, b: 0, a: 1}
+  HeadMeshFile: SK_Centipede_Head
+  BodyMeshFile: SK_Centipede_Segment
+  TailMeshFile: SK_Centipede_Tail
+  BoneSkinFile:

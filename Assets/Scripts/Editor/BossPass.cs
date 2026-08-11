@@ -148,8 +148,24 @@ namespace Proto.EditorTools
             a.SpitSpeed = 12f;
             a.SpitCurse = FindCurse(db, "drained");
 
-            a.HeadColor = new Color(0.75f, 0.85f, 0.3f);
-            a.BodyColor = new Color(0.35f, 0.42f, 0.18f);
+            // Badan HITAM, kepala MERAH — kepalanya satu-satunya yang menggigit, dan di badan
+            // sepanjang tiga puluh ruas yang bentuknya sama, warna itulah yang memberi tahu
+            // pemain ujung mana yang berbahaya.
+            //
+            // Hitamnya 0,16 dan bukan 0. Angka ini dikalikan ke tekstur, jadi nol berarti
+            // seluruh grain chitin-nya hilang dan yang tersisa siluet hitam rata — kelabangnya
+            // berhenti terlihat seperti benda dan mulai terlihat seperti lubang di layar.
+            a.HeadColor = new Color(1f, 0.22f, 0.18f);
+            a.BodyColor = new Color(0.16f, 0.16f, 0.19f);
+
+            a.HeadEmission = Color.black;
+            a.BodyEmission = Color.black;
+
+            // Model kelabang, disimpan sebagai NAMA BERKAS supaya bertahan dari BossModelPass
+            // berikutnya — pass itu menimpa referensi mesh semua boss dengan model bawaan.
+            a.HeadMeshFile = "SK_Centipede_Head";
+            a.BodyMeshFile = "SK_Centipede_Segment";
+            a.TailMeshFile = "SK_Centipede_Tail";
 
             EditorUtility.SetDirty(a);
             db.EditorAddBoss(a);

@@ -44,13 +44,18 @@ namespace Proto
             public string SourceName;
 
             /// <summary>
-            /// Efek yang menempel di BADAN pemain selama bilahnya berputar, diskalakan ke radius
-            /// cincin. Satu, bukan satu per bilah: delapan salinan efek yang sama menumpuk di
-            /// lingkaran kecil terbaca sebagai gumpalan, bukan sebagai bilah.
+            /// Efek per BILAH — satu salinan wrapper skill di tiap bilah, digeret TickRings
+            /// bersama bilahnya. Dulu satu aura di badan, dan itu gagal dua kali: auranya
+            /// sekali-main jadi mati duluan sementara cincinnya masih hidup, dan begitu
+            /// BodyVisible menyembunyikan bilah primitif, yang tersisa dari skill ini cuma
+            /// cakram penanda di tanah. Yang berputar sekarang efeknya sendiri.
+            ///
+            /// Aturannya sama dengan Boomerang/Seeker: wrapper-nya HARUS efek yang diam di
+            /// tempat (orb, bola api loop) — efek yang jatuh sendiri akan melawan geretan ini.
             /// </summary>
-            public Transform Vfx;
+            public readonly List<Transform> BladeVfx = new List<Transform>(8);
 
-            public GameObject VfxSrc;
+            public GameObject BladeVfxSrc;
 
             /// <summary>Cakram penanda jangkauan, di kaki pemain. Radius DAMAGE, bukan radius efek.</summary>
             public Transform Ring_;
@@ -274,11 +279,24 @@ namespace Proto
             ring.Ring_.localScale = new Vector3(ring.Radius * 2f, 0.02f, ring.Radius * 2f);
             ring.Ring_.gameObject.SetActive(true);
 
-            Attach(ref ring.Vfx, ref ring.VfxSrc, def, transform.position, Quaternion.identity,
-                def.CastVfxScale * Mathf.Max(0.35f, ring.Radius / 3f));
-
             SpawnFlash(transform.position, ring.Radius * 1.6f, 0.22f, def.Color);
             return true;
+        }
+
+        /// <summary>
+        /// Melepas semua efek bilah sebuah ring kembali ke pool. Dipanggil saat ring mati DAN
+        /// saat ring dipakai ulang oleh skill lain — wrapper skill lama di bilah skill baru
+        /// berarti Blade Dance yang tampil dengan bola api milik Ring of Ruin.
+        /// </summary>
+        void ReleaseBladeVfx(Ring ring)
+        {
+            for (int i = 0; i < ring.BladeVfx.Count; i++)
+            {
+                if (ring.BladeVfx[i] != null) _vfx.Release(ring.BladeVfxSrc, ring.BladeVfx[i]);
+            }
+
+            ring.BladeVfx.Clear();
+            ring.BladeVfxSrc = null;
         }
 
         /// <summary>
@@ -308,6 +326,24 @@ namespace Proto
 
                 Paint(ring.Blades[i], def.Color);
                 ShowBody(ring.Blades[i], showBlades);
+            }
+
+            // Efek per bilah. Dilepas dulu kalau ring ini bekas skill lain atau jumlah bilahnya
+            // berubah — menambal selisihnya saja berarti menyimpan campuran dua skill.
+            if (ring.BladeVfxSrc != def.CastVfx || ring.BladeVfx.Count != wanted)
+            {
+                ReleaseBladeVfx(ring);
+            }
+
+            if (def.CastVfx != null && ring.BladeVfx.Count == 0)
+            {
+                for (int i = 0; i < wanted; i++)
+                {
+                    ring.BladeVfx.Add(_vfx.Attach(def.CastVfx, ring.Blades[i].position,
+                        Quaternion.identity, def.CastVfxScale));
+                }
+
+                ring.BladeVfxSrc = def.CastVfx;
             }
 
             ring.TickInterval = Mathf.Max(0.1f, def.ZoneTickInterval);
@@ -737,21 +773,12 @@ namespace Proto
                     for (int b = 0; b < r.Blades.Count; b++) r.Blades[b].gameObject.SetActive(false);
                     if (r.Ring_ != null) r.Ring_.gameObject.SetActive(false);
 
-                    if (r.Vfx != null)
-                    {
-                        _vfx.Release(r.VfxSrc, r.Vfx);
-                        r.Vfx = null;
-                        r.VfxSrc = null;
-                    }
-
+                    ReleaseBladeVfx(r);
                     continue;
                 }
 
                 r.Angle += r.Spin * dt;
 
-                // Efeknya ikut badan. Kalau tidak, auranya tertinggal di tempat cast sementara
-                // bilahnya berjalan bersama pemain — dan yang terbaca dua hal berbeda, bukan satu.
-                if (r.Vfx != null) r.Vfx.position = body;
                 if (r.Ring_ != null) r.Ring_.position = new Vector3(body.x, 0.06f, body.z);
 
                 int used = 0;
@@ -775,6 +802,14 @@ namespace Proto
                     // menggambarkan skill yang mati diam-diam.
                     blade.position = body + offset * r.Radius + Vector3.up * 0.7f;
                     blade.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.up, offset));
+
+                    // Efeknya digeret persis ke posisi bilah — bukan di-parent, karena instance
+                    // pool dipakai bergantian dan parent yang menghilang membawa efeknya ikut mati.
+                    if (slot < r.BladeVfx.Count && r.BladeVfx[slot] != null)
+                    {
+                        r.BladeVfx[slot].position = blade.position;
+                    }
+
                     slot++;
                 }
 

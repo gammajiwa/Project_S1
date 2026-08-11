@@ -33,10 +33,13 @@ namespace Proto.EditorTools
         const string Cfxr = "Assets/Art/VFX/Packs/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/";
         const string Vf = "Assets/Art/VFX/Packs/Vefects/Trails VFX URP/VFX/Particles/";
         const string Lana = "Assets/Prefabs/Effects/";
+        const string Hovl = "Assets/Art/VFX/Packs/Hovl Studio/Magic effects pack/Prefabs/";
 
-        // Paket Lana yang UTUH. `Lana` di atas cuma lima berkas yang dulu disalin keluar;
-        // orb-orbnya ada di sini dan tidak ada di sana.
-        const string LanaPack = "Assets/Art/VFX/Packs/Lana Studio/Environment VFX pack/Prefabs/";
+        // Paket Lana yang UTUH — di Plugin/, TEMPAT ASLINYA, bukan salinan kedua di Packs/.
+        // Sempat ada dua salinan pack ini dan class script demonya langsung bentrok (CS0101);
+        // yang benar adalah melengkapi pack lama di tempatnya, bukan menaruh kembarannya.
+        // `Lana` di atas cuma lima berkas yang dulu disalin keluar; orb-orbnya ada di sini.
+        const string LanaPack = "Assets/Plugin/Lana Studio/Environment VFX pack/Prefabs/";
 
         /// <summary>
         /// (nama file piece, prefab paket default, CastVfxScale, skala anak di dalam wrapper).
@@ -58,7 +61,7 @@ namespace Proto.EditorTools
             ("emberburst",  Cfxr + "Explosions/CFXR3 Fire Explosion A.prefab",           1f, 1f),
             ("frostnova",   Cfxr + "Ice/CFXR3 Hit Ice A (Ground).prefab",                1f, 1f),
             ("staticfield", Cfxr + "Electric/CFXR Electric Explosion.prefab",            1f, 1f),
-            ("steamburst",  Cfxr + "Misc/CFXR Smoke Poof Circle Flat.prefab",            1f, 1f),
+            ("steamburst",  Ga + "vfx_ImpactAoE03_Water.prefab",                         0.8f, 1f),
             ("blizzard",    Cfxr + "Ice/CFXR3 Hit Ice B (Ground).prefab",                1f, 1f),
             ("thunderclap", Cfxr + "Electric/CFXR4 Sparks Explosion.prefab",             1f, 1f),
             ("rimenova",    Ga + "vfx_ImpactAoE02_Ice.prefab",                           0.8f, 1f),
@@ -102,7 +105,7 @@ namespace Proto.EditorTools
             // ---------- ZONE ----------
             ("cinderpatch",    Cfxr + "Fire/CFXR4 Burning Fire.prefab",        1f, 1f),
             ("stormcell",      Cfxr + "Electric/CFXR Electric Surface.prefab", 1f, 1f),
-            ("kubanganracun",  Cfxr + "Liquids/CFXR2 Potion Bubbles (Loop).prefab", 1f, 1f),
+            ("kubanganracun",  LanaPack + "MagicField/MagicField_Poison Variant.prefab", 1f, 1f),
             ("frostbitefield", Cfxr + "Nature/CFXR4 Snow 'Splashes'.prefab",   1f, 1f),
             ("badaisalju",     Cfxr + "Nature/CFXR4 Snow Falling.prefab",      1f, 1f),
             ("plaguebloom",    Cfxr + "Misc/CFXR4 Flies Cloud.prefab",         1f, 1f),
@@ -110,7 +113,7 @@ namespace Proto.EditorTools
             // Rockfall aslinya memenuhi layar — "ashfall terlalu besar, areanya kecil"
             // (2026-08-10). Dikecilkan DI DALAM wrapper supaya terlihat saat prefabnya dibuka.
             ("ashfall",        Lana + "Rockfall.prefab",                       1f, 0.22f),
-            ("ionstorm",       Lana + "Orb_lightning.prefab",                  1f, 1f),
+            ("ionstorm",       LanaPack + "MagicField/MagicField_Stun Variant.prefab", 1f, 1f),
 
             // ---------- CLEANSE ----------
             ("cahayapembersih", Cfxr + "Light/CFXR3 Hit Light A (Air).prefab",    1f, 1f),
@@ -122,7 +125,7 @@ namespace Proto.EditorTools
 
             // ---------- DETONATE ----------
             ("sunder",    Cfxr + "Impacts/CFXR2 Hit (Contrast).prefab",     1f, 1f),
-            ("rupture",   Cfxr + "Liquids/CFXR2 Blood Shape Splash.prefab", 1f, 1f),
+            ("rupture",   Cfxr + "Explosions/CFXR4 Explosion Quick.prefab", 1f, 1f),
             ("reckoning", Cfxr + "Fire/CFXR3 Hit Fire C (Air).prefab",      1f, 1f),
 
             // ---------- ORBIT — pecahan petir juga ramping ----------
@@ -134,9 +137,9 @@ namespace Proto.EditorTools
             ("voidstep",  Cfxr + "Space/CFXR4 Teleporter Rings Upwards (HDR, Purple).prefab", 1f, 1f),
 
             // ---------- WARD ----------
-            ("wardpetty", Cfxr + "Electric/CFXR Electric Barrier Simple (HDR).prefab",        1f, 1f),
-            ("wardaegis", Cfxr + "Electric/CFXR Electric Barrier (HDR).prefab",               1f, 1f),
-            ("bulwark",   Cfxr + "Electric/Variants/CFXR Electric Barrier (HDR, Purple).prefab", 1.1f, 1f),
+            ("wardpetty", Hovl + "Magic shields/Magic shield blue.prefab",   0.9f, 1f),
+            ("wardaegis", Hovl + "Magic shields/Magic shield yellow.prefab", 1f,   1f),
+            ("bulwark",   Hovl + "Magic shields/Magic shield pink.prefab",   1.1f, 1f),
 
             // ---------- SURGE / RESTORE ----------
             ("quickfoot",      Ga + "vfx_BuffAoE08_Speed.prefab",  0.7f, 1f),
@@ -153,9 +156,9 @@ namespace Proto.EditorTools
             ("chaosmeteor", Cfxr + "Fire/CFXR2 Fireball.prefab",             1.2f, 1f),
 
             // ---------- VORTEX ----------
-            ("whirlwind", Cfxr + "Nature/CFXR4 Wind Zone.prefab", 1f, 1f),
-            ("tornado",   Lana + "Tornado_sand.prefab",           1f, 1f),
-            ("maelstrom", Lana + "Tornado_snow.prefab",           1f, 1f),
+            ("whirlwind", Cfxr + "Nature/CFXR4 Wind Zone.prefab",           1f,   1f),
+            ("tornado",   Hovl + "Smoke effects/Smoke vortex.prefab",       1.1f, 1f),
+            ("maelstrom", Ga + "vfx_DebuffAoE05_Electricity.prefab",        1.2f, 1f),
 
             // ---------- FORCE PUSH ----------
             ("shove", Cfxr + "Explosions/CFXR4 Wave Explosion Purple.prefab", 1f, 1f),
@@ -171,10 +174,11 @@ namespace Proto.EditorTools
             //  konsisten elemennya tanpa pernah keluar dari satu bahasa visual.
             // =========================================================================
 
-            // ---------- ORBITAL: aura melingkar di kaki, dilebarkan ke radius cincinnya ----------
-            ("bladedance",  Ga + "vfx_BuffAoE07_Arcane.prefab",      0.9f, 1f),
-            ("stormcircle", Ga + "vfx_BuffAoE05_Electricity.prefab", 1f,   1f),
-            ("ringofruin",  Ga + "vfx_BuffAoE01_Fire.prefab",        1.1f, 1f),
+            // ---------- ORBITAL: wrapper dipasang SATU PER BILAH (EnsureBlades), jadi harus
+            //            kecil, loop, dan diam di tempat — kode yang menggerakkannya ----------
+            ("bladedance",  Cfxr + "Light/CFXR3 Lightball B + Trail.prefab",  0.85f, 1f),
+            ("stormcircle", LanaPack + "Orb/Orb_lightning.prefab",            0.55f, 1f),
+            ("ringofruin",  Cfxr + "Fire/CFXR Fireball + Fire Trail.prefab",  0.75f, 1f),
 
             // ---------- BOOMERANG: badan yang terbang ----------
             //
@@ -191,8 +195,8 @@ namespace Proto.EditorTools
             ("runescrawl",  Ga + "vfx_ImpactAoE07_Arcane.prefab",      0.55f, 1f),
 
             // ---------- TURRET: berdiri di tanah selama beberapa detik, jadi harus LOOP ----------
-            ("sentryeye", Ga + "vfx_DebuffVertical07_Arcane.prefab", 0.8f, 1f),
-            ("obelisk",   Ga + "vfx_DebuffVertical01_Fire.prefab",   0.9f, 1f),
+            ("sentryeye", Hovl + "Magic circles/Magic circle.prefab",       0.8f, 1f),
+            ("obelisk",   Hovl + "AoE effects/Red energy explosion.prefab", 0.8f, 1f),
 
             // ---------- SHOCKWAVE: cincin yang melebar ----------
             ("ripple", Ga + "vfx_ImpactAoE08_Speed.prefab", 0.8f, 1f),
@@ -203,7 +207,7 @@ namespace Proto.EditorTools
             // Cacat yang sama dengan bumerang: rudal juga dikemudikan kode, jadi komet berjatuhan
             // di sini pun salah. Ditemukan saat memperbaiki bumerang, bukan dilaporkan terpisah.
             ("hexbolts", LanaPack + "Orb/Orb_lightning.prefab", 0.45f, 1f),
-            ("hexstorm", LanaPack + "Orb/Orb_sand.prefab",      0.5f,  1f),
+            ("hexstorm", LanaPack + "Orb/Orb_lightning.prefab", 0.55f, 1f),
 
             // ---------- TETHER: disembur di ujung sinar tiap denyut, jadi harus kecil & cepat ----------
             ("siphonbeam", Ga + "vfx_ImpactAoE09_Heal.prefab",  0.4f, 1f),
@@ -216,41 +220,53 @@ namespace Proto.EditorTools
 
         /// <summary>
         /// Sumber yang DIGANTI karena tidak nyambung dengan skillnya, bukan karena jelek.
+        /// Batch yang sudah diterapkan tidak disimpan di sini — riwayatnya ada di git; array ini
+        /// selalu berisi batch KOREKSI BERIKUTNYA yang belum/baru saja dijalankan.
         ///
-        /// Audit 2026-08-11 menamai satu per satu, dan semuanya jenis kesalahan yang sama: prefab
-        /// dipilih karena kebetulan ada, bukan karena menggambarkan skillnya. Guruh yang keluar
-        /// sebagai percikan generik dan peledak darah yang menyemburkan cipratan darah beneran
-        /// membuat pemain membaca kejadian yang salah, dan itu lebih mahal daripada sekadar jelek.
+        /// Batch 2026-08-12 — audit loop-vs-sekali-main atas seluruh 92 skill. Temuannya satu
+        /// pola: skill yang HIDUP LAMA (zone, vortex, turret, orbital, ward) menggendong efek
+        /// sekali-main, jadi efeknya mati duluan dan sisa hidup skillnya bisu. Arah sebaliknya
+        /// aman — pool memotong efek loop di skill sekali-main pada 0,85 detik.
         ///
-        /// Dipisah dari <see cref="Map"/> supaya bisa dijalankan SENDIRI: wrapper-nya sudah
-        /// terlanjur ada, dan kontrak pass utama adalah tidak pernah menimpanya. Yang di sini
-        /// memang harus menimpa — itu seluruh gunanya.
+        /// Pilihan penggantinya dari dua paket yang baru masuk (Hovl = momen besar bergaya,
+        /// Lana MagicField = field status ber-elemen yang loop 20 detik), dua-duanya sudah
+        /// diverifikasi loop lewat inspeksi ParticleSystem, bukan dari namanya.
         /// </summary>
         static readonly (string piece, string path, float scale)[] Corrections =
         {
-            // Percikan generik -> sambaran petir sungguhan.
-            ("thunderclap", Cfxr + "Electric/CFXR Lightning Strike + Impact.prefab", 1f),
+            // ---------- ZONE: harus loop selama zonanya menagih ----------
+            ("kubanganracun", LanaPack + "MagicField/MagicField_Poison Variant.prefab", 1f),
+            ("ionstorm",      LanaPack + "MagicField/MagicField_Stun Variant.prefab",   1f),
 
-            // Cipratan DARAH untuk peledak BLEED terdengar masuk akal sampai dilihat: yang
-            // tergambar organ, bukan ledakan. Peledak harus terbaca sebagai LEDAKAN.
-            ("rupture", Cfxr + "Explosions/CFXR4 Explosion Quick.prefab", 1f),
+            // ---------- VORTEX: tornado asap netral — bukan pasir, bukan salju ----------
+            ("tornado", Hovl + "Smoke effects/Smoke vortex.prefab", 1.1f),
 
-            // Gelembung ramuan -> kubangan racun sungguhan yang betah di tanah.
-            ("kubanganracun", Ga + "vfx_DebuffAoE04_Poison.prefab", 0.9f),
+            // ---------- TURRET: berdiri berdetik-detik, efeknya harus betah ----------
+            ("obelisk",   Hovl + "AoE effects/Red energy explosion.prefab", 0.8f),
+            ("sentryeye", Hovl + "Magic circles/Magic circle.prefab",       0.8f),
 
-            // Awan lalat -> mekar wabah. Lalatnya lucu, dan skill ini bukan lelucon.
-            ("plaguebloom", Ga + "vfx_DebuffAoE04_Poison.prefab", 1f),
+            // ---------- ORBITAL: wrapper kini dipasang SATU PER BILAH oleh EnsureBlades,
+            //            jadi isinya harus kecil, loop, dan diam di tempat ----------
+            // Skala dinaikkan setelah dilihat di play mode: 0.6/0.55 tenggelam di kerumunan
+            // boneka; Orb_lightning tidak perlu — dia memang besar dari sananya.
+            ("bladedance",  Cfxr + "Light/CFXR3 Lightball B + Trail.prefab",  0.85f),
+            ("stormcircle", LanaPack + "Orb/Orb_lightning.prefab",            0.55f),
+            ("ringofruin",  Cfxr + "Fire/CFXR Fireball + Fire Trail.prefab",  0.75f),
 
-            // Tornado PASIR untuk skill yang bukan pasir, dan tornado SALJU untuk yang bukan salju.
-            // Keduanya petir/angin — dijadikan satu keluarga angin yang konsisten.
-            ("tornado",   Ga + "vfx_DebuffAoE08_Speed.prefab", 1.1f),
-            ("maelstrom", Ga + "vfx_DebuffAoE05_Electricity.prefab", 1.2f),
+            // ---------- BOOMERANG & SEEKER: komet jatuh diganti orb yang diam ----------
+            // (perbaikan Map kemarin tidak pernah mendarat — Map tidak menimpa wrapper
+            //  yang sudah ada; jalur timpanya memang cuma yang ini.)
+            ("chakram",    LanaPack + "Orb/Orb_lightning.prefab", 0.6f),
+            ("moonglaive", LanaPack + "Orb/Orb_snow.prefab",      0.75f),
+            ("hexbolts",   LanaPack + "Orb/Orb_lightning.prefab", 0.45f),
+            ("hexstorm",   LanaPack + "Orb/Orb_lightning.prefab", 0.55f),
 
-            // Asap poof untuk ledakan uap: uapnya benar, ledakannya hilang.
-            ("steamburst", Ga + "vfx_ImpactAoE03_Water.prefab", 0.8f),
-
-            // Ledakan monster ungu -> tusukan void. Skillnya TOMBAK, bukan monster meledak.
-            ("voidlance", Ga + "vfx_DebuffVertical06_Void.prefab", 0.8f),
+            // ---------- WARD: kubah perisai sungguhan, bukan pagar listrik ----------
+            // "laser ward gw gak paham skill apa itu" — pagar listrik terbaca sebagai
+            // serangan area, bukan pelindung. Kubah Hovl terbaca sebagai perisai.
+            ("wardpetty", Hovl + "Magic shields/Magic shield blue.prefab",   0.9f),
+            ("wardaegis", Hovl + "Magic shields/Magic shield yellow.prefab", 1f),
+            ("bulwark",   Hovl + "Magic shields/Magic shield pink.prefab",   1.1f),
         };
 
         /// <summary>
@@ -398,6 +414,36 @@ namespace Proto.EditorTools
             try
             {
                 var child = (GameObject)PrefabUtility.InstantiatePrefab(pack);
+
+                // Script hilang dibuang SEBELUM disimpan. Beberapa prefab paket (varian
+                // MagicField Lana, contohnya) membawa MonoBehaviour dari project asalnya yang
+                // tidak pernah ikut — GUID-nya bahkan tidak ada di project_b. Unity MENOLAK
+                // menyimpan prefab yang memuat script hilang, jadi tanpa ini wrappernya gagal
+                // dibangun; partikelnya sendiri tidak butuh script itu.
+                //
+                // Harganya: instance harus di-unpack (komponen milik prefab tertutup rapat),
+                // dan wrapper kehilangan tautan nested ke prefab paketnya. Karena itu HANYA
+                // dilakukan pada prefab yang memang membawa script hilang.
+                bool missing = false;
+                foreach (var t in child.GetComponentsInChildren<Transform>(true))
+                {
+                    if (GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject) > 0)
+                    {
+                        missing = true;
+                        break;
+                    }
+                }
+
+                if (missing)
+                {
+                    PrefabUtility.UnpackPrefabInstance(child, PrefabUnpackMode.Completely,
+                        InteractionMode.AutomatedAction);
+                    foreach (var t in child.GetComponentsInChildren<Transform>(true))
+                    {
+                        GameObjectUtility.RemoveMonoBehavioursWithMissingScript(t.gameObject);
+                    }
+                }
+
                 child.transform.SetParent(root.transform, false);
                 child.transform.localScale = Vector3.one * childScale;
 

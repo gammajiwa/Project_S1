@@ -2221,3 +2221,90 @@ sama di Assets/Prefabs (113/113, 0 unik). Ketiga folder lama dihapus.
 Keadaan akhir terverifikasi:
     Assets/Prefabs 168, Assets/Art 947, folder lama tidak ada, referensi putus 0
     ketiga pass idempoten: sudah benar 92 / 16 / 9, dibangun 0
+
+## Distribusi ulang VFX + bilah orbital (2026-08-12)
+
+Mandat user: "ganti semua vfx yg gak cocok pake yg baru, kalo gak ada yg lebih
+baik keep aja, dan TEST satu-satu cocok gak sama behaviornya."
+
+### Audit dulu, selera belakangan
+Semua 92 skill ber-VFX dibedah programatik: isi wrapper, loop/sekali-main,
+gravitasi/velocity bawaan, jumlah ParticleSystem. Aturan yang dipakai:
+- Skill HIDUP LAMA (Zone/Vortex/Turret/Orbital/Ward) wajib efek LOOP.
+- Badan yang DIGERAKKAN KODE (Boomerang/Seeker/Orbital/RollingBall/Radial)
+  wajib efek tanpa gerak bawaan (orb, bukan komet).
+- Efek JATUH justru benar untuk meteor/rain (AreaAtTarget) — jangan "dibenerin".
+- Arah sebalik (loop di skill sekali-main) aman: pool memotong di 0,85 s.
+
+### Temuan rusak (efek once di skill yang hidup lama)
+kubanganracun, tornado (dua warning lama), obelisk, sentryeye, bladedance,
+ringofruin + 4 komet jatuh di Boomerang/Seeker.
+
+### Penting: fix kemarin TIDAK PERNAH MENDARAT
+Fix orb kemarin ditaruh di Map — padahal kontrak pass: Map tidak menimpa
+wrapper yang sudah ada. Jalur timpa satu-satunya adalah Corrections.
+Batch Corrections baru berisi 15 entri; Map disinkronkan supaya rebuild
+masa depan tidak menghidupkan lagi pilihan lama.
+
+### Bilah orbital: perubahan kode, bukan tabel
+Sejak BodyVisible, bilah primitif DISEMBUNYIKAN dan aura kaki (once) mati
+duluan — Orbital nyaris tak terlihat. Sekarang: satu wrapper VFX PER BILAH
+(Ring.BladeVfx), dipasang EnsureBlades, digeret TickRings, dilepas
+ReleaseBladeVfx saat ring mati ATAU ring dipakai ulang skill lain.
+Wing/Totem/Missile sudah punya jalur ikut-badan sejak awal — tidak disentuh.
+
+### Konsolidasi Lana (compile error CS0101)
+Pack Lana sempat dobel (Plugin/ lama parsial + salinan baru di Packs/) dan
+script demonya bentrok. Salinan baru dicabut; pack lama DILENGKAPI di
+tempatnya (30 -> 66 prefab, Orb_lightning kini ada). LumiBrush di-skip
+sesuai instruksi user.
+
+### Batch pilihan (Corrections 2026-08-12)
+Zone:    kubanganracun -> Lana MagicField_Poison | ionstorm -> MagicField_Stun
+Vortex:  tornado -> Hovl Smoke vortex (asap netral, bukan pasir/salju)
+Turret:  obelisk -> Hovl Red energy explosion | sentryeye -> Hovl Magic circle
+Orbital: bladedance -> CFXR Lightball B | stormcircle -> Lana Orb_lightning
+         ringofruin -> CFXR Fireball + Trail   (semua per-bilah, kecil, loop)
+Boomerang/Seeker: chakram+hexbolts+hexstorm -> Orb_lightning,
+         moonglaive -> Orb_snow (hexstorm SEMPAT salah Orb_sand — elemen bohong)
+Ward:    wardpetty/aegis/bulwark -> Hovl Magic shield blue/yellow/pink
+         (pagar listrik terbaca serangan, kubah terbaca perisai)
+
+### Catatan perf (belum jadi masalah, diukur duluan)
+Orb_lightning = 7 ParticleSystem. Dipakai per-bilah/per-rudal:
+stormcircle 8 bilah = 56 PS, hexstorm ~8 rudal = 56 PS. Pool memakai ulang,
+tapi kalau profiler nanti menjerit, penggantinya Hovl Sparks (1 PS per prefab).
+Keputusan menunggu bukti profiler, bukan ditebak sekarang.
+
+### Hasil test visual play mode (16 skill difoto satu-satu, run ke-2)
+
+Driver screenshot v1 BUANG — CaptureScreenshot menangkap akhir frame, dan
+Select skill berikutnya di tick yang sama membuat semua foto memotret UI skill
+sesudahnya. v2 memisah fase capture dan select. Pelajaran: jangan pernah
+capture + mutate state di tick yang sama.
+
+LOLOS (dilihat langsung):
+- kubanganracun: field racun hijau + tengkorak status di boneka, loop
+- tornado: pusaran asap netral mengembara, 594 dps
+- obelisk: menara oranye HDR + pusaran energi merah loop, 222 dps
+- sentryeye: lingkaran sihir biru berputar di bawah menara
+- stormcircle: 5 orb petir + busur listrik mengitari — INI yang diminta user
+  ("pake bolt lightning"), 1019 dps
+- ringofruin: cincin bara menyala, 3830 dps
+- bladedance: jalan (244 dps) tapi bola cahaya 0.6 tenggelam di kerumunan
+- wardaegis/bulwark: kubah perisai kuning/magenta — ward akhirnya terbaca
+  PELINDUNG, bukan serangan
+- ionstorm: field kuning bermuatan + rune persegi, 240 dps
+- chakram/hexstorm: damage mengalir (13/698 dps), orb tak tertangkap frame
+  (antara lemparan) — bukti visual orb ada di stormcircle (wrapper sama)
+
+PENYESUAIAN setelah lihat: bladedance 0.6 -> 0.85, ringofruin 0.55 -> 0.75.
+Belum diverifikasi ulang secara visual setelah penyesuaian.
+
+BELUM DILIHAT: wardpetty (keluarga sama dengan aegis), maelstrom (tidak
+diubah), moonglaive/hexbolts (timing sama dengan chakram).
+
+### Verifikasi ulang skala (run ke-3)
+bladedance 0.85 dicek visual: tiga titik cahaya + halo terbaca di kondisi
+terburuk (40 boneka rapat). ringofruin 0.75 difoto juga. Selesai diterapkan:
+ApplyCorrections 15/15, audit pass 92/92, masalah 0.

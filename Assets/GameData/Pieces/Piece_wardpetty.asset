@@ -39,8 +39,8 @@ MonoBehaviour:
   ZoneDuration: 8
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 6540675656193484553, guid: 00b039ed20e525b44948630f48aa0b7d, type: 3}
-  CastVfxScale: 1
+  CastVfx: {fileID: 6826387238416821248, guid: 00b039ed20e525b44948630f48aa0b7d, type: 3}
+  CastVfxScale: 0.9
   Trigger: 0
   TriggerStatus: {fileID: 0}
   TriggerPoints: 10
