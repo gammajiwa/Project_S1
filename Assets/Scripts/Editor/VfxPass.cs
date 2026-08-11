@@ -34,6 +34,10 @@ namespace Proto.EditorTools
         const string Vf = "Assets/Art/VFX/Packs/Vefects/Trails VFX URP/VFX/Particles/";
         const string Lana = "Assets/Prefabs/Effects/";
 
+        // Paket Lana yang UTUH. `Lana` di atas cuma lima berkas yang dulu disalin keluar;
+        // orb-orbnya ada di sini dan tidak ada di sana.
+        const string LanaPack = "Assets/Art/VFX/Packs/Lana Studio/Environment VFX pack/Prefabs/";
+
         /// <summary>
         /// (nama file piece, prefab paket default, CastVfxScale, skala anak di dalam wrapper).
         /// childScale hampir selalu 1 — satu-satunya pengecualian dibakar ke wrapper supaya
@@ -172,9 +176,14 @@ namespace Proto.EditorTools
             ("stormcircle", Ga + "vfx_BuffAoE05_Electricity.prefab", 1f,   1f),
             ("ringofruin",  Ga + "vfx_BuffAoE01_Fire.prefab",        1.1f, 1f),
 
-            // ---------- BOOMERANG: badan yang terbang, jadi komet ----------
-            ("chakram",    Ga + "vfx_SingleComet07_Arcane.prefab", 0.6f, 1f),
-            ("moonglaive", Ga + "vfx_SingleComet02_Ice.prefab",    0.75f, 1f),
+            // ---------- BOOMERANG: badan yang terbang ----------
+            //
+            // WAJIB efek yang DIAM di tempatnya sendiri. Komet — yang dipakai di sini sebelumnya —
+            // punya gerak jatuh bawaan; dipasang ke badan yang sudah digeret kode, dua gerakan itu
+            // bertabrakan dan bumerangnya terlihat menukik ke tanah sambil melayang menyamping.
+            // Orb hanya berputar di porosnya, jadi seluruh perpindahannya murni milik kode.
+            ("chakram",    LanaPack + "Orb/Orb_lightning.prefab", 0.6f,  1f),
+            ("moonglaive", LanaPack + "Orb/Orb_snow.prefab",      0.75f, 1f),
 
             // ---------- RICOCHET: disembur di titik pantul, bukan di sepanjang garis ----------
             ("prismray",    Ga + "vfx_ImpactAoE02_Ice.prefab",         0.45f, 1f),
@@ -190,8 +199,11 @@ namespace Proto.EditorTools
             ("quake",  Ga + "vfx_ImpactAoE01_Fire.prefab",  0.9f, 1f),
 
             // ---------- SEEKER: satu efek per rudal, jadi harus KECIL ----------
-            ("hexbolts", Ga + "vfx_SingleComet06_Void.prefab",        0.45f, 1f),
-            ("hexstorm", Ga + "vfx_SingleComet05_Electricity.prefab", 0.5f,  1f),
+            //
+            // Cacat yang sama dengan bumerang: rudal juga dikemudikan kode, jadi komet berjatuhan
+            // di sini pun salah. Ditemukan saat memperbaiki bumerang, bukan dilaporkan terpisah.
+            ("hexbolts", LanaPack + "Orb/Orb_lightning.prefab", 0.45f, 1f),
+            ("hexstorm", LanaPack + "Orb/Orb_sand.prefab",      0.5f,  1f),
 
             // ---------- TETHER: disembur di ujung sinar tiap denyut, jadi harus kecil & cepat ----------
             ("siphonbeam", Ga + "vfx_ImpactAoE09_Heal.prefab",  0.4f, 1f),
