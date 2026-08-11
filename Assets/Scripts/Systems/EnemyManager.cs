@@ -153,7 +153,51 @@ namespace Proto
         /// Max HP ikut dikirim karena besar-kecilnya angka di layar diukur dari porsi HP musuh,
         /// bukan dari angka mentahnya — 40 damage di wave 2 dan di wave 20 artinya beda jauh.
         /// </summary>
-        public System.Action<Vector3, float, float> OnEnemyDamaged;
+        /// <summary>
+        /// (posisi, jumlah, maxHp, warna sumber). Warna diambil dari def skill/status yang
+        /// melukai — popup damage tampil dengan warna skillnya ("biar warna warni",
+        /// 2026-08-12), bukan satu gradasi seragam.
+        /// </summary>
+        public System.Action<Vector3, float, float, Color> OnEnemyDamaged;
+
+        /// <summary>
+        /// Peta DisplayName -> warna, dibangun SEKALI dari database saat pertama dibutuhkan.
+        /// Kunci pakai nama karena seluruh jalur damage sudah membawa sourceName — menjahit
+        /// Color ke belasan call-site cuma menduplikasi informasi yang sudah lewat sini.
+        /// </summary>
+        Dictionary<string, Color> _sourceTints;
+
+        static readonly Color PlainHitTint = new Color(1f, 0.96f, 0.86f);
+
+        Color TintFor(string sourceName)
+        {
+            if (string.IsNullOrEmpty(sourceName)) return PlainHitTint;
+
+            if (_sourceTints == null)
+            {
+                _sourceTints = new Dictionary<string, Color>(96);
+                if (_db != null)
+                {
+                    for (int i = 0; i < _db.Pieces.Count; i++)
+                    {
+                        var p = _db.Pieces[i];
+                        if (p != null && !string.IsNullOrEmpty(p.DisplayName))
+                            _sourceTints[p.DisplayName] = p.Color;
+                    }
+
+                    for (int i = 0; i < _db.Statuses.Count; i++)
+                    {
+                        var s = _db.Statuses[i];
+                        if (s != null && !string.IsNullOrEmpty(s.DisplayName) &&
+                            !_sourceTints.ContainsKey(s.DisplayName))
+                            _sourceTints[s.DisplayName] = s.Color;
+                    }
+                }
+            }
+
+            Color tint;
+            return _sourceTints.TryGetValue(sourceName, out tint) ? tint : PlainHitTint;
+        }
 
         public int Capacity => _balance != null ? _balance.MaxAliveEnemies : 200;
 
@@ -1309,7 +1353,9 @@ namespace Proto
                             else e.Hp -= dot;
 
                             OnDamage?.Invoke(def.DisplayName, dot);
-                            OnEnemyDamaged?.Invoke(e.Pos, dot, e.MaxHp);
+                            // DoT memakai warna STATUS-nya — tik burn tampil merah api,
+                            // racun hijau — bukan warna skill yang menempelkannya.
+                            OnEnemyDamaged?.Invoke(e.Pos, dot, e.MaxHp, def.Color);
                         }
                     }
 
@@ -2058,7 +2104,7 @@ namespace Proto
             if (dealt > 0f)
             {
                 OnDamage?.Invoke(sourceName ?? "?", dealt);
-                OnEnemyDamaged?.Invoke(e.Pos, dealt, e.MaxHp);
+                OnEnemyDamaged?.Invoke(e.Pos, dealt, e.MaxHp, TintFor(sourceName));
             }
 
             if (status != null) ApplyStatus(e, status, duration, points, allowReaction, origin);

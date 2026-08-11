@@ -29,7 +29,6 @@ namespace Proto
         const float RiseSpeed = 1.9f;
 
         static readonly Color LightHit = new Color(1f, 0.96f, 0.86f);
-        static readonly Color HeavyHit = new Color(1f, 0.45f, 0.16f);
 
         class Popup
         {
@@ -40,6 +39,7 @@ namespace Proto
             public float Life;
             public float Age;
             public float Bump;
+            public Color Tint;
         }
 
         readonly Popup[] _pool = new Popup[PoolSize];
@@ -83,7 +83,7 @@ namespace Proto
         /// One damage event. <paramref name="maxHp"/> is what turns a raw number into a readable
         /// one — it decides how big and how hot the label gets.
         /// </summary>
-        public void Push(Vector3 world, float amount, float maxHp)
+        public void Push(Vector3 world, float amount, float maxHp, Color tint)
         {
             if (amount <= 0f) return;
 
@@ -93,6 +93,9 @@ namespace Proto
                 target.Amount += amount;
                 target.Life = LifeSpan;
                 target.Bump = 1f;
+                // Gabungan lintas skill memakai warna penyumbang TERAKHIR. Mencampur warna
+                // menghasilkan lumpur cokelat yang bukan milik siapa-siapa.
+                target.Tint = tint;
                 Apply(target, maxHp);
                 return;
             }
@@ -103,6 +106,7 @@ namespace Proto
             slot.Life = LifeSpan;
             slot.Age = 0f;
             slot.Bump = 1f;
+            slot.Tint = tint;
             Apply(slot, maxHp);
         }
 
@@ -159,7 +163,11 @@ namespace Proto
             // hal yang membedakan gigitan kecil dari pukulan yang mematikan — dua angka empat
             // digit yang seukuran terbaca sama saja betapa pun jauh bedanya.
             p.Label.fontSize = Mathf.RoundToInt(Mathf.Lerp(20f, 54f, Mathf.Clamp01(share * 1.8f)));
-            p.Label.color = Color.Lerp(LightHit, HeavyHit, Mathf.Clamp01(share * 2.2f));
+
+            // Warna = milik SKILL yang melukai; panasnya tetap dari share. Gigitan kecil
+            // pucat mendekati krem supaya lantai tidak penuh konfeti pekat, pukulan besar
+            // memakai warna skillnya utuh — merah api, biru es, hijau racun.
+            p.Label.color = Color.Lerp(LightHit, p.Tint, Mathf.Lerp(0.45f, 1f, Mathf.Clamp01(share * 2.2f)));
         }
 
         static string Format(float amount) => BigNumber.Damage(amount);

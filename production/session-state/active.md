@@ -2468,3 +2468,16 @@ Fokus utama = BACKDROP layar penuh, layout tombol sekunder:
 - L3: percikan biru jarang (Hovl Sparks flashing blue)
 - L4: CloudShadows bergerak lambat menimpa semua (kedalaman)
 Semua siklus >10 detik. Diorama buku boleh tetap tapi sekunder.
+
+## Popup damage berwarna skill — SELESAI (2026-08-12 malam)
+OnEnemyDamaged kini membawa Color: muara damage me-lookup sourceName ->
+def.Color lewat kamus yang dibangun sekali (piece + status); DoT memakai
+warna STATUSNYA (burn merah, racun hijau). DamagePopups: warna = milik skill,
+panas ukuran tetap dari share HP; gigitan kecil dipucatkan ke krem.
+Terverifikasi: compile bersih + satu wave penuh di Proto tanpa error runtime.
+Belum terlihat mata (frame capture meleset dari momen hit) — user akan
+langsung lihat saat main.
+
+CRIT ditunda SATU PAKET dengan kontennya (sesi baru): flag crit harus ikut
+MENUMPANG di proyektil yang mendarat frame kemudian — sambungan lebar di
+struct Projectile/Wing/Missile dkk. Popup crit: MERAH PEKAT + lebih besar.
