@@ -147,3 +147,13 @@ InitTestScene*.unity*
 
 # Berkas cadangan editor gambar (Krita/GIMP menulis "nama.png~" di sebelah aslinya).
 *~
+
+# Pack VFX vendor yang disalin dari project_b + Crimson (~1,5 GB).
+# Sengaja TIDAK masuk git: repo ini tidak pakai LFS, dan menaruh 1,5 GB biner
+# di riwayat berarti tiap clone menariknya selamanya. Sumbernya masih ada di
+# D:\GameGamma\project_b\Assets\11_Plugin dan Crimson, jadi bisa disalin ulang.
+Assets/Art/VFX/Packs/Cartoon Coffee/
+Assets/Art/VFX/Packs/118 sprite effects bundle/
+Assets/Art/VFX/Packs/Hovl Studio/
+Assets/Art/VFX/Packs/Lana Studio/
+Assets/Art/VFX/Packs/Adrift Team/
