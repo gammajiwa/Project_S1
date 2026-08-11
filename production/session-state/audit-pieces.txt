@@ -1,0 +1,118 @@
+0|5|1|0|emberrune|Ember Rune|0|0.05
+0|5|1|3|chronorune|Chrono Rune|0|0.05
+0|5|1|3|plainrune|Plain Rune|0|0.05
+0|5|1|3|voidrune|Void Rune|0|0.05
+0|5|2|3|runearus|Current Rune|0|1
+0|5|2|3|runebenteng|Bastion Rune|0|1
+0|5|3|2|runebadai|Storm Rune|0|1
+0|8|1|1|frostrune|Frost Rune|0|1
+0|8|1|2|sparkrune|Spark Rune|0|1
+0|8|2|3|runeasah|Whetstone Rune|0|1
+0|8|2|3|runesiphon|Siphon Rune|0|1
+0|8|3|3|runenadir|Nadir Rune|0|1
+0|8|4|0|runemercu|Beacon Rune|0|1
+0|8|4|3|runegema|Echo Rune|0|1
+0|8|4|3|runesungai|River Rune|0|1
+0|8|5|3|runeinti|Keystone Rune|0|1
+1|0|1|0|fireball|Fireball|28|1.1
+1|0|1|1|frostshard|Frost Shard|30|1.2
+1|0|1|2|sparkbolt|Spark Bolt|26|1
+1|0|2|0|greaterfireball|Greater Fireball|82|1.05
+1|0|2|1|glacialspike|Glacial Spike|22|1.1
+1|10|1|3|belatiberputar|Whirling Blade|12|1.6
+1|10|5|1|absolutezero|Absolute Zero|76|2.6
+1|11|2|3|sunder|Sunder|8|3.2
+1|11|3|3|rupture|Rupture|15|3.6
+1|11|4|3|reckoning|Reckoning|32|4.4
+1|12|1|2|sparkshards|Spark Shards|24|2.6
+1|12|3|2|stormshards|Storm Shards|160|3.4
+1|13|1|3|blinkstep|Blink Step|0|7
+1|13|3|3|voidstep|Void Step|0|5.5
+1|14|1|3|wardpetty|Lesser Ward|38|11
+1|14|2|3|wardaegis|Aegis|95|13
+1|14|4|3|bulwark|Bulwark|320|15
+1|15|1|3|quickfoot|Fleetfoot|0|9
+1|15|2|3|quickcastsigil|Quickcast|0|13
+1|16|2|3|manawell|Mana Well|0|20
+1|17|2|0|sunlance|Sun Lance|60|3.2
+1|17|3|0|sunstrike|Sun Strike|130|4.2
+1|17|5|0|solarflare|Solar Flare|650|7
+1|18|2|0|emberroll|Rolling Ember|58|3.2
+1|18|4|0|chaosmeteor|Chaos Meteor|290|5.5
+1|19|3|2|whirlwind|Whirlwind|10|6.5
+1|19|4|2|tornado|Tornado|16|8
+1|19|5|2|maelstrom|Maelstrom|20|10
+1|1|1|0|emberburst|Ember Burst|9|2.6
+1|1|1|1|frostnova|Frost Nova|9|3
+1|1|1|2|staticfield|Static Field|8|2.4
+1|1|2|0|steamburst|Steam Burst|18|2.5
+1|1|2|1|blizzard|Blizzard|13|3
+1|1|2|2|thunderclap|Thunderclap|17|2.8
+1|1|3|1|rimenova|Rime Nova|32|3.2
+1|1|3|3|nullsphere|Null Sphere|40|3.4
+1|1|4|0|novakiamat|Doom Nova|72|4.2
+1|20|1|3|shove|Shove|11|6
+1|2|1|2|arcbolt|Arc Bolt|14|1.9
+1|2|1|3|riftchain|Rift Chain|15|2
+1|2|2|2|chainlightning|Chain Lightning|30|2.2
+1|2|3|1|prismabeku|Frost Prism|92|2.4
+1|2|4|2|thundercrown|Thunder Crown|140|3.2
+1|2|5|2|stormbreaker|Stormbreaker|175|4.2
+1|3|1|3|minorheal|Minor Heal|18|12
+1|3|2|3|greaterheal|Greater Heal|45|10
+1|4|1|0|hujanapi|Fire Rain|12|2.4
+1|4|1|1|hailstorm|Hailstorm|12|2.6
+1|4|1|3|plaguebrand|Plague Brand|5|2.4
+1|4|1|3|pusaran|Vortex|12|3.2
+1|4|2|3|gravitywell|Gravity Well|26|3
+1|4|3|0|firestormcore|Firestorm Core|42|3
+1|4|3|0|lepasamuk|Frenzy Release|18|3.4
+1|4|3|0|meteor|Meteor|54|3.2
+1|4|3|2|tempest|Tempest|40|3
+1|4|4|1|wintersend|Winter's End|74|3.4
+1|4|5|0|cataclysm|Cataclysm|150|5.5
+1|5|1|0|flamelash|Flame Lash|20|2
+1|5|1|1|icelance|Ice Lance|20|2.2
+1|5|1|2|sabetanpetir|Lightning Slash|16|1.9
+1|5|2|0|infernowave|Inferno Wave|34|2.1
+1|5|2|3|voidlance|Void Lance|36|2
+1|5|4|0|ragnarok|Ragnarok|230|3.6
+1|6|1|0|cinderpatch|Cinder Patch|4|4.5
+1|6|1|2|stormcell|Storm Cell|3|5
+1|6|1|3|kubanganracun|Poison Pool|3|5
+1|6|2|0|ashfall|Ashfall|5|5.5
+1|6|2|1|badaisalju|Snowstorm|5|6
+1|6|2|1|frostbitefield|Frostbite Field|5|5.5
+1|6|3|2|ionstorm|Ion Storm|8|6
+1|6|3|3|plaguebloom|Plague Bloom|9|6
+1|6|5|3|singularity|Singularity|34|7
+1|7|1|3|segelakar|Root Sigil|0|1
+1|7|1|3|segelamuk|Frenzy Sigil|0|1
+1|7|1|3|segelbara|Ember Sigil|0|0.05
+1|7|1|3|segelgerimis|Drizzle Sigil|0|1
+1|7|1|3|segelkarang|Coral Sigil|0|1
+1|7|1|3|segelkristal|Geode Sigil|0|1
+1|7|1|3|segelmata|Keen Sigil|0|1
+1|7|1|3|segelnadi|Pulse Sigil|0|0.05
+1|7|1|3|segelpedang|Whetstone|0|1
+1|7|1|3|segelpenangkal|Ward Sigil|0|1
+1|7|1|3|segelrantai|Chain Sigil|0|1
+1|7|1|3|segelsumur|Wellspring Sigil|0|0.05
+1|7|1|3|segelvitalitas|Vitality Sigil|0|0.05
+1|7|1|3|tintamengalir|Flowing Ink|0|0.05
+1|7|2|3|segelagung|Grand Sigil|0|1
+1|7|2|3|segelamarah|Wrath Sigil|0|1
+1|7|2|3|segelarus|Conduit Sigil|0|1
+1|7|2|3|segeldaya|Power Sigil|0|1
+1|7|2|3|segelembun|Dewfall Sigil|0|1
+1|7|2|3|segelpemurni|Purifier Sigil|0|1
+1|7|2|3|segelperisai|Ironhide|0|1
+1|7|2|3|segelrimba|Heartwood Sigil|0|1
+1|7|2|3|segeltajam|Razor Sigil|0|1
+1|7|2|3|segeltelaga|Deep Well|0|1
+1|7|3|3|segelbenteng|Bulwark Sigil|0|1
+1|7|3|3|segelfajar|Dawn Sigil|0|1
+1|7|3|3|segelmurka|Sigil of Fury|0|1
+1|7|3|3|segelsamudra|Tidecaller|0|1
+1|9|1|3|cahayapembersih|Cleansing Light|0|8
+1|9|2|3|fajarpembersih|Cleansing Dawn|40|7

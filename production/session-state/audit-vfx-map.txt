@@ -1,0 +1,74 @@
+Absolute Zero          | CFXR3 Iceball A + Ice Trail
+Aegis                  | CFXR Electric Barrier (HDR)
+Arc Bolt               | CFXR3 Hit Electric A (Air)
+Ashfall                | Rockfall
+Blink Step             | CFXR Magic Poof
+Blizzard               | CFXR3 Hit Ice B (Ground)
+Bulwark                | CFXR Electric Barrier (HDR, Purple)
+Cataclysm              | vfx_MeteorRain01_Fire Variant
+Chain Lightning        | CFXR3 Hit Electric B (Air)
+Chaos Meteor           | CFXR2 Fireball
+Cinder Patch           | CFXR4 Burning Fire
+Cleansing Dawn         | CFXR3 Hit Light Fireworks
+Cleansing Light        | CFXR3 Hit Light A (Air)
+Doom Nova              | CFXR4 Explosion Orange (HDR) + Smoke
+Ember Burst            | CFXR3 Fire Explosion A
+Fire Rain              | vfx_MeteorRain01_Fire
+Fireball               | CFXR3 Fireball A + Fire Trail
+Firestorm Core         | CFXR3 Fire Explosion B
+Flame Lash             | CFXR4 Sword Hit FIRE (Slash)
+Fleetfoot              | vfx_BuffAoE08_Speed
+Frenzy Release         | CFXR4 Explosion Quick
+Frost Nova             | CFXR3 Hit Ice A (Ground)
+Frost Prism            | CFXR3 Hit Ice A (Air)
+Frost Shard            | CFXR3 Iceball A + Ice Trail
+Frostbite Field        | CFXR4 Snow 'Splashes'
+Glacial Spike          | CFXR3 Iceball B + Ice Trail
+Gravity Well           | vfx_DebuffVertical06_Void
+Greater Fireball       | CFXR3 Fireball B + Fire Trail
+Greater Heal           | vfx_ImpactAoE09_Heal
+Hailstorm              | vfx_MeteorRain02_Ice
+Ice Lance              | CFXR3 Hit Ice B (Air)
+Inferno Wave           | CFXR4 Flamethrower + Smoke
+Ion Storm              | Orb_lightning
+Lesser Ward            | CFXR Electric Barrier Simple (HDR)
+Lightning Slash        | CFXR Slash (Blue)
+Maelstrom              | Tornado_snow
+Mana Well              | vfx_BuffAoE03_Water
+Meteor                 | vfx_SingleComet01_Fire
+Minor Heal             | vfx_BuffAoE09_Heal
+Null Sphere            | vfx_ImpactAoE06_Void
+Plague Bloom           | CFXR4 Flies Cloud
+Plague Brand           | vfx_DebuffAoE04_Poison
+Poison Pool            | CFXR2 Potion Bubbles (Loop)
+Quickcast              | vfx_BuffAoE07_Arcane
+Ragnarok               | CFXR Fire Breath
+Reckoning              | CFXR3 Hit Fire C (Air)
+Rift Chain             | CFXR3 Hit Electric A (Air, Purple)
+Rime Nova              | vfx_ImpactAoE02_Ice
+Rolling Ember          | CFXR Fireball + Fire Trail
+Rupture                | CFXR2 Blood Shape Splash
+Shove                  | CFXR4 Wave Explosion Purple
+Singularity            | CFXR Portal
+Snowstorm              | CFXR4 Snow Falling
+Solar Flare            | vfx_SingleComet01_Fire Variant
+Spark Bolt             | VFX_Trail_Electric
+Spark Shards           | VFX_Trail_Electric
+Static Field           | CFXR Electric Explosion
+Steam Burst            | CFXR Smoke Poof Circle Flat
+Storm Cell             | CFXR Electric Surface
+Storm Shards           | VFX_Trail_Electric
+Stormbreaker           | CFXR Lightning Impact
+Sun Lance              | vfx_DebuffVertical01_Fire
+Sun Strike             | vfx_ImpactAoE01_Fire
+Sunder                 | CFXR2 Hit (Contrast)
+Tempest                | CFXR Lightning Strike + Impact
+Thunder Crown          | CFXR3 Hit Electric C (Air)
+Thunderclap            | CFXR4 Sparks Explosion
+Tornado                | Tornado_sand
+Void Lance             | CFXR4 Monster Explosion Purple (Small)
+Void Step              | CFXR4 Teleporter Rings Upwards (HDR, Purple)
+Vortex                 | vfx_DebuffAoE06_Void
+Whirling Blade         | CFXR3 Lightball B + Trail
+Whirlwind              | CFXR4 Wind Zone
+Winter's End           | vfx_ArrowRain02_Ice

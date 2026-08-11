@@ -1618,3 +1618,606 @@ ditint?), proporsi ring AOE, rupa 74 VFX.
 - Spam warning "no audio listeners" masih ada
 - Spam error `Property <noninit> already exists in the property sheet` saat play —
   belum dilacak; kandidat: `Gloom.LateUpdate` menulis property block tiap frame
+
+---
+
+## Perilaku skill baru, PAKTA, dan klon jadi item (2026-08-11)
+
+Menjawab tiga permintaan pemilik project sekaligus: skill harus punya PERILAKU lain
+(bilah muter di badan, laser mantul yang corat-coret layar), "word modifier" =
+**WORLD modifier** dari audit hari ini harus dibangun dan se-ekstrem mungkin dengan UI
+sendiri, dan skill dikurangi tapi tiap satunya unik — kekurangannya diganti item.
+
+### 1. Delapan `CastKind` baru — sebaran perilaku pecah
+
+| Kind | Apa yang beda |
+|---|---|
+| `Orbital` | Bilah mengitari BADAN pemain, melukai yang tersapu selama beberapa detik |
+| `Boomerang` | Pergi lurus, pulang mengejar posisi pemain SEKARANG — menagih dua kali |
+| `Ricochet` | Sinar memantul dari musuh & dari TEPI LAYAR; coretannya tumbuh bersama build |
+| `Turret` | Menara yang menembak sendiri dari tempat ditanam — pemain boleh lari |
+| `Shockwave` | Cincin melebar, hanya TEPINYA melukai; mengejar yang sudah di luar jangkauan |
+| `Seeker` | Rudal melengkung, satu rudal satu musuh, tidak ada yang tumpang tindih |
+| `Tether` | Sinar mengunci satu musuh, damage BERJALAN — jawaban untuk boss |
+| `Barrage` | Beberapa hantaman beraba-aba berurutan di titik berpencar |
+
+Implementasi: `Systems/PlayerCasterBehaviour.cs` (partial baru). Dua helper baru di
+`EnemyManager`: `DamageRing`/`PushRing` (cincin, bukan cakram — supaya gelombang menagih
+tiap musuh SEKALI) dan `FirstAlongRay` (satu lintasan linear per pantulan; sampling titik
+demi titik akan jadi 200 ribu perbandingan per tembakan di 500 musuh).
+
+**18 piece baru** lewat `Editor/BehaviourPass.cs` + 18 resep yang sengaja mencampur bahan
+LAMA, supaya pembuka Fireball punya jalan menuju perilaku baru.
+
+Sebaran skill sebelum → sesudah: **74 dari 102 skill di 7 ember (73%)** menjadi
+**76 skill di 26 perilaku, ember terbesar 7 (43%)**.
+
+### 2. PAKTA — world modifier
+
+`Data/WorldModifierDefinition.cs` (SO) + `Systems/WorldPacts.cs` (runtime, bukan
+MonoBehaviour) + **22 pakta** lewat `Editor/PactPass.cs`. Berkah permanen DAN kutuk
+permanen, diambil sekaligus. Node kejadian yang dulu cuma "+80 koin" sekarang menawarkan
+dua pakta + tombol menolak (koin lama).
+
+Sisi pemain DITAMBAHKAN ke stat; sisi musuh DIKALIKAN berantai (dua pakta +30% nyawa =
+1,69×, bukan 1,6× — penjumlahan akan membuat pakta kelima tidak terasa).
+
+Empat aturan yang tidak bisa ditulis sebagai stat: `ManaRegenMul` (nol = regen mati total,
+dan itu TIDAK bisa ditiru lewat StatKind karena stat itu penjumlahan yang bisa dilewati
+satu segel), `ManaPerKill`/`HpPerKill`, `EchoChance` (cast menembak dua kali; digabung
+sebagai peluang GAGAL semua supaya tidak pernah tembus 100%), dan `ReviveAt`.
+
+**Jebakan yang hampir memakan seluruh fitur ini:** `BuffDamageMul` dan tiga saudaranya
+membaca `_buffStats`/`_debuffStats` **LANGSUNG**, bukan lewat `Total()`. Menyambung pakta
+hanya ke `Total()` akan membuat pakta ber-DamagePct tampil di HUD, terbaca benar di
+kartunya, dan **tidak mengubah satu pun angka damage**. Sekarang keempatnya lewat
+`Temp(StatKind)` — satu tempat.
+
+`MaxHp`/`MaxMana` sekarang BERLANTAI di 1. Baru perlu sejak pakta ada: sebelumnya semua
+yang menyentuhnya menambah; tiga pakta pengurang nyawa yang bertumpuk membawa maksimumnya
+ke bawah nol, dan run berakhir sebelum satu musuh pun lahir.
+
+### 3. UI PAKTA — kolom tegak di tepi KANAN
+
+Strip keempat, sengaja beda sisi layar dan beda arah tumbuh dari tiga strip kiri. Tiga
+strip itu tempat mata mencari hal SEMENTARA; pakta tidak pernah pergi. Digambar ulang
+hanya saat `WorldPacts.Version` berubah, bukan tiap frame. Slot `PactArea` ditambahkan ke
+`StatusStripRig` supaya bisa ditata tangan.
+
+`StripPactY = -210`, BUKAN sejajar strip buff (−96). Ketahuan dari screenshot: bilah demo
+duduk di pojok kanan-atas sampai ≈−175 dan menimbun dua ikon pakta teratas.
+
+### 4. Klon jadi item — DIUBAH, tidak dihapus
+
+`Editor/ClonesToItemsPass.cs` — 16 skill kembar jadi segel. Id-nya tetap hidup, dan itu
+load-bearing: **36 resep menyentuh piece-piece itu, dan nol yang rusak.** Menghapus aset
+akan memutus resep penghasil, resep pemakai, dan codex pemain sekaligus.
+
+Itemnya bukan tempelan stat — audit menyebut 28 segel lama sebagai penyumbang kebosanan
+terbesar justru karena nol perilaku. Tiga `StatKind` baru membeli KATA KERJA:
+`BonusBounces` (peluru & sinar mantul), `BonusForks` (cabang rantai), `BonusHits`
+(semburan/bilah/rudal/hantaman). Terukur: **Fireball punya 0 pantulan di asetnya, lahir
+dengan 3 pantulan** begitu dua segel duduk di papan.
+
+`thunderclap` & `rimenova` dikonversi, BUKAN `frostnova` & `blizzard`: dua yang terakhir
+punya blurb tertulis tangan di `FootprintPass.Table`, dan pass itu menimpanya tiap
+dijalankan — segelnya akan menyandang keterangan skill Nova yang tidak lagi ia lakukan.
+
+### Jaring baru di solver
+
+`BalanceTunePass.ExpectedTargets` sekarang mengembalikan **−1** untuk kind yang belum
+didaftarkan, dan `Run()` MENERIAKKANNYA lalu melewatinya. Dulu `return 1f`, dan itu
+diam-diam berarti "skill ini mengenai satu musuh" — tiap kind baru yang lupa didaftarkan
+otomatis mewarisi arti itu dan dikasih damage peluru tunggal walau menyapu 30 musuh.
+
+### Terukur
+
+- Runescrawl ★5 (Ricochet): **1239 dps** melawan target solver 1417 — pas
+- Ripple ★1 (Shockwave): 27 dps melawan target 22
+- Wave 8, 5 pakta bertumpuk: damage ×3,05 · cooldown ×1,30 · musuh nyawa ×2,1 · jumlah
+  ×1,3 · gema 30% · regen mana 0 · HP maks 100→40. Kebangkitan: pukulan mematikan pertama
+  → HP kembali ke 20 (50%), yang kedua → mati
+- Musuh spawn di HP 107,9 = 51,4 (wave 5) × 2,1 pakta. Wave count 100 = 77 × 1,3
+
+### Yang DIKOREKSI setelah diukur, bukan setelah ditebak
+
+- **Quake ★3 radius 9** = radius bintang EMPAT (Doom Nova 9). Keluar di 680 dps melawan
+  Meteor 413 di bintang yang sama. Radius adalah kekuatan papan yang lolos dari seluruh
+  sistem penyeimbang → diturunkan ke 6,5. Ripple 5,5 → 4,5
+- **Blade Dance cuma 8 dps** melawan targetnya 17,6. Bukan damage-nya: `PlayerMotor`
+  menjauhkan pemain begitu musuh masuk `DangerRadius` 6 unit, jadi bilah berjari-jari 2,4
+  hidup sepenuhnya di ruang yang SUDAH dikosongkan. Radius Orbital 2,4/3,4/4,6 →
+  **3,6/5/6,6**; solver menurunkan damage per denyut sendiri karena luasannya naik
+
+### Urutan menjalankan editor tool (berubah)
+
+`Generate Behaviour Skills` → `Generate Pacts` → `Convert Clone Skills To Items` →
+`Footprint by Rarity` → `Generate Placeholder Icons` → **`Rebalance by Throughput` TERAKHIR**.
+
+### Berikutnya / belum beres
+
+- **Belum dimainkan tangan manusia.** Semua angka di atas dari play mode terkendali
+- **Balancing pakta belum diadu sungguhan** — 22 pakta, dan yang diuji baru 6 bertumpuk
+- Skill baru belum punya `CastVfx` satu pun (masih primitif) — dan slot FxLibrary baru
+  (`Blade`, `Boomerang`, `TurretBody`, `ShockRing`, `Missile`) masih kosong
+- **Spam error `Can't remove Light because UniversalAdditionalLightData depends on it`**
+  — SUDAH DILACAK, bukan dari perubahan sesi ini: `View/SkillVfxPool.cs:186` menghapus
+  komponen `Light` dari prefab VFX, sementara URP otomatis menempelkan
+  `UniversalAdditionalLightData` yang bergantung padanya. Belum diperbaiki (di luar
+  permintaan) — perbaikannya: hapus data tambahannya dulu, atau matikan lampunya
+  alih-alih menghapusnya
+- Rolet/slot masih cuma koin & piece — rancangan jekpot berbintang di audit belum dibangun
+
+## Ruang uji, VFX, dan teks reaksi (2026-08-11, lanjutan)
+
+Tiga keluhan pemilik project, dan **ketiganya satu akar**: ia menilai skill di ruang uji,
+dan ruang uji itu menyembunyikan separuh umpan balik game.
+
+### "reaction gak ada text popup" — bukan dihapus, memang belum pernah ada di sana
+
+Kabelnya utuh di `GrimoireUI.cs:444` dan terbukti hidup saat diperiksa di scene Proto
+(`"STATIC FREEZE!"` di slot floater, alpha 0,31). Sebabnya lain: **`PlaygroundBootstrap`
+tidak pernah membangun `GrimoireUI`** — nol floater, nol `DamagePopups`. Yang menguji
+skill di sana melihat reaksi MELETUS (kilat, partikel, damage tercatat) tapi tidak pernah
+melihat NAMANYA, lalu wajar menyimpulkan popup-nya rusak.
+
+Sekarang ruang uji punya kolam floater + `DamagePopups` sendiri. Terverifikasi lewat
+screenshot: `"STATIC FREEZE!"` melayang di atas gerombolan boneka.
+
+### Ruang uji akhirnya bisa menguji SEMUANYA — 92 → 136 piece
+
+Dulu `if (p.IsRune || p.IsPassive) continue;` membuang 44 dari 136 piece dari satu-satunya
+tempat yang bisa memeriksanya, dan 14 skill lain masuk daftar tapi tidak pernah bunyi.
+Semua sebabnya sudah dilacak dan ditutup:
+
+| Yang dulu mustahil | Sebab | Penutup |
+|---|---|---|
+| 16 rune | ditolak masuk daftar | rune jadi ALAS papan + skill acuan berdiri di atasnya |
+| 44 segel | ditolak masuk daftar | segel + skill acuan, angka skill itu yang dibaca bergeser |
+| Detonate ×3 | tidak ada yang bertanda | penanda ber-ailment cocok ikut didudukkan (`sunder` → 2 spell) |
+| Frenzy Release | `ConsumesCharge` di 0 | generator `GrantOnKill`-nya ikut didudukkan (11 piece, bukan 10) |
+| Blink ×2 | `CrowdPressure` NOL PERSIS di lingkaran simetris | formasi **BUSUR** (tombol 5) → terukur 1,000 |
+| Ward / Heal / Cleanse | pemain tidak pernah terluka/terkutuk | mode **LAWAN** (F) → perisai 33, 1 kutukan menempel |
+| Restore | ruang uji **mengisi mana penuh TIAP FRAME** | pengisian dimatikan selama mode LAWAN → mana 42/80 |
+
+> Baris `_caster.Mana = _caster.MaxMana` itu terlihat seperti kemudahan dan sebenarnya
+> tembok: `CastRestore` menolak menyala di atas 60% mana, jadi selama mana dipaksa penuh
+> skill itu **mustahil** diuji di sini.
+
+Plus mode **RAPUH** (M): boneka HP 40 yang mati dan langsung diganti, supaya charge dan
+panen-per-kill benar-benar berjalan.
+
+**Daftarnya juga sempat tidak terbaca** — panel 268 piksel memotong "Blade Dance
+<Orbital>" jadi "Dance <Orbital>". Penyebabnya pivot konten di TENGAH: isi yang lebih
+lebar dari viewport melebar ke dua arah, dan yang ke kiri jatuh di luar layar. Pivot
+dipindah ke kiri, panel 268 → 360.
+
+### VFX
+
+**18 skill baru tidak punya `CastVfx` sama sekali** — itu murni kelalaian sesi sebelumnya.
+Sekarang nol skill polos dari 76.
+
+Tapi memasang prefab saja tidak cukup: **tiga dari delapan perilaku baru tidak pernah
+MEMBACA `CastVfx`**. Disambungkan: Orbital (aura melingkar menempel di badan, ikut berjalan
+bersama pemain), Ricochet (semburan di titik pantul, dibatasi 6 titik pertama supaya 18
+pantulan tidak menjenuhkan kolam dan menutupi coretannya sendiri), Tether (semburan di
+ujung sinar tiap denyut).
+
+Semua 18 memakai **satu paket saja — GabrielAguiar**. Audit menyebut gaya paket campur aduk
+sebagai sebab pertama efek terbaca jelek, dan GA punya bentuk yang sama untuk delapan
+elemen, jadi satu keluarga skill bisa konsisten tanpa keluar dari satu bahasa visual.
+
+**8 sumber yang meleset diluruskan** lewat menu BARU dan berdialog:
+`Tools/Grimoire/Fix Mismatched Skill VFX (TIMPA wrapper)`. Terpisah dari `Assign Skill VFX`
+karena ini satu-satunya jalur yang MEMBUANG art yang sudah ada — kontrak pass utama tetap
+"wrapper yang sudah ada tidak pernah dibangun ulang". Diperiksa dulu lewat git bahwa nol
+wrapper lama pernah disentuh tangan sebelum dijalankan.
+
+Guruh → sambaran petir (dulu percikan generik) · Rupture → ledakan (dulu cipratan darah,
+yang tergambar organ) · Poison Pool & Plague Bloom → kubangan racun (dulu gelembung ramuan
+& awan lalat) · Tornado/Maelstrom → keluarga angin (dulu tornado PASIR dan SALJU untuk
+skill yang bukan keduanya) · Steam Burst → ledakan air · Void Lance → tusukan void (dulu
+monster ungu meledak). Tiga di antaranya dilewati dan DILAPORKAN karena sudah jadi segel.
+
+### Spam `Can't remove Light` — beres
+
+`SkillVfxPool.Strip` memanggil `Destroy(light)`, sementara URP menempelkan
+`UniversalAdditionalLightData` yang ber-RequireComponent terhadap Light itu. Destroy-nya
+SELALU ditolak, jadi yang terjadi bukan lampu hilang melainkan satu baris error per lampu
+per prefab. Sekarang lampunya `enabled = false` — membeli hal yang sama tanpa melawan
+aturan komponen URP.
+
+### Primitif dicabut habis + "skill ini efeknya apa?" (2026-08-11, lanjutan)
+
+**Enam slot FxLibrary baru, dan lima di antaranya sempat KOSONG** — slotnya ditambahkan
+tapi tidak pernah ada aset yang mengisinya, jadi bilah Orbital, bumerang, badan menara,
+cincin gelombang, dan rudal lahir sebagai `CreatePrimitive` murni: kotak putih yang tidak
+bisa dibuka, diseret, atau diganti tanpa menyunting C#. Persis yang `CoreFxPass` ada untuk
+mencegahnya. Sekarang **16/16 slot terisi prefab**, masing-masing di folder sendiri di
+`Assets/Art/VFX/Core/<Nama>/`.
+
+Pemilik project menegaskan: **jangan pilihkan VFX, cukup sediakan prefabnya** — ia yang
+mengganti isinya. Semua wrapper (`Assets/Art/VFX/Skills/<Nama>/`) dan core prefab memang
+dibangun untuk itu: ganti isi prefabnya, kode tidak tahu-menahu.
+
+**`OrbitRing` — penanda jangkauan Orbital.** Keluhannya: "gak paham skill apa itu, gak
+nge-damage sama sekali tapi kaya spesial gede banget areanya". Itu Blade Dance, dan dua
+hal salah sekaligus: efek partikelnya jauh lebih lebar dari radius damage 3,6 (jadi
+areanya BOHONG), dan boneka ruang uji berdiri di radius 6,5 — di luar jangkauan. Sekarang
+cakram tipis di kaki pemain menggambar radius SESUNGGUHNYA, digambar dari radius damage
+dan tidak pernah dari skala efeknya.
+
+**Ruang uji mendekatkan boneka sesuai jangkauan skill terpilih** (`FitSpread`). Hanya
+menurunkan, tidak pernah menaikkan — menaikkannya akan diam-diam mengubah sebaran yang
+barusan disetel tangan. Blade Dance: 0 dps → **184 dps terukur**.
+
+**Panel bacaan akhirnya menjelaskan SKILLNYA, bukan cuma angkanya.** Tiap piece sudah
+membawa `Blurb` yang ditulis untuk dibaca; panel ini tidak pernah menampilkannya. Plus
+satu baris `Diagnose()` yang menyebut kenapa sebuah skill DIAM — separuh buku ini sengaja
+menahan diri (peledak tanpa penanda, Heal di nyawa penuh, Blink di lapangan lengang), dan
+semua penolakan itu terlihat persis sama dari luar: skill yang tidak melakukan apa-apa.
+Panel dibesarkan 322x142 → 440x430 supaya kalimatnya muat.
+
+## Tangga footprint dirombak + editor bentuk grid (2026-08-11, lanjutan)
+
+Permintaan pemilik project: bintang 1 itu SATU petak dan sesekali dua, bintang 2 dua dan
+sesekali tiga, seterusnya; bentuknya harus beragam tanpa aturan kaku; dan **tidak boleh ada
+bentuk yang "mustahil"**.
+
+### Tangga baru
+
+| | Dulu | Sekarang |
+|---|---|---|
+| ★1 | 2-3 petak | **1**, 9% dapat 2 |
+| ★2 | 4 | **2**, 18% dapat 3 |
+| ★3 | 5 | **3**, 14% dapat 4 |
+| ★4 | 7 | **4-7**, diperingkat dari skor OP |
+| ★5 | 8-9 | **5-9**, diperingkat dari skor OP |
+
+Skor OP = `ExpectedTargets × jangkauan`. BUKAN damage: solver sudah menyamakan throughput
+seluruh anggota satu tingkat, jadi damage tidak membedakan apa pun. Yang tersisa sebagai
+kekuatan nyata cuma berapa musuh tersentuh dan sejauh mana ia menjangkau papan. Dipakai
+sebagai PERINGKAT, bukan nilai mentah — skor skill zone berbeda dua orde dari skill peluru.
+
+**13 bentuk baru**, total 33. Diverifikasi otomatis: **0 kembar** (dibandingkan lewat
+keempat rotasinya) dan **0 yang keluar kotak 3×3**. Tiga di antaranya sempat kembar
+(`Jay`==`Ell`, `Nub`==`Tee`, `Arrow`==`Cross`) — ketahuan oleh pengecekan itu, bukan oleh
+mata. Dua bentuk sengaja TERPUTUS (`Diag3`, `Twin`, `Nub`): papan cuma memeriksa tiap petak
+satu per satu, tidak pernah menuntut bentuknya menyatu. Di kotak 3×3 hanya ada enam
+tetromino yang muat, jadi bentuk 4-petak ketujuh HARUS yang tidak menyatu.
+
+`RarePercent` ditulis sebagai persen, bukan `hash % 5 == 0`. Bentuk kedua terlihat setara
+dan tidak: hash id pendek tidak tersebar rata di lima sisa bagi, dan yang terukur 30% —
+setengah lebih banyak dari yang dimaksud.
+
+### Kerusakan yang ditangkap SEBELUM sampai ke pemain
+
+Fireball naik dari 1 ke 2 petak karena undian "jarang", lalu mencaplok petak tetangganya:
+**`segelmata` milik Stormcaller GAGAL DUDUK** — run dibuka dengan satu piece yang dijanjikan
+hilang, tanpa satu pun error. Sekarang piece yang dipakai susunan pembuka hero mana pun
+**tidak pernah** dapat ukuran yang lebih besar. Terverifikasi: 3 hero, 6 piece masing-masing,
+**0 gagal**.
+
+### Konsekuensi keseimbangan yang ikut ditutup
+
+Rata-rata footprint turun **4,3 → 2,67 petak**, jadi papan 49 petak menampung ~1,6× lebih
+banyak piece — dan nafsu mana seluruh papan naik sebesar itu. `SkillsOnAFullBoard` 5 → **8**.
+Membiarkannya di 5 berarti mengulang persis bug yang dulu membuat build ★5 terbaik menembak
+di 10% laju nominalnya dan mati di wave 20.
+
+### Editor Bentuk Grid — `Tools/Grimoire/Editor Bentuk Grid`
+
+Menggambar bentuk dengan MENGKLIK petaknya, dan meluruskan art di atas bentuk itu, dalam
+satu jendela. Juga bisa dibuka dari klik-kanan sebuah PieceDefinition.
+
+Hasilnya ditulis ke `PieceDefinition.CustomCells`, dan begitu terisi **`FootprintPass`
+berhenti menyentuh piece itu selamanya** — bentuk gambaran tangan adalah keputusan, dan
+generator yang membatalkan keputusan membuat kedua alat itu tidak bisa dipercaya sekaligus.
+`Cells` sekarang mengembalikan `CustomCells` kalau ada, jadi papan, tas, codex, ikon, dan
+pratinjau evolusi semuanya ikut tanpa satu pun perlu tahu bentuk tangan itu ada.
+
+Bidang art baru di `PieceDefinition`: `Art`, `ArtOffset` (satuan PETAK), `ArtSize` (petak),
+`ArtRotation`, `ArtBehindCells`. Jendelanya menggambar art memakai angka-angka itu apa
+adanya — bukan dipaskan otomatis — supaya efek tiap geseran langsung terlihat.
+
+> **BELUM: papan sungguhan belum menggambar `Art`.** `GrimoireUI` masih menggambar piece
+> sebagai petak berwarna. Bidang + editornya sudah ada dan tersimpan benar; yang kurang
+> satu kolam Image di `GrimoireUI` yang membentangkan sprite-nya di atas footprint tiap
+> piece terpasang.
+
+### BUG: sinar memantul tidak pernah mencorat-coret (2026-08-11, lanjutan)
+
+Pemilik project menagih: "yg mantul2 mana?". Ditelusuri, dan itu **bug sungguhan** — bukan
+soal boneka yang berdempetan seperti yang sempat gw duga tanpa mengukur.
+
+Lintasan Runescrawl (18 pantulan) yang terukur SEBELUM perbaikan:
+
+```
+0: (17.1, 13.9)   pemain
+1: ( 8.4,  6.5)   musuh A
+2: ( 7.5,  7.6)   musuh B
+3: ( 8.4,  6.5)   A lagi
+4: ( 7.5,  7.6)   B lagi   ... dan seterusnya sampai pantulannya habis
+```
+
+**20 titik lintasan, hanya 3 posisi berbeda.** Sinarnya ping-pong di sepasang musuh, dan
+kedua puluh ruasnya tergambar menumpuk di satu garis pendek — jadi tidak ada coretan apa pun
+di layar, dan skill yang seluruh janjinya adalah bentuk yang tertinggal di layar tampil
+sebagai garis biasa yang mahal.
+
+**Sebabnya aturan yang diwarisi dari peluru.** `NearestExcluding` mengecualikan SATU musuh —
+yang barusan kena. Itu cukup untuk peluru yang memantul sekali (dan komentar di sana memang
+menjelaskan begitu). Untuk sinar yang memantul delapan belas kali, mengecualikan satu berarti
+dari A ia memilih B dan dari B ia memilih A, selamanya.
+
+Diperbaiki: dua metode baru di `EnemyManager` — `NearestOutside` dan `FirstAlongRayOutside` —
+yang mengecualikan SEKUMPULAN musuh sekaligus. `CastRicochet` mencatat tiap korban cast ini
+di `_chainBuffer` dan mengecualikan seluruhnya.
+
+Daftar korban **tidak** dikosongkan setelah memantul di tepi layar. Membiarkan sinar
+menyambar ulang terdengar murah hati dan justru membunuh skill ini: gerombolan terpadat
+selalu di satu tempat, jadi sinarnya akan pulang ke situ terus dan berhenti menyeberang.
+Efek sampingnya yang diinginkan — begitu musuh segar habis, sinarnya TERPAKSA memantul di
+tepi layar, dan pantulan tepi itulah yang mencorat-coret.
+
+Terukur SESUDAH, 26 boneka disebar spiral radius 3,5-14,5:
+
+```
+20 titik lintasan, 20 posisi BERBEDA
+(0,0) -> (3,0) -> (4.2,-2.7) -> (3,-6.3) -> (0.3,-3.8) -> (-2.7,-5.1) ->
+(-1.2,-8.9) -> (2.7,-11.9) -> (7.2,-7.2) -> (12.2,-5.6) -> (8,-1.8) ->
+(5.8,2.1) -> (2.6,3.3) -> (2.2,7.1) -> (-1.4,5.2) -> (-2.5,2.3) ->
+(-6.1,2.5) -> (-4.5,-0.8) -> (-6.7,-3.9) -> (-7,-8.4)
+```
+
+Membentang ~19x19 unit. Belum sempat difoto: papan ruang uji disetir ulang di antara
+panggilan remote, jadi tiap jepretan kena skill lain. Untuk melihatnya sendiri: pilih
+Runescrawl, tekan 4 (formasi acak), renggangkan dengan +.
+
+### Model SnakeBoss dipasang ke SEMUA boss (2026-08-11, lanjutan)
+
+`Assets/Art/Characters/Bosses/SnakeBoss` — tiga FBX (Head / Segment / Tail) + satu albedo.
+Mesinnya ternyata sudah lengkap sejak lama: `BossDefinition` punya slot mesh, `BossVisual`
+membangun tiga `EnemyRenderer` dan mengembalikan null kalau slotnya kosong (jatuh balik ke
+kapsul). Yang kurang cuma asetnya terisi.
+
+Pass baru `Tools/Grimoire/Pasang Model Boss` (`BossModelPass`). **Terpisah dari `BossPass`
+dengan sengaja**: model diganti jauh lebih sering daripada angka gameplay, dan menggabung
+keduanya berarti tiap kali art ditukar, seluruh nyawa/kecepatan/jeda serangan boss ikut
+ditulis ulang ke nilai bawaan.
+
+**Anti-kebalik.** Slot dicocokkan lewat NAMA FILE, bukan urutan folder — ini satu-satunya
+tempat kepala bisa tertukar dengan ekor, dan tertukarnya tidak akan pernah melempar error:
+ularnya cuma berjalan mundur seumur build itu. Diverifikasi dengan MATA di play mode:
+tengkorak kepala memimpin di ujung depan, badan berduri mengekor, tekstur tulang terpakai.
+
+**Skala: dua kali salah sebelum benar, dan keduanya dicatat di kode.**
+
+1. Percobaan pertama membagi dengan skala instans RATA-RATA (1,6) — kepala keluar 3,90 unit
+   padahal diminta 2,40, karena kepala memakai skala instans 2,6 bukan 1,6.
+2. Percobaan kedua memaksa tiap kepala jadi tepat 2,40 unit — dan ketiga boss jadi SAMA
+   BESAR, termasuk `grub` yang seluruh gunanya anak buah kecil. Yang salah bukan angkanya
+   melainkan idenya: memaksa panjang akhir berarti membagi habis `HeadScale`, satu-satunya
+   bidang yang membedakan ukuran mereka.
+
+Yang benar sesuai maksud bidangnya: pengali aset menormalkan mesh ke SATU UNIT (12,6 kepala
+/ 16,8 badan, diturunkan dari bounds bukan diketik), lalu `HeadScale` tiap boss berarti
+harfiah "panjang dalam unit dunia".
+
+| boss | kepala | ruas | jarak | tumpang tindih |
+|---|---|---|---|---|
+| serpent | 2,60u | 1,73u | 1,05 | 1,6× |
+| centipede | 2,90u | 1,80u | 0,85 | 2,1× |
+| grub (anak buah) | 1,15u | 0,80u | 0,60 | 1,3× |
+
+Ruas sengaja lebih panjang dari jaraknya: ruas yang panjangnya persis sama dengan jaraknya
+menyisakan celah di tiap sambungan begitu ularnya membelok — sisi luar tikungan merentang,
+dan yang terlihat barisan potongan, bukan satu makhluk.
+
+Wrap mode tekstur diperiksa dan dipaksa Repeat (UV mesh keluar rentang 0..1; Clamp akan
+meregangkan satu baris piksel tepi di sepanjang badan).
+
+**Jebakan yang memakan waktu lagi:** `refresh_unity` TIDAK menjamin recompile — pass lama
+terus berjalan dan angkanya tidak berubah dua kali berturut-turut, sementara console
+menyimpan error compile yang tidak pernah gw lihat. Palunya `CompilationPipeline.
+RequestScriptCompilation()`, DAN membaca console setelahnya. Sudah tercatat sebelumnya di
+file ini; gw tetap kena.
+
+`GameBalance.MapOpensRun` sempat dimatikan untuk memotret arena, dan **sudah dikembalikan
+ke True**.
+
+### Rotasi kepala boss & badan yang berlubang — TIGA bug (2026-08-11, lanjutan)
+
+Keluhan: "ular rotasinya salah" dan "kok tiap badan gak nyambung". Ditelusuri, dan ternyata
+**tiga sebab terpisah** — tidak satu pun soal mesh atau materialnya.
+
+**1. Kepala tidak pernah diputar sekali pun.**
+Arah hadap tiap ruas diturunkan dari selisih posisinya dengan ruas di depannya. Untuk ruas
+NOL, "ruas di depannya" adalah kepala itu sendiri — dan `_trail.Insert(0, _head)` membuat
+`SegmentPoint(0)` praktis SAMA dengan `HeadPos`. Selisihnya nyaris nol, penjaga
+`sqrMagnitude > 0.0001f` menolaknya, dan yaw kepala tidak pernah ditulis: kepalanya menatap
+utara dunia seumur pertarungan sementara seluruh badannya meliuk dengan benar.
+Diperbaiki: `BossSnake.Heading` dibuka, dan ruas nol memakainya. Terukur COCOK di ketiga boss.
+
+**2. Jejak kepala tidak berjarak seragam.**
+Versi lama menyisipkan SATU titik tiap kepala bergerak sejauh `TrailStep` (0,28) — dan itu
+diam-diam salah begitu ia bergerak lebih jauh dari itu dalam satu frame. Saat MENERJANG ia
+melaju 15 unit/detik. `SegmentPoint` mencari ruas dengan menghitung INDEKS lalu mengalikannya
+dengan TrailStep, jadi begitu jaraknya tak seragam, aritmetika itu berbohong.
+Yang terlihat: badan ular MERENGGANG tepat saat ia menerjang. Terukur: jarak antar ruas
+terjauh **1,96** padahal ruasnya sendiri cuma 1,26 panjangnya.
+Diperbaiki: titik antaranya diisi interpolasi, dibatasi 64 supaya teleport tidak melahirkan
+ribuan titik.
+
+**3. `SegmentPoint` membulatkan indeks.**
+Pembulatan mengkuantisasi jarak antar ruas ke kelipatan 0,28. Untuk boss ber-Spacing 0,6
+jaraknya melompat antara 0,56 dan 0,84 — variasi 50%, dan yang 0,84 lebih panjang dari
+ruasnya. Diperbaiki dengan interpolasi antara dua titik jejak.
+
+Terukur SESUDAH ketiganya:
+
+| | jarak antar ruas | target | ruas ekor | |
+|---|---|---|---|---|
+| serpent | 1,05..1,05 | 1,05 | 1,26 | NYAMBUNG |
+| grub | 0,60..0,60 | 0,60 | 0,72 | NYAMBUNG |
+
+Nol variasi, dan tiap ruas menimpa tetangganya.
+
+**Plus: `TailScale` dipatok minimal `Spacing x 1,2`** di `BossModelPass`. Panjang satu ruas
+di dunia sama dengan skalanya (pengali aset menormalkan mesh ke satu unit), dan ketiga boss
+memakai TailScale LEBIH KECIL dari Spacing — jadi separuh belakang tiap boss pasti berlubang
+berapa pun jejaknya dibetulkan. Yang dipatok cuma ambang minimum; nilai di atasnya tidak
+diganggu.
+
+> **Mesh-nya sendiri TIDAK terbalik.** Diperiksa lewat profil radius per irisan sepanjang Z:
+> kepala meruncing ke +Z (moncong di depan), ekor meruncing ke −Z (ujung di belakang). Dua-
+> duanya sesuai konvensi `Yaw = Atan2(forward)`. Dugaan awal bahwa modelnya menghadap −Z
+> terbantah oleh pengukuran itu, dan untung tidak keburu "diperbaiki" dengan offset 180°.
+
+### Rotasi model boss — akar sebenarnya: MODELNYA BERDIRI (2026-08-11, lanjutan)
+
+Pemilik project menolak dua perbaikan sebelumnya ("masih salah rotasinya") dan menunjuk
+akarnya sendiri: *"file originnya itu berdiri, lu harusnya cuma rotasi di sumbu buat
+direbahkan dan cari mana moncong kepalanya."* Benar.
+
+**Dugaan gw sebelumnya salah dua kali**, dan keduanya karena gw menyimpulkan dari STATISTIK
+mesh (profil radius per irisan) alih-alih melihatnya. Yang akhirnya menjawab: memajang
+ketiga mesh di rotasi NOL di play mode dan memotretnya. Di situ langsung terlihat kamera
+atas menampilkan tengkorak dari SAMPING — profil rahang — bukan dari punggungnya.
+
+Lalu lima kandidat rotasi dipajang berdampingan dalam satu frame (identitas, pitch ±90,
+roll ±90). Hanya **roll +90 pada sumbu Z** yang merebahkannya.
+
+**Kepala dan ekor diekspor menghadap arah BERLAWANAN.** Setelah direbahkan, moncong kepala
+menunjuk −Z sementara ujung ekor juga −Z. Ekor memang harus begitu (menjauhi kepala);
+kepala tidak. Jadi satu koreksi untuk ketiga mesh tidak akan pernah cukup — apa pun yang
+membetulkan salah satunya membalik yang lain.
+
+Koreksi final, disimpan sebagai DATA di tiap aset boss:
+
+| mesh | koreksi |
+|---|---|
+| kepala | `(0, 180, 90)` |
+| ruas badan | `(0, 0, 90)` |
+| ekor | `(0, 0, 90)` |
+
+`EnemyRenderer` dapat parameter `meshEuler`, dipasang di dalam matriks instans sebagai
+`Quaternion.Euler(0, yaw, 0) * meshRotation`. **Urutannya bukan selera**: yang kiri berputar
+di ruang dunia dan yang kanan di ruang mesh, jadi membaliknya membuat koreksi "rebahkan
+model" ikut berputar bersama arah hadap — modelnya berguling tiap kali boss membelok.
+
+Diterima sebagai **Euler, bukan Quaternion**: `default(Quaternion)` adalah (0,0,0,0), BUKAN
+identitas, dan mengalikannya meruntuhkan tiap matriks jadi nol. Menjaganya butuh sentinel,
+dan sentinel itu tidak bisa diperiksa dengan `==` — operator Quaternion Unity memakai dot
+product, jadi `default == default` justru mengembalikan FALSE. `Euler(0,0,0)` tidak punya
+lubang itu.
+
+Koreksinya ditaruh di RENDERER, bukan diperbaiki di importer FBX: memutar mesh di importer
+mengubah bounds-nya, dan seluruh perhitungan ukuran di `BossModelPass` diturunkan dari
+bounds itu.
+
+Diverifikasi dengan merakit kepala + 5 ruas + ekor sepanjang +Z memakai angka final:
+tengkorak di depan menghadap arah jalan (terlihat dari ATAS, bukan profil), tulang punggung
+menyambung tanpa putus, ekor meruncing di belakang.
+
+> **Pelajaran yang mahal di sesi ini:** tiga kali gw menyimpulkan orientasi mesh dari angka
+> (bounds, sebaran vertex, profil radius) dan tiga kali salah. Yang menyelesaikannya dalam
+> satu percobaan: pajang di rotasi nol, foto, lihat.
+
+### Primitif akhirnya benar-benar HILANG, bukan dikecilkan (2026-08-11, lanjutan)
+
+Keluhan: *"beberapa skill tornado kok ada primitif object sih, gw kan bilang buang semua"*.
+Benar, dan sebabnya bukan slot kosong — melainkan keputusan lama yang sengaja
+MEMPERTAHANKAN primitifnya.
+
+Tujuh tempat di kode cuma MENGECILKAN badan primitif saat skillnya punya `CastVfx`: bola
+peluru jadi 0,12, bola meteor 0,3, dan tabung puting beliung ditipiskan jadi 22% transparan.
+Niat aslinya masuk akal — primitif itu penanda radius damage sesungguhnya, dan partikel
+hampir tidak pernah seukuran radiusnya. Tapi yang dikecilkan itu **tetap terlihat**, dan
+yang terlihat adalah bola abu dan tabung tembus pandang menempel di tiap efek.
+
+Sekarang `ShowBody()` mematikan RENDERER-nya (bukan GameObject-nya — posisi benda itu dibaca
+tiap frame oleh uji tabrakan, ekor, dan pelepasan efek).
+
+**Aturannya sempat salah sekali lagi.** Percobaan pertama: "slot FxLibrary terisi = art
+sungguhan, tampilkan". Terukur gagal — `CoreFxPass` sudah mengisi KESELURUHAN 16 slot dengan
+prefab yang isinya masih bentuk primitif, jadi "terisi" tidak membedakan apa pun, dan tabung
+Tornado tetap muncul persis seperti sebelumnya.
+
+Sekarang satu saklar tegas: **`FxLibrary.ShowBodiesWithVfx`, MATI secara bawaan.** Nyalakan
+begitu slot-slotnya diisi model sungguhan. Benda yang TIDAK punya efek partikel tetap
+digambar apa pun nilainya — tidak menggambar apa-apa lebih buruk daripada menggambar kotak.
+
+Terverifikasi di play mode: Tornado, renderer primitif **1/1 DIMATIKAN**.
+
+Sapuan seluruh isi buku: **0 dari 76 skill bermasalah** secara struktural (tanpa VFX,
+damage 0, Detonate tanpa penanda, pemakan charge tanpa generator, Range 0, durasi 0).
+
+> **Yang masih placeholder dan TIDAK bisa ditutup dari kode:** isi 16 prefab core
+> (`Assets/Art/VFX/Core/*`) masih kubus/bola/silinder, dan isi 76 wrapper skill
+> (`Assets/Art/VFX/Skills/*`) masih pilihan dari paket yang ada. Keduanya memang dirancang
+> untuk ditukar tangan. Penanda tanah (cakram Zone, cincin SunStrike/Shockwave/Orbital)
+> sengaja TETAP digambar — itu satu-satunya yang memberitahu jangkauan sesungguhnya, dan
+> menghapusnya mengembalikan keluhan "areanya gede tapi gak nge-damage".
+
+## Prefab dirapikan ke Assets/Prefabs/ (2026-08-11)
+
+168 prefab milik project dikumpulkan dari 10 lokasi tersebar ke satu akar.
+Dipindah lewat `AssetDatabase.MoveAsset` (GUID ikut, referensi utuh), bukan
+lewat OS — memindahkan lewat Explorer akan memutus semua referensi.
+
+    Ambient 8 | Characters 2 | Effects 5 | FX_Core 16 | Light 2
+    Reactions 9 | Skills 108 | UI 6 | Weather 8 | World 4
+
+Pack vendor (Packs/, Plugin/, Stylized3DMonster, Feyloom, ToonScapes) SENGAJA
+tidak disentuh — scene demo dan referensi internalnya akan rusak.
+
+### Yang wajib ikut pindah: 6 konstanta path
+Path disimpan sebagai TEKS, jadi tidak ikut pindah sendiri. Kalau tertinggal,
+pass-nya membangun ulang ~100 prefab di path lama TANPA satu pun error —
+duplikat senyap. Sudah diganti:
+
+    VfxPass.SkillRoot        -> Assets/Prefabs/Skills
+    VfxPass.Lana             -> Assets/Prefabs/Effects/
+    CoreFxPass.Root          -> Assets/Prefabs/FX_Core
+    ReactionVfxPass.VfxRoot  -> Assets/Prefabs/Reactions
+    MainMenuBuilder x2       -> Assets/Prefabs/UI/
+
+### Verifikasi
+Ketiga pass dijalankan ulang: `wrapper dibangun 0`, jumlah prefab di
+Assets/Art tidak berubah (1060 -> 1060). Nol duplikat.
+
+Sisa 2 peringatan VfxPass (Piece_tornado, Piece_kubanganracun: kind gendong
+tapi efeknya sekali-main) adalah isu KONTEN lama, bukan akibat pemindahan.
+
+### Jebakan yang kena lagi (ketiga kalinya)
+`RequestScriptCompilation()` tidak menjamin compile SELESAI sebelum kode
+berikutnya jalan. Run pertama memakai assembly lama dan melaporkan 4 "prefab
+paket hilang" yang palsu. Cara membuktikan assembly benar: baca konstantanya
+lewat refleksi (`GetRawConstantValue`) sebelum percaya hasil pass.
+
+Juga: `AssetDatabase.CreateFolder` di dalam `StartAssetEditing()` belum
+terdaftar sampai batch ditutup — 6 pemindahan berkas gagal karenanya.
+
+### KOREKSI: duplikat itu MEMANG terjadi
+
+Klaim "nol duplikat" di catatan di atas SALAH. Run pertama yang memakai assembly
+basi membangun ulang 113 prefab di path lama (Skills 88 + Core 16 + Reactions 9).
+
+Kenapa lolos dari pemeriksaan: hitungan before/after dijalankan SETELAH duplikatnya
+terlanjur lahir, jadi selisihnya nol dan terbaca aman. Jejaknya sebenarnya terlihat
+sejak awal — angka Assets/Art melompat 947 -> 1060 antara dua pengukuran, persis
++113 — tapi dibaca sebagai derau pengukuran.
+
+Pelajarannya: membandingkan sebelum/sesudah TIDAK bisa mendeteksi kerusakan yang
+sudah terjadi sebelum pengukuran dimulai. Yang mendeteksinya adalah sensus absolut
+"prefab apa saja yang ada di luar Assets/Prefabs" — dan itu baru dijalankan karena
+user minta dicek ulang.
+
+Penyelesaian: 113 duplikat diverifikasi yatim (0 referensi menunjuk ke sana, 168
+referensi menunjuk ke lokasi baru) dan tiap satunya punya kembaran sekaligus nama
+sama di Assets/Prefabs (113/113, 0 unik). Ketiga folder lama dihapus.
+
+Keadaan akhir terverifikasi:
+    Assets/Prefabs 168, Assets/Art 947, folder lama tidak ada, referensi putus 0
+    ketiga pass idempoten: sudah benar 92 / 16 / 9, dibangun 0
