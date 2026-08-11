@@ -19,12 +19,12 @@ MonoBehaviour:
   Spacing: 0.6
   HeadScale: 1.15
   TailScale: 0.72
-  HeadMesh: {fileID: 7641001853791997134, guid: ac7e180a27c0a7f4bb0e90d60e081e91, type: 3}
-  BodyMesh: {fileID: -1489127082316723425, guid: af5b432be16ff624b94fae1c3a1e748b, type: 3}
-  TailMesh: {fileID: 1258264036989032260, guid: 91c8e0b18f08fa14b9eec276e84aee29, type: 3}
-  BoneSkin: {fileID: 2800000, guid: b14585ee99704de4f9e2a53fb833a35c, type: 3}
-  HeadMeshScale: 12.605702
-  BodyMeshScale: 16.80672
+  HeadMesh: {fileID: 2563715741337686096, guid: d9ceb84851265f044a0d1551eb782e23, type: 3}
+  BodyMesh: {fileID: -4984433126831042738, guid: c741ef74ad905604aa8cb3fb405b5091, type: 3}
+  TailMesh: {fileID: 3844104304424081712, guid: 2a019a965fb1846d031af0a48cf7c37a, type: 3}
+  BoneSkin: {fileID: 2800000, guid: f8a33a787cf53b343834da00de75b7dc, type: 3}
+  HeadMeshScale: 8.472638
+  BodyMeshScale: 13.799645
   HeadMeshRotation: {x: 0, y: 180, z: 90}
   BodyMeshRotation: {x: 0, y: 0, z: 90}
   TailMeshRotation: {x: 0, y: 0, z: 90}
@@ -57,7 +57,7 @@ MonoBehaviour:
   BodyColor: {r: 0.88, g: 0.84, b: 0.85, a: 1}
   HeadEmission: {r: 0, g: 0, b: 0, a: 1}
   BodyEmission: {r: 0, g: 0, b: 0, a: 1}
-  HeadMeshFile: SK_Worm_Head
-  BodyMeshFile: SK_Worm_Segment
-  TailMeshFile: SK_Worm_Tail
+  HeadMeshFile: SK_Centipede_Head
+  BodyMeshFile: SK_Centipede_Segment
+  TailMeshFile: SK_Centipede_Tail
   BoneSkinFile: SnakeBoss_Albedo_Flesh

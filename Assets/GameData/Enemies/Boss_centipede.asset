@@ -19,12 +19,12 @@ MonoBehaviour:
   Spacing: 0.85
   HeadScale: 2.9
   TailScale: 1.0200001
-  HeadMesh: {fileID: 7641001853791997134, guid: ac7e180a27c0a7f4bb0e90d60e081e91, type: 3}
-  BodyMesh: {fileID: -1489127082316723425, guid: af5b432be16ff624b94fae1c3a1e748b, type: 3}
-  TailMesh: {fileID: 1258264036989032260, guid: 91c8e0b18f08fa14b9eec276e84aee29, type: 3}
+  HeadMesh: {fileID: -7477590199563355630, guid: bb893ed4b583b7e38127b2c75b327758, type: 3}
+  BodyMesh: {fileID: -322289017124685891, guid: bf0d6d43f8098606f9ed417e2db56298, type: 3}
+  TailMesh: {fileID: -4178779993440046383, guid: cf7066c28f38b9a6030dc6a2f1fe3d68, type: 3}
   BoneSkin: {fileID: 2800000, guid: b14585ee99704de4f9e2a53fb833a35c, type: 3}
-  HeadMeshScale: 12.605702
-  BodyMeshScale: 16.80672
+  HeadMeshScale: 11.314489
+  BodyMeshScale: 15.817798
   HeadMeshRotation: {x: 0, y: 180, z: 90}
   BodyMeshRotation: {x: 0, y: 0, z: 90}
   TailMeshRotation: {x: 0, y: 0, z: 90}
@@ -57,7 +57,7 @@ MonoBehaviour:
   BodyColor: {r: 0.16, g: 0.16, b: 0.19, a: 1}
   HeadEmission: {r: 0, g: 0, b: 0, a: 1}
   BodyEmission: {r: 0, g: 0, b: 0, a: 1}
-  HeadMeshFile: SK_Centipede_Head
-  BodyMeshFile: SK_Centipede_Segment
-  TailMeshFile: SK_Centipede_Tail
-  BoneSkinFile:
+  HeadMeshFile: SK_Worm_Head
+  BodyMeshFile: SK_Worm_Segment
+  TailMeshFile: SK_Worm_Tail
+  BoneSkinFile: 

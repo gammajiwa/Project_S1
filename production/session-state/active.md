@@ -2342,3 +2342,12 @@ atau apa? Belum ada def keempat.
 Jalur: isi HeadMeshFile/BodyMeshFile/TailMeshFile/BoneSkinFile per def
 (field niat yang selamat dari BossModelPass), jalankan Tools/Grimoire/
 Pasang Model Boss, cek rotasi per mesh (worm/centipede bisa beda hadap).
+
+### Boss varian terpasang (2026-08-12)
+serpent <- Horned+Spiked (Boss) | centipede <- Worm (yg gede) | grub <- Centipede (yg kecil)
+Lewat field *MeshFile (niat, selamat dari pass), BossModelPass jalan: "3 boss
+memakai model SnakeBoss", 0 error. Rotasi ketiganya mewarisi koreksi ular
+((0,180,90)/(0,0,90)) — BELUM diverifikasi visual; pelajaran ular: kepala vs
+ekor bisa diekspor beda hadap. Cek in-game di sesi berikutnya.
+BELUM: def "Elit" (ular polos) belum ada — nunggu jawaban user; tekstur varian
+(Charred/Flesh/Moss/Pale) belum dipilih per boss.
