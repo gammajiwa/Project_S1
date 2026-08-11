@@ -23,7 +23,7 @@ MonoBehaviour:
   ArtSize: {x: 0, y: 0}
   ArtRotation: 0
   ArtBehindCells: 0
-  Color: {r: 0.95, g: 0.9, b: 0.4, a: 1}
+  Color: {r: 0.38, g: 0.72, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 4792b26d4ac08af4a99f19a234e0bba9, type: 3}
   Kind: 5
   Element: 2
@@ -39,7 +39,7 @@ MonoBehaviour:
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 6230838430762338099, guid: 58e7352509dad0944864894fd6cb4e7a, type: 3}
+  CastVfx: {fileID: 3464405071616244616, guid: 58e7352509dad0944864894fd6cb4e7a, type: 3}
   CastVfxScale: 0.9
   Trigger: 0
   TriggerStatus: {fileID: 0}

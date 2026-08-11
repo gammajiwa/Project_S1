@@ -27,7 +27,7 @@ MonoBehaviour:
   Icon: {fileID: 21300000, guid: c8dc514f9359a9d4caf2139a0c9a2112, type: 3}
   Kind: 6
   Element: 3
-  BaseDamage: 34
+  BaseDamage: 44
   BaseCooldown: 7
   Radius: 6
   Range: 12

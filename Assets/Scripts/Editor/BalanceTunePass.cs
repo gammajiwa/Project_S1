@@ -29,8 +29,17 @@ namespace Proto.EditorTools
         const float MaxTargets = 50f;
         const float TypicalPoints = 3f;
 
-        /// <summary>Throughput each tier is meant to be worth, in damage per second.</summary>
-        static readonly float[] TargetDps = { 0f, 22f, 68f, 190f, 520f, 1350f };
+        /// <summary>
+        /// Throughput each tier is meant to be worth, in damage per second.
+        ///
+        /// Kurvanya sengaja MENCURAM di puncak (2026-08-12). Tabel lama
+        /// {22/68/190/520/1350} rasionya justru menurun 3,1x -> 2,6x per bintang,
+        /// dan karena footprint b4-b5 jauh lebih lapar sel (b3 2-3 sel, b4 4-7, b5 5-9),
+        /// nilai PER SEL b3 (~76) nyaris menyamai b4 (~95) — temuan pemilik project:
+        /// "bintang 3 kaya lebih berharga daripada bintang 4 dan 5". Sekarang per sel:
+        /// b3 ~68, b4 ~113, b5 ~219 — tiap naik bintang harus terasa naik kelas.
+        /// </summary>
+        static readonly float[] TargetDps = { 0f, 22f, 68f, 170f, 620f, 1750f };
 
         /// <summary>
         /// Mana per second each tier is meant to cost — for the WHOLE BOARD, not for one skill.

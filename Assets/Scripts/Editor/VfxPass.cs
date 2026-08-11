@@ -96,10 +96,11 @@ namespace Proto.EditorTools
             ("cataclysm",     Ga + "vfx_MeteorRain01_Fire Variant.prefab",  0.8f, 1f),
 
             // ---------- LINE ----------
-            // Semburan dari badan ke sasaran — "cariin vfx yg nyembur api dari player ke
-            // target" (2026-08-12). Titik lahir VFX garis sudah dekat badan, jadi
-            // flamethrower memanjang keluar dari tangan, bukan melayang di tengah garis.
-            ("flamelash",    Cfxr + "Fire/CFXR4 Flamethrower + Smoke.prefab",           0.8f, 1f),
+            // Bara Pantul — dulu Line api kedua ("flame lash masih aneh, udah kebanyakan
+            // skill kaya gini", 2026-08-12), sekarang RICOCHET api: mengisi anak tangga
+            // b1 yang kosong (es b2, listrik b4, arcane b5). VFX mengikuti pola
+            // keluarganya: ImpactAoE elemennya sendiri, disembur di titik pantul.
+            ("flamelash",    Ga + "vfx_ImpactAoE01_Fire.prefab",                        0.45f, 1f),
             ("icelance",     Cfxr + "Ice/CFXR3 Hit Ice B (Air).prefab",                     1f, 1f),
             ("sabetanpetir", Hovl + "Slash effects/Electro slash.prefab",                   0.9f, 1f),
             ("infernowave",  Cfxr + "Fire/CFXR4 Flamethrower + Smoke.prefab",               1f, 1f),
@@ -118,8 +119,9 @@ namespace Proto.EditorTools
             // (2026-08-10). Dikecilkan DI DALAM wrapper supaya terlihat saat prefabnya dibuka.
             ("ashfall",        Lana + "Rockfall.prefab",                       1f, 0.22f),
             // Electric Surface bekas stormcell (kini item pasif) — MagicField_Stun tampak
-            // belum jadi ("kotak2") di mata pemilik project.
-            ("ionstorm",       Cfxr + "Electric/CFXR Electric Surface.prefab",  1f, 1f),
+            // belum jadi ("kotak2"). 0.5: prefabnya sendiri lebar, di skala 1 dua kali
+            // lipat cakram penandanya ("terlalu gede", 2026-08-12).
+            ("ionstorm",       Cfxr + "Electric/CFXR Electric Surface.prefab",  0.5f, 1f),
 
             // ---------- CLEANSE ----------
             ("cahayapembersih", Cfxr + "Light/CFXR3 Hit Light A (Air).prefab",    1f, 1f),
@@ -249,7 +251,9 @@ namespace Proto.EditorTools
             // "cariin vfx yg nembakin laser atau yg nyembur api dari player ke target".
             // Titik lahir VFX garis sudah dipindah ke badan pemain (PlayerCaster), jadi
             // prefab semburan yang memanjang ke depan sekarang benar-benar keluar dari tangan.
-            ("flamelash",    Cfxr + "Fire/CFXR4 Flamethrower + Smoke.prefab", 0.8f),
+            // flamelash sudah berubah kelamin jadi Ricochet ("Bara Pantul") — wrapper
+            // lamanya bernama folder "Flame Lash" dan dihapus saat batch ini jalan.
+            ("flamelash",    Ga + "vfx_ImpactAoE01_Fire.prefab",              0.45f),
             ("sabetanpetir", Hovl + "Slash effects/Electro slash.prefab",     0.9f),
 
             // ---------- LISTRIK: Vefects trail (0 partikel) diganti benda sungguhan ----------
@@ -268,7 +272,7 @@ namespace Proto.EditorTools
 
             // ---------- ZONE listrik: MagicField_Stun tampak belum jadi ("kotak2") ----------
             // Electric Surface bekas stormcell (sekarang item pasif, slotnya bebas).
-            ("ionstorm", Cfxr + "Electric/CFXR Electric Surface.prefab", 1f),
+            ("ionstorm", Cfxr + "Electric/CFXR Electric Surface.prefab", 0.5f),
 
             // ---------- VORTEX: keputusan pemilik project — tornado Lana KEMBALI ----------
             // Batch kemarin menggantinya demi "kejujuran elemen" (pasir untuk skill bukan

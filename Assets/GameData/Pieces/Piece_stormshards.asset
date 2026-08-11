@@ -27,7 +27,7 @@ MonoBehaviour:
   Icon: {fileID: 21300000, guid: f1a6eb2df12fb224b92d71bc68101906, type: 3}
   Kind: 12
   Element: 2
-  BaseDamage: 160
+  BaseDamage: 145
   BaseCooldown: 3.4
   Radius: 0
   Range: 9.5
@@ -39,7 +39,7 @@ MonoBehaviour:
   ZoneDuration: 4
   ZoneTickInterval: 0.5
   ZoneDrift: 0
-  CastVfx: {fileID: 5212776538998821583, guid: 983ecfbffd82abe4488108876a56be2b, type: 3}
+  CastVfx: {fileID: 9194254867102435950, guid: 983ecfbffd82abe4488108876a56be2b, type: 3}
   CastVfxScale: 0.8
   Trigger: 0
   TriggerStatus: {fileID: 0}

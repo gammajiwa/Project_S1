@@ -2351,3 +2351,30 @@ memakai model SnakeBoss", 0 error. Rotasi ketiganya mewarisi koreksi ular
 ekor bisa diekspor beda hadap. Cek in-game di sesi berikutnya.
 BELUM: def "Elit" (ular polos) belum ada — nunggu jawaban user; tekstur varian
 (Charred/Flesh/Moss/Pale) belum dipilih per boss.
+
+## Feedback ronde 3 (2026-08-12 malam) — semua kecuali satu
+
+1. Lightning Slash: def.Color kuning -> biru (0.38, 0.72, 1) menyamai Electro
+   slash — laser, flash, dan penanda ikut biru lewat satu field.
+2. Flame Lash BERUBAH KELAMIN -> "Bara Pantul", Ricochet api b1 (Hits 4,
+   Radius 0.5). Alasan user: "udah kebanyakan skill kaya gini [Line]".
+   Tangga ricochet kini: api b1, es b2, listrik b4, arcane b5 — pola VFX
+   keluarga dipertahankan (ImpactAoE elemen di titik pantul). Wrapper lama
+   "Flame Lash" dihapus. Damage di-solve ulang: 76 dmg / 1 mana.
+3. Ion Storm b3 "terlalu gede dan OP": Radius 5 -> 4.2, VFX scale 1 -> 0.5
+   (Electric Surface memang lebar dari sananya). Damage ikut solver: 10/tick.
+4. KURVA BINTANG dicuramkan: TargetDps {22/68/190/520/1350} ->
+   {22/68/170/620/1750}. Alasan terukur: rasio lama menurun per bintang dan
+   nilai PER SEL b3 (~76) nyaris = b4 (~95) — "bintang 3 kaya lebih berharga
+   daripada bintang 4 dan 5". Sekarang per sel: b3 ~68, b4 ~113, b5 ~219.
+   64 skill di-solve ulang, BELUM diplaytest.
+
+### BELUM DIKERJAKAN (janji ke user): penanda tanah ber-TIMING
+"kalo ada timingnya dia berubah balik ke primitif padahal bisa gak pertahanin
+shadernya, kalopun pake timing timingnya di shaderin"
+Dugaan: telegraf hantaman / penanda isi-mengisi digambar lewat jalur berbeda
+yang menskalakan primitif polos, bukan lewat Grimoire/AoeRing. Jalur kerja:
+cari siapa yang menggambar telegraf timing (grep Telegraf/telegraph di
+PlayerCaster + EnemyManager), lalu tambah param _Fill 0..1 di shader AoeRing
+(atau varian) yang diisi dari MaterialPropertyBlock — timing pindah ke shader,
+primitif tidak pernah tampil.
