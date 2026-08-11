@@ -2378,3 +2378,51 @@ cari siapa yang menggambar telegraf timing (grep Telegraf/telegraph di
 PlayerCaster + EnemyManager), lalu tambah param _Fill 0..1 di shader AoeRing
 (atau varian) yang diisi dari MaterialPropertyBlock — timing pindah ke shader,
 primitif tidak pernah tampil.
+
+## DESAIN MAIN MENU (2026-08-12, disetujui untuk dibangun sesi berikutnya)
+
+Masalah: menu sekarang "terlalu polos". Identitas game: grimoire gelap, sihir
+HDR yang menyala (bloom 0.8-1.25), papan grid, bullet-haven. Menu harus
+MEMAMERKAN identitas itu, bukan sekadar tombol.
+
+### Konsep: "Buku yang Menunggu di Meja"
+Diorama 3D (kerangka BuildDiorama SUDAH ADA) berisi GRIMOIRE terbuka di atas
+meja batu, dilihat serong-atas. Di atas halamannya: 2-3 piece grid melayang
+pelan (pakai orb yang sudah ada: Orb_lightning + CFXR Fireball, kecil), dan
+SATU bilah orbital berputar lambat mengitari buku — aset yang SUDAH terbukti
+cakep di game. Latar: gelap vignette (Gloom shader ada), Embers_calm Lana
+melayang + Hovl "Sparks flashing blue" jarang-jarang. TIDAK usah bikin model
+buku bagus dulu — kubus pipih + material emissive ungu untuk halaman pun
+jalan; yang menjual adalah CAHAYA dan GERAK, bukan mesh.
+
+### Layout (1920x1080, aman untuk mobile portrait nanti dipisah)
+    ┌──────────────────────────────────────────┐
+    │  GRIMOIRE HAVEN            [diorama 3D   │
+    │  <subjudul kecil>           buku+orbit   │
+    │                             di kanan,    │
+    │  ▸ MULAI  (besar, UiGlow)   ~60% layar]  │
+    │  ▸ Lanjut Run                            │
+    │  ▸ Grimoire   (koleksi)                  │
+    │  ▸ Pengaturan                            │
+    │  ▸ Keluar                                │
+    │  v0.x        [ikon2 kecil]               │
+    └──────────────────────────────────────────┘
+Tombol rata kiri, kolom sempit (~420px) — bukan tengah: diorama yang jadi
+bintangnya. Hover tombol = teksnya menyala (UiGlow, warna elemen bergilir?
+JANGAN — satu warna aksen saja: ungu arcane #B380FF, konsisten).
+
+### Aturan visual
+- SATU warna aksen (ungu arcane), sisanya netral gelap. Warna lain hanya
+  boleh datang dari VFX diorama.
+- Font judul: yang dipakai UI sekarang, ukuran besar + letter-spacing lebar;
+  glow lembut lewat UiGlow, BUKAN outline tebal.
+- Transisi masuk: judul fade + naik 20px, tombol menyusul berurutan 60ms.
+- Hormati penataan tangan user di scene menu kalau ada (memory!).
+
+### Jalur teknis
+MainMenuBuilder.Build() sudah membangun _Menu + diorama + canvas. Tambah:
+BuildDiorama -> meja + buku + spawner orb/bilah (komponen runtime kecil
+MenuOrbit.cs: putar transform, TANPA physics); BuildBackdrop -> vignette
+Gloom + partikel; tombol -> gaya baru (UiGlow material, layout kiri).
+StarterPanel/SettingsPage yang sudah ada JANGAN dirombak — cukup restyle
+warna aksen supaya senada.
