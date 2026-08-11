@@ -2457,3 +2457,14 @@ tahu basis & formula. Yang diminta user:
 user akan kasih daftarnya nanti. Jangan proaktif ganti-ganti lagi.
 
 ### Selebihnya dinyatakan OK oleh user ("sisanya semua keren no debat").
+
+### KOREKSI DESAIN MENU dari user: yang dia mau LATAR BELAKANGNYA keren
+"bukan itu yg gw maksud tapi lebih ke latar di belakang, gw kan grimoire"
+Fokus utama = BACKDROP layar penuh, layout tombol sekunder:
+- L0: gradasi radial malam ungu-gelap + vignette (Gloom)
+- L1: LINGKARAN SIHIR RAKSASA samar (Hovl Magic circle scale ~3x, alpha
+  rendah) berputar SUPER pelan di tengah — jiwa grimoire-nya di sini
+- L2: rune/bara ungu melayang naik pelan (Embers Lana di-tint)
+- L3: percikan biru jarang (Hovl Sparks flashing blue)
+- L4: CloudShadows bergerak lambat menimpa semua (kedalaman)
+Semua siklus >10 detik. Diorama buku boleh tetap tapi sekunder.
