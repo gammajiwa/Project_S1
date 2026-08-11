@@ -2426,3 +2426,34 @@ MenuOrbit.cs: putar transform, TANPA physics); BuildBackdrop -> vignette
 Gloom + partikel; tombol -> gaya baru (UiGlow material, layout kiri).
 StarterPanel/SettingsPage yang sudah ada JANGAN dirombak — cukup restyle
 warna aksen supaya senada.
+
+## SPEC DISETUJUI USER (2026-08-12 malam) — kerjakan di sesi baru, urutan bebas
+
+### 1. Main menu: BANGUN sesuai desain di atas ("gw serahin ke elu")
+
+### 2. Popup damage berwarna skill ("biar warna warni")
+DamagePopups sekarang satu warna. Warna skill ada di def.Color, tapi jalur
+damage (DamageArea/DamageLine/Damage) cuma bawa SourceName string — pilih:
+(a) tambah param Color di jalur damage, atau (b) popup lookup SourceName ->
+def.Color via ContentDatabase (hindari lookup per-popup tiap frame; cache
+dictionary sekali). Crit popup: lebih besar + putih-ke-warna-skill.
+
+### 3. CRITICAL — plumbing SUDAH ADA, kontennya belum
+FAKTA: RollCrit() di PlayerCaster:506 sudah dipakai banyak cast; StatKind
+CritChance(221) + CritDamage(222) sudah ada. Baca dulu isi RollCrit() untuk
+tahu basis & formula. Yang diminta user:
+- JANGAN tambah item baru — GESER item/sigil yang ada: beberapa item yang
+  efeknya "itu-itu aja" dialihkan kasih CritChance/CritDamage lewat modifier
+  yang sudah ada (ClonesToItemsPass path / BuffDefinition).
+- Buff critical (BuffDefinition) untuk jalur buff biasa.
+- SATU pact dunia baru: berkah crit besar + kerugian setimpal (mis. crit
+  chance +X% TAPI damage non-crit -Y% — "biar keren"). Masuk WorldModifier
+  + UI strip pact yang sudah ada.
+- Distribusi ke skill: crit TIDAK berlaku di kind yang menagih berkali-kali
+  (Orbital/Zone/Vortex — sudah ada komentar desain soal ini di CastOrbital)
+  — hormati aturan itu.
+
+### 4. DITUNDA ATAS PERINTAH USER: "beberapa skill yg gak pas di game" —
+user akan kasih daftarnya nanti. Jangan proaktif ganti-ganti lagi.
+
+### Selebihnya dinyatakan OK oleh user ("sisanya semua keren no debat").
