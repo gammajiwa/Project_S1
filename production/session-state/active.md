@@ -2436,7 +2436,7 @@ DamagePopups sekarang satu warna. Warna skill ada di def.Color, tapi jalur
 damage (DamageArea/DamageLine/Damage) cuma bawa SourceName string — pilih:
 (a) tambah param Color di jalur damage, atau (b) popup lookup SourceName ->
 def.Color via ContentDatabase (hindari lookup per-popup tiap frame; cache
-dictionary sekali). Crit popup: lebih besar + putih-ke-warna-skill.
+dictionary sekali). Crit popup KEPUTUSAN USER: MERAH PEKAT + lebih besar (bukan warna skill — crit harus kebaca seragam).
 
 ### 3. CRITICAL — plumbing SUDAH ADA, kontennya belum
 FAKTA: RollCrit() di PlayerCaster:506 sudah dipakai banyak cast; StatKind
