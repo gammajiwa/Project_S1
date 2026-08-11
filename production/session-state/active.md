@@ -2308,3 +2308,37 @@ diubah), moonglaive/hexbolts (timing sama dengan chakram).
 bladedance 0.85 dicek visual: tiga titik cahaya + halo terbaca di kondisi
 terburuk (40 boneka rapat). ringofruin 0.75 difoto juga. Selesai diterapkan:
 ApplyCorrections 15/15, audit pass 92/92, masalah 0.
+
+## Batch VFX v2 + laser beam (2026-08-12, lanjutan QA user)
+
+Punch list user, semua diterapkan (11 koreksi + 2 kode):
+- flamelash -> Flamethrower; sabetanpetir -> Hovl Electro slash. TITIK LAHIR
+  VFX Line dipindah: dulu 30% panjang garis (ragnarok = 4,2 unit di depan),
+  sekarang 0,9 unit dari badan — semburan lahir dari tangan. TERBUKTI di foto.
+- sparkbolt -> CFXR Lightball A (Vefects trail 0-partikel dicabut);
+  sparkshards/stormshards -> Orb_lightning (bahasa yang sama dgn Storm Circle)
+- greaterfireball scale 1.5 ("kurang gede"); emberroll -> CFXR4 Burning Fire
+  ("terlalu sama kaya fireball")
+- ionstorm -> CFXR Electric Surface (MagicField_Stun "kotak2" kata user)
+- Tornado Lana KEMBALI atas keputusan user: tornado=sand, maelstrom=snow,
+  whirlwind=Hovl Smoke vortex. Tangga vortex: asap -> pasir -> salju.
+  TERBUKTI di foto: tornado pasir mengembara, 732 dps.
+- BoltPool: shader baru Grimoire/LaserBeam (Assets/Shaders/LaserBeam.shader) —
+  inti memutih + halo additive + denyut halus; kontrak vertex-color/alpha
+  dipertahankan jadi C# tidak berubah. Lebar pita Line 1.6x -> 0.8x halfWidth.
+  TERBUKTI di foto ragnarok: pita oranye datar hilang, 2066 dps.
+
+Catatan: error shader 'Sprite Shaders Ultimate' di console = vendor pack
+(bentrok include URP 2D), BUKAN dari LaserBeam. Sudah ada sejak impor pack.
+
+## BERIKUTNYA: boss varian (instruksi user, belum dikerjakan)
+"yg uler bertanduk = Boss biasa, yg polos = ELIT; boss satunya 2 type:
+yg GEDE pake CACING (worm), yg KECIL pake KELABANG (centipede)."
+Aset sudah ada: SK_Snake_Head_Horned + SK_Snake_Segment_Spiked (Boss),
+SK_Worm_* (3), SK_Centipede_* (3), tekstur Charred/Flesh/Moss/Pale.
+Def: Boss_serpent (-> horned), Boss_centipede (-> worm?), Boss_grub (-> centipede?).
+PERTANYAAN TERBUKA untuk user: "Elit" ular polos itu def baru (Minion=true)
+atau apa? Belum ada def keempat.
+Jalur: isi HeadMeshFile/BodyMeshFile/TailMeshFile/BoneSkinFile per def
+(field niat yang selamat dari BossModelPass), jalankan Tools/Grimoire/
+Pasang Model Boss, cek rotasi per mesh (worm/centipede bisa beda hadap).

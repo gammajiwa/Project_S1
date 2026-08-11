@@ -952,16 +952,23 @@ namespace Proto
                         spell.Damage * BuffDamageMul * RollCrit(),
                         def.AppliedStatus, def.StatusDuration, AilmentPoints(def), def.DisplayName);
 
+                    // 0.8× lebar damage, bukan 1.6×: dengan shader laser, halo-nya sudah
+                    // melebarkan kesan sinarnya sendiri — pita yang lebih lebar dari
+                    // jalur damage cuma menjanjikan luka yang tidak pernah terjadi.
                     _bolts.Beam(transform.position, transform.position + dir.normalized * length,
-                        def.Color, halfWidth * 1.6f);
+                        def.Color, halfWidth * 0.8f);
 
-                    // Di 30% panjang garis, menghadap arah sapuan: lidah api terbaca keluar dari
-                    // pemain, dan efek ledakan tidak menutupi pemainnya sendiri. Umurnya dipaksa
-                    // pendek karena sebagian prefab garis (semburan api) adalah loop.
+                    // TEPAT di depan badan, menghadap arah sapuan. Dulu 30% panjang garis —
+                    // di garis pendek itu terbaca "keluar dari pemain", tapi di ragnarok
+                    // (range 14) semburannya lahir 4,2 unit di depan dan terputus dari tangan
+                    // yang menyemburkannya. Prefab semburan (flamethrower, fire breath) memang
+                    // dibuat memanjang ke depan dari titik lahirnya, jadi titik lahir yang benar
+                    // adalah badan pemain, berapa pun panjang garisnya. Umurnya dipaksa pendek
+                    // karena sebagian prefab garis adalah loop.
                     if (def.CastVfx != null && dir.sqrMagnitude > 0.0001f)
                     {
                         Vector3 dirN = dir.normalized;
-                        _vfx.Burst(def.CastVfx, transform.position + dirN * (length * 0.3f),
+                        _vfx.Burst(def.CastVfx, transform.position + dirN * 0.9f,
                             def.CastVfxScale * Mathf.Max(0.6f, length / 6f),
                             Quaternion.LookRotation(dirN), 0.8f);
                     }

@@ -53,5 +53,11 @@ MonoBehaviour:
   Minion: 1
   MinionFromWave: 6
   MinionCount: 2
-  HeadColor: {r: 0.66, g: 0.78, b: 0.34, a: 1}
-  BodyColor: {r: 0.3, g: 0.38, b: 0.2, a: 1}
+  HeadColor: {r: 1, g: 0.97, b: 0.97, a: 1}
+  BodyColor: {r: 0.88, g: 0.84, b: 0.85, a: 1}
+  HeadEmission: {r: 0, g: 0, b: 0, a: 1}
+  BodyEmission: {r: 0, g: 0, b: 0, a: 1}
+  HeadMeshFile: SK_Worm_Head
+  BodyMeshFile: SK_Worm_Segment
+  TailMeshFile: SK_Worm_Tail
+  BoneSkinFile: SnakeBoss_Albedo_Flesh

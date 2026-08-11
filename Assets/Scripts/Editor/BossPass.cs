@@ -215,8 +215,19 @@ namespace Proto.EditorTools
             a.SpitSpeed = 10f;
             a.SpitCurse = null;
 
-            a.HeadColor = new Color(0.66f, 0.78f, 0.34f);
-            a.BodyColor = new Color(0.3f, 0.38f, 0.2f);
+            // Warnanya datang dari TEKSTUR, bukan dari tint — jadi tint-nya dibiarkan mendekati
+            // putih. Cacing ini memakai kulit daging yang memang sudah merah muda, dan mengalikan
+            // merah muda dengan merah muda lagi cuma menjenuhkan warnanya sampai grain-nya hilang.
+            a.HeadColor = new Color(1f, 0.97f, 0.97f);
+            a.BodyColor = new Color(0.88f, 0.84f, 0.85f);
+
+            a.HeadEmission = Color.black;
+            a.BodyEmission = Color.black;
+
+            a.HeadMeshFile = "SK_Worm_Head";
+            a.BodyMeshFile = "SK_Worm_Segment";
+            a.TailMeshFile = "SK_Worm_Tail";
+            a.BoneSkinFile = "SnakeBoss_Albedo_Flesh";
 
             EditorUtility.SetDirty(a);
             db.EditorAddBoss(a);

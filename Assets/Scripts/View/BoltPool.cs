@@ -38,7 +38,12 @@ namespace Proto
         {
             _root = root;
 
-            var shader = Shader.Find("Sprites/Default");
+            // Grimoire/LaserBeam: inti panas + halo lembut, additive — pita datar
+            // Sprites/Default terbaca sebagai penanda prototype ("kasar banget",
+            // 2026-08-12). Kontraknya sama persis: vertex color untuk tint, alpha
+            // untuk fade, jadi seluruh kode di bawah tidak berubah satu baris pun.
+            var shader = Shader.Find("Grimoire/LaserBeam");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
             if (shader == null) shader = Shader.Find("Universal Render Pipeline/Unlit");
             _material = new Material(shader);
         }

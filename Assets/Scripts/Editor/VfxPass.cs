@@ -50,12 +50,14 @@ namespace Proto.EditorTools
         {
             // ---------- PROJECTILE ----------
             ("fireball",        Cfxr + "Fire/CFXR3 Fireball A + Fire Trail.prefab",  1f, 1f),
-            ("greaterfireball", Cfxr + "Fire/CFXR3 Fireball B + Fire Trail.prefab",  1f, 1f),
+            // 1.5: "kurang gede, gak terlalu beda sama fireball biasa" — lebih besar itu
+            // satu-satunya bedanya, jadi harus KELIHATAN lebih besar.
+            ("greaterfireball", Cfxr + "Fire/CFXR3 Fireball B + Fire Trail.prefab",  1.5f, 1f),
             ("frostshard",      Cfxr + "Ice/CFXR3 Iceball A + Ice Trail.prefab",     1f, 1f),
             ("glacialspike",    Cfxr + "Ice/CFXR3 Iceball B + Ice Trail.prefab",     1f, 1f),
-            // Petir = trail ramping, bukan bola. "3 skill petir buat ramping, yang sekarang
-            // solid banget waktu nembak" (2026-08-10).
-            ("sparkbolt",       Vf + "VFX_Trail_Electric.prefab",                    1f, 1f),
+            // Trail Vefects dicabut (2026-08-12): 0 partikel, cuma garis saat bergerak —
+            // "spark bolt jelek banget". Lightball = bola listrik ber-ekor yang terlihat.
+            ("sparkbolt",       Cfxr + "Light/CFXR3 Lightball A + Trail.prefab",     1f, 1f),
 
             // ---------- NOVA ----------
             ("emberburst",  Cfxr + "Explosions/CFXR3 Fire Explosion A.prefab",           1f, 1f),
@@ -94,10 +96,12 @@ namespace Proto.EditorTools
             ("cataclysm",     Ga + "vfx_MeteorRain01_Fire Variant.prefab",  0.8f, 1f),
 
             // ---------- LINE ----------
-            // Sabetan pedang api, bukan flamethrower — "flame lash masih gak cocok" (2026-08-10).
-            ("flamelash",    Cfxr + "Sword Trails/Fire/CFXR4 Sword Hit FIRE (Slash).prefab", 1f, 1f),
+            // Semburan dari badan ke sasaran — "cariin vfx yg nyembur api dari player ke
+            // target" (2026-08-12). Titik lahir VFX garis sudah dekat badan, jadi
+            // flamethrower memanjang keluar dari tangan, bukan melayang di tengah garis.
+            ("flamelash",    Cfxr + "Fire/CFXR4 Flamethrower + Smoke.prefab",           0.8f, 1f),
             ("icelance",     Cfxr + "Ice/CFXR3 Hit Ice B (Air).prefab",                     1f, 1f),
-            ("sabetanpetir", Cfxr + "Impacts/CFXR Slash (Blue).prefab",                     1f, 1f),
+            ("sabetanpetir", Hovl + "Slash effects/Electro slash.prefab",                   0.9f, 1f),
             ("infernowave",  Cfxr + "Fire/CFXR4 Flamethrower + Smoke.prefab",               1f, 1f),
             ("voidlance",    Cfxr + "Explosions/CFXR4 Monster Explosion Purple (Small).prefab", 0.9f, 1f),
             ("ragnarok",     Cfxr + "Fire/CFXR Fire Breath.prefab",                         1.2f, 1f),
@@ -113,7 +117,9 @@ namespace Proto.EditorTools
             // Rockfall aslinya memenuhi layar — "ashfall terlalu besar, areanya kecil"
             // (2026-08-10). Dikecilkan DI DALAM wrapper supaya terlihat saat prefabnya dibuka.
             ("ashfall",        Lana + "Rockfall.prefab",                       1f, 0.22f),
-            ("ionstorm",       LanaPack + "MagicField/MagicField_Stun Variant.prefab", 1f, 1f),
+            // Electric Surface bekas stormcell (kini item pasif) — MagicField_Stun tampak
+            // belum jadi ("kotak2") di mata pemilik project.
+            ("ionstorm",       Cfxr + "Electric/CFXR Electric Surface.prefab",  1f, 1f),
 
             // ---------- CLEANSE ----------
             ("cahayapembersih", Cfxr + "Light/CFXR3 Hit Light A (Air).prefab",    1f, 1f),
@@ -128,9 +134,9 @@ namespace Proto.EditorTools
             ("rupture",   Cfxr + "Explosions/CFXR4 Explosion Quick.prefab", 1f, 1f),
             ("reckoning", Cfxr + "Fire/CFXR3 Hit Fire C (Air).prefab",      1f, 1f),
 
-            // ---------- ORBIT — pecahan petir juga ramping ----------
-            ("sparkshards", Vf + "VFX_Trail_Electric.prefab", 0.7f, 1f),
-            ("stormshards", Vf + "VFX_Trail_Electric.prefab", 1f, 1.25f),
+            // ---------- ORBIT — orb petir yang sama dengan Storm Circle, satu bahasa ----------
+            ("sparkshards", LanaPack + "Orb/Orb_lightning.prefab", 0.7f, 1f),
+            ("stormshards", LanaPack + "Orb/Orb_lightning.prefab", 0.8f, 1f),
 
             // ---------- BLINK ----------
             ("blinkstep", Cfxr + "Misc/CFXR Magic Poof.prefab",                              1f, 1f),
@@ -152,13 +158,16 @@ namespace Proto.EditorTools
             ("solarflare", Ga + "vfx_SingleComet01_Fire Variant.prefab", 0.9f, 1f),
 
             // ---------- ROLLING BALL ----------
-            ("emberroll",   Cfxr + "Fire/CFXR Fireball + Fire Trail.prefab", 1f, 1f),
+            // Api unggun menggelinding, bukan komet — "terlalu sama kaya fireball".
+            ("emberroll",   Cfxr + "Fire/CFXR4 Burning Fire.prefab",        1f, 1f),
             ("chaosmeteor", Cfxr + "Fire/CFXR2 Fireball.prefab",             1.2f, 1f),
 
             // ---------- VORTEX ----------
-            ("whirlwind", Cfxr + "Nature/CFXR4 Wind Zone.prefab",           1f,   1f),
-            ("tornado",   Hovl + "Smoke effects/Smoke vortex.prefab",       1.1f, 1f),
-            ("maelstrom", Ga + "vfx_DebuffAoE05_Electricity.prefab",        1.2f, 1f),
+            // Tangga vortex: asap -> pasir -> salju. Tornado Lana KEMBALI atas keputusan
+            // pemilik project — "kejujuran elemen" kalah dari tornado yang memang cakep.
+            ("whirlwind", Hovl + "Smoke effects/Smoke vortex.prefab",             0.9f,  1f),
+            ("tornado",   LanaPack + "Wind_Leaves_Tornado/Tornado_sand.prefab",   1f,    1f),
+            ("maelstrom", LanaPack + "Wind_Leaves_Tornado/Tornado_snow.prefab",   1.15f, 1f),
 
             // ---------- FORCE PUSH ----------
             ("shove", Cfxr + "Explosions/CFXR4 Wave Explosion Purple.prefab", 1f, 1f),
@@ -234,39 +243,41 @@ namespace Proto.EditorTools
         /// </summary>
         static readonly (string piece, string path, float scale)[] Corrections =
         {
-            // ---------- ZONE: harus loop selama zonanya menagih ----------
-            ("kubanganracun", LanaPack + "MagicField/MagicField_Poison Variant.prefab", 1f),
-            ("ionstorm",      LanaPack + "MagicField/MagicField_Stun Variant.prefab",   1f),
+            // Batch 2026-08-12b — hasil QA pemilik project atas batch sebelumnya.
+            //
+            // ---------- LINE: semburan dari badan pemain ke sasaran ----------
+            // "cariin vfx yg nembakin laser atau yg nyembur api dari player ke target".
+            // Titik lahir VFX garis sudah dipindah ke badan pemain (PlayerCaster), jadi
+            // prefab semburan yang memanjang ke depan sekarang benar-benar keluar dari tangan.
+            ("flamelash",    Cfxr + "Fire/CFXR4 Flamethrower + Smoke.prefab", 0.8f),
+            ("sabetanpetir", Hovl + "Slash effects/Electro slash.prefab",     0.9f),
 
-            // ---------- VORTEX: tornado asap netral — bukan pasir, bukan salju ----------
-            ("tornado", Hovl + "Smoke effects/Smoke vortex.prefab", 1.1f),
+            // ---------- LISTRIK: Vefects trail (0 partikel) diganti benda sungguhan ----------
+            // Trail hanya menggambar saat digerakkan; sebagai peluru ia garis tipis nyaris
+            // tak terlihat. Lightball = bola listrik dengan ekor; pecahan orbit memakai
+            // orb petir yang sama dengan Storm Circle — satu bahasa untuk keluarga listrik.
+            ("sparkbolt",   Cfxr + "Light/CFXR3 Lightball A + Trail.prefab", 1f),
+            ("sparkshards", LanaPack + "Orb/Orb_lightning.prefab",           0.7f),
+            ("stormshards", LanaPack + "Orb/Orb_lightning.prefab",           0.8f),
 
-            // ---------- TURRET: berdiri berdetik-detik, efeknya harus betah ----------
-            ("obelisk",   Hovl + "AoE effects/Red energy explosion.prefab", 0.8f),
-            ("sentryeye", Hovl + "Magic circles/Magic circle.prefab",       0.8f),
+            // ---------- API: tiap anggota keluarga harus beda silau ----------
+            // Greater fireball cuma terasa lebih besar kalau MEMANG lebih besar; rolling
+            // ember bukan peluru, jadi bentuknya api unggun menggelinding, bukan komet.
+            ("greaterfireball", Cfxr + "Fire/CFXR3 Fireball B + Fire Trail.prefab", 1.5f),
+            ("emberroll",       Cfxr + "Fire/CFXR4 Burning Fire.prefab",            1f),
 
-            // ---------- ORBITAL: wrapper kini dipasang SATU PER BILAH oleh EnsureBlades,
-            //            jadi isinya harus kecil, loop, dan diam di tempat ----------
-            // Skala dinaikkan setelah dilihat di play mode: 0.6/0.55 tenggelam di kerumunan
-            // boneka; Orb_lightning tidak perlu — dia memang besar dari sananya.
-            ("bladedance",  Cfxr + "Light/CFXR3 Lightball B + Trail.prefab",  0.85f),
-            ("stormcircle", LanaPack + "Orb/Orb_lightning.prefab",            0.55f),
-            ("ringofruin",  Cfxr + "Fire/CFXR Fireball + Fire Trail.prefab",  0.75f),
+            // ---------- ZONE listrik: MagicField_Stun tampak belum jadi ("kotak2") ----------
+            // Electric Surface bekas stormcell (sekarang item pasif, slotnya bebas).
+            ("ionstorm", Cfxr + "Electric/CFXR Electric Surface.prefab", 1f),
 
-            // ---------- BOOMERANG & SEEKER: komet jatuh diganti orb yang diam ----------
-            // (perbaikan Map kemarin tidak pernah mendarat — Map tidak menimpa wrapper
-            //  yang sudah ada; jalur timpanya memang cuma yang ini.)
-            ("chakram",    LanaPack + "Orb/Orb_lightning.prefab", 0.6f),
-            ("moonglaive", LanaPack + "Orb/Orb_snow.prefab",      0.75f),
-            ("hexbolts",   LanaPack + "Orb/Orb_lightning.prefab", 0.45f),
-            ("hexstorm",   LanaPack + "Orb/Orb_lightning.prefab", 0.55f),
-
-            // ---------- WARD: kubah perisai sungguhan, bukan pagar listrik ----------
-            // "laser ward gw gak paham skill apa itu" — pagar listrik terbaca sebagai
-            // serangan area, bukan pelindung. Kubah Hovl terbaca sebagai perisai.
-            ("wardpetty", Hovl + "Magic shields/Magic shield blue.prefab",   0.9f),
-            ("wardaegis", Hovl + "Magic shields/Magic shield yellow.prefab", 1f),
-            ("bulwark",   Hovl + "Magic shields/Magic shield pink.prefab",   1.1f),
+            // ---------- VORTEX: keputusan pemilik project — tornado Lana KEMBALI ----------
+            // Batch kemarin menggantinya demi "kejujuran elemen" (pasir untuk skill bukan
+            // pasir), dan itu keliru arah: yang penting tornadonya CAKEP dan terbaca
+            // berputar. Sand untuk tornado, snow untuk maelstrom, dan whirlwind ambil
+            // pusaran asap supaya tangga vortex-nya kebaca: asap -> pasir -> salju.
+            ("whirlwind", Hovl + "Smoke effects/Smoke vortex.prefab",                 0.9f),
+            ("tornado",   LanaPack + "Wind_Leaves_Tornado/Tornado_sand.prefab",       1f),
+            ("maelstrom", LanaPack + "Wind_Leaves_Tornado/Tornado_snow.prefab",       1.15f),
         };
 
         /// <summary>

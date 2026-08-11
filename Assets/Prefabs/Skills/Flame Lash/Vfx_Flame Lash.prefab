@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &715328662145984299
+--- !u!1 &3307385156868344013
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,7 +8,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 989433393428164114}
+  - component: {fileID: 4601279682064350417}
   m_Layer: 0
   m_Name: Vfx_Flame Lash
   m_TagString: Untagged
@@ -16,81 +16,81 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &989433393428164114
+--- !u!4 &4601279682064350417
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 715328662145984299}
+  m_GameObject: {fileID: 3307385156868344013}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4616236427084595359}
+  - {fileID: 8607527918558169630}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &2122811729901790323
+--- !u!1001 &6373219403187524159
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 989433393428164114}
+    m_TransformParent: {fileID: 4601279682064350417}
     m_Modifications:
-    - target: {fileID: 6729948598702482665, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
-      propertyPath: m_Name
-      value: CFXR4 Sword Hit FIRE (Slash)
-      objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalRotation.w
       value: 1
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalRotation.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalRotation.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
+    - target: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3388444484260091948, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
+      propertyPath: m_Name
+      value: CFXR4 Flamethrower + Smoke
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
---- !u!4 &4616236427084595359 stripped
+  m_SourcePrefab: {fileID: 100100000, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
+--- !u!4 &8607527918558169630 stripped
 Transform:
-  m_CorrespondingSourceObject: {fileID: 6729948598702482668, guid: 7093a571714081b4c966eba7f3bc80d5, type: 3}
-  m_PrefabInstance: {fileID: 2122811729901790323}
+  m_CorrespondingSourceObject: {fileID: 3388444484260091937, guid: ed9015b87ffa77341890e69ed9122f7c, type: 3}
+  m_PrefabInstance: {fileID: 6373219403187524159}
   m_PrefabAsset: {fileID: 0}
