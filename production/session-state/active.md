@@ -2587,3 +2587,79 @@ menghilang jadi setitik atau menelan layar. Dua bidang bergambar `grimoireUI.png
 tetap ada sebagai jalur cadangan kalau modelnya hilang.
 Emissive ditahan di (0.55,0.42,0.85): nilai pertama (1.6,1.25,2.2) memutihkan
 seluruh buku sampai albedonya tidak terbaca sama sekali.
+
+# ============================================================
+# HANDOFF 2026-08-13 — BACA INI DULU
+# ============================================================
+
+## YANG MASIH SALAH (prioritas 1)
+
+**Efek partikel di kaki pemain (Reaper) — belum benar setelah 5 percobaan.**
+
+Lokasi: `Assets/Prefabs/Characters/PlayerAvatar_Reaper.prefab` -> anak `FootSmoke`
+Prefab sumber: `CFXR Prefabs/Liquids/CFXR2 Potion Bubbles (Loop)`
+Komponen: `Assets/Scripts/View/FootSmoke.cs` (laju emisi mengikuti kecepatan)
+
+Yang diminta pemilik project, dikumpulkan dari lima kali koreksi:
+- BUKAN footstep, BUKAN asap area besar, BUKAN mesh/quad ber-shader
+- Particle system, bentuk bulat seperti gelembung/liquid, warna HITAM
+- Badan pemain seperti CEROBONG: partikel keluar dari badan lalu JATUH ke tanah
+- Setelah mendarat MENYEBAR ke mana-mana di permukaan tanah
+- Saat bergerak meninggalkan JEJAK, saat diam "berkibar" (bergolak di tempat)
+- Kecil, di bawah kaki — bukan menutupi layar
+
+Setelan terakhir (e78bb9a): cone menghadap bawah 42 deg dari y=0.95, gravitasi
++0.55, radial 0.35-1.3 dengan Y dinolkan, dampen 0.35, simulationSpace World.
+Pemilik project bilang MASIH SALAH tapi belum menyebut salahnya di mana.
+
+**TANYAKAN DULU sebelum menebak lagi.** Lima percobaan gagal berturut-turut
+menghabiskan kesabaran, dan tiap tebakan baru memperburuk. Pertanyaan yang paling
+menyempitkan: partikelnya harus terlihat seperti apa saat DIAM — kolam yang
+menggenang di kaki, atau kabut yang terus mengalir keluar?
+
+Catatan teknis yang sudah terbukti dan jangan diulang penemuannya:
+- `CFXR_Effect` harus dicabut; ia mengelola umur efeknya sendiri dan bisa
+  menghancurkannya
+- `simulationSpace` WAJIB World, kalau tidak seluruh kepulan menyeret ikut badan
+  dan tidak ada jejak yang tertinggal
+- Warna JANGAN hitam murni; yang nol tidak punya tepi dan hilang di latar apa pun.
+  Yang dipakai sekarang (0.05, 0.045, 0.07) terbaca hitam tapi tetap punya bentuk
+
+## YANG BELUM DIKERJAKAN (diminta, belum disentuh)
+
+**Rebalance jumlah musuh.** Permintaannya: musuh JAUH lebih banyak mulai wave 4
+ke atas, rasa Vampire Survivors, TAPI tidak gampang mati dan tetap bisa dimenangkan.
+
+Analisis sudah ditulis sebagai komentar di `GameBalance.cs`, ANGKANYA BELUM DIUBAH.
+Akar masalahnya: damage sentuh MENUMPUK per musuh (jebakan #16), jadi jumlah musuh
+dan mematikannya musuh adalah tuas yang SAMA — tidak bisa menaikkan satu tanpa
+satunya. Rencana: naikkan `EnemiesPerWave` 6 -> 16 (suku LINEAR, bukan
+`EnemyCountGrowth` yang pangkat dan meledak di wave 20) sambil menurunkan
+`EnemyContactDps` 6 -> 2.6 dan `EnemyContactDpsPerWave` 1.7 -> 0.55.
+Hitungan: wave 10 jadi ~304 musuh, tiap musuh 8.1 dps, lima menempel = 40 dps
+lawan HP 100 = 2.5 detik untuk mati. Berdiri di kerumunan boleh sebentar,
+berkemah tetap membunuh.
+
+**Tata letak `ShopPrefab`.** Ruangan singgah sudah top-down dan sudah berisi
+(meja pedagang, altar berbuku, mesin slot), tapi panel UI-nya belum digeser ke
+bawah layar supaya ruangannya kelihatan.
+
+**`Grimoire_Hover`** — klip ketiga di Reaper.fbx belum dipakai. Kandidat: state
+cast, atau layer di atas Idle supaya bukunya melayang terus.
+
+**Def "Elit"** (ular polos) — belum pernah dijawab pemilik project sejak awal sesi.
+
+## YANG SUDAH BERES SESI INI (12 commit, 9392a26..e78bb9a)
+
+Latar menu berlapis + buku 3D + bokeh/glow/asap ber-shader · telegraf `_Fill` ·
+crit sampai popup + pakta Tangan Gemetar · boss cacing (kepala, pemetaan, guling,
+jarak ruas) · cahaya per-kilatan skill · layar muat bersigil di semua pindah scene ·
+3 font (Cinzel/Barlow/EB Garamond) in-menu dan in-game · outline angka damage ·
+klik shop/slot yang ketelan · piece tercecer di depan panel · ruangan singgah
+top-down + isinya · Ruang Uji (`Tools/Grimoire/Ruang Uji`) · model + animasi Reaper.
+
+## CARA MENGUJI CEPAT
+
+`Tools/Grimoire/Ruang Uji` — jendela editor: lompat ke wave mana pun, isi papan
+bintang 5, munculkan boss, isi HP/mana, ubah kecepatan. Semuanya runtime saja,
+tidak menyentuh satu pun aset (jebakan #22).
