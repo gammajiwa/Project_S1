@@ -29,7 +29,94 @@ ModelImporter:
     animationWrapMode: 0
     extraExposedTransformPaths: []
     extraUserProperties: []
-    clipAnimations: []
+    clipAnimations:
+    - serializedVersion: 16
+      name: Grimoire_Hover
+      takeName: Grimoire_Hover
+      internalID: 5637432947990131986
+      firstFrame: 0
+      lastFrame: 239
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 1
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Idle_Float
+      takeName: Idle_Float
+      internalID: 7228499501841952757
+      firstFrame: 0
+      lastFrame: 239
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 1
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Walk_Fly
+      takeName: Walk_Fly
+      internalID: -703281576097275283
+      firstFrame: 0
+      lastFrame: 59
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 1
+      hasAdditiveReferencePose: 0
+      loopTime: 1
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
     isReadable: 0
   meshes:
     lODScreenPercentages: []
@@ -83,7 +170,102 @@ ModelImporter:
   humanDescription:
     serializedVersion: 3
     human: []
-    skeleton: []
+    skeleton:
+    - name: Reaper(Clone)
+      parentName: 
+      position: {x: 0, y: 0, z: 0}
+      rotation: {x: 0, y: 0, z: 0, w: 1}
+      scale: {x: 1, y: 1, z: 1}
+    - name: CHAR_Final
+      parentName: Reaper(Clone)
+      position: {x: 0.0093913395, y: -0.00025474594, z: 0.00031034634}
+      rotation: {x: -0.7071037, y: -0.0020870992, z: -0.021259585, w: 0.7067871}
+      scale: {x: 100.00001, y: 99.99999, z: 99.99999}
+    - name: CHAR_Root
+      parentName: Reaper(Clone)
+      position: {x: -0, y: 0, z: 0}
+      rotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
+      scale: {x: 100, y: 100, z: 100}
+    - name: CHAR_ArmRig
+      parentName: CHAR_Root
+      position: {x: 0.00015392159, y: -0.0001347673, z: -0.0008406566}
+      rotation: {x: -0.00022385817, y: 0.013556999, z: -0.016508603, w: 0.9997718}
+      scale: {x: 1, y: 1, z: 1}
+    - name: Root
+      parentName: CHAR_ArmRig
+      position: {x: -0, y: 0.0002, z: 0}
+      rotation: {x: 0.7071068, y: -9.313226e-10, z: 0.0000000031030254, w: 0.7071067}
+      scale: {x: 1, y: 1, z: 1.0000001}
+    - name: Hips
+      parentName: Root
+      position: {x: -0, y: 0.002, z: -0.0001}
+      rotation: {x: -0.020819815, y: 0.0000000017055446, z: 0.0000000042486437, w: 0.9997833}
+      scale: {x: 1, y: 0.99999994, z: 1.0000001}
+    - name: Spine
+      parentName: Hips
+      position: {x: -0, y: 0.001201041, z: 9.3132255e-12}
+      rotation: {x: -0, y: 6.7225026e-10, z: -6.445473e-10, w: 1}
+      scale: {x: 1, y: 1.0000002, z: 1.0000002}
+    - name: Chest
+      parentName: Spine
+      position: {x: -0, y: 0.0012010412, z: -1.8626451e-11}
+      rotation: {x: -0.0035070833, y: -0.022722444, z: -0.023688931, w: 0.99945503}
+      scale: {x: 1, y: 1, z: 0.9999999}
+    - name: Neck
+      parentName: Chest
+      position: {x: -1.3969838e-11, y: 0.0010523784, z: 5.6752467e-12}
+      rotation: {x: 0.03363637, y: -0.08108011, z: -0.08672651, w: 0.9923574}
+      scale: {x: 1, y: 0.9999997, z: 0.9999999}
+    - name: Head
+      parentName: Neck
+      position: {x: -5.5879353e-11, y: 0.00071651925, z: 0}
+      rotation: {x: 0.005448293, y: 0.06500883, z: 0.062589414, w: 0.99590504}
+      scale: {x: 1.0000001, y: 1, z: 1}
+    - name: RightShoulder
+      parentName: Chest
+      position: {x: -0.00005629829, y: 0.0007306037, z: -0.0006416858}
+      rotation: {x: -0.54953665, y: -0.38993862, z: -0.38462433, w: 0.6308895}
+      scale: {x: 1.0000001, y: 1.0000005, z: 1.0000001}
+    - name: RightUpperArm
+      parentName: RightShoulder
+      position: {x: 2.7939677e-11, y: 0.0007562311, z: 6.170012e-11}
+      rotation: {x: 0.018744286, y: 0.08153371, z: 0.18780677, w: -0.9786366}
+      scale: {x: 1.0000001, y: 1.0000002, z: 1.0000004}
+    - name: RightLowerArm
+      parentName: RightUpperArm
+      position: {x: 7.4505804e-11, y: 0.0010541403, z: -6.519258e-11}
+      rotation: {x: -0.0153812375, y: -0.6285378, z: -0.015330284, w: -0.7774758}
+      scale: {x: 0.9999999, y: 1, z: 1.0000005}
+    - name: RightHand
+      parentName: RightLowerArm
+      position: {x: -2.4214386e-10, y: 0.0016211359, z: -1.4901161e-10}
+      rotation: {x: 0.16647929, y: 0.2996091, z: 0.2922993, w: -0.89279354}
+      scale: {x: 1.0000006, y: 1, z: 1}
+    - name: CHAR_Grimoire
+      parentName: RightHand
+      position: {x: -0.00023376703, y: 0.0005821421, z: 0.00058437686}
+      rotation: {x: -0.3674898, y: -0.027947886, z: 0.17025542, w: 0.9138836}
+      scale: {x: 1.2731364, y: 1.2731363, z: 1.2731364}
+    - name: LeftShoulder
+      parentName: Chest
+      position: {x: -0.0006032599, y: 0.00081551715, z: -0.000098991375}
+      rotation: {x: -0.3571664, y: 0.54322845, z: 0.6296047, w: 0.4253621}
+      scale: {x: 1.0000004, y: 1.0000002, z: 1.0000001}
+    - name: LeftUpperArm
+      parentName: LeftShoulder
+      position: {x: 4.1909514e-11, y: 0.0007104846, z: -5.2561516e-10}
+      rotation: {x: -0.023512654, y: -0.5407444, z: 0.14267035, w: -0.82866627}
+      scale: {x: 0.9999998, y: 1.0000005, z: 1.0000005}
+    - name: LeftLowerArm
+      parentName: LeftUpperArm
+      position: {x: -6.0535965e-10, y: 0.00077710766, z: -1.862645e-10}
+      rotation: {x: 0.015697444, y: 0.43455595, z: -0.0069985623, w: 0.90048087}
+      scale: {x: 0.99999994, y: 1.0000005, z: 1.0000001}
+    - name: LeftHand
+      parentName: LeftLowerArm
+      position: {x: 5.5879353e-11, y: 0.0009241772, z: 1.4901161e-10}
+      rotation: {x: 0.08888321, y: 0.23502752, z: -0.19564445, w: 0.94793725}
+      scale: {x: 0.99999976, y: 1.0000002, z: 0.99999976}
     armTwist: 0.5
     foreArmTwist: 0.5
     upperLegTwist: 0.5
@@ -98,7 +280,7 @@ ModelImporter:
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
   autoGenerateAvatarMappingIfUnspecified: 1
-  animationType: 3
+  animationType: 2
   humanoidOversampling: 1
   avatarSetup: 1
   addHumanoidExtraRootOnlyWhenUsingAvatar: 1
