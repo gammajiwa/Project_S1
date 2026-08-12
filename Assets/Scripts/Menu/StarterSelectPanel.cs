@@ -29,6 +29,11 @@ namespace Proto
         [Header("Scene")]
         [SerializeField] string _gameSceneName = "Proto";
 
+        [Header("Layar muat")]
+        [SerializeField] Sprite _loadingSigil;
+
+        [SerializeField] Color _loadingInk = new Color(0.72f, 0.5f, 1f, 1f);
+
         [Header("Isi kartu")]
         [SerializeField] TextMeshProUGUI _nameLabel;
         [SerializeField] TextMeshProUGUI _blurbLabel;
@@ -124,7 +129,7 @@ namespace Proto
             }
 
             HeroChoice.Id = _heroes[_index].Id;
-            SceneManager.LoadScene(_gameSceneName);
+            LoadingScreen.Go(_gameSceneName, _loadingSigil, _loadingInk);
         }
 
         // ==================================================================

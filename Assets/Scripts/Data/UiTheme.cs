@@ -24,6 +24,10 @@ namespace Proto
                  "kecil (intip lewat M). Kosong = latar biru-gelap seperti sebelumnya.")]
         public Sprite MapPaper;
 
+        [Tooltip("Sigil yang berputar di tirai layar muat saat pindah scene. Kosong = tirai " +
+                 "polos tanpa sigil — tetap menutup, cuma tidak bercerita apa-apa.")]
+        public Sprite LoadingSigil;
+
         [Tooltip("PREFAB papan grimoire — cara yang dipakai sekarang. Isinya bebas: sampul, " +
                  "hiasan, apa pun.\n\n" +
                  "Aturan mainnya satu, dan penting: kode HANYA menempelkannya ke kanvas di " +

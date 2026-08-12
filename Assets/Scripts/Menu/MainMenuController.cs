@@ -22,6 +22,12 @@ namespace Proto
         [Header("Scene")]
         [SerializeField] string _gameSceneName = "Proto";
 
+        [Header("Layar muat")]
+        [Tooltip("Sigil yang berputar di tengah tirai. Kosong = tirai polos tanpa sigil.")]
+        [SerializeField] Sprite _loadingSigil;
+
+        [SerializeField] Color _loadingInk = new Color(0.72f, 0.5f, 1f, 1f);
+
         [Header("Halaman")]
         [SerializeField] GameObject _rootPage;
         [SerializeField] GameObject _starterPage;
@@ -116,7 +122,7 @@ namespace Proto
                 return;
             }
 
-            SceneManager.LoadScene(_gameSceneName);
+            LoadingScreen.Go(_gameSceneName, _loadingSigil, _loadingInk);
         }
 
         void Quit()

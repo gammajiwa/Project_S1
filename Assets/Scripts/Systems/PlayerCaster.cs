@@ -578,6 +578,16 @@ namespace Proto
 
         BoltPool _bolts;
         SkillVfxPool _vfx;
+
+        /// <summary>
+        /// Cahaya sesaat di tiap tempat sebuah skill terjadi.
+        ///
+        /// Disambung ke <see cref="SpawnFlash"/> dan BUKAN ke tiap cast satu per satu. Kilatan
+        /// sudah jadi muara semua kejadian di game ini — cast, tumbukan, reaksi, ledakan mati —
+        /// dan ketiga puluh tempat yang memanggilnya sudah membawa posisi, ukuran, umur, dan
+        /// warna. Menyambung di situ berarti tidak ada satu pun jenis skill yang bisa lupa.
+        /// </summary>
+        SkillLightPool _lights;
         LineRenderer _rangeRing;
 
         /// <summary>
@@ -662,6 +672,15 @@ namespace Proto
 
             _bolts = new BoltPool(_fxRoot);
             _vfx = new SkillVfxPool(_fxRoot);
+            _lights = new SkillLightPool(_fxRoot);
+
+            // Disetel dari aset, bukan dipatok di kode: "jangan terlalu terang" adalah penilaian
+            // mata, dan penilaian mata harus bisa digeser tanpa recompile.
+            if (Fx != null)
+            {
+                _lights.Brightness = Fx.SkillLightBrightness;
+                _lights.Reach = Fx.SkillLightReach;
+            }
 
             _enemies.OnReaction += OnReactionFired;
             _enemies.OnStatusApplied += OnEnemyStatusApplied;
@@ -744,6 +763,7 @@ namespace Proto
             TickFlashes(dt);
             _bolts.Tick(dt);
             _vfx.Tick(dt);
+            _lights.Tick(dt);
         }
 
         /// <summary>Called when a wave starts so every spell opens on a ready cooldown.</summary>
@@ -1469,6 +1489,11 @@ namespace Proto
 
         void SpawnFlash(Vector3 pos, float size, float life, Color color)
         {
+            // Cahaya dulu, kilatannya belakangan. Kolam lampu punya batas kerasnya sendiri dan
+            // menolak diam-diam kalau penuh — menaruhnya di depan berarti kilatan yang tidak
+            // kebagian lampu tetap tergambar, bukan sebaliknya.
+            _lights?.Pulse(pos, color, size, life);
+
             Flash f = null;
             for (int i = 0; i < _flashes.Count; i++)
             {

@@ -125,6 +125,7 @@ namespace Proto
                 .Set("_codexPanel", codexPanel)
                 .Set("_settingsPanel", settingsPanel)
                 .Set("_versionLabel", version)
+                .Set("_loadingSigil", LoadingSigil())
                 .Apply();
 
             // Halaman setelan DISIMPAN SEBAGAI PREFAB sebelum dimatikan — scene game membukanya
@@ -543,6 +544,14 @@ namespace Proto
         /// Gambar yang sama yang jadi alas papan grimoire justru menjahit menu ke permainannya.
         /// </summary>
         const string BookArtPath = "Assets/Art/UI/Frames/grimoireUI.png";
+
+        /// <summary>
+        /// Sigil yang berputar di layar muat. SALINAN milik kita, bukan tekstur pack-nya
+        /// langsung: memakai yang di pack berarti mengubah tipe importnya jadi Sprite, dan
+        /// tekstur itu masih dipakai material partikel yang tidak minta diubah apa-apa.
+        /// </summary>
+        static Sprite LoadingSigil() =>
+            AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Sigil_Loading.png");
 
         const string BookModelPath = "Assets/Art/Props/Grimoire/SM_Grimoire.fbx";
         const string BookTextureDir = "Assets/Art/Props/Grimoire/Textures";

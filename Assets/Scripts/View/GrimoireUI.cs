@@ -563,10 +563,21 @@ namespace Proto
 
         /// <summary>By name, not by build index: reloading by index breaks silently the moment the
         /// build list is reordered, and it was already broken while Proto sat outside that list.</summary>
-        static void LoadScene(string sceneName)
+        /// <summary>
+        /// Tidak lagi static, dan itu bukan kebetulan: tirai layar muat butuh sigil dari
+        /// <see cref="UiTheme"/>, dan tema itu milik instance. Kelima pemanggilnya sudah berada
+        /// di dalam metode instance, jadi tidak ada yang berubah di sisi pemanggil.
+        ///
+        /// timeScale dikembalikan SEBELUM tirai dipanggil. Kembali ke menu bisa terjadi dari
+        /// dalam fase menyusun grid yang membekukan waktu, dan tirai yang animasinya memakai
+        /// waktu berskala akan menggantung di layar selamanya — meskipun ia sendiri memakai
+        /// unscaled, coroutine yang menunggunya tidak boleh bergantung pada nasib itu.
+        /// </summary>
+        void LoadScene(string sceneName)
         {
             Time.timeScale = 1f;
-            UnityEngine.SceneManagement.SceneManager.LoadScene(sceneName);
+            LoadingScreen.Go(sceneName, _theme != null ? _theme.LoadingSigil : null,
+                new Color(0.72f, 0.5f, 1f, 1f));
         }
 
         // ---------- construction ----------

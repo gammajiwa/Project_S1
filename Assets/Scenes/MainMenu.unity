@@ -14989,6 +14989,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Proto.MainMenuController
   _gameSceneName: Proto
+  _loadingSigil: {fileID: 21300000, guid: 60ad9ecc59aaf4b4f9b5f53582ec4c31, type: 3}
+  _loadingInk: {r: 0.72, g: 0.5, b: 1, a: 1}
   _rootPage: {fileID: 457478386}
   _starterPage: {fileID: 1785601295}
   _codexPage: {fileID: 1640728714}
@@ -23916,6 +23918,10 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 7761660241174521224, guid: c078f88b339052c4f9c77b4427e6ee06, type: 3}
+      propertyPath: _loadingSigil
+      value: 
+      objectReference: {fileID: 21300000, guid: 60ad9ecc59aaf4b4f9b5f53582ec4c31, type: 3}
     - target: {fileID: 8928356630313977279, guid: c078f88b339052c4f9c77b4427e6ee06, type: 3}
       propertyPath: m_fontAsset
       value: 

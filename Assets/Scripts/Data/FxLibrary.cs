@@ -31,6 +31,19 @@ namespace Proto
                  "menggambar apa-apa lebih buruk daripada menggambar kotak.")]
         public bool ShowBodiesWithVfx;
 
+        [Header("Cahaya skill")]
+        [Tooltip("Terangnya cahaya yang dipancarkan tiap kilatan skill. 0 = mati total.\n\n" +
+                 "Ada karena efek partikel menggambar dirinya sendiri terang tapi tidak " +
+                 "MENYINARI apa pun — ledakan yang tidak menerangi tanah di bawahnya terbaca " +
+                 "sebagai stiker yang ditempel di layar, dan itu paling kentara di biome malam.\n\n" +
+                 "Jumlah lampunya dibatasi keras di kolam (sepuluh) berapa pun angka ini, jadi " +
+                 "menaikkannya menambah TERANG, bukan menambah beban.")]
+        [Range(0f, 3f)] public float SkillLightBrightness = 1f;
+
+        [Tooltip("Pengali jangkauan cahaya. Dipisah dari terangnya: redup-tapi-luas dan " +
+                 "terang-tapi-sempit adalah dua rasa yang berbeda.")]
+        [Range(0.1f, 3f)] public float SkillLightReach = 1f;
+
         [Header("Peluru & tumbukan")]
         [Tooltip("Inti peluru. Menciut sendiri jadi titik kalau skillnya punya CastVfx — " +
                  "yang diuji tabrakannya benda ini, efeknya cuma menumpang di posisinya.")]

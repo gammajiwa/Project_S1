@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: UiTheme
   m_EditorClassIdentifier: Assembly-CSharp::Proto.UiTheme
   MapPaper: {fileID: 21300000, guid: b997f644670c7b040a65f899ad7baa66, type: 3}
+  LoadingSigil: {fileID: 21300000, guid: 60ad9ecc59aaf4b4f9b5f53582ec4c31, type: 3}
   GrimoirePanelPrefab: {fileID: 4725670757830398596, guid: 9e613509076f1824bb2986daeac17b35, type: 3}
   GrimoireFrame: {fileID: 21300000, guid: 8e93eba3dd21c6548b82dc8a2404e10f, type: 3}
   VitalsPrefab: {fileID: 9135706996123029156, guid: e186026d193fb7d4480926b63ea50484, type: 3}
