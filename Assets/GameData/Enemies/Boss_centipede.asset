@@ -16,9 +16,9 @@ MonoBehaviour:
   DisplayName: The Gorging Coil
   MaxSegments: 30
   MinSegments: 5
-  Spacing: 0.85
+  Spacing: 1.35
   HeadScale: 2.9
-  TailScale: 1.0200001
+  TailScale: 1.6200001
   HeadMesh: {fileID: -7477590199563355630, guid: bb893ed4b583b7e38127b2c75b327758, type: 3}
   BodyMesh: {fileID: -322289017124685891, guid: bf0d6d43f8098606f9ed417e2db56298, type: 3}
   TailMesh: {fileID: -4178779993440046383, guid: cf7066c28f38b9a6030dc6a2f1fe3d68, type: 3}

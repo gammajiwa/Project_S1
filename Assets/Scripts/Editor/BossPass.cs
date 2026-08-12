@@ -111,11 +111,11 @@ namespace Proto.EditorTools
             a.DisplayName = "The Gorging Coil";
             a.Burrows = true;
 
-            // Lebih panjang dan lebih rapat dari ular: kelabang harus terbaca sebagai satu barisan
-            // kaki yang tak habis-habis saat menyembur keluar tanah.
+            // Lebih panjang dari ular: ia harus terbaca sebagai satu barisan yang tak
+            // habis-habis saat menyembur keluar tanah. Jaraknya disetel di bawah, sesudah
+            // model cacingnya dipasang — lihat komentar di sana.
             a.MaxSegments = 30;
             a.MinSegments = 5;
-            a.Spacing = 0.85f;
             a.HeadScale = 2.9f;
             a.TailScale = 0.7f;
 
@@ -181,6 +181,19 @@ namespace Proto.EditorTools
 
             // Mengebor: badan berguling satu arah, kepala berlawanan.
             a.SpinDegreesPerSecond = 110f;
+
+            // Ruasnya DIRENGGANGKAN. Laporan pemilik project: "badan sama kepalanya terlalu
+            // nempel, kasih jarak di antara badan-badannya".
+            //
+            // 0,85 itu angka warisan dari waktu boss ini masih memakai model kelabang yang jauh
+            // lebih kecil. Kepalanya sekarang 2,9 — paling besar di antara ketiga boss — sementara
+            // jaraknya paling rapat, dan ruas yang lebih besar dari jaraknya sendiri saling
+            // menembus sampai seluruh badannya terbaca sebagai satu batang pejal.
+            //
+            // Pembandingnya ular: kepala 2,6 dengan jarak 1,05. Diskalakan ke kepala 2,9 itu
+            // 1,17 — dan dilebihkan sedikit ke 1,35 karena yang diminta memang JARAK yang
+            // terlihat, bukan sekadar berhenti saling menembus.
+            a.Spacing = 1.35f;
 
             EditorUtility.SetDirty(a);
             db.EditorAddBoss(a);
