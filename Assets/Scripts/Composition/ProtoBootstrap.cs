@@ -199,6 +199,7 @@ namespace Proto
                 {
                     var bar = new GameObject("DemoBar").AddComponent<DemoBar>();
                     bar.transform.SetParent(transform, false);
+                    bar.Theme = _uiTheme;
                     bar.Init(dresser, weather, _biomes.Length);
                 }
             }
@@ -263,6 +264,7 @@ namespace Proto
             // ia mengecek WaveActive saat lahir, dan saklar curang OpeningWave hidup di ui.Init.
             var run = new GameObject("RunDirector").AddComponent<RunDirector>();
             run.transform.SetParent(transform, false);
+            run.Theme = _uiTheme;
             run.Init(enemies, motor, arenaCam, cam, _balance, _database, playerGo.transform, _rig,
                 gloom, dresser, _restBiome);
             // Ruangan singgah dipramuat SEKARANG, di awal run - bukan saat nodenya diinjak.

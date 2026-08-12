@@ -55,6 +55,9 @@ namespace Proto
         Transform _player;
         Transform _rig;
         Font _font;
+
+        /// <summary>Tema UI, disuntik composition root. Boleh null — font jatuh ke bawaan Unity.</summary>
+        public UiTheme Theme;
         Gloom _gloom;
         BiomeDresser _dresser;
         BiomeDefinition _restBiome;
@@ -126,7 +129,12 @@ namespace Proto
             _dresser = dresser;
             _restBiome = restBiome;
 
-            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            // Font dari tema kalau ada, bawaan Unity kalau tidak. Field publik yang disuntik
+            // composition root — bukan Resources.Load dan bukan singleton, dua-duanya dilarang
+            // di kode runtime project ini.
+            _font = Theme != null && Theme.UiFont != null
+                ? Theme.UiFont
+                : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             // System.Random milik sutradara, TERPISAH dari urutan acak gameplay: susunan peta dan
             // isi elite tidak boleh menggeser sebaran drop atau arah semburan skill.

@@ -231,13 +231,13 @@ namespace Proto
             Refresh();
         }
 
-        static Text MakeLabel(RectTransform parent, string text)
+        Text MakeLabel(RectTransform parent, string text)
         {
             var go = new GameObject("Label");
             go.transform.SetParent(parent, false);
 
             var label = go.AddComponent<Text>();
-            label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            label.font = BarFont();
             label.fontSize = 13;
             label.alignment = TextAnchor.MiddleCenter;
             label.color = new Color(1f, 0.93f, 0.72f);
@@ -251,7 +251,7 @@ namespace Proto
             return label;
         }
 
-        static Button MakeButton(RectTransform parent, string caption, UnityEngine.Events.UnityAction onClick)
+        Button MakeButton(RectTransform parent, string caption, UnityEngine.Events.UnityAction onClick)
         {
             var go = new GameObject(caption);
             go.transform.SetParent(parent, false);
@@ -271,7 +271,7 @@ namespace Proto
             textGo.transform.SetParent(go.transform, false);
 
             var text = textGo.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = BarFont();
             text.fontSize = 12;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = new Color(0.92f, 0.94f, 1f);
@@ -286,5 +286,13 @@ namespace Proto
 
             return button;
         }
+
+        /// <summary>Tema UI, disuntik composition root. Boleh null — jatuh ke font bawaan Unity.</summary>
+        public UiTheme Theme;
+
+        Font BarFont() =>
+            Theme != null && Theme.UiFont != null
+                ? Theme.UiFont
+                : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
     }
 }
