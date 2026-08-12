@@ -1141,8 +1141,14 @@ namespace Proto
 
             for (int i = 0; i < ShopSlots; i++)
             {
+                // Cokelat tinta, bukan biru-gelap. Warna lama dipilih waktu badan panelnya
+                // masih kotak biru-gelap; di atas perkamen ia terbaca sebagai potongan UI dari
+                // game lain yang ditempel di atas kertas. Kontrasnya sama tingginya — yang
+                // berubah cuma nadanya, jadi teks putih di atasnya tetap terbaca.
                 _shopSlotBg[i] = MakeImage($"ShopSlot_{i}", Vector2.zero, new Vector2(ShopSlotW, ShopSlotH),
-                    new Color(0.13f, 0.13f, 0.18f, 0.95f), Vector2.zero);
+                    paper != null
+                        ? new Color(0.16f, 0.115f, 0.085f, 0.94f)
+                        : new Color(0.13f, 0.13f, 0.18f, 0.95f), Vector2.zero);
                 _shopSlotBg[i].enabled = false;
 
                 _shopSlotText[i] = MakeText($"ShopSlotText_{i}", Vector2.zero, new Vector2(ShopSlotW - 10, 40), 13,
@@ -1151,7 +1157,9 @@ namespace Proto
             }
 
             _rerollBg = MakeImage("RerollBg", Vector2.zero, new Vector2(240, 34),
-                new Color(0.32f, 0.45f, 0.28f, 0.95f), Vector2.zero);
+                paper != null
+                    ? new Color(0.26f, 0.33f, 0.18f, 0.95f)
+                    : new Color(0.32f, 0.45f, 0.28f, 0.95f), Vector2.zero);
             _rerollBg.enabled = false;
 
             _rerollLabel = MakeText("RerollLabel", Vector2.zero, new Vector2(240, 22), 15,
