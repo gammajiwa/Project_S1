@@ -78,11 +78,20 @@ namespace Proto
                 text.verticalOverflow = VerticalWrapMode.Overflow;
                 text.text = "";
 
-                // The floor is dark but spell flashes are not — without a drop shadow the numbers
-                // vanish exactly when the screen is busiest.
-                var shadow = go.AddComponent<Shadow>();
-                shadow.effectColor = new Color(0f, 0f, 0f, 0.75f);
-                shadow.effectDistance = new Vector2(1.5f, -1.5f);
+                // OUTLINE, bukan drop shadow.
+                //
+                // Bayangan cuma menebalkan satu sisi, dan angka damage melayang ke SEMUA arah di
+                // atas latar yang berubah tiap frame — lantai gelap, kilatan skill yang menyala,
+                // badan musuh, tepi lingkaran sihir. Sisi yang tidak dibayangi akan bertemu
+                // sesuatu seterang dirinya sendiri, dan di situ angkanya lenyap.
+                //
+                // Outline mengelilingi glyph dari empat penjuru sekaligus, jadi tidak ada sisi
+                // yang bisa kalah. Ongkosnya empat kali lipat vertex per label — untuk kolam 48
+                // label pendek umur itu murah, dan angka yang tidak terbaca harganya jauh lebih
+                // mahal daripada vertex.
+                var outline = go.AddComponent<Outline>();
+                outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+                outline.effectDistance = new Vector2(2f, 2f);
 
                 var rect = text.rectTransform;
                 rect.anchorMin = rect.anchorMax = Vector2.zero;
