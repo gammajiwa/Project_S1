@@ -1168,6 +1168,18 @@ namespace Proto
 
             BuildGameOver();
 
+            // Piece TERCECER naik ke paling depan, sesudah semua panel dibangun.
+            //
+            // Kolam ini lahir di baris 947, badan panel di 1110 — dan di UGUI yang lahir duluan
+            // digambar duluan, artinya SETIAP piece tercecer tergambar DI BELAKANG panel toko.
+            // Barang yang baru dibeli dilempar dekat slotnya, yaitu di dalam panel, jadi ia
+            // menghilang di detik ia muncul. Laporan pemilik project: "gw minta itemnya di
+            // paling depan, ini malah di belakang".
+            //
+            // Peta dan layar game over tidak terpengaruh: keduanya menaikkan dirinya sendiri
+            // tiap frame, jadi mereka tetap menang di atas ini.
+            for (int i = 0; i < _looseCells.Length; i++) _looseCells[i].transform.SetAsLastSibling();
+
             _evoLines = new Image[EvoLinePool];
             for (int i = 0; i < EvoLinePool; i++)
             {
