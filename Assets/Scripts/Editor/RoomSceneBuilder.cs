@@ -109,8 +109,19 @@ namespace Proto.EditorTools
 
             var camGo = new GameObject("Kamera Ruangan");
             camGo.transform.SetParent(root.transform, false);
-            camGo.transform.localPosition = new Vector3(0f, 4.2f, -9.5f);
-            camGo.transform.localRotation = Quaternion.Euler(14f, 0f, 0f);
+            // TOP-DOWN, sama seperti arena — permintaan pemilik project: "semua kalo bisa itu
+            // top-down".
+            //
+            // Yang lama duduk di ketinggian mata (pitch 14 derajat), dan itu bahasa kamera yang
+            // BERBEDA dari seluruh sisa permainan. Pemain yang baru saja menatap arena dari atas
+            // lalu dilempar ke ruangan yang dilihat dari samping membaca perpindahan itu sebagai
+            // pindah game, bukan sebagai pindah tempat.
+            //
+            // 62 derajat, bukan 68 seperti arena: ruangan ini punya dinding, dan sudut arena yang
+            // penuh membuat dinding jadi pita tipis di tepi layar. Enam derajat lebih landai
+            // menyisakan cukup dinding untuk memberi ruangan itu batas.
+            camGo.transform.localPosition = new Vector3(0f, 12.5f, -6.6f);
+            camGo.transform.localRotation = Quaternion.Euler(62f, 0f, 0f);
 
             var cam = camGo.AddComponent<Camera>();
             cam.fieldOfView = 42f;
