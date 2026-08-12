@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: MenuTheme
   m_EditorClassIdentifier: Assembly-CSharp::Proto.MenuTheme
   GameTitle: GRIMOIRE MASTER
-  TitleTracking: 26
-  TitleFont: {fileID: 0}
-  BodyFont: {fileID: 0}
+  TitleTracking: 12
+  TitleFont: {fileID: 11400000, guid: 7c5043b0a8c3bd549b4b38b3549321d6, type: 2}
+  BodyFont: {fileID: 11400000, guid: 7bcf2008bfeba6547866ff5ebe9fc858, type: 2}
   TitleSize: 82
   TaglineSize: 19
   MenuItemSize: 30

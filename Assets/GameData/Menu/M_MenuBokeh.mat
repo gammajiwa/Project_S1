@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_MenuBokeh
+  m_Shader: {fileID: 4800000, guid: 202b53bf3989f63468c515980539bddf, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Brightness: 0.07
+    - _Cells: 7.4
+    - _Drift: 0.011
+    - _Mask: 0.189
+    - _Rim: 1.26
+    - _Size: 0.194
+    - _Softness: 1
+    - _Twinkle: 0.63
+    - _TwinkleSpeed: 0.79
+    - _Variety: 0.42
+    m_Colors:
+    - _Color: {r: 0.23302203, g: 0.19599415, b: 1, a: 0.16470589}
+    - _ColorB: {r: 1, g: 0.6038274, b: 0.26327342, a: 0.14901961}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
