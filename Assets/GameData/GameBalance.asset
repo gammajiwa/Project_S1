@@ -32,7 +32,7 @@ MonoBehaviour:
   SurgeSpawnMultiplier: 1.25
   WaveRampStart: 0.55
   WaveRampEnd: 1.6
-  EnemyHpBase: 15
+  EnemyHpBase: 14
   EnemyHpPerWave: 4
   EnemySpeedMin: 1.7
   EnemySpeedMax: 2.05
@@ -92,7 +92,7 @@ MonoBehaviour:
   MapShopChance: 0.1
   MapEventChance: 0.07
   MapGambleChance: 0.05
-  MapEliteMinFloor: 3
+  MapEliteMinFloor: 5
   MapOpensRun: 1
   MapFadeClose: 1.1
   MapFadeOpen: 1.4

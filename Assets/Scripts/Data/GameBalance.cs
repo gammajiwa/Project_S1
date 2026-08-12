@@ -58,7 +58,10 @@ namespace Proto
 
         public float WaveRampEnd = 1.6f;
 
-        public float EnemyHpBase = 18f;
+        // 14, bukan 18. Ini suku KONSTAN kurva HP: pengaruhnya paling besar di wave-wave awal
+        // dan tenggelam oleh suku pertumbuhan begitu wave naik — jadi menurunkannya melunakkan
+        // node bawah ("agak asan dikit") tanpa menyentuh dinding endgame yang sudah diukur.
+        public float EnemyHpBase = 14f;
         public float EnemyHpPerWave = 4f;
 
         /// <summary>Musuh per detik di wave ini, sebelum tanjakan dalam-wave.</summary>
@@ -306,8 +309,13 @@ namespace Proto
         [Range(0f, 1f)] public float MapGambleChance = 0.08f;
 
         [Tooltip("Elite baru boleh muncul dari lantai ini. Elite di lantai awal bukan " +
-                 "pilihan melainkan tembok.")]
-        public int MapEliteMinFloor = 3;
+                 "pilihan melainkan tembok.\n\n" +
+                 "Dinaikkan 3 -> 5 setelah laporan pemilik project: elite di node bawah " +
+                 "\"langsung mati\". Tiga terlalu dini — di lantai 3 papan pemain masih " +
+                 "berisi piece pembuka, dan wave elite yang 42% lebih berat tidak punya " +
+                 "jawaban di papan seukuran itu. Lima memberi dua lantai lagi untuk " +
+                 "mengumpulkan piece sebelum tembok pertama muncul.")]
+        public int MapEliteMinFloor = 5;
 
         [Tooltip("Peta langsung terbuka begitu run mulai, tanpa fase SUSUN GRIMOIRE-MU di depan.\n\n" +
                  "Masuk akal sejak papan pembuka ditentukan di layar pilih starter: fase susun " +

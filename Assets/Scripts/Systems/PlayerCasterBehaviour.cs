@@ -742,6 +742,7 @@ namespace Proto
                 s.Remaining = s.Total + i * gap;
                 s.Damage = damage;
                 s.Crit = crit;
+                s.Pulse = i * gap * 0.5f;
                 s.Status = def.AppliedStatus;
                 s.StatusDuration = def.StatusDuration;
                 s.Points = AilmentPoints(def);

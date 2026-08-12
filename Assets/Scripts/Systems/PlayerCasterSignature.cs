@@ -90,6 +90,9 @@ namespace Proto
             /// <summary>Undian crit menunggu bersama aba-abanya sampai hantamannya mendarat.</summary>
             public bool Crit;
 
+            /// <summary>Hitung mundur ke denyut "mengumpul" berikutnya selama aba-aba berjalan.</summary>
+            public float Pulse;
+
             public bool Active;
 
             /// <summary>Prefab semburan detik hantaman — dibawa karena Strike tidak menyimpan Def.</summary>
@@ -365,6 +368,7 @@ namespace Proto
             s.Radius = spell.Radius * BuffAreaMul;
             s.Remaining = Mathf.Max(0.15f, def.TelegraphDelay);
             s.Total = s.Remaining;
+            s.Pulse = 0f;
             s.Damage = CritHit(spell, out bool crit);
             s.Crit = crit;
             s.Status = def.AppliedStatus;
@@ -646,6 +650,35 @@ namespace Proto
                     // menciut penandanya salah menyebut area — lebih lebar dari yang dilukai.
                     float fill = s.Total > 0f ? 1f - Mathf.Clamp01(s.Remaining / s.Total) : 1f;
                     PaintStrike(s, Mathf.Min(fill, 0.99f));
+
+                    // Denyut MENGUMPUL selama menunggu.
+                    //
+                    // Keluhan pemilik project: "ada skill yg nge-spawn lingkaran aoe doang tanpa
+                    // vfx, jelek banget". Bukan skillnya yang kosong — semua skill punya CastVfx,
+                    // tapi efeknya baru meletus saat MENDARAT. Di antaranya ada jeda 0,75–1,1
+                    // detik yang isinya cuma satu cincin diam.
+                    //
+                    // Diisi kilatan kecil yang makin sering dan makin besar mendekati hantaman.
+                    // Lewat SpawnFlash, jadi ia ikut membawa cahaya kolam lampu — dan itu yang
+                    // menjawab keluhan kedua sekaligus: aba-aba di biome malam sekarang menyala.
+                    s.Pulse -= dt;
+
+                    if (s.Pulse <= 0f)
+                    {
+                        // Makin rapat mendekati detik hantaman: jeda menyempit dari 0,26 ke 0,08.
+                        // Irama yang MEMBURU adalah cara termurah menyampaikan "sebentar lagi".
+                        s.Pulse = Mathf.Lerp(0.26f, 0.08f, fill);
+
+                        // Titiknya berkeliaran di dalam cincin, bukan menumpuk di pusat: yang
+                        // berkumpul di satu titik terbaca sebagai satu benda yang berkedip,
+                        // yang tersebar terbaca sebagai tenaga yang dikumpulkan dari sekitarnya.
+                        float wander = s.Radius * 0.7f * (1f - fill);
+                        float angle = Random.Range(0f, Mathf.PI * 2f);
+
+                        var at = s.Target + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * wander;
+                        SpawnFlash(at, Mathf.Lerp(0.5f, 1.9f, fill), 0.18f, s.Tint);
+                    }
+
                     continue;
                 }
 

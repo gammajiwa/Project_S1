@@ -28,6 +28,24 @@ namespace Proto
                  "polos tanpa sigil — tetap menutup, cuma tidak bercerita apa-apa.")]
         public Sprite LoadingSigil;
 
+        [Tooltip("Perkamen latar panel SINGGAH: toko, kejadian, dan slot. Ketiganya berbagi satu " +
+                 "badan panel, jadi satu sprite mengurus ketiganya.\n\n" +
+                 "Kosong = ikut MapPaper. Kalau MapPaper juga kosong, kembali ke kotak warna " +
+                 "datar seperti sebelum art masuk.")]
+        public Sprite PanelPaper;
+
+        [Header("Font")]
+        [Tooltip("Font seluruh UI dalam run: tombol, panel, label, tooltip. Kosong = font " +
+                 "bawaan Unity (LegacyRuntime/Arial), yang selama ini dipakai karena belum " +
+                 "ada slotnya sama sekali.")]
+        public Font UiFont;
+
+        [Tooltip("Font ANGKA damage melayang. Dipisah dari UiFont dengan sengaja: popup damage " +
+                 "hidup 0,75 detik di atas layar yang penuh, dan yang dibaca di situ bukan " +
+                 "kata melainkan besaran. Berat yang lebih tebal terbaca lebih cepat.\n\n" +
+                 "Kosong = ikut UiFont.")]
+        public Font NumberFont;
+
         [Tooltip("PREFAB papan grimoire — cara yang dipakai sekarang. Isinya bebas: sampul, " +
                  "hiasan, apa pun.\n\n" +
                  "Aturan mainnya satu, dan penting: kode HANYA menempelkannya ke kanvas di " +

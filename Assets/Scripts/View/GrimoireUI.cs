@@ -122,6 +122,9 @@ namespace Proto
         // kembali ke kotak warna datar, supaya art yang belum ada tidak pernah memblokir tes.
         UiTheme _theme;
 
+        /// <summary>Font khusus angka damage. Jatuh ke <c>_font</c> kalau tema tidak memisahkannya.</summary>
+        Font _numberFont;
+
         // Dua lapis bingkai di belakang papan grimoire. Disimpan supaya bisa disembunyikan
         // bersama papannya nanti; sekarang keduanya hidup selama run berjalan.
         Image _grimoireFrame;
@@ -402,8 +405,16 @@ namespace Proto
             _tooltips = new TooltipBuilder(balance);
             _rerollCost = balance.RerollCostStart;
 
-            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            // Font dari tema kalau ada; bawaan Unity kalau tidak. Fallback-nya dipertahankan
+            // karena seluruh UI run digambar dari kode — tema yang lupa diisi tidak boleh
+            // membuat setengah layar jadi kotak kosong.
+            _font = _theme != null && _theme.UiFont != null
+                ? _theme.UiFont
+                : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
             if (_font == null) _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+            _numberFont = _theme != null && _theme.NumberFont != null ? _theme.NumberFont : _font;
 
             BuildCanvas();
 
@@ -414,7 +425,7 @@ namespace Proto
 
             // Built first on purpose: on this canvas creation order is draw order, so the damage
             // numbers pass UNDER the grimoire and the panels instead of covering them.
-            _popups = new DamagePopups(_canvas.transform, _font, cam);
+            _popups = new DamagePopups(_canvas.transform, _numberFont, cam);
 
             BuildGrid();
             BuildSkillWidgets();
@@ -1098,10 +1109,31 @@ namespace Proto
 
             _panelBg = MakeImage("PanelBg", Vector2.zero, new Vector2(PanelW, PanelH),
                 new Color(0.07f, 0.07f, 0.11f, 0.98f), new Vector2(0.5f, 0.5f));
+
+            // Perkamen kalau temanya punya, kotak datar kalau tidak.
+            //
+            // Toko, kejadian, dan slot berbagi SATU badan panel — jadi satu sprite di sini
+            // mendandani ketiganya sekaligus. Warnanya dijaga tetap dekat putih supaya yang
+            // tampil gambarnya apa adanya: tint pada Image itu perkalian, dan warna panel lama
+            // (0,07) akan mengalikan perkamennya sampai hampir hitam.
+            var paper = _theme != null
+                ? (_theme.PanelPaper != null ? _theme.PanelPaper : _theme.MapPaper)
+                : null;
+
+            if (paper != null)
+            {
+                _panelBg.sprite = paper;
+                _panelBg.type = Image.Type.Sliced;
+                _panelBg.color = new Color(0.82f, 0.79f, 0.72f, 1f);
+            }
+
             _panelBg.enabled = false;
 
+            // Tinta gelap di atas perkamen, tinta terang di atas kotak. Warna judul lama dipilih
+            // untuk latar gelap, dan di atas kertas ia praktis tidak terbaca.
             _panelTitle = MakeText("PanelTitle", Vector2.zero, new Vector2(PanelW - 24, 26), 17,
-                new Color(0.9f, 0.88f, 0.98f), new Vector2(0.5f, 0.5f), TextAnchor.UpperLeft);
+                paper != null ? new Color(0.22f, 0.15f, 0.1f) : new Color(0.9f, 0.88f, 0.98f),
+                new Vector2(0.5f, 0.5f), TextAnchor.UpperLeft);
             _panelTitle.enabled = false;
 
             _shopSlotBg = new Image[ShopSlots];
@@ -2482,8 +2514,20 @@ namespace Proto
             {
                 if (!PanelRect().Contains(mouse))
                 {
+                    // Klik yang MENUTUP panel tidak ikut ditelan — kecuali tangan sedang
+                    // memegang piece.
+                    //
+                    // Laporan pemilik project: "ui shop masih bloking, kadang gak bisa ditarik".
+                    // Sebabnya di sini: klik pertama di luar panel habis dipakai untuk menutup,
+                    // jadi mengambil piece butuh DUA klik — dan yang pertama tidak memberi tanda
+                    // apa pun bahwa ia sudah terpakai. Yang terbaca pemain bukan "panelnya
+                    // tertutup", melainkan "tarikan saya tidak jalan".
+                    //
+                    // Yang memegang piece tetap ditelan: menjatuhkan barang ke tempat yang baru
+                    // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
+                    // lebih mahal daripada satu klik yang terbuang.
                     _gambleOpen = false;
-                    return true;
+                    return _held != null;
                 }
 
                 if (RerollRect().Contains(mouse) && _spinLeft <= 0f)
@@ -2532,9 +2576,20 @@ namespace Proto
 
             if (!PanelRect().Contains(mouse))
             {
-                // Clicking outside closes the panel instead of dropping the held piece behind it.
+                // Klik yang MENUTUP panel tidak ikut ditelan — kecuali tangan sedang
+                // memegang piece.
+                //
+                // Laporan pemilik project: "ui shop masih bloking, kadang gak bisa ditarik".
+                // Sebabnya di sini: klik pertama di luar panel habis dipakai untuk menutup,
+                // jadi mengambil piece butuh DUA klik — dan yang pertama tidak memberi tanda
+                // apa pun bahwa ia sudah terpakai. Yang terbaca pemain bukan "panelnya
+                // tertutup", melainkan "tarikan saya tidak jalan".
+                //
+                // Yang memegang piece tetap ditelan: menjatuhkan barang ke tempat yang baru
+                // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
+                // lebih mahal daripada satu klik yang terbuang.
                 _shopOpen = false;
-                return true;
+                return _held != null;
             }
 
             if (RerollRect().Contains(mouse))
