@@ -158,7 +158,7 @@ namespace Proto
         /// melukai — popup damage tampil dengan warna skillnya ("biar warna warni",
         /// 2026-08-12), bukan satu gradasi seragam.
         /// </summary>
-        public System.Action<Vector3, float, float, Color> OnEnemyDamaged;
+        public System.Action<Vector3, float, float, Color, bool> OnEnemyDamaged;
 
         /// <summary>
         /// Peta DisplayName -> warna, dibangun SEKALI dari database saat pertama dibutuhkan.
@@ -1355,7 +1355,7 @@ namespace Proto
                             OnDamage?.Invoke(def.DisplayName, dot);
                             // DoT memakai warna STATUS-nya — tik burn tampil merah api,
                             // racun hijau — bukan warna skill yang menempelkannya.
-                            OnEnemyDamaged?.Invoke(e.Pos, dot, e.MaxHp, def.Color);
+                            OnEnemyDamaged?.Invoke(e.Pos, dot, e.MaxHp, def.Color, false);
                         }
                     }
 
@@ -2089,8 +2089,16 @@ namespace Proto
 
         // ---------- damage API ----------
 
+        /// <param name="crit">
+        /// Apakah pukulan ini hasil lemparan crit yang berhasil. Parameter OPSIONAL, dan itu
+        /// disengaja: jalur damage di game ini ada belasan, dan mewajibkan tiap pemanggil
+        /// menyebutkan crit berarti belasan berkas ikut berubah untuk sesuatu yang cuma dibaca
+        /// popup. Yang lupa menyebut dapat "bukan crit", dan itu jawaban yang benar untuk DoT,
+        /// sentuhan musuh, reaksi, dan detonator.
+        /// </param>
         public void Damage(Enemy e, float damage, StatusDefinition status, float duration,
-            int points = 1, bool allowReaction = true, string sourceName = null, Vector3? origin = null)
+            int points = 1, bool allowReaction = true, string sourceName = null,
+            Vector3? origin = null, bool crit = false)
         {
             if (e == null || !e.Alive) return;
 
@@ -2104,7 +2112,7 @@ namespace Proto
             if (dealt > 0f)
             {
                 OnDamage?.Invoke(sourceName ?? "?", dealt);
-                OnEnemyDamaged?.Invoke(e.Pos, dealt, e.MaxHp, TintFor(sourceName));
+                OnEnemyDamaged?.Invoke(e.Pos, dealt, e.MaxHp, TintFor(sourceName), crit);
             }
 
             if (status != null) ApplyStatus(e, status, duration, points, allowReaction, origin);
@@ -2124,7 +2132,8 @@ namespace Proto
         }
 
         public void DamageArea(Vector3 center, float radius, float damage, StatusDefinition status,
-            float duration, int points = 1, bool allowReaction = true, string sourceName = null)
+            float duration, int points = 1, bool allowReaction = true, string sourceName = null,
+            bool crit = false)
         {
             float sqrRadius = radius * radius;
 
@@ -2135,7 +2144,7 @@ namespace Proto
 
                 Vector3 d = e.Pos - center;
                 d.y = 0f;
-                if (d.sqrMagnitude <= sqrRadius) Damage(e, damage, status, duration, points, allowReaction, sourceName, center);
+                if (d.sqrMagnitude <= sqrRadius) Damage(e, damage, status, duration, points, allowReaction, sourceName, center, crit);
             }
         }
 
@@ -2149,7 +2158,7 @@ namespace Proto
         /// </summary>
         public void DamageRing(Vector3 center, float inner, float outer, float damage,
             StatusDefinition status, float duration, int points = 1, bool allowReaction = true,
-            string sourceName = null)
+            string sourceName = null, bool crit = false)
         {
             if (outer <= 0f) return;
 
@@ -2167,7 +2176,7 @@ namespace Proto
                 float sqr = d.sqrMagnitude;
                 if (sqr <= sqrInner || sqr > sqrOuter) continue;
 
-                Damage(e, damage, status, duration, points, allowReaction, sourceName, center);
+                Damage(e, damage, status, duration, points, allowReaction, sourceName, center, crit);
             }
         }
 
@@ -2370,7 +2379,8 @@ namespace Proto
 
         /// <summary>Damages everything inside a rectangle running from origin along dir.</summary>
         public void DamageLine(Vector3 origin, Vector3 dir, float length, float halfWidth,
-            float damage, StatusDefinition status, float duration, int points = 1, string sourceName = null)
+            float damage, StatusDefinition status, float duration, int points = 1,
+            string sourceName = null, bool crit = false)
         {
             dir.y = 0f;
             if (dir.sqrMagnitude < 0.0001f) return;
@@ -2390,7 +2400,7 @@ namespace Proto
                 float side = d.x * dir.z - d.z * dir.x;
                 if (Mathf.Abs(side) > halfWidth) continue;
 
-                Damage(e, damage, status, duration, points, true, sourceName, origin);
+                Damage(e, damage, status, duration, points, true, sourceName, origin, crit);
             }
         }
 
@@ -2539,7 +2549,8 @@ namespace Proto
         /// than spreading it thin.
         /// </summary>
         public int DetonateStatus(int statusIndex, float damagePerPoint, float splashRadius,
-            int maxBlasts, string sourceName, System.Action<Vector3, int> onBlast)
+            int maxBlasts, string sourceName, System.Action<Vector3, int> onBlast,
+            bool crit = false)
         {
             if (statusIndex < 0 || maxBlasts <= 0) return 0;
 
@@ -2567,7 +2578,7 @@ namespace Proto
                 blasts++;
                 onBlast?.Invoke(at, points);
 
-                DamageArea(at, splashRadius, damagePerPoint * points, null, 0f, 1, false, sourceName);
+                DamageArea(at, splashRadius, damagePerPoint * points, null, 0f, 1, false, sourceName, crit);
             }
 
             return blasts;

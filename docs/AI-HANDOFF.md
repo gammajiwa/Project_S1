@@ -376,6 +376,26 @@ Ini semua sudah pernah terjadi. Jangan mengulangi.
     di jendela 1920 dengan skala kanvas 1 — di ukuran lain ia melayang entah di mana.
     Tempelkan tombol ke rect panelnya sebagai anak, jangan hitung posisinya dari layar.
 
+28. **`SetFloat`/`SetColor` ke material yang sudah jadi ASET tidak menandainya kotor.**
+    `AssetDatabase.SaveAssets()` melewatinya; nilainya hidup di memori sampai domain
+    reload lalu hilang tanpa jejak. Wajib `EditorUtility.SetDirty(material)`.
+    Lebih licik lagi: **menghapus file `.mat` dari luar Unity TIDAK membuatnya hilang**
+    selama masih ada scene terbuka yang memegang renderer penunjuknya — Unity
+    menuliskannya kembali saat refresh, lengkap dengan nilai BAWAAN SHADER. Jadi
+    "hapus lalu generate ulang" bukan cara memaksa nilai baru masuk. Tiga putaran
+    penuh habis menyetel angka di kode yang tidak pernah sampai ke layar.
+29. **Partikel `Magic circle` Hovl ber-render mode Billboard (alignment Local).**
+    Memutar transformnya tidak mengubah hadapnya. Prefabnya sudah rebah dari sananya;
+    "membetulkan" rotasinya justru yang membuatnya berdiri.
+30. **`TextureImporterType.Sprite` saja tidak cukup di project 3D.** `spriteImportMode`
+    harus disebut sendiri, kalau tidak asetnya terimpor tanpa Sprite di dalamnya —
+    dan `Image` yang spritenya null menggambar **kotak putih penuh**, bukan error.
+31. **`BossModelPass` dulu menimpa koreksi rotasi SEMUA boss** dengan angka yang
+    diukur dari aset SnakeBoss. Boss varian mewarisinya membabi buta dan tampil dengan
+    kepala terbalik. Sekarang pass itu melewati boss yang punya berkas mesh sendiri.
+    Aturan umumnya: apa pun yang ditulis tangan ke aset boss akan hilang pada
+    `Generate Boss` berikutnya — pemetaan model WAJIB hidup di `BossPass`.
+
 ---
 
 ## 8. JANGAN lakukan

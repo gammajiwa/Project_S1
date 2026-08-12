@@ -78,6 +78,9 @@ namespace Proto
             public int Points;
             public string SourceName;
 
+            /// <summary>Undian crit dilempar saat cast dan MENUMPANG sampai pukulannya mendarat.</summary>
+            public bool Crit;
+
             /// <summary>Sedang pulang. Kaki pulangnya membidik posisi pemain SEKARANG, bukan tempat ia dilempar.</summary>
             public bool Returning;
 
@@ -141,6 +144,9 @@ namespace Proto
             public float StatusDuration;
             public int Points;
             public string SourceName;
+
+            /// <summary>Undian crit dilempar saat cast dan MENUMPANG sampai pukulannya mendarat.</summary>
+            public bool Crit;
             public bool Active;
         }
 
@@ -158,6 +164,9 @@ namespace Proto
             public float StatusDuration;
             public int Points;
             public string SourceName;
+
+            /// <summary>Undian crit dilempar saat cast dan MENUMPANG sampai pukulannya mendarat.</summary>
+            public bool Crit;
             public Transform Vfx;
             public GameObject VfxSrc;
             public bool Active;
@@ -370,7 +379,8 @@ namespace Proto
             w.MaxTravel = Mathf.Max(3f, spell.Range * BuffRangeMul);
             w.Speed = Mathf.Max(6f, def.TravelSpeed);
             w.Radius = Mathf.Max(0.7f, spell.Radius * BuffAreaMul);
-            w.Damage = spell.Damage * BuffDamageMul * RollCrit();
+            w.Damage = CritHit(spell, out bool wingCrit);
+            w.Crit = wingCrit;
             w.Status = def.AppliedStatus;
             w.StatusDuration = def.StatusDuration;
             w.Points = AilmentPoints(def);
@@ -412,7 +422,7 @@ namespace Proto
             if (dir.sqrMagnitude < 0.0001f) return false;
             dir.Normalize();
 
-            float damage = spell.Damage * BuffDamageMul * RollCrit();
+            float damage = CritHit(spell, out bool crit);
             float beamRadius = Mathf.Max(0.45f, spell.Radius);
             float bounceReach = Mathf.Max(reach, def.BounceRange);
 
@@ -456,7 +466,7 @@ namespace Proto
                     _ricochetPath[points++] = at;
 
                     _enemies.Damage(hit, damage, def.AppliedStatus, def.StatusDuration,
-                        AilmentPoints(def), true, def.DisplayName);
+                        AilmentPoints(def), true, def.DisplayName, null, crit);
 
                     SpawnFlash(hit.Pos, 1.5f, 0.12f, def.Color);
 
@@ -565,7 +575,8 @@ namespace Proto
             w.LastRadius = 0f;
             w.MaxRadius = max;
             w.Speed = Mathf.Max(4f, def.TravelSpeed);
-            w.Damage = spell.Damage * BuffDamageMul * RollCrit();
+            w.Damage = CritHit(spell, out bool swellCrit);
+            w.Crit = swellCrit;
             w.Push = def.PushForce;
             w.Status = def.AppliedStatus;
             w.StatusDuration = def.StatusDuration;
@@ -601,7 +612,7 @@ namespace Proto
 
             if (found <= 0) return false;
 
-            float damage = spell.Damage * BuffDamageMul * RollCrit();
+            float damage = CritHit(spell, out bool crit);
             float spread = Random.Range(0f, Mathf.PI * 2f);
 
             for (int i = 0; i < found; i++)
@@ -624,6 +635,7 @@ namespace Proto
                 m.StatusDuration = def.StatusDuration;
                 m.Points = AilmentPoints(def);
                 m.SourceName = def.DisplayName;
+                m.Crit = crit;
                 m.Active = true;
 
                 Paint(m.T, def.Color);
@@ -699,7 +711,7 @@ namespace Proto
             if (cluster == null) return false;
 
             int shots = Mathf.Clamp(def.Hits + BonusHits, 2, 12);
-            float damage = spell.Damage * BuffDamageMul * RollCrit();
+            float damage = CritHit(spell, out bool crit);
             float radius = Mathf.Max(0.8f, spell.Radius * BuffAreaMul);
             float gap = Mathf.Max(0.08f, def.ZoneTickInterval);
 
@@ -721,8 +733,15 @@ namespace Proto
                     cluster.Pos.z + Mathf.Sin(angle) * away);
 
                 s.Radius = radius;
-                s.Remaining = Mathf.Max(0.15f, def.TelegraphDelay) + i * gap;
+
+                // Jendela aba-aba SAMA untuk semua tembakan; yang berbeda cuma kapan ia dibuka.
+                // Kalau Total ikut menampung jeda antrean, tembakan kedua belas menghabiskan
+                // detik demi detik mengisi dirinya pelan-pelan, dan hitungan mundur yang lajunya
+                // berbeda-beda per lingkaran tidak bisa dibaca sebagai satu bahasa.
+                s.Total = Mathf.Max(0.15f, def.TelegraphDelay);
+                s.Remaining = s.Total + i * gap;
                 s.Damage = damage;
+                s.Crit = crit;
                 s.Status = def.AppliedStatus;
                 s.StatusDuration = def.StatusDuration;
                 s.Points = AilmentPoints(def);
@@ -732,7 +751,7 @@ namespace Proto
                 s.VfxScale = VfxScale(def, radius);
                 s.Active = true;
 
-                Paint(s.Ring, def.Color);
+                PaintStrike(s, 0f);
                 s.Ring.position = s.Target;
                 s.Ring.localScale = new Vector3(radius * 2f, 0.02f, radius * 2f);
                 s.Ring.gameObject.SetActive(true);
@@ -983,7 +1002,7 @@ namespace Proto
                 // frame lalu dan radius sekarang. Musuh yang sudah dilewati tepinya ada di dalam
                 // lingkaran, dan lingkaran dalam tidak pernah ditanya lagi.
                 _enemies.DamageRing(w.Centre, w.LastRadius, w.Radius, w.Damage,
-                    w.Status, w.StatusDuration, w.Points, true, w.SourceName);
+                    w.Status, w.StatusDuration, w.Points, true, w.SourceName, w.Crit);
 
                 if (w.Push > 0f) _enemies.PushRing(w.Centre, w.LastRadius, w.Radius, w.Push);
 
@@ -1041,7 +1060,8 @@ namespace Proto
                 var hit = _enemies.NearestExcluding(m.T.position, 0.8f, null);
                 if (hit == null) continue;
 
-                _enemies.Damage(hit, m.Damage, m.Status, m.StatusDuration, m.Points, true, m.SourceName);
+                _enemies.Damage(hit, m.Damage, m.Status, m.StatusDuration, m.Points, true,
+                    m.SourceName, null, m.Crit);
                 SpawnFlash(m.T.position, 1.6f, 0.16f, Color.white);
                 RetireMissile(m);
             }

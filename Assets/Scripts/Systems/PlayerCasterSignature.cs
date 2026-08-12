@@ -51,6 +51,10 @@ namespace Proto
             public float StatusDuration;
             public int Points;
             public string SourceName;
+
+            /// <summary>Undian crit menumpang sampai pecahannya meluncur dan mendarat.</summary>
+            public bool Crit;
+
             public float Trigger;
             public bool Active;
 
@@ -65,8 +69,16 @@ namespace Proto
         class Strike
         {
             public Transform Ring;
+
+            /// <summary>Renderer cincinnya, dicari sekali. Prefab boleh menaruhnya di anak.</summary>
+            public Renderer Rend;
+
             public Vector3 Target;
             public float Remaining;
+
+            /// <summary>Berapa lama aba-abanya semula. Pembagi hitungan mundur di shader.</summary>
+            public float Total;
+
             public float Radius;
             public float Damage;
             public StatusDefinition Status;
@@ -74,6 +86,10 @@ namespace Proto
             public int Points;
             public string SourceName;
             public Color Tint;
+
+            /// <summary>Undian crit menunggu bersama aba-abanya sampai hantamannya mendarat.</summary>
+            public bool Crit;
+
             public bool Active;
 
             /// <summary>Prefab semburan detik hantaman — dibawa karena Strike tidak menyimpan Def.</summary>
@@ -97,6 +113,9 @@ namespace Proto
             public float StatusDuration;
             public int Points;
             public string SourceName;
+
+            /// <summary>Undian crit menumpang selama bolanya menggelinding.</summary>
+            public bool Crit;
 
             /// <summary>Efek yang menggelinding bersama bola. Mengikuti posisi, bukan putarannya.</summary>
             public Transform Vfx;
@@ -172,7 +191,7 @@ namespace Proto
 
             if (held >= wanted * 2) return false;
 
-            float damage = spell.Damage * BuffDamageMul * RollCrit();
+            float damage = CritHit(spell, out bool crit);
             float baseAngle = Random.Range(0f, Mathf.PI * 2f);
 
             for (int i = 0; i < wanted; i++)
@@ -188,6 +207,7 @@ namespace Proto
                 o.StatusDuration = def.StatusDuration;
                 o.Points = AilmentPoints(def);
                 o.SourceName = def.DisplayName;
+                o.Crit = crit;
                 o.Trigger = Mathf.Max(2f, spell.Range * BuffRangeMul);
                 o.Active = true;
 
@@ -344,7 +364,9 @@ namespace Proto
             s.Target.y = 0.06f;
             s.Radius = spell.Radius * BuffAreaMul;
             s.Remaining = Mathf.Max(0.15f, def.TelegraphDelay);
-            s.Damage = spell.Damage * BuffDamageMul * RollCrit();
+            s.Total = s.Remaining;
+            s.Damage = CritHit(spell, out bool crit);
+            s.Crit = crit;
             s.Status = def.AppliedStatus;
             s.StatusDuration = def.StatusDuration;
             s.Points = AilmentPoints(def);
@@ -354,7 +376,7 @@ namespace Proto
             s.VfxScale = VfxScale(def, s.Radius);
             s.Active = true;
 
-            Paint(s.Ring, def.Color);
+            PaintStrike(s, 0f);
             s.Ring.position = s.Target;
             s.Ring.localScale = new Vector3(s.Radius * 2f, 0.02f, s.Radius * 2f);
             s.Ring.gameObject.SetActive(true);
@@ -383,7 +405,8 @@ namespace Proto
             b.Radius = Mathf.Max(0.8f, spell.Radius * BuffAreaMul);
             b.Travelled = 0f;
             b.MaxTravel = spell.Range * BuffRangeMul;
-            b.Damage = spell.Damage * BuffDamageMul * RollCrit();
+            b.Damage = CritHit(spell, out bool crit);
+            b.Crit = crit;
             b.Status = def.AppliedStatus;
             b.StatusDuration = def.StatusDuration;
             b.Points = AilmentPoints(def);
@@ -502,9 +525,9 @@ namespace Proto
 
             if (spell.Damage > 0f)
             {
-                _enemies.DamageArea(transform.position, radius,
-                    spell.Damage * BuffDamageMul * RollCrit(),
-                    def.AppliedStatus, def.StatusDuration, AilmentPoints(def), true, def.DisplayName);
+                _enemies.DamageArea(transform.position, radius, CritHit(spell, out bool crit),
+                    def.AppliedStatus, def.StatusDuration, AilmentPoints(def), true,
+                    def.DisplayName, crit);
             }
 
             SpawnFlash(transform.position, radius * 2.2f, 0.28f, def.Color);
@@ -595,7 +618,8 @@ namespace Proto
                 var hit = _enemies.NearestExcluding(o.T.position, 0.8f, null);
                 if (hit == null) continue;
 
-                _enemies.Damage(hit, o.Damage, o.Status, o.StatusDuration, o.Points, true, o.SourceName);
+                _enemies.Damage(hit, o.Damage, o.Status, o.StatusDuration, o.Points, true,
+                    o.SourceName, null, o.Crit);
                 SpawnFlash(o.T.position, 1.6f, 0.16f, Color.white);
                 Retire(o);
             }
@@ -612,16 +636,21 @@ namespace Proto
 
                 if (s.Remaining > 0f)
                 {
-                    // Cincinnya mengetat menuju detik hantaman. Aba-aba yang diam tidak memberi tahu
-                    // pemain BERAPA LAMA lagi, dan itu separuh gunanya.
-                    float tighten = Mathf.Clamp01(s.Remaining * 2f);
-                    float scale = s.Radius * 2f * Mathf.Lerp(1f, 1.45f, tighten);
-                    s.Ring.localScale = new Vector3(scale, 0.02f, scale);
+                    // Hitungan mundurnya hidup di SHADER, bukan di skala transform. Cincinnya
+                    // duduk diam di radius yang sesungguhnya sejak frame pertama — pemain tahu
+                    // persis petak mana yang akan kena — dan isinya yang merambat ke tepi
+                    // membawa kabar berapa lama lagi.
+                    //
+                    // Yang lama menskalakan silinder 1,45x lalu menciutkannya. Dua ongkosnya:
+                    // benda polos yang berubah ukuran terbaca sebagai primitif, dan selama
+                    // menciut penandanya salah menyebut area — lebih lebar dari yang dilukai.
+                    float fill = s.Total > 0f ? 1f - Mathf.Clamp01(s.Remaining / s.Total) : 1f;
+                    PaintStrike(s, Mathf.Min(fill, 0.99f));
                     continue;
                 }
 
                 _enemies.DamageArea(s.Target, s.Radius, s.Damage,
-                    s.Status, s.StatusDuration, s.Points, true, s.SourceName);
+                    s.Status, s.StatusDuration, s.Points, true, s.SourceName, s.Crit);
 
                 _bolts.Beam(s.Target + Vector3.up * 14f, s.Target, s.Tint, s.Radius * 0.7f);
                 SpawnFlash(s.Target, s.Radius * 2.4f, 0.35f, s.Tint);
@@ -682,7 +711,8 @@ namespace Proto
             }
 
             b.Hit.Add(victim);
-            _enemies.Damage(victim, b.Damage, b.Status, b.StatusDuration, b.Points, true, b.SourceName);
+            _enemies.Damage(victim, b.Damage, b.Status, b.StatusDuration, b.Points, true,
+                b.SourceName, null, b.Crit);
         }
 
         void TickTwisters(float dt)
@@ -764,6 +794,30 @@ namespace Proto
             t.GetComponent<Renderer>().SetPropertyBlock(_mpb);
         }
 
+        static readonly int FillId = Shader.PropertyToID("_Fill");
+
+        /// <summary>
+        /// Blok properti TERPISAH dari <c>_mpb</c>, dan itu bukan kerapian.
+        ///
+        /// <c>MaterialPropertyBlock</c> menahan tiap nilai yang pernah ditulis padanya sampai
+        /// dibersihkan. Kalau <c>_Fill</c> ikut menumpang di blok bersama, penanda tanah
+        /// BERIKUTNYA yang dicat lewat blok itu — kubangan Zone, cincin Orbital, gelombang —
+        /// akan mewarisi angka hitungan mundur milik telegraf yang sudah mendarat, lalu
+        /// menggambar dirinya setengah terisi tanpa ada yang pernah memintanya.
+        /// </summary>
+        MaterialPropertyBlock _strikeMpb;
+
+        /// <summary>Warna dan hitungan mundur ditulis bersama: keduanya hidup di material yang sama.</summary>
+        void PaintStrike(Strike s, float fill)
+        {
+            if (s.Rend == null) return;
+
+            _strikeMpb ??= new MaterialPropertyBlock();
+            _strikeMpb.SetColor(BaseColorId, s.Tint);
+            _strikeMpb.SetFloat(FillId, fill);
+            s.Rend.SetPropertyBlock(_strikeMpb);
+        }
+
         Orb TakeOrb()
         {
             for (int i = 0; i < _orbs.Count; i++)
@@ -794,6 +848,8 @@ namespace Proto
                 Ring = Sleeping(NewFx(Fx != null ? Fx.StrikeRing : null,
                     PrimitiveType.Cylinder, "StrikeRing", false))
             };
+
+            fresh.Rend = fresh.Ring.GetComponentInChildren<Renderer>(true);
 
             _strikes.Add(fresh);
             return fresh;

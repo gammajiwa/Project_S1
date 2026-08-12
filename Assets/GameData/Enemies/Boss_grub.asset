@@ -28,6 +28,7 @@ MonoBehaviour:
   HeadMeshRotation: {x: 0, y: 180, z: 90}
   BodyMeshRotation: {x: 0, y: 0, z: 90}
   TailMeshRotation: {x: 0, y: 0, z: 90}
+  SpinDegreesPerSecond: 0
   HpMultiplier: 5
   OrbitRadius: 3
   Speed: 6.5

@@ -31,6 +31,17 @@ namespace Proto
             /// <summary>Who it just hit, so it cannot immediately bounce back into them.</summary>
             public EnemyManager.Enemy LastHit;
 
+            /// <summary>
+            /// Undian crit MENUMPANG di peluru sampai ia mendarat.
+            ///
+            /// Ini yang membuat sistem crit tidak bisa dikerjakan di satu tempat: peluru mendarat
+            /// beberapa frame setelah dicast, dan saat itu pelemparnya sudah melempar undian untuk
+            /// cast-cast lain. Angka damage-nya sudah membawa pengalinya, tapi tidak ada apa pun
+            /// di angka itu yang bisa dibaca balik sebagai "ini crit". Pantulan mewarisi flag
+            /// yang sama — satu undian melayani seluruh perjalanan peluru.
+            /// </summary>
+            public bool Crit;
+
             public bool Active;
 
             /// <summary>
@@ -503,12 +514,34 @@ namespace Proto
         float BuffManaCostMul => Mathf.Clamp(1f - Temp(StatKind.ManaCostPct), 0.2f, 2f);
 
         /// <summary>Satu lemparan crit. Dipanggil sekali per cast, bukan per musuh.</summary>
-        float RollCrit()
+        float RollCrit() => RollCrit(out _);
+
+        /// <summary>
+        /// Sama, tapi MELAPORKAN hasil undiannya.
+        ///
+        /// Pengalinya saja tidak cukup untuk tahu apakah sebuah pukulan crit: 1,5 + CritDamage
+        /// bisa jatuh di angka mana pun, dan begitu ia dikalikan ke damage tidak ada lagi yang
+        /// bisa membacanya balik. Popup harus tahu, dan popup baru menggambar beberapa frame
+        /// kemudian — untuk skill yang pelurunya masih terbang, flag inilah yang ikut menumpang
+        /// di peluru sampai ia mendarat.
+        /// </summary>
+        /// <summary>
+        /// Damage satu cast, lengkap dengan buff dan undian crit, plus kabar apakah crit-nya jadi.
+        ///
+        /// Satu baris untuk pola yang berulang di dua puluh tempat. Yang penting bukan
+        /// kependekannya melainkan bahwa undiannya terjadi TEPAT SEKALI di tiap tempat itu —
+        /// menulisnya tangan berarti suatu hari ada yang memanggil RollCrit dua kali di satu
+        /// cast, dan skill itu diam-diam punya peluang crit dua kali lipat.
+        /// </summary>
+        float CritHit(CompiledSpell spell, out bool crit) =>
+            spell.Damage * BuffDamageMul * RollCrit(out crit);
+
+        float RollCrit(out bool crit)
         {
             float chance = Total(StatKind.CritChance);
-            if (chance <= 0f || Random.value > chance) return 1f;
+            crit = chance > 0f && Random.value <= chance;
 
-            return 1.5f + Total(StatKind.CritDamage);
+            return crit ? 1.5f + Total(StatKind.CritDamage) : 1f;
         }
 
         /// <summary>Raised with the rune instance that just fired, so the UI can pulse it.</summary>
@@ -827,19 +860,19 @@ namespace Proto
                 case CastKind.Nova:
                 {
                     float radius = spell.Radius * BuffAreaMul;
-                    _enemies.DamageArea(at, radius, spell.Damage * BuffDamageMul * RollCrit(),
-                        def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
+                    _enemies.DamageArea(at, radius, CritHit(spell, out bool novaCrit),
+                        def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName, novaCrit);
                     SpawnFlash(at, radius * 2f, 0.3f, def.Color);
                     _vfx.Burst(def.CastVfx, at, VfxScale(def, radius));
                     return true;
                 }
 
                 case CastKind.Chain:
-                    return CastChain(spell, def, at, spell.Damage * BuffDamageMul * RollCrit());
+                    return CastChain(spell, def, at, CritHit(spell, out bool chainCrit), chainCrit);
 
                 case CastKind.Projectile:
-                    _enemies.Damage(target, spell.Damage * BuffDamageMul * RollCrit(),
-                        def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName);
+                    _enemies.Damage(target, CritHit(spell, out bool boltCrit),
+                        def.AppliedStatus, def.StatusDuration, points, true, def.DisplayName, null, boltCrit);
                     SpawnFlash(at, 1.8f, 0.2f, def.Color);
                     _vfx.Burst(def.CastVfx, at, def.CastVfxScale);
                     return true;
@@ -869,7 +902,8 @@ namespace Proto
 
                     Vector3 dir = target.Pos - transform.position;
                     dir.y = 0f;
-                    FireProjectile(dir.normalized, spell.Damage * BuffDamageMul * RollCrit(), def, def.Color);
+                    FireProjectile(dir.normalized, CritHit(spell, out bool shotCrit), def,
+                        def.Color, shotCrit);
                     return true;
                 }
 
@@ -883,9 +917,9 @@ namespace Proto
                     // Buffs and crit apply here exactly like they do to every other cast. They did
                     // not before, which quietly excluded the heaviest skills in the book — every
                     // Nova, up to Doom Nova — from the reaction -> buff -> bigger hit loop.
-                    _enemies.DamageArea(transform.position, radius,
-                        spell.Damage * BuffDamageMul * RollCrit(),
-                        def.AppliedStatus, def.StatusDuration, AilmentPoints(def), true, def.DisplayName);
+                    _enemies.DamageArea(transform.position, radius, CritHit(spell, out bool blastCrit),
+                        def.AppliedStatus, def.StatusDuration, AilmentPoints(def), true,
+                        def.DisplayName, blastCrit);
 
                     SpawnFlash(transform.position, radius * 2f, 0.3f, def.Color);
                     _vfx.Burst(def.CastVfx, transform.position, VfxScale(def, radius));
@@ -893,7 +927,8 @@ namespace Proto
                 }
 
                 case CastKind.Chain:
-                    return CastChain(spell, def, transform.position, spell.Damage * BuffDamageMul * RollCrit());
+                    return CastChain(spell, def, transform.position,
+                        CritHit(spell, out bool arcCrit), arcCrit);
 
                 case CastKind.Radial:
                     return CastRadial(spell, def);
@@ -932,8 +967,8 @@ namespace Proto
 
                     // Crit is rolled here, at cast, and carried down with the shot — rolling it on
                     // impact would break the one-roll-per-cast rule the whole game is tuned around.
-                    LaunchDescent(cluster.Pos, spell, def,
-                        spell.Damage * BuffDamageMul * RollCrit(), spell.Radius * BuffAreaMul);
+                    LaunchDescent(cluster.Pos, spell, def, CritHit(spell, out bool skyCrit),
+                        spell.Radius * BuffAreaMul, skyCrit);
                     return true;
                 }
 
@@ -949,8 +984,9 @@ namespace Proto
                     float length = spell.Range * BuffRangeMul;
 
                     _enemies.DamageLine(transform.position, dir, length, halfWidth,
-                        spell.Damage * BuffDamageMul * RollCrit(),
-                        def.AppliedStatus, def.StatusDuration, AilmentPoints(def), def.DisplayName);
+                        CritHit(spell, out bool beamCrit),
+                        def.AppliedStatus, def.StatusDuration, AilmentPoints(def),
+                        def.DisplayName, beamCrit);
 
                     // 0.8× lebar damage, bukan 1.6×: dengan shader laser, halo-nya sudah
                     // melebarkan kesan sinarnya sendiri — pita yang lebih lebar dari
@@ -1032,7 +1068,8 @@ namespace Proto
         /// Hops enemy to enemy and draws a bolt along every hop. Shared by the cooldown cast and the
         /// ailment-triggered one so both look and reach the same.
         /// </summary>
-        bool CastChain(CompiledSpell spell, PieceDefinition def, Vector3 origin, float damage)
+        bool CastChain(CompiledSpell spell, PieceDefinition def, Vector3 origin, float damage,
+            bool crit = false)
         {
             int points = AilmentPoints(def);
             int forks = Mathf.Max(1, def.Forks + BonusForks);
@@ -1064,8 +1101,10 @@ namespace Proto
                     // sisanya tetap dapat kilat dan flash.
                     if (i == taken) _vfx.Burst(def.CastVfx, to, def.CastVfxScale);
 
+                    // Crit dilempar sekali per cast dan berlaku untuk SELURUH rantai — semua
+                    // lompatan berbagi satu undian, sesuai invarian "sekali per cast".
                     _enemies.Damage(target, damage, def.AppliedStatus, def.StatusDuration,
-                        points, true, def.DisplayName, from);
+                        points, true, def.DisplayName, from, crit);
 
                     from = to;
                 }
@@ -1087,7 +1126,7 @@ namespace Proto
             if (_enemies.Nearest(transform.position, spell.Range) == null) return false;
 
             int arms = Mathf.Max(2, def.Hits + BonusHits);
-            float damage = spell.Damage * BuffDamageMul * RollCrit();
+            float damage = CritHit(spell, out bool crit);
 
             // Rolled per cast, so two shots never lay down the same pattern.
             float spin = Random.Range(0f, Mathf.PI * 2f);
@@ -1096,7 +1135,7 @@ namespace Proto
             {
                 float angle = spin + i * (Mathf.PI * 2f / arms);
                 FireProjectile(new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)),
-                    damage, def, def.Color);
+                    damage, def, def.Color, crit);
             }
 
             SpawnFlash(transform.position, 2.4f, 0.2f, def.Color);
@@ -1117,7 +1156,7 @@ namespace Proto
             int statusIndex = _db.IndexOfStatus(def.TriggerStatus);
             if (statusIndex < 0) return false;
 
-            float perPoint = spell.Damage * BuffDamageMul * RollCrit();
+            float perPoint = CritHit(spell, out bool crit);
             float radius = spell.Radius * BuffAreaMul;
 
             int blasts = _enemies.DetonateStatus(statusIndex, perPoint, radius,
@@ -1127,7 +1166,8 @@ namespace Proto
                     // Bigger stack, bigger bang — the flash has to say so.
                     SpawnFlash(at, radius * (1f + points * 0.12f), 0.28f, def.Color);
                     _vfx.Burst(def.CastVfx, at, def.CastVfxScale * (1f + points * 0.05f));
-                });
+                },
+                crit);
 
             return blasts > 0;
         }
@@ -1151,13 +1191,16 @@ namespace Proto
             public float Radius;
             public bool IsZone;
 
+            /// <summary>Undian crit ikut TURUN bersama peluru — dilempar saat cast, dibaca saat mendarat.</summary>
+            public bool Crit;
+
             public bool Active;
         }
 
         readonly List<Descent> _descents = new List<Descent>(8);
 
         void LaunchDescent(Vector3 at, CompiledSpell spell, PieceDefinition def,
-            float damage, float radius)
+            float damage, float radius, bool crit = false)
         {
             Descent d = null;
             for (int i = 0; i < _descents.Count; i++)
@@ -1198,6 +1241,7 @@ namespace Proto
             d.Damage = damage;
             d.Radius = radius;
             d.IsZone = def.Kind == CastKind.Zone;
+            d.Crit = crit;
             d.Active = true;
 
             // Bola jatuhnya menciut jadi inti kalau skillnya punya efek sendiri: yang bercerita
@@ -1258,7 +1302,7 @@ namespace Proto
             }
 
             _enemies.DamageArea(d.Target, d.Radius, d.Damage, d.Def.AppliedStatus,
-                d.Def.StatusDuration, AilmentPoints(d.Def), true, d.Def.DisplayName);
+                d.Def.StatusDuration, AilmentPoints(d.Def), true, d.Def.DisplayName, d.Crit);
 
             SpawnFlash(d.Target, d.Radius * 2f, 0.3f, d.Def.Color);
             _vfx.Burst(d.Def.CastVfx, d.Target, VfxScale(d.Def, d.Radius));
@@ -1270,8 +1314,9 @@ namespace Proto
             SpawnFlash(at, 2.2f, 0.18f, new Color(0.95f, 0.72f, 0.55f));
         }
 
-        void FireProjectile(Vector3 dir, float damage, PieceDefinition source, Color color) =>
-            FireProjectileFrom(transform.position, dir, damage, source, color);
+        void FireProjectile(Vector3 dir, float damage, PieceDefinition source, Color color,
+            bool crit = false) =>
+            FireProjectileFrom(transform.position, dir, damage, source, color, crit);
 
         /// <summary>
         /// Peluru yang berangkat dari titik mana pun, bukan cuma dari badan pemain.
@@ -1282,7 +1327,7 @@ namespace Proto
         /// tidak berhubungan, dan tidak ada yang error.
         /// </summary>
         void FireProjectileFrom(Vector3 from, Vector3 dir, float damage, PieceDefinition source,
-            Color color)
+            Color color, bool crit = false)
         {
             Projectile p = null;
             for (int i = 0; i < _projectiles.Count; i++)
@@ -1329,6 +1374,7 @@ namespace Proto
             p.StatusDuration = source.StatusDuration;
             p.Points = source.AppliedPoints + Book.BonusAilmentPoints;
             p.SourceName = source.DisplayName;
+            p.Crit = crit;
 
             // Pantulan dari segel berlaku juga untuk peluru yang aslinya TIDAK memantul sama
             // sekali. Itu memang yang dibeli: sebuah Fireball yang mulai memantul bukan Fireball
@@ -1362,7 +1408,8 @@ namespace Proto
                 var hit = _enemies.NearestExcluding(p.T.position, 0.75f, p.LastHit);
                 if (hit == null) continue;
 
-                _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points, true, p.SourceName);
+                _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points, true,
+                    p.SourceName, null, p.Crit);
 
                 // Kilatan tumbukan: putih besar kalau peluru ini polos, dan kecil berwarna
                 // kalau ia sudah membawa efeknya sendiri. Bola putih di tiap tumbukan adalah

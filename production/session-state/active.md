@@ -2481,3 +2481,109 @@ langsung lihat saat main.
 CRIT ditunda SATU PAKET dengan kontennya (sesi baru): flag crit harus ikut
 MENUMPANG di proyektil yang mendarat frame kemudian — sambungan lebar di
 struct Projectile/Wing/Missile dkk. Popup crit: MERAH PEKAT + lebih besar.
+
+## Ronde 5 (2026-08-12 sore) — 4 item digarap sekaligus atas perintah user "semuanya gass"
+
+### 1. Penanda tanah ber-TIMING — SELESAI (utang lama)
+Akarnya BUKAN "jalur berbeda yang menskalakan primitif". Telegraf SunStrike/
+Barrage MEMANG sudah pakai shader Grimoire/AoeRing. Yang salah: hitungan
+mundurnya diekspresikan lewat `localScale` — silinder mengetat 1,45x -> 1x.
+Benda polos yang berubah ukuran = terbaca primitif, DAN selama menciut
+penandanya berbohong soal radius (lebih lebar dari yang dilukai).
+
+Sekarang: param `_Fill` (0..1) di AoeRing. Isi merambat dari pusat ke tepi +
+garis muka terang yang bergerak. Cincin DIAM di radius sesungguhnya sejak
+frame pertama. `_Fill = 1` (bawaan) = piksel-per-piksel identik dengan
+sebelumnya, jadi kubangan Zone / cincin Orbital / gelombang tidak berubah.
+- C#: `Strike.Total` + `Strike.Rend` (cache) + `PaintStrike()` dengan
+  MaterialPropertyBlock TERPISAH (`_strikeMpb`). Blok bersama akan menularkan
+  `_Fill` telegraf ke penanda tanah berikutnya yang dicat lewat blok itu.
+- Barrage: `Total` = jendela telegraf saja, TIDAK termasuk jeda antrean —
+  kalau tidak, tembakan ke-12 mengisi dirinya jauh lebih pelan dari yang ke-1.
+Terverifikasi: compile bersih, shader 0 error, `_Fill` ada di shader.
+BELUM dilihat mata in-game.
+
+### 2. Main menu backdrop — SELESAI (disetujui user di tengah jalan: "ini cakep")
+Latar layar penuh, semua di DUNIA 3D (canvas Overlay selalu di atas 3D):
+L0 gloom radial · L1 lingkaran sihir raksasa · L1b lingkaran kedua counter-rotate
+· L1c BUKU · L2 bara ungu · L2b bara jauh (parallax) · L2c kabut rendah
+· L3 percikan biru jarang · L4 bayangan awan.
+- LANTAI DICOPOT. Props placeholder sudah dibuang, jadi lantai tinggal jadi
+  mesh pejal yang MEMOTONG lingkaran sihir (billboard menghadap kamera).
+- Buku = DUA quad bergambar `Art/UI/Frames/grimoireUI.png`, halaman kiri
+  skala X negatif supaya jilid kulitnya bertemu di TENGAH. Material
+  `Sprites/Default` (sudah alpha-blend + Cull Off, terbukti di project ini).
+- Kamera: MenuDiorama dapat `_dolly` (maju-mundur di arah PANDANG, bukan Z
+  dunia). Orbit 50 dtk + dolly 83 dtk — periodenya tidak sebanding jadi
+  komposisinya tidak mengulang.
+- Veil layar penuh diganti SCRIM KIRI (PNG gradasi 64x1, kuadrat) — separuh
+  kanan layar dibiarkan utuh.
+- SceneLook_Menu diubah jadi malam ungu (dulu golden hour).
+
+**JEBAKAN BARU (mahal, 3 putaran):** `SetFloat`/`SetColor` ke material yang
+sudah jadi ASET tidak menandainya kotor — `SaveAssets` melewatinya, nilainya
+hidup di memori lalu hilang. Butuh `EditorUtility.SetDirty`. Lebih licik lagi:
+menghapus file `.mat` dari luar Unity TIDAK membuatnya hilang selama scene
+masih membuka renderer yang menunjuknya — Unity menulisnya kembali dengan
+nilai bawaan shader saat refresh. Karena itu `NewLayerQuad` sekarang SELALU
+menulis ulang nilainya, tidak ada lagi jalur "cuma kalau baru dibuat".
+
+**Pelajaran kedua:** partikel lingkaran sihir Hovl ber-render mode Billboard
+(alignment Local) — memutar transformnya TIDAK mengubah hadapnya. Prefabnya
+sudah rebah dari sananya; "membetulkan" rotasinya justru yang membuatnya berdiri.
+
+### 3. Sistem CRITICAL — SELESAI, terverifikasi mata
+FAKTA yang mengubah rencana: konten crit SUDAH ADA banyak — 3 piece
+(whetstone/keen/razor), 1 sigil, 1 buff, dan 3 pakta (warlock/puasa/mataketiga).
+Yang benar-benar kosong cuma SATU hal: flag crit tidak pernah sampai ke popup.
+
+- `RollCrit(out bool crit)` + `CritHit(spell, out bool crit)` — satu baris untuk
+  pola yang berulang di 20 tempat, dan menjamin undiannya sekali per cast.
+- `bool crit` jadi parameter OPSIONAL di Damage / DamageArea / DamageLine /
+  DamageRing / DetonateStatus. Opsional = belasan call-site lama tidak berubah,
+  dan yang lupa menyebut dapat "bukan crit" — jawaban yang benar untuk DoT,
+  sentuhan musuh, dan reaksi.
+- `OnEnemyDamaged` kini `Action<Vector3,float,float,Color,bool>`.
+- Flag MENUMPANG di tiap benda yang mendarat belakangan: Projectile, Descent,
+  Orb, Strike, Boulder, Wing (bumerang), Swell (gelombang), Missile (rudal).
+- Popup crit: MERAH PEKAT (0.88,0.07,0.07) + huruf 1.5x + sentakan 1.6x, dan
+  TIDAK PERNAH digabung dengan popup non-crit walau sepetak sedetik — kalau
+  digabung, satu-satunya kali pemain harus melihatnya justru hilang.
+- Crit TIDAK berlaku di Orbital/Zone/Vortex — dicek: ketiganya memang tidak
+  pernah memanggil RollCrit. Invarian #12 utuh.
+- PAKTA BARU: **TANGAN GEMETAR** — crit +40%, damage crit +150%, TAPI semua
+  damage −45%. Nilai harapannya ~1,0 di angka bawaan: yang dibeli VARIANSI,
+  bukan damage. Diambil tanpa piece crit lain = merugikan. 22 pakta sekarang.
+Terverifikasi: foto play mode, angka "648" merah pekat besar di layar.
+
+### 4. Boss cacing — DUA bug, dua-duanya dari laporan user
+1. "kepalanya si cacing kebalik" — `BossModelPass` menimpa rotasi SEMUA boss
+   dengan angka yang diukur dari aset SnakeBoss. Cacing tidak butuh 180 derajat
+   tambahan. Sekarang pass itu hanya menulis rotasi bawaan untuk boss yang
+   TIDAK punya berkas mesh sendiri (`HasOwnMeshes`).
+2. Pemetaan model TERBALIK lagi: `Generate Boss` mengembalikan cacing ke boss
+   KECIL. Perintah user: "yg GEDE pake CACING, yg KECIL pake KELABANG". Sekarang
+   pemetaannya hidup di `BossPass` (bukan editan tangan di aset), jadi bertahan.
+   Sekarang: Boss_centipede (HeadScale 2.9, HP x110) = CACING;
+   Boss_grub (1.15, x5, Minion) = KELABANG; Boss_serpent = ular bertanduk.
+3. "badannya dan kepalnya selalu berputar berlawanan" — `EnemyRenderer.SetRoll`
+   (satu nilai PER RENDERER, bukan per instance: kepala dan badan sudah punya
+   renderer sendiri, jadi satu nilai masing-masing sudah cukup dan gerombolan
+   500 musuh tidak membayar array baru). Gulingannya disisipkan DI ANTARA yaw
+   dan koreksi aset — di luar itu sumbunya salah dan modelnya tumbang.
+   `BossDefinition.SpinDegreesPerSecond`: cacing 110, sisanya 0.
+BELUM DILIHAT MATA: layar peta menutupi arena saat mau difoto. User akan
+langsung lihat saat main.
+
+### Pertanyaan terbuka yang MASIH menunggu user
+Def "Elit" (ular polos) belum ada — belum dijawab sejak ronde sebelumnya.
+
+### Buku menu pakai MODEL ASLI (user mengimpor SM_Grimoire.fbx di tengah sesi)
+`BuildBookModel` memakai `Assets/Art/Props/Grimoire/SM_Grimoire.fbx` + material
+PBR (`M_MenuGrimoire`, albedo/normal/metallic/AO/emissive). Skalanya DIUKUR dari
+bounds renderer lalu dinormalkan ke `BookWidth` 3,4 unit — skala ekspor FBX
+berbeda ratusan kali antar pipeline, dan angka tetap di kode berarti buku yang
+menghilang jadi setitik atau menelan layar. Dua bidang bergambar `grimoireUI.png`
+tetap ada sebagai jalur cadangan kalau modelnya hilang.
+Emissive ditahan di (0.55,0.42,0.85): nilai pertama (1.6,1.25,2.2) memutihkan
+seluruh buku sampai albedonya tidak terbaca sama sekali.

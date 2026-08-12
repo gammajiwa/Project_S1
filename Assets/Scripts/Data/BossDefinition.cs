@@ -76,6 +76,14 @@ namespace Proto
         [Tooltip("Koreksi rotasi mesh EKOR.")]
         public Vector3 TailMeshRotation;
 
+        [Tooltip("Kecepatan GULINGAN badan di sumbu jalannya sendiri, derajat per detik. " +
+                 "0 = tidak berguling (bawaan, dan benar untuk ular).\n\n" +
+                 "Kepala berguling ke arah SEBALIKNYA dengan kecepatan yang sama. Itu yang " +
+                 "membedakan cacing dari ular: ular meliuk di bidang datar, cacing MENGEBOR — " +
+                 "dan yang membaca sebagai mengebor bukan gulingannya sendiri melainkan " +
+                 "perlawanan antara kepala dan badan.")]
+        public float SpinDegreesPerSecond;
+
         [Header("Nyawa")]
         [Tooltip("Dikali HP musuh biasa di wave itu. Boss harus bertahan cukup lama untuk sempat " +
                  "menunjukkan perilakunya, bukan cuma HP besar yang berdiri diam.")]

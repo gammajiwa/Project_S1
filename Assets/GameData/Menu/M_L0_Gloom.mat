@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: M_L0_Gloom
+  m_Shader: {fileID: 4800000, guid: 3bfe68c3cef19ed4e853355db34297f8, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _Ceiling: 0.6
+    - _Churn: 0.05
+    - _DotAngle: 45
+    - _DotSharpness: 1.4
+    - _DotSize: 9
+    - _Drift: 0.35
+    - _Inner: 30
+    - _Outer: 76
+    - _Scale: 14
+    - _Smooth: 1
+    - _Warp: 0.8
+    - _Wobble: 15
+    m_Colors:
+    - _Center: {r: 0, g: 5.5, b: 0, a: 0}
+    - _Color: {r: 0.0013931888, g: 0.0005417957, b: 0.0024767802, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

@@ -161,11 +161,26 @@ namespace Proto.EditorTools
             a.HeadEmission = Color.black;
             a.BodyEmission = Color.black;
 
-            // Model kelabang, disimpan sebagai NAMA BERKAS supaya bertahan dari BossModelPass
+            // Model CACING, disimpan sebagai NAMA BERKAS supaya bertahan dari BossModelPass
             // berikutnya — pass itu menimpa referensi mesh semua boss dengan model bawaan.
-            a.HeadMeshFile = "SK_Centipede_Head";
-            a.BodyMeshFile = "SK_Centipede_Segment";
-            a.TailMeshFile = "SK_Centipede_Tail";
+            //
+            // Perintah pemilik project: "yg GEDE pake CACING (worm), yg KECIL pake KELABANG
+            // (centipede)". Pemetaan ini sempat dipasang tangan di asetnya lalu terhapus begitu
+            // pass ini dijalankan lagi — sekarang ia hidup di sini, jadi ia bertahan.
+            a.HeadMeshFile = "SK_Worm_Head";
+            a.BodyMeshFile = "SK_Worm_Segment";
+            a.TailMeshFile = "SK_Worm_Tail";
+            a.BoneSkinFile = "SnakeBoss_Albedo_Flesh";
+
+            // Kepala cacing TIDAK butuh 180 derajat tambahan seperti kepala ular. Angka lama
+            // diwarisi membabi buta dari aset SnakeBoss, dan hasilnya dilaporkan pemilik
+            // project: "kepalanya si cacing kebalik".
+            a.HeadMeshRotation = new Vector3(0f, 0f, 90f);
+            a.BodyMeshRotation = new Vector3(0f, 0f, 90f);
+            a.TailMeshRotation = new Vector3(0f, 0f, 90f);
+
+            // Mengebor: badan berguling satu arah, kepala berlawanan.
+            a.SpinDegreesPerSecond = 110f;
 
             EditorUtility.SetDirty(a);
             db.EditorAddBoss(a);
@@ -224,10 +239,26 @@ namespace Proto.EditorTools
             a.HeadEmission = Color.black;
             a.BodyEmission = Color.black;
 
-            a.HeadMeshFile = "SK_Worm_Head";
-            a.BodyMeshFile = "SK_Worm_Segment";
-            a.TailMeshFile = "SK_Worm_Tail";
+            // Anak buah memakai KELABANG — yang kecil, sesuai perintah pemilik project.
+            a.HeadMeshFile = "SK_Centipede_Head";
+            a.BodyMeshFile = "SK_Centipede_Segment";
+            a.TailMeshFile = "SK_Centipede_Tail";
             a.BoneSkinFile = "SnakeBoss_Albedo_Flesh";
+
+            // Ditulis eksplisit, bukan dibiarkan kosong: sejak boss boleh punya mesh sendiri,
+            // BossModelPass TIDAK lagi menimpa rotasi boss ber-mesh sendiri. Yang dibiarkan
+            // kosong akan tampil BERDIRI — dan diamnya jauh lebih membingungkan daripada
+            // terbalik. Angka kelabang belum pernah dinilai mata; ini nilai ular, dan kalau
+            // salah, yang diubah tiga angka di sini.
+            a.HeadMeshRotation = new Vector3(0f, 180f, 90f);
+            a.BodyMeshRotation = new Vector3(0f, 0f, 90f);
+            a.TailMeshRotation = new Vector3(0f, 0f, 90f);
+
+            // Ditulis NOL secara eksplisit, bukan dibiarkan. Aset ini pernah memegang model
+            // cacing pada putaran sebelumnya dan ikut menerima nilai gulingnya; field yang
+            // dibiarkan tidak disentuh akan menyimpan nilai itu selamanya, dan kelabang kecil
+            // akan mengebor tanpa ada satu baris pun di kode yang menyuruhnya.
+            a.SpinDegreesPerSecond = 0f;
 
             EditorUtility.SetDirty(a);
             db.EditorAddBoss(a);

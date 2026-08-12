@@ -22,12 +22,13 @@ MonoBehaviour:
   HeadMesh: {fileID: -7477590199563355630, guid: bb893ed4b583b7e38127b2c75b327758, type: 3}
   BodyMesh: {fileID: -322289017124685891, guid: bf0d6d43f8098606f9ed417e2db56298, type: 3}
   TailMesh: {fileID: -4178779993440046383, guid: cf7066c28f38b9a6030dc6a2f1fe3d68, type: 3}
-  BoneSkin: {fileID: 2800000, guid: b14585ee99704de4f9e2a53fb833a35c, type: 3}
+  BoneSkin: {fileID: 2800000, guid: f8a33a787cf53b343834da00de75b7dc, type: 3}
   HeadMeshScale: 11.314489
   BodyMeshScale: 15.817798
-  HeadMeshRotation: {x: 0, y: 180, z: 90}
+  HeadMeshRotation: {x: 0, y: 0, z: 90}
   BodyMeshRotation: {x: 0, y: 0, z: 90}
   TailMeshRotation: {x: 0, y: 0, z: 90}
+  SpinDegreesPerSecond: 110
   HpMultiplier: 110
   OrbitRadius: 4
   Speed: 7.5
@@ -60,4 +61,4 @@ MonoBehaviour:
   HeadMeshFile: SK_Worm_Head
   BodyMeshFile: SK_Worm_Segment
   TailMeshFile: SK_Worm_Tail
-  BoneSkinFile: 
+  BoneSkinFile: SnakeBoss_Albedo_Flesh

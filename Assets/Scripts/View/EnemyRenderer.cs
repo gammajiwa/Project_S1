@@ -40,6 +40,25 @@ namespace Proto
 
         readonly Quaternion _meshRotation;
 
+        /// <summary>
+        /// Gulingan seluruh batch di sekitar ARAH JALANNYA, dalam derajat.
+        ///
+        /// Satu nilai untuk satu renderer, bukan satu per instance, dan itu memang cukup: yang
+        /// memakainya boss ular — kepala punya renderer sendiri, badan punya renderer sendiri,
+        /// jadi "kepala dan badan berputar berlawanan" persis satu nilai per renderer. Menaruhnya
+        /// per instance berarti satu array float lagi yang disalin tiap frame untuk 500 musuh
+        /// yang tidak seorang pun berguling.
+        /// </summary>
+        Quaternion _roll = Quaternion.identity;
+
+        /// <summary>Nol mengembalikannya ke identitas, dan itu keadaan bawaan seluruh gerombolan.</summary>
+        public void SetRoll(float degrees)
+        {
+            _roll = Mathf.Abs(degrees) < 0.0001f
+                ? Quaternion.identity
+                : Quaternion.AngleAxis(degrees, Vector3.forward);
+        }
+
         readonly Vector3[] _stagePos;
         readonly float[] _stageYaw;
         readonly float[] _stagePhase;
@@ -352,7 +371,7 @@ namespace Proto
             {
                 int slot = _bucketCursor[_stageTint[i]]++;
                 _instances[slot] = Compose(_stagePos[i], _stageYaw[i], _stagePhase[i],
-                    _stageScale[i], _animate ? time : 0f, _bodyScale, _animate, _meshRotation);
+                    _stageScale[i], _animate ? time : 0f, _bodyScale, _animate, _meshRotation, _roll);
 
                 // Ditulis di slot yang SAMA dengan matriksnya. Pengurutan ember mengacak urutan
                 // musuh, dan data animasi yang tetap memakai urutan masuk akan memasangkan
@@ -425,7 +444,7 @@ namespace Proto
         /// has to change.
         /// </summary>
         static Matrix4x4 Compose(Vector3 position, float yaw, float phase, Vector3 scale, float time,
-            float bodyScale, bool animate, Quaternion meshRotation)
+            float bodyScale, bool animate, Quaternion meshRotation, Quaternion roll)
         {
             Vector3 body = scale * bodyScale;
 
@@ -433,7 +452,12 @@ namespace Proto
             // ruang dunia dan yang kanan di ruang mesh, jadi membaliknya membuat koreksi "rebahkan
             // model" ikut berputar bersama arah hadap — modelnya akan berguling tiap kali boss
             // membelok.
-            Quaternion facing = Quaternion.Euler(0f, yaw, 0f) * meshRotation;
+            // Gulingan disisipkan DI ANTARA arah hadap dan koreksi aset, bukan di ujung mana pun.
+            // Di sebelah kiri yaw ia berguling di sumbu dunia dan modelnya tumbang; di sebelah
+            // kanan koreksi aset ia berguling di sumbu mesh yang sudah direbahkan, dan yang
+            // terlihat model berputar seperti jarum jam di atas tanah. Di tengah, sumbunya adalah
+            // arah jalannya sendiri — itu yang dibaca sebagai badan yang mengebor.
+            Quaternion facing = Quaternion.Euler(0f, yaw, 0f) * roll * meshRotation;
 
             if (!animate)
             {

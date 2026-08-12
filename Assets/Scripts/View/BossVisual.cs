@@ -84,7 +84,12 @@ namespace Proto
             // tersambung — bukan sebagai ujung.
             _tail = new EnemyRenderer(def.TailMesh, palette, capacity, bodyScale,
                 false, null, true, def.BoneSkin, def.TailMeshRotation, def.BodyEmission);
+
+            _spin = def.SpinDegreesPerSecond;
         }
+
+        /// <summary>Derajat per detik badan berguling. Kepala mengambil nilai yang sama, negatif.</summary>
+        readonly float _spin;
 
         public void Begin()
         {
@@ -112,6 +117,17 @@ namespace Proto
 
         public void Draw(float time)
         {
+            if (Mathf.Abs(_spin) > 0.0001f)
+            {
+                // Berlawanan, dan sengaja BUKAN sekadar dua kecepatan berbeda. Yang dibaca mata
+                // sebagai mengebor adalah PERLAWANAN — dua bagian yang berputar ke arah yang
+                // sama, secepat apa pun, cuma terbaca sebagai satu benda yang berguling.
+                float roll = time * _spin;
+                _head.SetRoll(-roll);
+                _body.SetRoll(roll);
+                _tail.SetRoll(roll);
+            }
+
             _head.Draw(time);
             _body.Draw(time);
             _tail.Draw(time);

@@ -108,9 +108,18 @@ namespace Proto.EditorTools
                 // Kepala butuh 180 derajat TAMBAHAN, dan ekor tidak. Diperiksa berdampingan di
                 // play mode: setelah direbahkan, moncong kepala menunjuk −Z sementara ujung ekor
                 // juga menunjuk −Z. Ekor memang harus begitu (menjauhi kepala), kepala tidak.
-                boss.HeadMeshRotation = new Vector3(0f, 180f, 90f);
-                boss.BodyMeshRotation = new Vector3(0f, 0f, 90f);
-                boss.TailMeshRotation = new Vector3(0f, 0f, 90f);
+                //
+                // HANYA untuk boss yang memakai mesh BAWAAN. Angka-angka ini diukur dari aset
+                // SnakeBoss dan tidak berlaku untuk aset lain: tiga varian boss ikut menerimanya
+                // secara membabi buta, dan cacing tampil dengan KEPALA TERBALIK sampai pemilik
+                // project melihatnya sendiri. Boss yang membawa berkas mesh sendiri sekarang
+                // memegang koreksinya sendiri, dan pass ini tidak menyentuhnya.
+                if (!HasOwnMeshes(boss))
+                {
+                    boss.HeadMeshRotation = new Vector3(0f, 180f, 90f);
+                    boss.BodyMeshRotation = new Vector3(0f, 0f, 90f);
+                    boss.TailMeshRotation = new Vector3(0f, 0f, 90f);
+                }
 
                 // Diturunkan dari mesh yang BENAR-BENAR dipakai boss ini, bukan dari mesh bawaan.
                 // Varian berduri panjangnya berbeda 1,3% dari ruas polos, dan mengukur yang salah
@@ -194,6 +203,18 @@ namespace Proto.EditorTools
         /// sambil berteriak. Salah ketik satu huruf tanpa peringatan akan terbaca sebagai
         /// "variannya tidak jadi", dan yang dicari orang berikutnya adalah bug di renderer.
         /// </summary>
+        /// <summary>
+        /// Benar kalau boss ini membawa berkas mesh sendiri, jadi koreksi orientasi bawaan
+        /// (yang diukur dari aset SnakeBoss) TIDAK berlaku untuknya.
+        ///
+        /// Cukup salah satunya terisi. Boss yang memakai kepala sendiri dengan badan bawaan tetap
+        /// punya kepala yang orientasinya tidak bisa ditebak dari aset ular.
+        /// </summary>
+        static bool HasOwnMeshes(BossDefinition boss) =>
+            !string.IsNullOrEmpty(boss.HeadMeshFile) ||
+            !string.IsNullOrEmpty(boss.BodyMeshFile) ||
+            !string.IsNullOrEmpty(boss.TailMeshFile);
+
         static Mesh PickMesh(string file, Mesh fallback, string bossId, string part)
         {
             if (string.IsNullOrWhiteSpace(file)) return fallback;

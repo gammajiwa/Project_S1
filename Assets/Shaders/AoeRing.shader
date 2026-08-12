@@ -19,6 +19,16 @@ Shader "Grimoire/AoeRing"
         _RimAlpha ("Kepekatan tepi", Range(0, 1)) = 0.4
         _RimStart ("Mulai tepi (0-1)", Range(0.5, 0.98)) = 0.86
         _Pulse ("Denyut tepi", Range(0, 0.5)) = 0.12
+
+        // Aba-aba berwaktu. 1 = penanda biasa (kubangan Zone, cincin Orbital, gelombang) dan
+        // shader ini berperilaku persis seperti sebelum parameter ini ada.
+        //
+        // Di bawah 1 ia jadi TELEGRAF: isinya merambat dari pusat ke tepi, dan saat menyentuh
+        // tepi itulah hantamannya mendarat. Dulu waktu ini digambar dengan MENSKALAKAN
+        // silindernya (1,45x menciut ke 1x) — dan silinder polos yang berubah ukuran adalah
+        // persis yang terbaca sebagai primitif. Lebih buruk lagi, selama menciut cincinnya
+        // berbohong soal radius: yang ditandai lebih lebar dari yang benar-benar dilukai.
+        _Fill ("Isi telegraf (0-1)", Range(0, 1)) = 1
     }
 
     SubShader
@@ -47,6 +57,7 @@ Shader "Grimoire/AoeRing"
                 float _RimAlpha;
                 float _RimStart;
                 float _Pulse;
+                float _Fill;
             CBUFFER_END
 
             struct Attributes
@@ -80,12 +91,30 @@ Shader "Grimoire/AoeRing"
                 // dan yang boleh menarik mata cuma garis jangkauannya.
                 rim *= 1.0 - _Pulse + _Pulse * (0.5 + 0.5 * sin(_Time.y * 4.2 + r * 6.0));
 
-                float a = saturate(_FillAlpha + rim * _RimAlpha) * _BaseColor.a;
+                // step(), bukan if(): satu hujan Barrage menaruh sampai dua belas telegraf di
+                // layar sekaligus, dan cabang dinamis di fragment membayar kedua sisinya.
+                float timed = 1.0 - step(0.999, _Fill);
+
+                // Bidang isi. Di luar mode telegraf nilainya dipaksa 1, jadi penanda biasa
+                // piksel-per-piksel sama persis dengan sebelum parameter ini ada.
+                float body = lerp(1.0, 1.0 - smoothstep(_Fill - 0.05, _Fill, r), timed);
+
+                // Muka gelombang yang merambat. Ini yang membuatnya terbaca sebagai HITUNGAN
+                // MUNDUR dan bukan sekadar bidang yang membesar — mata mengunci garis terang
+                // yang bergerak, bukan luas bidang yang berubah pelan.
+                float lead = smoothstep(_Fill - 0.09, _Fill, r) *
+                             (1.0 - smoothstep(_Fill, _Fill + 0.03, r)) * timed;
+
+                float a = saturate(_FillAlpha * body + rim * _RimAlpha + lead * _RimAlpha) * _BaseColor.a;
 
                 // Tepi diberi sedikit dorongan ke putih supaya tetap terbaca di atas warna
                 // lantai apa pun — warna murni yang gelap tenggelam di rumput gelap. Dorongan
                 // ini ikut dikecilkan: putih itu yang bikin cincinnya menyilaukan.
                 float3 rgb = lerp(_BaseColor.rgb, saturate(_BaseColor.rgb + 0.2), rim * 0.35);
+
+                // Mukanya lebih putih dari tepi: dia harus menang melawan tepi yang diam,
+                // kalau tidak yang bergerak justru jadi yang paling samar.
+                rgb = lerp(rgb, saturate(_BaseColor.rgb + 0.45), lead * 0.8);
 
                 return half4(rgb, a);
             }

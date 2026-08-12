@@ -211,6 +211,24 @@ namespace Proto.EditorTools
             thirdeye.Boon = Mods(M(StatKind.RangePct, 0.5f), M(StatKind.CritChance, 0.15f));
             thirdeye.Bane = Mods(M(StatKind.AreaPct, -0.30f));
 
+            // Pakta crit yang MENUNTUT dibangun ke arahnya, bukan sekadar menambah angka.
+            //
+            // Tiga pakta lama sudah menyentuh crit, tapi ketiganya memberi crit sebagai bonus di
+            // atas build apa pun — diambil, damage naik, selesai. Yang ini menaruh taruhannya:
+            // pukulan biasa dipotong hampir separuh, dan yang mengembalikannya cuma crit. Diambil
+            // tanpa satu pun piece crit lain, ia MERUGIKAN. Diambil di atas Whetstone + Razor
+            // Sigil, ia jadi build terkeras di buku.
+            //
+            // Hitungannya di angka bawaan: non-crit 0,55x; crit 0,55 x (1,5 + 1,5) = 1,65x. Pada
+            // 40% peluang, nilai harapannya hampir persis 1,0 — jadi yang dibeli bukan damage,
+            // melainkan VARIANSI. Naikkan peluangnya sedikit saja dan seluruhnya jadi keuntungan.
+            var tremor = P(into, "tangangemetar", "TANGAN GEMETAR", new Color(0.85f, 0.25f, 0.25f),
+                boon: "Crit +40%, damage crit +150%",
+                bane: "Semua damage −45%",
+                blurb: "\"Tanganmu tidak lagi bisa diam. Sesekali ia berhenti tepat di tempat yang benar.\"");
+            tremor.Boon = Mods(M(StatKind.CritChance, 0.40f), M(StatKind.CritDamage, 1.5f));
+            tremor.Bane = Mods(M(StatKind.DamagePct, -0.45f));
+
             var venom = P(into, "bisa", "BISA", new Color(0.45f, 0.8f, 0.35f),
                 boon: "Tiap tempelan ailment membawa 2 POIN tambahan",
                 bane: "Damage langsung −30%",

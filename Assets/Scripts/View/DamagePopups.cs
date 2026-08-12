@@ -30,6 +30,19 @@ namespace Proto
 
         static readonly Color LightHit = new Color(1f, 0.96f, 0.86f);
 
+        /// <summary>
+        /// Warna crit, dan ia sengaja BUKAN warna skillnya.
+        ///
+        /// Keputusan pemilik project: crit harus terbaca SERAGAM. Seluruh sisa layar sudah
+        /// warna-warni per skill; kalau crit ikut memakai warna skillnya, satu-satunya
+        /// pembedanya tinggal ukuran — dan ukuran sudah dipakai untuk menyatakan seberapa besar
+        /// gigitannya terhadap HP. Satu merah pekat untuk semua crit, apa pun yang melemparnya.
+        /// </summary>
+        static readonly Color CritInk = new Color(0.88f, 0.07f, 0.07f);
+
+        /// <summary>Pengali ukuran huruf crit di atas ukuran yang sudah dihitung dari share HP.</summary>
+        const float CritScale = 1.5f;
+
         class Popup
         {
             public Text Label;
@@ -40,6 +53,7 @@ namespace Proto
             public float Age;
             public float Bump;
             public Color Tint;
+            public bool Crit;
         }
 
         readonly Popup[] _pool = new Popup[PoolSize];
@@ -83,16 +97,16 @@ namespace Proto
         /// One damage event. <paramref name="maxHp"/> is what turns a raw number into a readable
         /// one — it decides how big and how hot the label gets.
         /// </summary>
-        public void Push(Vector3 world, float amount, float maxHp, Color tint)
+        public void Push(Vector3 world, float amount, float maxHp, Color tint, bool crit = false)
         {
             if (amount <= 0f) return;
 
-            var target = FindMergeTarget(world);
+            var target = FindMergeTarget(world, crit);
             if (target != null)
             {
                 target.Amount += amount;
                 target.Life = LifeSpan;
-                target.Bump = 1f;
+                target.Bump = crit ? 1.6f : 1f;
                 // Gabungan lintas skill memakai warna penyumbang TERAKHIR. Mencampur warna
                 // menghasilkan lumpur cokelat yang bukan milik siapa-siapa.
                 target.Tint = tint;
@@ -105,12 +119,21 @@ namespace Proto
             slot.Amount = amount;
             slot.Life = LifeSpan;
             slot.Age = 0f;
-            slot.Bump = 1f;
+            slot.Bump = crit ? 1.6f : 1f;
             slot.Tint = tint;
+            slot.Crit = crit;
             Apply(slot, maxHp);
         }
 
-        Popup FindMergeTarget(Vector3 world)
+        /// <summary>
+        /// Crit dan non-crit TIDAK PERNAH digabung, walau mendarat di petak dan detik yang sama.
+        ///
+        /// Penggabungan ada untuk menjaga layar tetap terbaca, dan itu benar selama yang digabung
+        /// sama-sama "satu gigitan lagi". Crit bukan itu — crit adalah kejadian, dan menuangnya
+        /// ke dalam angka biasa yang kebetulan ada di dekat situ menghapus satu-satunya kali
+        /// pemain seharusnya melihatnya.
+        /// </summary>
+        Popup FindMergeTarget(Vector3 world, bool crit)
         {
             float bestSqr = MergeRadius * MergeRadius;
             Popup best = null;
@@ -118,7 +141,7 @@ namespace Proto
             for (int i = 0; i < PoolSize; i++)
             {
                 var p = _pool[i];
-                if (p.Life <= 0f || p.Age > MergeWindow) continue;
+                if (p.Life <= 0f || p.Age > MergeWindow || p.Crit != crit) continue;
 
                 Vector3 d = p.World - world;
                 d.y = 0f;
@@ -162,7 +185,20 @@ namespace Proto
             // Rentangnya dilebarkan (dulu 16-34): dengan angka besar, ukuran adalah satu-satunya
             // hal yang membedakan gigitan kecil dari pukulan yang mematikan — dua angka empat
             // digit yang seukuran terbaca sama saja betapa pun jauh bedanya.
-            p.Label.fontSize = Mathf.RoundToInt(Mathf.Lerp(20f, 54f, Mathf.Clamp01(share * 1.8f)));
+            float size = Mathf.Lerp(20f, 54f, Mathf.Clamp01(share * 1.8f));
+            if (p.Crit) size *= CritScale;
+
+            p.Label.fontSize = Mathf.RoundToInt(size);
+
+            if (p.Crit)
+            {
+                // Tanpa pemucatan share. Crit kecil tetap crit, dan memucatkannya ke krem akan
+                // membuat separuh crit di game ini tampil sebagai angka biasa yang kebetulan
+                // agak besar — persis yang tidak boleh terjadi pada satu-satunya kejadian yang
+                // dijanjikan terbaca seragam.
+                p.Label.color = CritInk;
+                return;
+            }
 
             // Warna = milik SKILL yang melukai; panasnya tetap dari share. Gigitan kecil
             // pucat mendekati krem supaya lantai tidak penuh konfeti pekat, pukulan besar
