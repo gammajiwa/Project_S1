@@ -107,6 +107,8 @@ namespace Proto.EditorTools
             light.intensity = 1.15f;
             light.shadows = LightShadows.Soft;
 
+            Dress(root.transform, room);
+
             var camGo = new GameObject("Kamera Ruangan");
             camGo.transform.SetParent(root.transform, false);
             // TOP-DOWN, sama seperti arena — permintaan pemilik project: "semua kalo bisa itu
@@ -144,6 +146,131 @@ namespace Proto.EditorTools
                 case RoomLoader.SlotScene: return 800f;
                 default: return 0f;
             }
+        }
+
+        /// <summary>
+        /// Isi ruangan. Primitif, dan itu disengaja: yang dinilai di sini TATA LETAK dan
+        /// siluetnya dari atas, bukan kualitas modelnya. Begitu bentuknya benar, tiap kubus
+        /// bisa ditukar model sungguhan tanpa satu baris pun berubah — namanya sudah dipisah
+        /// per benda supaya bisa dicari di Hierarchy.
+        ///
+        /// Semua diletakkan dengan asumsi kamera menatap dari atas pada 62 derajat: benda tinggi
+        /// menutupi apa pun di belakangnya, jadi yang penting duduk di DEPAN, dan yang tinggi
+        /// didorong ke belakang.
+        /// </summary>
+        static void Dress(Transform root, Room room)
+        {
+            var ink = room.Wall * 0.55f;
+            var wood = new Color(0.28f, 0.18f, 0.11f);
+            var stone = new Color(0.3f, 0.29f, 0.32f);
+
+            switch (room.Scene)
+            {
+                case RoomLoader.ShopScene:
+                {
+                    // Meja MELINTANG, pedagang di belakangnya. Ini yang membuat ruangan terbaca
+                    // sebagai toko dalam satu pandang: ada batas, dan ada yang berdiri di
+                    // seberang batas itu.
+                    Prop(root, "Meja", PrimitiveType.Cube, new Vector3(0f, 0.9f, 0.5f),
+                        new Vector3(11f, 1.8f, 2.2f), wood);
+
+                    Prop(root, "Pedagang_Badan", PrimitiveType.Capsule, new Vector3(0f, 1.7f, 3.4f),
+                        new Vector3(1.5f, 1.7f, 1.5f), ink);
+                    Prop(root, "Pedagang_Kepala", PrimitiveType.Sphere, new Vector3(0f, 3.5f, 3.4f),
+                        Vector3.one * 1.1f, room.Light * 0.8f);
+
+                    // Peti di sisi, bukan di tengah: yang di tengah menutupi dagangan yang
+                    // digambar UI tepat di atas mejanya.
+                    Prop(root, "Peti_Kiri", PrimitiveType.Cube, new Vector3(-6.6f, 0.7f, 2.4f),
+                        new Vector3(1.8f, 1.4f, 1.8f), wood * 0.8f);
+                    Prop(root, "Peti_Kanan", PrimitiveType.Cube, new Vector3(6.6f, 0.7f, 2.4f),
+                        new Vector3(1.8f, 1.4f, 1.8f), wood * 0.8f);
+                    Prop(root, "Peti_Tumpuk", PrimitiveType.Cube, new Vector3(6.6f, 1.9f, 2.4f),
+                        new Vector3(1.3f, 1f, 1.3f), wood * 0.7f);
+                    break;
+                }
+
+                case RoomLoader.EventScene:
+                {
+                    // BUKU, bukan orang. Pakta adalah tawaran dari sesuatu yang tidak berwajah;
+                    // NPC yang punya wajah membuat pemain mencari motifnya, dan motif yang tidak
+                    // pernah dijelaskan terbaca sebagai cerita yang bolong. Buku tidak menawar,
+                    // ia cuma terbuka.
+                    Prop(root, "Altar", PrimitiveType.Cube, new Vector3(0f, 0.55f, 1.5f),
+                        new Vector3(5f, 1.1f, 3.4f), stone);
+                    Prop(root, "Altar_Kaki", PrimitiveType.Cube, new Vector3(0f, 0.2f, 1.5f),
+                        new Vector3(6f, 0.4f, 4.2f), stone * 0.8f);
+
+                    // Dua halaman miring saling menyandar — itu siluet buku terbuka dari atas.
+                    var kiri = Prop(root, "Halaman_Kiri", PrimitiveType.Cube,
+                        new Vector3(-1.05f, 1.35f, 1.5f), new Vector3(2.2f, 0.12f, 2.8f),
+                        new Color(0.86f, 0.8f, 0.66f));
+                    kiri.transform.localRotation = Quaternion.Euler(0f, 0f, 9f);
+
+                    var kanan = Prop(root, "Halaman_Kanan", PrimitiveType.Cube,
+                        new Vector3(1.05f, 1.35f, 1.5f), new Vector3(2.2f, 0.12f, 2.8f),
+                        new Color(0.86f, 0.8f, 0.66f));
+                    kanan.transform.localRotation = Quaternion.Euler(0f, 0f, -9f);
+
+                    Prop(root, "Punggung", PrimitiveType.Cube, new Vector3(0f, 1.28f, 1.5f),
+                        new Vector3(0.5f, 0.2f, 2.9f), new Color(0.35f, 0.1f, 0.14f));
+
+                    // Cahaya keluar DARI halamannya. Itu satu-satunya sumber terang di ruangan,
+                    // jadi mata jatuh ke buku sebelum sempat menyapu sisanya.
+                    var glowGo = new GameObject("Pendar_Halaman");
+                    glowGo.transform.SetParent(root, false);
+                    glowGo.transform.localPosition = new Vector3(0f, 2.2f, 1.5f);
+                    var glow = glowGo.AddComponent<Light>();
+                    glow.type = LightType.Point;
+                    glow.color = new Color(0.72f, 0.5f, 1f);
+                    glow.intensity = 6f;
+                    glow.range = 12f;
+                    glow.shadows = LightShadows.None;
+                    break;
+                }
+
+                case RoomLoader.SlotScene:
+                {
+                    Prop(root, "Mesin_Badan", PrimitiveType.Cube, new Vector3(0f, 2f, 2f),
+                        new Vector3(7f, 4f, 2.4f), stone);
+                    Prop(root, "Mesin_Alas", PrimitiveType.Cube, new Vector3(0f, 0.4f, 2f),
+                        new Vector3(8f, 0.8f, 3.2f), stone * 0.75f);
+
+                    // Tiga gulungan, direbahkan supaya sumbunya mendatar — dari atas yang terbaca
+                    // tiga silinder sejajar, dan itu bahasa mesin slot di mana pun.
+                    for (int i = 0; i < 3; i++)
+                    {
+                        var reel = Prop(root, "Gulungan_" + i, PrimitiveType.Cylinder,
+                            new Vector3((i - 1) * 2.1f, 2.6f, 0.9f), new Vector3(1.6f, 0.7f, 1.6f),
+                            new Color(0.55f, 0.42f, 0.2f));
+                        reel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+                    }
+
+                    Prop(root, "Tuas_Batang", PrimitiveType.Cube, new Vector3(4.4f, 2.6f, 1.2f),
+                        new Vector3(0.25f, 2.4f, 0.25f), new Color(0.4f, 0.38f, 0.42f));
+                    Prop(root, "Tuas_Kenop", PrimitiveType.Sphere, new Vector3(4.4f, 4f, 1.2f),
+                        Vector3.one * 0.8f, new Color(0.75f, 0.15f, 0.18f));
+                    break;
+                }
+            }
+        }
+
+        static GameObject Prop(Transform root, string name, PrimitiveType shape,
+            Vector3 pos, Vector3 scale, Color color)
+        {
+            var go = GameObject.CreatePrimitive(shape);
+            go.name = name;
+            go.transform.SetParent(root, false);
+            go.transform.localPosition = pos;
+            go.transform.localScale = scale;
+
+            // Collider dicabut: tidak ada yang berjalan di ruangan ini, dan collider yang
+            // tertinggal ikut disapu fisika tiap frame untuk benda yang tidak pernah ditabrak.
+            var col = go.GetComponent<Collider>();
+            if (col != null) Object.DestroyImmediate(col);
+
+            Paint(go, color);
+            return go;
         }
 
         static void Paint(GameObject go, Color color)
