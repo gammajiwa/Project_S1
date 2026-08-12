@@ -86,6 +86,15 @@ namespace Proto
         public float EnemySpeedPerWave = 0.04f;
 
         [Tooltip("Menumpuk PER musuh yang menempel. Lima musuh = lima kali angka ini.")]
+        // TURUN DRASTIS, dan itu syarat dari kerumunan yang membesar - bukan pelunakan.
+        //
+        // Damage sentuh MENUMPUK per musuh yang menempel. Selama angka ini besar, jumlah musuh
+        // dan mematikannya musuh adalah tuas yang SAMA: menaikkan kerumunan otomatis menaikkan
+        // kematian, dan tidak ada cara menaikkan satu tanpa satunya. Itu persis keluhan pemilik
+        // project - "kalau sedikit kurang puas, kalau kebanyakan gampang mati".
+        //
+        // Dipisah dengan menurunkan harga per musuh sebanding dengan naiknya jumlah. Yang dibeli:
+        // berdiri di tengah gerombolan boleh SEBENTAR, berkemah di dalamnya tetap membunuh.
         public float EnemyContactDps = 14f;
 
         [Tooltip("Tambahan damage sentuh per wave. Tanpa ini musuh wave 40 menyakiti persis " +
@@ -109,6 +118,10 @@ namespace Proto
         // ditindaklanjuti. Lajunya tetap ada, tapi cuma mengatur kecepatan datangnya.
         public int EnemiesBase = 12;
 
+        // Suku LINEAR yang dinaikkan, bukan suku pertumbuhannya. Pertumbuhan itu pangkat:
+        // menaikkannya sedikit membuat wave awal nyaris tak berubah lalu meledak di wave 20
+        // sampai menabrak cap. Suku linear menambah jumlah SECARA MERATA, jadi wave 4 ke atas
+        // langsung terasa ramai tanpa endgame kehilangan bentuknya.
         public int EnemiesPerWave = 6;
 
         [Min(1f)] public float EnemyCountGrowth = 1.05f;
