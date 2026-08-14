@@ -65,6 +65,20 @@ MonoBehaviour:
     Clip: {fileID: 8300000, guid: 1da8456a871f0ae4eb66189ee6ee382f, type: 3}
   - Reaction: {fileID: 11400000, guid: 4291dca7702dbc848a4a9827c125b78a, type: 2}
     Clip: {fileID: 8300000, guid: 8a1e4dfdd792e2c4dbde5e7bf08a6a55, type: 3}
+  - Reaction: {fileID: 11400000, guid: a00ca3c199c137a47a5bdc524601d841, type: 2}
+    Clip: {fileID: 8300000, guid: 4c95356c5e13b7849a0a78275a537208, type: 3}
+  - Reaction: {fileID: 11400000, guid: 26e81678a43337e42950bce0a894a9cf, type: 2}
+    Clip: {fileID: 8300000, guid: c7803314eef69d142a3109dedf13be3b, type: 3}
+  - Reaction: {fileID: 11400000, guid: 38bac42082efccc4585916b3af3e52d8, type: 2}
+    Clip: {fileID: 8300000, guid: dd06fcd3b89e5234bbe0fccc8944d625, type: 3}
+  - Reaction: {fileID: 11400000, guid: 2b075b71840171f46b7786e861931257, type: 2}
+    Clip: {fileID: 8300000, guid: 28b6d88201d54904fb6ab876ba10639f, type: 3}
+  - Reaction: {fileID: 11400000, guid: 5ce2531fd1d0f7747a7cfad327deaee1, type: 2}
+    Clip: {fileID: 8300000, guid: c19e48e7fa5afbd43b33cbf22bff44a1, type: 3}
+  - Reaction: {fileID: 11400000, guid: e2c297030f59d7a449471321ca355bdc, type: 2}
+    Clip: {fileID: 8300000, guid: 4378ee1d644536546a27ecf023b14aa7, type: 3}
+  - Reaction: {fileID: 11400000, guid: a34406502b5c59c40a76da7092851be5, type: 2}
+    Clip: {fileID: 8300000, guid: 086e02b367057c945befbc91ff868d9a, type: 3}
   PiecePick: {fileID: 8300000, guid: d6950ca84db4cc14598a78ddbe9b543c, type: 3}
   PiecePlace: {fileID: 8300000, guid: 6d2b9f2735a4a4646b43b35af186c048, type: 3}
   PieceHover: {fileID: 8300000, guid: a04a3e5a01f52704a853498825613085, type: 3}
