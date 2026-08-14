@@ -63,11 +63,19 @@ namespace Proto
             panel.anchorMin = new Vector2(1f, 1f);
             panel.anchorMax = new Vector2(1f, 1f);
             panel.pivot = new Vector2(1f, 1f);
-            panel.anchoredPosition = new Vector2(-14f, -84f);
+
+            // y -120, bukan -84: tombol siang/malam milik HUD berakhir di y -110, dan di -84
+            // bilah ini duduk persis di atasnya — dua label saling tindih dan dua-duanya
+            // tidak terbaca. Angka ini mengekor GrimoireLayout (Margin 20 + 34 + 22 + 34).
+            panel.anchoredPosition = new Vector2(-14f, -120f);
             panel.sizeDelta = new Vector2(258f, 92f);
 
             var bg = panel.gameObject.AddComponent<Image>();
-            bg.color = new Color(0.04f, 0.05f, 0.08f, 0.66f);
+            bg.color = new Color(0.055f, 0.05f, 0.09f, 0.85f);
+
+            var edge = panel.gameObject.AddComponent<Outline>();
+            edge.effectColor = new Color(0.76f, 0.62f, 0.34f, 0.6f);
+            edge.effectDistance = new Vector2(1f, 1f);
 
             var layout = panel.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 3f;
@@ -257,7 +265,7 @@ namespace Proto
             go.transform.SetParent(parent, false);
 
             var img = go.AddComponent<Image>();
-            img.color = new Color(0.16f, 0.18f, 0.26f, 0.95f);
+            img.color = new Color(0.11f, 0.1f, 0.16f, 0.95f);
 
             var button = go.AddComponent<Button>();
             button.targetGraphic = img;
@@ -274,7 +282,7 @@ namespace Proto
             text.font = BarFont();
             text.fontSize = 12;
             text.alignment = TextAnchor.MiddleCenter;
-            text.color = new Color(0.92f, 0.94f, 1f);
+            text.color = new Color(0.9f, 0.86f, 0.76f);
             text.text = caption;
             text.horizontalOverflow = HorizontalWrapMode.Overflow;
 
