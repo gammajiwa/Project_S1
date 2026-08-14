@@ -153,7 +153,6 @@ namespace Proto
         public void AttachRooms(RoomLoader rooms) => _rooms = rooms;
 
         Image _mapBg;
-        Text _mapTitle;
         Text _mapLegend;
         Image[] _mapEdges = System.Array.Empty<Image>();
 
@@ -221,7 +220,9 @@ namespace Proto
         // Jarak antar lantai. Renggang itu keputusan, bukan sisa ruang: node yang berdempetan
         // membuat jalur antar lantai jadi garis pendek yang tak terbaca arahnya, dan seluruh
         // act terlihat bantet walau isinya banyak.
-        const float MapFloorGap = 170f;
+        // 210 (dulu 170): node sekarang seukuran ibu jari dan boss empat kali lipatnya —
+        // di jarak lantai yang lama, kaki boss menindih node di bawahnya.
+        const float MapFloorGap = 210f;
 
         // Tirai hitam di atas SEGALANYA: menutup pergantian dari peta ke tempat baru.
         Image _fadeCover;
@@ -3423,20 +3424,16 @@ namespace Proto
                 _mapBg.preserveAspect = false;
             }
 
-            // Tinta di atas perkamen. Krem dan biru-muda yang lama dipilih untuk latar
-            // biru-gelap; di atas kertas terang keduanya lenyap.
-            _mapTitle = MakeText("MapTitle", Vector2.zero, new Vector2(480f, 30f), 22,
-                _theme != null ? _theme.MapTitleInk : new Color(1f, 0.9f, 0.6f),
-                Vector2.zero, TextAnchor.MiddleCenter);
+            // Tinta di atas perkamen. Judul di kepala peta DIBUANG atas permintaan pemilik
+            // project — peta ber-icon besar sudah bercerita sendiri, dan satu baris teks di
+            // atasnya cuma memakan ruang lantai teratas. Legenda bawah dipertahankan.
             _mapLegend = MakeText("MapLegend", Vector2.zero, new Vector2(620f, 40f), 13,
                 _theme != null ? _theme.MapLegendInk : new Color(0.8f, 0.85f, 0.9f),
                 Vector2.zero, TextAnchor.MiddleCenter);
 
-            _mapTitle.transform.SetParent(_mapRoot, false);
             _mapLegend.transform.SetParent(_mapRoot, false);
 
             Centre(_mapBg.rectTransform);
-            Centre(_mapTitle.rectTransform);
             Centre(_mapLegend.rectTransform);
 
             // Jalur = bezier PUTUS-PUTUS, pola yang sama dengan peta referensi (RoguelikeMapUI):
@@ -3489,18 +3486,16 @@ namespace Proto
                 _mapIcons[i].enabled = false;
             }
 
-            // KARAKTER pemain di peta: MERAH, bukan kuning. Kuning sudah dipakai jalur
-            // "bisa dituju" — token pemain yang ikut kuning tenggelam di antaranya, kata
-            // mata pemilik project. Merah tidak dipakai apa pun di perkamen ini, jadi
-            // "itu gw" terbaca dalam sekejap TANPA label; tulisan KAMU yang dulu menempel
-            // di atasnya dibuang atas permintaan yang sama — icon yang jelas tidak butuh
-            // keterangan. Gambarnya icon dari tema kalau ada; cadangannya bulatan `_circle`
+            // KARAKTER pemain di peta: HITAM pekat, mengikuti palet peta rujukannya —
+            // semua MUSUH bertinta merah, jadi satu-satunya tinta hitam di perkamen ini
+            // otomatis terbaca "itu gw" tanpa label; tulisan KAMU dibuang atas permintaan
+            // yang sama. Gambarnya icon dari tema kalau ada; cadangannya bulatan `_circle`
             // yang sudah dibuat BuildSkillWidgets (jalan lebih dulu, lihat Init) — sprite
             // bulat bawaan Unity TIDAK bisa dipakai: GetBuiltinResource gagal saat runtime.
             var youIcon = _theme != null ? _theme.MapIconYou : null;
 
-            _mapMark = MakeImage("MapMark", Vector2.zero, new Vector2(48f, 48f),
-                new Color(0.85f, 0.12f, 0.08f, 1f), Vector2.zero);
+            _mapMark = MakeImage("MapMark", Vector2.zero, new Vector2(72f, 72f),
+                new Color(0.07f, 0.05f, 0.04f, 1f), Vector2.zero);
             _mapMark.transform.SetParent(_mapRoot, false);
             Centre(_mapMark.rectTransform);
             _mapMark.sprite = youIcon != null ? youIcon : _circle;
@@ -3524,7 +3519,6 @@ namespace Proto
             _fadeCover.enabled = false;
 
             _mapBg.enabled = false;
-            _mapTitle.enabled = false;
             _mapLegend.enabled = false;
 
             // ---- slot ----
@@ -3871,7 +3865,6 @@ namespace Proto
             if (_mapBg != null)
             {
                 _mapBg.enabled = open;
-                _mapTitle.enabled = open;
                 _mapLegend.enabled = open;
                 if (_mapGloom != null) _mapGloom.enabled = open;
             }
@@ -4108,10 +4101,10 @@ namespace Proto
 
 
         /// <summary>Batas atas scroll: sisa tinggi act yang tidak muat di panel.
-        /// Konstantanya = ruang tunggu bawah (310) + kepala boss (140 — node boss sekarang
-        /// 4x lipat, kepalanya butuh ruang dua kali dari dulu) + jendela atas (60).</summary>
+        /// Konstantanya = ruang tunggu bawah (310) + kepala boss (210 — node boss 4x dari
+        /// dasar yang sudah digedekan, setengah badannya 150-an) + jendela atas (60).</summary>
         float MapScrollMax(RunMap map, Rect panel) =>
-            Mathf.Max(0f, (map.Floors - 1) * MapFloorGap - (panel.height - 510f));
+            Mathf.Max(0f, (map.Floors - 1) * MapFloorGap - (panel.height - 580f));
 
         /// <summary>Jendela vertikal tempat node boleh tergambar — di luarnya disembunyikan,
         /// supaya peta yang di-scroll tidak menimpa judul dan legenda.</summary>
@@ -4126,9 +4119,6 @@ namespace Proto
             _mapBg.rectTransform.anchoredPosition = panel.center;
 
             LayoutMapGloom(panel);
-
-            _mapTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 30f);
-            _mapTitle.text = Loc.F(_mapChoose ? "map.title.choose" : "map.title.view", _run.Act);
 
             _mapLegend.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMin + 52f);
             _mapLegend.text = Loc.T(_mapChoose ? "map.legend.choose" : "map.legend.view");
@@ -4213,10 +4203,10 @@ namespace Proto
                 // Yang kedua JENIS, dan ini yang baru. Peta yang semua nodenya sebesar satu sama
                 // lain menuntut membaca hurufnya satu per satu untuk tahu ada apa di depan.
                 // Ukuran menjawab itu dari jarak pandang: yang besar berarti besar taruhannya.
-                // Naik dari 46/38/32: "ini kekecilan" kata mata pemilik project, dan setelah
-                // holder dibuang, icon-nya sendirilah seluruh nodenya — ia boleh sebesar itu
-                // karena tidak ada lagi kotak yang menumpuk di belakangnya.
-                float size = (now ? 66f : next ? 56f : 46f) * KindScale(n.Kind);
+                // Dua kali dinaikkan dan dua kali masih "kekecilan" — sekarang seukuran node
+                // peta Slay the Spire yang jadi rujukannya: icon adalah ISI petanya, bukan
+                // hiasan di antara jalur. Jalurnya cuma pengantar antar icon.
+                float size = (now ? 104f : next ? 88f : 76f) * KindScale(n.Kind);
 
                 // Jitter ber-seed, jadi diam di tempat. Boss dikecualikan: ia satu-satunya node
                 // yang ukurannya BERARTI SESUATU secara mutlak, dan boss yang kebetulan diundi
@@ -4245,13 +4235,20 @@ namespace Proto
 
                 if (icon != null)
                 {
-                    // Icon-nya SENDIRI yang jadi node — tanpa kotak, tanpa cincin. Silhouette
-                    // putihnya diwarnai warna jenisnya, digelapkan ~30% ke arah tinta: palet
-                    // KindColor dipilih untuk kotak berhuruf hitam, dan cyan atau emas murni
-                    // nyaris hilang di atas perkamen terang. Digelapkan, ia jadi tinta
-                    // berwarna yang kebaca dari jauh.
-                    var inkTone = Color.Lerp(tone, Color.black, 0.3f);
-                    inkTone.a = tone.a;
+                    // Icon-nya SENDIRI yang jadi node — tanpa kotak, tanpa cincin. Warnanya
+                    // TINTA ala peta rujukan (Slay the Spire): musuh merah bata, elite merah
+                    // bara, sisanya tinta gelap di keluarga warna jenisnya. Palet KindColor
+                    // yang lama terang — dipakai langsung di icon, ia lenyap di perkamen.
+                    var inkTone = KindInk(n.Kind);
+
+                    if (walked && !now) inkTone.a = 0.5f;
+                    else if (!now && !next)
+                    {
+                        // Terkunci: dipucatkan ke arah abu perkamen — jenisnya masih kebaca
+                        // buat merencanakan jalur, tapi jelas belum bisa diinjak.
+                        inkTone = Color.Lerp(inkTone, new Color(0.5f, 0.46f, 0.4f), 0.45f);
+                        inkTone.a = 0.62f;
+                    }
 
                     _mapIcons[i].sprite = icon;
                     _mapIcons[i].rectTransform.anchoredPosition = pos;
@@ -4299,14 +4296,37 @@ namespace Proto
         /// </summary>
         static float KindScale(RunNodeKind kind)
         {
+            // Selisihnya DILEBARKAN atas permintaan pemilik project: "ukurannya jangan sama".
+            // Beda 10-20% tidak pernah terbaca dari jarak pandang peta — beda antar jenis
+            // harus kelihatan tanpa membandingkan dua node berdampingan.
             switch (kind)
             {
                 case RunNodeKind.Boss: return 4f;
-                case RunNodeKind.Elite: return 1.42f;
-                case RunNodeKind.Shop: return 1.22f;
-                case RunNodeKind.Gamble: return 1.16f;
-                case RunNodeKind.Event: return 1.1f;
+                case RunNodeKind.Elite: return 1.7f;
+                case RunNodeKind.Shop: return 1.5f;
+                case RunNodeKind.Gamble: return 1.45f;
+                case RunNodeKind.Event: return 1.35f;
                 default: return 1f;
+            }
+        }
+
+        /// <summary>
+        /// Warna TINTA icon per jenis — mengikuti peta rujukan (Slay the Spire): pertarungan
+        /// merah bata, elite merah bara yang lebih menyala, boss merah paling pekat; toko,
+        /// kejadian, dan slot tinta gelap di keluarga warnanya masing-masing. Pemain HITAM,
+        /// satu-satunya tinta hitam pekat di peta. KindColor yang lama tetap dipakai kotak
+        /// cadangan — palet terangnya memang untuk kotak berhuruf, bukan untuk icon telanjang.
+        /// </summary>
+        static Color KindInk(RunNodeKind kind)
+        {
+            switch (kind)
+            {
+                case RunNodeKind.Elite: return new Color(0.78f, 0.2f, 0.06f);
+                case RunNodeKind.Shop: return new Color(0.52f, 0.36f, 0.05f);
+                case RunNodeKind.Event: return new Color(0.38f, 0.24f, 0.5f);
+                case RunNodeKind.Gamble: return new Color(0.58f, 0.16f, 0.4f);
+                case RunNodeKind.Boss: return new Color(0.5f, 0.05f, 0.05f);
+                default: return new Color(0.58f, 0.14f, 0.1f);
             }
         }
 
