@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35f3c3f8e086ac944bc31f5f148db6f3, type: 3}
+  m_Name: AudioTheme
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.AudioTheme
+  MenuLoop: {fileID: 8300000, guid: ec10fd851fc6d2649bdf595faa59eef9, type: 3}
+  CombatLoop: {fileID: 8300000, guid: 637c5437f9653d64eb39cfc71811b77a, type: 3}
+  ShopLoop: {fileID: 8300000, guid: 1902f4bd92c5d4c4ab87a5fc31ca9ac0, type: 3}
+  WinStinger: {fileID: 8300000, guid: 787e9d66c78ebb049a49af6092fe5f2a, type: 3}
+  LoseStinger: {fileID: 8300000, guid: 42d280072d6579f4ebdecdd58f11317f, type: 3}
+  EvolveStinger: {fileID: 8300000, guid: ce6e58305ad415f4e9d2fed08d82c7d5, type: 3}
+  MusicTrim: 0.55
+  StingerTrim: 0.8
+  CrossfadeSeconds: 1.6
+  Cast:
+  - {fileID: 8300000, guid: 04f21775824b97043910e4821e4190a0, type: 3}
+  - {fileID: 8300000, guid: 4d393be24ed7ad14bad4b5cdd969a1f1, type: 3}
+  Blast:
+  - {fileID: 8300000, guid: 0eddab43b261eac48bec381b607eefff, type: 3}
+  - {fileID: 8300000, guid: 34f60088526b4d44b97ad072de94f359, type: 3}
+  - {fileID: 8300000, guid: 6519450b222821748aea1937deaa274f, type: 3}
+  Hit:
+  - {fileID: 8300000, guid: 82ceb4143bed3d942979bbfd9dae5c0e, type: 3}
+  Death:
+  - {fileID: 8300000, guid: 97d0b91cc5d694746a75567c33d0e66f, type: 3}
+  - {fileID: 8300000, guid: 8b01b47131397f94786a6e499e0ad305, type: 3}
+  Reaction: []
+  Pickup:
+  - {fileID: 8300000, guid: 69a301a895b10463eac5eab717f29252, type: 3}
+  BossRoar:
+  - {fileID: 8300000, guid: f557b7818486b4ee3be6cd8dd2aa01bb, type: 3}
+  WaveStart:
+  - {fileID: 8300000, guid: ade3fa78dd7a4554bad8b284dad71078, type: 3}
+  Fire:
+    Light: {fileID: 8300000, guid: 356e41eb7503c2c46a448a327c11d78a, type: 3}
+    Heavy: {fileID: 8300000, guid: 8d530c3462669b54ab13d44065f77721, type: 3}
+  Ice:
+    Light: {fileID: 8300000, guid: a90e92e635955674aa8dd0b930534a0a, type: 3}
+    Heavy: {fileID: 8300000, guid: a707d21f69ec3314fb3c4cf87ca4c4b2, type: 3}
+  Lightning:
+    Light: {fileID: 8300000, guid: 4c47168b19fc63b4ab833aeef1b3d535, type: 3}
+    Heavy: {fileID: 8300000, guid: 4a6061ff78f052548badd65da50f9b5b, type: 3}
+  Arcane:
+    Light: {fileID: 8300000, guid: df00f94be32e14f4398a6d92e565218a, type: 3}
+    Heavy: {fileID: 8300000, guid: 92f4d0c3cbc4ec94e8205b2a31eaf712, type: 3}
+  Pieces:
+  - Piece: {fileID: 11400000, guid: fac0e9f21bcea134a85b29b8568c2f60, type: 2}
+    Cast: {fileID: 8300000, guid: dabc64da482b32443ba5a6451a7d80e7, type: 3}
+  - Piece: {fileID: 11400000, guid: bffff3d1ea834514eb3cc4568a020a45, type: 2}
+    Cast: {fileID: 8300000, guid: cb4a6f6fd0fd6094c9985b56e7dbeecf, type: 3}
+  Reactions:
+  - Reaction: {fileID: 11400000, guid: f961d9524b1cf94498fe33e811530bc9, type: 2}
+    Clip: {fileID: 8300000, guid: 1da8456a871f0ae4eb66189ee6ee382f, type: 3}
+  - Reaction: {fileID: 11400000, guid: 4291dca7702dbc848a4a9827c125b78a, type: 2}
+    Clip: {fileID: 8300000, guid: 8a1e4dfdd792e2c4dbde5e7bf08a6a55, type: 3}
+  PiecePick: {fileID: 8300000, guid: d6950ca84db4cc14598a78ddbe9b543c, type: 3}
+  PiecePlace: {fileID: 8300000, guid: 6d2b9f2735a4a4646b43b35af186c048, type: 3}
+  PieceHover: {fileID: 8300000, guid: a04a3e5a01f52704a853498825613085, type: 3}
+  Buy: {fileID: 8300000, guid: c2dc61517a659f34bb121c0aaa3a8c9b, type: 3}
+  Reroll: {fileID: 8300000, guid: 6e1feee5a366e2249a2f50c7f72d72c7, type: 3}
+  Click: {fileID: 8300000, guid: 0ff4c2c11b17b490dae85965a94f6238, type: 3}
+  PanelClose: {fileID: 8300000, guid: e396893fb086372419348fbc5029853e, type: 3}
+  SameClipWindow: 0.045
+  DuckAmount: 0.45
+  DuckSeconds: 0.9

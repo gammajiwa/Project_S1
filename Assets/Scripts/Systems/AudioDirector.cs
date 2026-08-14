@@ -36,11 +36,30 @@ namespace Proto
                  "Kosong = pakai yang disintesis.")]
         public AudioClip[] Overrides = new AudioClip[SoundCount];
 
+        [Tooltip("Bahan bunyi dari aset (Resources/AudioTheme). Kosong = jalur lama: " +
+                 "Overrides, lalu sintesis. Diisi composition root, bukan Inspector — " +
+                 "komponen ini lahir dari kode.")]
+        public AudioTheme Theme;
+
+        /// <summary>Untuk ducking: suara besar menyuruh musik menunduk. Boleh null.</summary>
+        public MusicDirector Music;
+
         readonly AudioClip[] _clips = new AudioClip[SoundCount];
         readonly AudioSource[] _voices = new AudioSource[Voices];
 
-        int _cursor;
+        // Prioritas & umur tiap voice. Dipakai saat enam belas voice penuh: yang dicuri
+        // prioritas terendah paling tua, dan permintaan tidak pernah mencuri ke atas.
+        readonly int[] _voicePriority = new int[Voices];
+        readonly float[] _voiceStarted = new float[Voices];
+
+        // Jendela anti-dobel per KLIP — MinGap di bawah per KATEGORI; dua-duanya perlu.
+        // Dua puluh musuh yang mati di frame yang sama memutar SATU splat, bukan dinding
+        // suara dua puluh lapis.
+        readonly System.Collections.Generic.Dictionary<AudioClip, float> _clipStarted =
+            new System.Collections.Generic.Dictionary<AudioClip, float>(64);
+
         float _volume = 1f;
+        float _pollAt;
 
         /// <summary>
         /// Dua suara identik dalam frame yang sama saling menumpuk jadi satu bunyi dua kali lebih
@@ -87,19 +106,81 @@ namespace Proto
         public void Play(Sound sound, float volumeScale = 1f, float pitch = 1f)
         {
             int index = (int)sound;
-            if (_volume <= 0.001f) return;
             if (Time.unscaledTime - _lastPlayed[index] < MinGap[index]) return;
 
-            var clip = Overrides != null && index < Overrides.Length && Overrides[index] != null
-                ? Overrides[index]
-                : _clips[index];
-
+            var clip = Resolve(sound);
             if (clip == null) return;
 
             _lastPlayed[index] = Time.unscaledTime;
+            PlayClip(clip, volumeScale, pitch, PriorityOf(sound));
+        }
 
-            var voice = _voices[_cursor];
-            _cursor = (_cursor + 1) % Voices;
+        /// <summary>Klip sebuah slot inti: tema (variasi diundi) -> Overrides -> sintesis.</summary>
+        AudioClip Resolve(Sound sound)
+        {
+            int index = (int)sound;
+
+            var pool = Theme != null ? ThemePool(sound) : null;
+            if (pool != null && pool.Length > 0)
+            {
+                var pick = pool[Random.Range(0, pool.Length)];
+                if (pick != null) return pick;
+            }
+
+            if (Overrides != null && index < Overrides.Length && Overrides[index] != null)
+                return Overrides[index];
+
+            return _clips[index];
+        }
+
+        AudioClip[] ThemePool(Sound sound)
+        {
+            switch (sound)
+            {
+                case Sound.Cast: return Theme.Cast;
+                case Sound.Blast: return Theme.Blast;
+                case Sound.Hit: return Theme.Hit;
+                case Sound.Death: return Theme.Death;
+                case Sound.Reaction: return Theme.Reaction;
+                case Sound.Pickup: return Theme.Pickup;
+                case Sound.BossRoar: return Theme.BossRoar;
+                case Sound.WaveStart: return Theme.WaveStart;
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// Boss dan penanda ritme wave tidak boleh tercuri; reaksi mengalahkan bunyi rutin;
+        /// antarmuka (prioritas 0, lewat jalur PlayClip) paling rela mengalah.
+        /// </summary>
+        static int PriorityOf(Sound sound)
+        {
+            switch (sound)
+            {
+                case Sound.BossRoar:
+                case Sound.WaveStart: return 3;
+                case Sound.Reaction: return 2;
+                default: return 1;
+            }
+        }
+
+        /// <summary>
+        /// Jalur umum semua klip. Empat rem menyala di sini sekaligus: volume master,
+        /// jendela anti-dobel per klip, pencurian voice berprioritas, dan acak nada.
+        /// </summary>
+        public void PlayClip(AudioClip clip, float volumeScale = 1f, float pitch = 1f,
+            int priority = 1)
+        {
+            if (clip == null || _volume <= 0.001f) return;
+
+            float window = Theme != null ? Theme.SameClipWindow : 0.045f;
+            if (_clipStarted.TryGetValue(clip, out float started) &&
+                Time.unscaledTime - started < window) return;
+
+            var voice = TakeVoice(priority);
+            if (voice == null) return;
+
+            _clipStarted[clip] = Time.unscaledTime;
 
             voice.clip = clip;
 
@@ -108,6 +189,113 @@ namespace Proto
             voice.pitch = pitch * Random.Range(0.94f, 1.06f);
             voice.volume = Mathf.Clamp01(volumeScale) * _volume;
             voice.Play();
+
+            // Suara sebesar ini pantas didengar sendirian — musiknya menunduk dulu.
+            if (priority >= 3 && Music != null && Theme != null)
+                Music.Duck(Theme.DuckAmount, Theme.DuckSeconds);
+        }
+
+        AudioSource TakeVoice(int priority)
+        {
+            int steal = -1;
+
+            for (int i = 0; i < Voices; i++)
+            {
+                if (!_voices[i].isPlaying)
+                {
+                    _voicePriority[i] = priority;
+                    _voiceStarted[i] = Time.unscaledTime;
+                    return _voices[i];
+                }
+
+                if (steal < 0 ||
+                    _voicePriority[i] < _voicePriority[steal] ||
+                    (_voicePriority[i] == _voicePriority[steal] &&
+                     _voiceStarted[i] < _voiceStarted[steal]))
+                {
+                    steal = i;
+                }
+            }
+
+            // Semua sibuk dan yang paling lemah pun lebih penting dari permintaan ini.
+            // Permintaan kecil yang datang saat enam belas suara penting berbunyi memang
+            // layak hilang — itu bukan kegagalan, itu mixing.
+            if (steal < 0 || _voicePriority[steal] > priority) return null;
+
+            _voicePriority[steal] = priority;
+            _voiceStarted[steal] = Time.unscaledTime;
+            return _voices[steal];
+        }
+
+        // =====================================================================================
+        //  jalur bertema — yang paling spesifik menang
+        // =====================================================================================
+
+        /// <summary>Cast sebuah piece: per-piece -> per-elemen -> slot inti -> sintesis.</summary>
+        public void PlayCast(PieceDefinition def, bool heavy)
+        {
+            var clip = Theme != null ? Theme.CastClipFor(def, heavy) : null;
+
+            if (clip != null)
+            {
+                PlayClip(clip, heavy ? 0.85f : 0.55f, heavy ? 0.95f : 1.05f);
+                return;
+            }
+
+            // Jalur lama apa adanya, termasuk nadanya: berat lebih rendah, ringan lebih
+            // tinggi — papan yang penuh tetap terbaca lewat telinga saja.
+            Play(heavy ? Sound.Blast : Sound.Cast, heavy ? 0.85f : 0.5f, heavy ? 0.9f : 1.15f);
+        }
+
+        public void PlayReaction(ReactionDefinition reaction)
+        {
+            var clip = Theme != null ? Theme.ReactionClipFor(reaction) : null;
+
+            if (clip != null) PlayClip(clip, 0.9f, 1f, 2);
+            else Play(Sound.Reaction);
+        }
+
+        // ---- antarmuka: prioritas 0, paling rela mengalah saat layar sedang ramai ----
+
+        public void UiPick() => PlayClip(Theme != null ? Theme.PiecePick : null, 0.8f, 1f, 0);
+        public void UiPlace() => PlayClip(Theme != null ? Theme.PiecePlace : null, 0.85f, 1f, 0);
+        public void UiHover() => PlayClip(Theme != null ? Theme.PieceHover : null, 0.45f, 1f, 0);
+        public void UiBuy() => PlayClip(Theme != null ? Theme.Buy : null, 0.85f, 1f, 0);
+        public void UiReroll() => PlayClip(Theme != null ? Theme.Reroll : null, 0.85f, 1f, 0);
+        public void UiClick() => PlayClip(Theme != null ? Theme.Click : null, 0.7f, 1f, 0);
+        public void UiClose() => PlayClip(Theme != null ? Theme.PanelClose : null, 0.7f, 1f, 0);
+
+        // ---- fanfare: kejadian yang layak menyentuh musiknya ----
+
+        public void EvolveFanfare()
+        {
+            if (Music != null && Theme != null && Theme.EvolveStinger != null)
+                Music.PlayStinger(Theme.EvolveStinger);
+            else Play(Sound.Reaction);
+        }
+
+        /// <summary>Boss tumbang. Fanfare penuh sengaja disimpan untuk ini — bukan tiap wave.</summary>
+        public void VictoryFanfare()
+        {
+            if (Music != null && Theme != null) Music.PlayStinger(Theme.WinStinger);
+        }
+
+        public void GameOverFanfare()
+        {
+            if (Music == null || Theme == null) return;
+
+            Music.StopLoop();
+            Music.PlayStinger(Theme.LoseStinger);
+        }
+
+        void Update()
+        {
+            // Slider SFX boleh digeser lewat ESC di tengah run; GameSettings tidak punya
+            // event, jadi dibaca ulang dua kali sedetik.
+            if (Time.unscaledTime < _pollAt) return;
+
+            _pollAt = Time.unscaledTime + 0.5f;
+            _volume = Mathf.Clamp01(GameSettings.Load().SfxVolume);
         }
 
         // =====================================================================================

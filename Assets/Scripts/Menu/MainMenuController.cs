@@ -64,6 +64,10 @@ namespace Proto
             _settings = GameSettings.Load();
             _settings.Apply();
 
+            // Musik menu, dari kode — bukan objek scene, supaya tidak pernah ikut tergilas
+            // saat scene menu digenerate ulang. Tanpa AudioTheme, menu tetap sunyi tanpa error.
+            MenuMusic.Ensure();
+
             if (_settingsPanel != null) _settingsPanel.Init(_settings);
 
             Wire(_playButton, StartGame);
@@ -140,6 +144,10 @@ namespace Proto
 
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(action);
+
+            // Satu bunyi klik untuk semua tombol menu, dipasang di satu tempat — bukan
+            // dititipkan ke tiap pemanggil untuk diingat-ingat.
+            button.onClick.AddListener(MenuMusic.Click);
         }
     }
 }

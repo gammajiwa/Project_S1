@@ -86,6 +86,9 @@ namespace Proto
         // Browsing the codex belongs to the main menu now. A run only ever writes to it.
         DiscoveryLog _codex;
 
+        /// <summary>Pengeras suara UI, dititip composition root. Null = UI bisu, bukan rusak.</summary>
+        public AudioDirector Sfx;
+
         bool _shopOpen;
         int _rerollCost;
         readonly PieceDefinition[] _shop = new PieceDefinition[ShopSlots];
@@ -1135,6 +1138,10 @@ namespace Proto
             _shopOpen = false;
             _eventOpen = false;
             _gambleOpen = false;
+
+            // Fanfare kalah SEKALI, di frame pertama kerudung mulai memerah — _overFade
+            // masih nol hanya di frame itu (di-nol-kan lagi tiap frame selama masih hidup).
+            if (_overFade <= 0f && Sfx != null) Sfx.GameOverFanfare();
 
             ShowGameOver(true);
 
@@ -2593,6 +2600,7 @@ namespace Proto
                     {
                         DropRiders();
                         _held = null;
+                        if (Sfx != null) Sfx.UiPlace();
                     }
                     else if (_bag.CanReplaceAt(_held, bagOrigin, _heldRot))
                     {
@@ -2617,6 +2625,7 @@ namespace Proto
                     {
                         LandRiders(gridOrigin, mouse);
                         _held = null;
+                        if (Sfx != null) Sfx.UiPlace();
                     }
                     else if (Book.CanReplaceAt(_held, gridOrigin, _heldRot))
                     {
@@ -2627,6 +2636,7 @@ namespace Proto
                         {
                             LandRiders(gridOrigin, mouse);
                             _held = null;
+                            if (Sfx != null) Sfx.UiPlace();
                         }
                     }
 
@@ -2646,6 +2656,7 @@ namespace Proto
                 _held = _loose[looseIndex];
                 _heldRot = 0;
                 RemoveLoose(looseIndex);
+                if (Sfx != null) Sfx.UiPick();
                 return;
             }
 
@@ -2658,6 +2669,7 @@ namespace Proto
                     _held = stored.Def;
                     _heldRot = stored.Rot;
                     _bag.Remove(stored);
+                    if (Sfx != null) Sfx.UiPick();
                 }
 
                 return;
@@ -2672,6 +2684,7 @@ namespace Proto
 
             _held = inst.Def;
             _heldRot = inst.Rot;
+            if (Sfx != null) Sfx.UiPick();
 
             // Lifting a base takes whatever is standing on it. Anything bridging two bases belongs
             // to neither, so Remove sends those to the floor as it always did.
@@ -2753,6 +2766,7 @@ namespace Proto
                     // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
                     // lebih mahal daripada satu klik yang terbuang.
                     _gambleOpen = false;
+                    if (Sfx != null) Sfx.UiClose();
                     return _held != null;
                 }
 
@@ -2815,6 +2829,7 @@ namespace Proto
                 // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
                 // lebih mahal daripada satu klik yang terbuang.
                 _shopOpen = false;
+                if (Sfx != null) Sfx.UiClose();
                 return _held != null;
             }
 
@@ -2825,6 +2840,7 @@ namespace Proto
                     _gold -= _rerollCost;
                     _rerollCost += _balance.RerollCostIncrement;
                     RollShop();
+                    if (Sfx != null) Sfx.UiReroll();
                 }
 
                 return true;
@@ -2841,6 +2857,7 @@ namespace Proto
                 _gold -= price;
                 AddLoose(_shop[i], NearScatterPos(ShopSlotRect(i).center, i));
                 _shop[i] = null;
+                if (Sfx != null) Sfx.UiBuy();
                 return true;
             }
 
@@ -2929,6 +2946,7 @@ namespace Proto
             // di sini sudah dipastikan ADA yang benar-benar berevolusi (baris keluar lebih awal
             // kalau daftarnya kosong), jadi runenya tidak pernah berputar untuk apa-apa.
             if (_rune != null) _rune.Celebrate();
+            if (Sfx != null) Sfx.EvolveFanfare();
             PushFloater(Player.transform.position + Vector3.up * 3f, Loc.T("hud.evolve"), new Color(0.55f, 1f, 0.7f));
         }
 

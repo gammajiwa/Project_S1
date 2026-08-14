@@ -211,15 +211,32 @@ namespace Proto
                 }
             }
 
+            // Bahan bunyi dari aset; kosong = jalur lama (sintesis) tetap jalan utuh.
+            // Resources.Load untuk ASET DATA — preseden RuneTileSet; larangannya untuk sistem.
+            var audioTheme = Resources.Load<AudioTheme>("AudioTheme");
+
+            var music = new GameObject("Music").AddComponent<MusicDirector>();
+            music.transform.SetParent(transform, false);
+            music.Init(audioTheme, GameSettings.Load().MusicVolume);
+
             var audio = new GameObject("Audio").AddComponent<AudioDirector>();
             audio.transform.SetParent(transform, false);
+            audio.Theme = audioTheme;
+            audio.Music = music;
             audio.Init(GameSettings.Load().SfxVolume);
+
+            // Musik pertarungan menyala dari detik pertama run — build phase juga bagian
+            // dari lapangan, dan keheningan sebelum wave pertama terbaca sebagai bug.
+            if (audioTheme != null) music.SetLoop(audioTheme.CombatLoop);
 
             // Burst radius drives the kick, so a screen-clearing reaction outweighs a small one.
             enemies.OnReaction += (at, reaction) =>
             {
                 shake.Add(0.16f + reaction.BurstRadius * 0.045f);
-                audio.Play(AudioDirector.Sound.Reaction);
+
+                // FIRESTORM berbunyi sebagai badai api, bukan sebagai dentang generik —
+                // klip per-reaction dari tema, dentang lama sebagai jaringnya.
+                audio.PlayReaction(reaction);
             };
 
             // Single-target casts stay quiet; only the ones that cover ground get a nudge.
@@ -228,20 +245,27 @@ namespace Proto
                 bool heavy = IsHeavy(inst.Def.Kind);
                 if (heavy) shake.Add(0.07f);
 
-                // Skill besar dan skill kecil tidak boleh berbunyi sama. Nada yang lebih rendah
-                // untuk yang berat adalah cara termurah membuat papan yang penuh tetap terbaca
-                // lewat telinga saja.
-                audio.Play(heavy ? AudioDirector.Sound.Blast : AudioDirector.Sound.Cast,
-                    heavy ? 0.85f : 0.5f, heavy ? 0.9f : 1.15f);
+                // Resolusi paling-spesifik-menang: klip milik PIECE ini -> klip elemennya
+                // (berat/ringan) -> slot inti -> sintesis. Absolute Zero tidak boleh
+                // berbunyi sama dengan Fireball.
+                audio.PlayCast(inst.Def, heavy);
             };
 
             enemies.OnKill += _ => audio.Play(AudioDirector.Sound.Death, 0.35f);
             enemies.OnWaveStarted += _ => audio.Play(AudioDirector.Sound.WaveStart, 0.8f);
 
+            // Wave baru = kembali ke musik pertarungan (idempoten — kalau sudah, diam).
+            if (audioTheme != null)
+                enemies.OnWaveStarted += _ => music.SetLoop(audioTheme.CombatLoop);
+
             // Satu-satunya suara yang tidak pernah diredam dan tidak pernah dijeda: kedatangan
             // boss harus terdengar bahkan di tengah tiga ratus musuh yang meledak.
             enemies.OnBossSpawned += _ => audio.Play(AudioDirector.Sound.BossRoar, 1f);
             enemies.OnBossDied += _ => audio.Play(AudioDirector.Sound.BossRoar, 1f, 0.6f);
+
+            // Fanfare kemenangan disimpan untuk BOSS tumbang — bukan tiap wave beres;
+            // wave beres terjadi tiap dua menit dan hadiah sesering itu berhenti terasa hadiah.
+            enemies.OnBossDied += _ => audio.VictoryFanfare();
 
             // Enemies used to just wink out of existence. A pop on death is what makes clearing a
             // pack read as an event instead of a disappearance.
@@ -267,6 +291,10 @@ namespace Proto
             var ui = uiGo.AddComponent<GrimoireUI>();
             ui.Init(caster, enemies, cam, _database, _balance, dresser, _uiTheme);
 
+            // UI bersuara lewat satu pegangan ini: ambil/taruh piece, beli, reroll, evolve,
+            // game over. Null aman — UI yang bisu bukan UI yang rusak.
+            ui.Sfx = audio;
+
             // Sutradara run: peta act, portal antar wave, pulau rehat. Dipasang SETELAH UI —
             // ia mengecek WaveActive saat lahir, dan saklar curang OpeningWave hidup di ui.Init.
             var run = new GameObject("RunDirector").AddComponent<RunDirector>();
@@ -283,6 +311,11 @@ namespace Proto
             ui.AttachRooms(rooms);
 
             ui.AttachRun(run);
+
+            // DI BAWAH AttachRun dengan sengaja: di dalamnya GrimoireUI MENGISI (bukan
+            // menambah) run.OnRestEntered — subscribe sebelum itu berarti tersapu diam-diam.
+            if (audioTheme != null)
+                run.OnRestEntered += _ => music.SetLoop(audioTheme.ShopLoop);
 
             // Diumumkan lewat banner yang sama dengan reaksi, bukan lewat widget baru: pemain
             // sudah tahu harus melihat ke mana saat sesuatu penting terjadi.
