@@ -60,7 +60,6 @@ namespace Proto.EditorTools
             if (!AssetDatabase.IsValidFolder(Folder)) AssetDatabase.CreateFolder(Root, "Biomes");
 
             EnsureFireflies();
-            EnsureGodRay();
 
             string path = Folder + "/Biome_forest.asset";
             var forest = AssetDatabase.LoadAssetAtPath<BiomeDefinition>(path);
@@ -185,10 +184,6 @@ namespace Proto.EditorTools
             // 96% berubah dengan selisih rata-rata empat kali lipat.
             forest.CloudSpeed = 7f;
 
-            forest.RayColor = new Color(1f, 0.97f, 0.82f, 0.16f);
-            forest.RaySize = 34f;
-            forest.RayCoverage = 0.4f;
-
             // Lampu pengembara DIMATIKAN. Gunanya dulu memberi lantai gelap daerah terang; lantai
             // sekarang sudah terang merata, jadi yang tersisa cuma kolam cahaya yang mengembara
             // tanpa sumber yang terlihat.
@@ -309,11 +304,6 @@ namespace Proto.EditorTools
                 Ambient("Birds/Birds_spin", 0.5f, repeat: 75f, lifetime: 16f,
                     near: 34f, far: 58f, scale: 0.6f, height: 12f)
             };
-
-            // Berkas cahaya datar DICOPOT. Alpha nol mematikan lapisannya sama sekali — bidang
-            // tidak punya tinggi, dan berkas yang tidak punya tinggi bukan berkas. Penggantinya
-            // berkas volumetrik sungguhan dari kabut froxel, disetel di HazePass.
-            forest.RayColor = new Color(1f, 0.97f, 0.82f, 0f);
 
             // Cuaca, diundi tiap wave. Entri pertama SENGAJA kosong — tanpa cuaca cerah di daftar,
             // tiap wave selalu ada sesuatu yang jatuh dari langit, dan hujan berhenti terasa
@@ -672,7 +662,6 @@ namespace Proto.EditorTools
             // keteduhan, ia cuma menghapus apa yang masih bisa dibaca.
             night.CloudColor = new Color(0.02f, 0.03f, 0.08f, 0.16f);
             night.CloudSize = 44f;
-            night.RayColor = new Color(0.55f, 0.68f, 1f, 0.07f);
 
             // KUNANG-KUNANG. Varian "_fog" kupu-kupu itu yang bercahaya sendiri, dan di lapangan
             // gelap ia berhenti terbaca sebagai kupu-kupu — yang tersisa cuma titik cahaya yang
@@ -701,8 +690,6 @@ namespace Proto.EditorTools
                 Ambient("Wind_Leaves_Tornado/Leaves_green", 0.3f,
                     scale: 0.1f, height: 15f, follow: true, offX: -22f)
             };
-
-            night.RayColor = new Color(0.55f, 0.68f, 1f, 0f);
 
             // Cuaca malam lebih tenang. Badai di atas lapangan yang sudah gelap tidak menambah
             // suasana — ia cuma menghapus apa yang masih bisa dibaca.
@@ -1111,159 +1098,6 @@ namespace Proto.EditorTools
                 Offset = new Vector2(offX, 0f),
                 CoverageOnly = coverage
             };
-        }
-
-        /// <summary>
-        /// Prefab god ray BUATAN SENDIRI, dibangkitkan sekali.
-        ///
-        /// Mesh shaft paket (TSI) menyerah di kamera ini: ia dirancang untuk kamera sejajar
-        /// mata, dan dari 68 derajat di atas ia memipih jadi GENANGAN cahaya di lantai — bukan
-        /// berkas. Yang selalu terbaca sebagai god ray di kamera atas adalah PITA yang menghadap
-        /// kamera, miring searah matahari (searah bayangan pohon), pangkal jelas di bawah dan
-        /// puncak yang MELURUH habis lewat gradien — jadi sumbernya tidak pernah terlihat.
-        /// </summary>
-        static void EnsureGodRay()
-        {
-            const string path = "Assets/GameData/Look/GodRay.prefab";
-
-            // SELALU ditulis ulang — bentuk god ray milik pass ini, dan menimpanya lewat
-            // SaveAsPrefabAsset mempertahankan GUID, jadi rujukan di aset biome tidak putus.
-
-            // ---- tekstur gradien: melintang = bel lembut, membujur = pangkal lembut,
-            //      badan panjang, lenyap total sebelum ujung ----
-            const string texPath = "Assets/GameData/Look/GodRayGradient.asset";
-            var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texPath);
-            bool freshTexture = texture == null;
-
-            if (freshTexture)
-            {
-                texture = new Texture2D(64, 256, TextureFormat.RGBA32, false)
-                {
-                    name = "GodRayGradient"
-                };
-            }
-
-            texture.wrapMode = TextureWrapMode.Clamp;
-            texture.filterMode = FilterMode.Bilinear;
-
-            {
-                int w = texture.width;
-                int h = texture.height;
-                var pixels = new Color32[w * h];
-
-                for (int y = 0; y < h; y++)
-                {
-                    float v = y / (float)(h - 1);
-
-                    // Membujur: naik lembut di 7% pertama (pangkal TANPA tepi kotak), bertahan,
-                    // lalu meluruh dan NOL di 85% — sisa 15% teratas kosong supaya ujungnya tidak
-                    // pernah kelihatan, dari mana pun kamera memotongnya.
-                    float baseIn = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(v / 0.07f));
-                    float fadeOut = Mathf.Clamp01(1f - v / 0.85f);
-                    float along = baseIn * fadeOut * fadeOut;
-
-                    for (int x = 0; x < w; x++)
-                    {
-                        float u = x / (float)(w - 1);
-
-                        // Melintang: bel kosinus — tepi kiri-kanan lenyap lembut.
-                        float across = Mathf.Sin(u * Mathf.PI);
-                        across = Mathf.Pow(across, 1.6f);
-
-                        byte a = (byte)(Mathf.Clamp01(along * across) * 255f);
-                        pixels[y * w + x] = new Color32(255, 255, 255, a);
-                    }
-                }
-
-                texture.SetPixels32(pixels);
-                texture.Apply();
-            }
-
-            if (freshTexture) AssetDatabase.CreateAsset(texture, texPath);
-            else EditorUtility.SetDirty(texture);
-
-            // ---- material: pinjam setelan additive milik shaft paket, tukar teksturnya ----
-            const string matPath = "Assets/GameData/Look/GodRay.mat";
-            var material = AssetDatabase.LoadAssetAtPath<Material>(matPath);
-
-            if (material == null)
-            {
-                Material template = null;
-                var tsi = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/Plugin/ToonScapes/Spring Isles/Particles/TSI_Sun_Shaft_01A.prefab");
-
-                if (tsi != null)
-                {
-                    foreach (var r in tsi.GetComponentsInChildren<ParticleSystemRenderer>(true))
-                    {
-                        if (r.sharedMaterial == null) continue;
-                        template = r.sharedMaterial;
-                        break;
-                    }
-                }
-
-                if (template == null)
-                {
-                    Debug.LogError("[BiomePass] material shaft TSI tidak ketemu — god ray batal.");
-                    return;
-                }
-
-                material = new Material(template) { name = "GodRay" };
-                material.SetTexture("_BaseMap", texture);
-                material.SetTexture("_MainTex", texture);
-                AssetDatabase.CreateAsset(material, matPath);
-            }
-
-            // ---- prefab: TIGA pita menghadap kamera, miring searah matahari ----
-            //
-            // Euler(68; 0; z): menghadap persis kamera yang menunduk 68 derajat (anchor-nya
-            // Gloom — quad Euler(90;0;0) menghadap kamera tegak lurus), lalu z memutarnya DI
-            // BIDANG LAYAR. +22 derajat = condong kiri-atas, searah matahari siang (bayangan
-            // pohon jatuh kanan-bawah). Tiga pita beda lebar/kemiringan supaya terbaca sebagai
-            // cahaya menembus tajuk, bukan satu papan.
-            //
-            // PANJANG 46 unit — layar cuma 22 unit tingginya: badan pita selalu menembus tepi
-            // atas layar, dan gradien sudah menghabisinya sebelum ujung. Sumbernya tak pernah
-            // terlihat, persis god ray sungguhan.
-            var root = new GameObject("GodRay");
-
-            BuildBlade(root.transform, material, 0f, 3.2f, 46f, 22f, 1f);
-            BuildBlade(root.transform, material, -3.4f, 1.6f, 38f, 17f, 0.55f);
-            BuildBlade(root.transform, material, 2.9f, 2.1f, 42f, 27f, 0.7f);
-
-            PrefabUtility.SaveAsPrefabAsset(root, path);
-            Object.DestroyImmediate(root);
-
-            Debug.Log("[BiomePass] prefab god ray dibangkitkan: " + path);
-        }
-
-        static void BuildBlade(Transform parent, Material material, float side, float width,
-            float length, float tilt, float strength)
-        {
-            var blade = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            blade.name = "Blade";
-
-            var collider = blade.GetComponent<Collider>();
-            if (collider != null) Object.DestroyImmediate(collider);
-
-            var rotation = Quaternion.Euler(68f, 0f, tilt);
-
-            blade.transform.SetParent(parent, false);
-            blade.transform.localRotation = rotation;
-
-            // Pivot quad di tengah — digeser setengah panjang SEPANJANG sumbu pitanya sendiri,
-            // jadi pangkalnya duduk di titik kantong dan seluruh badannya menjulang ke atas layar.
-            blade.transform.localPosition = rotation * new Vector3(side, length * 0.5f, 0f);
-            blade.transform.localScale = new Vector3(width, length, 1f);
-
-            var renderer = blade.GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-
-            // Kekuatan per pita dibawa lewat skala alpha di property block SAAT spawn — di sini
-            // cukup disimpan di nama supaya Weather bisa membacanya tanpa komponen baru.
-            blade.name = "Blade " + strength.ToString("0.00");
         }
 
         /// <summary>

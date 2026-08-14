@@ -338,15 +338,6 @@ namespace Proto
                  "Beranimasi, tapi terbaca diam.")]
         public float CloudSpeed = 12f;
 
-        [Header("Berkas cahaya")]
-        [Tooltip("Warna berkasnya. Ditambahkan, bukan ditimpa, jadi warnanya langsung jadi cahaya.")]
-        public Color RayColor = new Color(1f, 0.82f, 0.45f, 0.32f);
-
-        [Tooltip("Jarak antar berkas dalam unit dunia.")]
-        public float RaySize = 30f;
-
-        [Range(0.05f, 0.95f)] public float RayCoverage = 0.4f;
-
         [Header("Lampu arena")]
         [Tooltip("Lampu titik lembut yang mengembara di lapangan. Matahari menyinari semuanya " +
                  "sama rata; lampu inilah yang membuat lantai punya daerah terang dan daerah " +

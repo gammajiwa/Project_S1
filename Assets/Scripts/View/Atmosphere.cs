@@ -43,7 +43,6 @@ namespace Proto
 
         Transform _follow;
         Transform _clouds;
-        Transform _rays;
         float _span;
 
         public void Init(Transform follow, float span)
@@ -64,7 +63,6 @@ namespace Proto
             if (biome == null || _follow == null) return;
 
             if (_clouds != null) Destroy(_clouds.gameObject);
-            if (_rays != null) Destroy(_rays.gameObject);
 
             var shader = Shader.Find("Grimoire/CloudShadows");
 
@@ -72,7 +70,6 @@ namespace Proto
             {
                 Debug.LogError("[Atmosphere] shader Grimoire/CloudShadows tidak ketemu.");
                 _clouds = null;
-                _rays = null;
                 return;
             }
 
@@ -106,26 +103,11 @@ namespace Proto
                 biome.CloudSize, biome.CloudCoverage, 0.3f,
                 wind, biome.CloudSpeed, 0.015f, 0.45f, Vector2.one, false);
 
-            // Berkas cahaya DICOPOT dari sini, dan itu koreksi atas kesalahan yang mendasar.
-            //
-            // Versi lama menggambarnya sebagai bidang datar di atas tanah — pola terang bergaris
-            // yang diregangkan searah matahari. Trik itu punya batas yang tidak bisa dilewati:
-            // bidang tidak punya TINGGI. Berkas cahaya yang meyakinkan adalah kolom yang berdiri
-            // dari tajuk pohon sampai ke tanah, dan tidak ada bidang setipis apa pun yang bisa
-            // berpura-pura punya tinggi di kamera yang menunduk.
-            //
-            // Penggantinya berkas volumetrik sungguhan: kabut froxel HAZE yang kepadatannya
-            // dinaikkan di daerah tak terbayangi, sehingga celah di antara bayangan pohon terisi
-            // cahaya yang benar-benar menempati ruang. Disetel di HazePass, bukan di sini.
-            if (biome.RayColor.a > 0.001f)
-            {
-                _rays = BuildLayer(shader, "GodRays", 0.06f, biome.RayColor,
-                    biome.RaySize, biome.RayCoverage, 0.3f,
-                    wind, biome.CloudSpeed * 0.35f, 0.12f, 0.15f,
-                    new Vector2(0.28f, 2.4f), true);
-
-                _rays.localRotation = Quaternion.Euler(90f, biome.SunYaw, 0f);
-            }
+            // Berkas cahaya TIDAK dibangun di sini, dan tidak lagi dibangun kode mana pun.
+            // Dua generasi god ray buatan kode (bidang bergaris di sini, lalu pita quad dari
+            // BiomePass) dua-duanya DIBUANG atas perintah pemilik project — penggantinya
+            // prefab tataan tangan di Assets/Prefabs/Light (Sunlight/Moonlight), dipasang
+            // lewat AmbientVfx di aset biome seperti kunang-kunang dan kupu-kupu.
         }
 
         Transform BuildLayer(Shader shader, string label, float height, Color tint,
@@ -180,8 +162,6 @@ namespace Proto
             Vector3 at = _follow.position;
 
             _clouds.position = new Vector3(at.x, _clouds.localPosition.y, at.z);
-
-            if (_rays != null) _rays.position = new Vector3(at.x, _rays.localPosition.y, at.z);
         }
     }
 }
