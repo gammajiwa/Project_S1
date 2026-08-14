@@ -28,7 +28,7 @@ namespace Proto
         [Tooltip("Sepekat apa kotak warnanya. Petak rune duduk di atas HALAMAN PERKAMEN yang " +
                  "terang, dan kotak pekat di atasnya terbaca sebagai lubang hitam, bukan sebagai " +
                  "petak. Yang harus menang di petak ini adalah runenya.")]
-        [Range(0f, 1f)] public float PlateAlpha = 0.38f;
+        [Range(0f, 1f)] public float PlateAlpha = 0.22f;
 
         [Tooltip("Bingkai ornamennya dipakai atau tidak. Mati secara bawaan: ornamen yang " +
                  "digambar untuk petak 128 piksel jadi bubur begitu dikecilkan ke ukuran petak " +
@@ -39,7 +39,12 @@ namespace Proto
                  "runenya besar dan tegas.")]
         [Range(0f, 0.4f)] public float GlyphInset = 0.06f;
 
+        [Tooltip("Geser tambahan glyph SESUDAH dipusatkan, dalam pecahan sisi petak. +y naik. " +
+                 "Pemusatannya sendiri otomatis per gambar; yang ini murni selera.")]
+        public Vector2 GlyphNudge = new Vector2(0f, 0.03f);
+
         RectTransform _rect;
+        Sprite _placed;
         bool _ready;
 
         void Awake() => Ensure();
@@ -71,15 +76,6 @@ namespace Proto
                 _glyph.preserveAspect = true;
             }
 
-            // Ditambatkan ke SUDUT petak, bukan diberi jarak dalam piksel: petak yang sama
-            // digambar 15 piksel di codex dan puluhan kali lebih besar di papan, dan jarak dalam
-            // piksel yang benar di salah satunya pasti salah di yang lain.
-            var rt = _glyph.rectTransform;
-            rt.anchorMin = new Vector2(GlyphInset, GlyphInset);
-            rt.anchorMax = new Vector2(1f - GlyphInset, 1f - GlyphInset);
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-
             // Terakhir di antara saudaranya = digambar paling atas. Glyph yang tertutup kotak
             // warnanya sendiri adalah keluhan yang sama dengan yang sedang diperbaiki.
             _glyph.transform.SetAsLastSibling();
@@ -87,6 +83,42 @@ namespace Proto
             if (_plate != null) _plate.raycastTarget = false;
             if (_border != null) _border.raycastTarget = false;
             _glyph.raycastTarget = false;
+        }
+
+        /// <summary>
+        /// Menempatkan glyph supaya TINTANYA yang duduk di tengah petak, bukan kanvas gambarnya.
+        ///
+        /// Runenya digambar tidak terpusat di PNG-nya sendiri, dan preserveAspect memusatkan
+        /// KOTAK gambarnya - jadi yang terlihat mendarat melenceng, beda-beda per rune. Koreksinya
+        /// dituang ke ANCHOR, bukan ke posisi dalam piksel, supaya ikut benar di petak 15 piksel
+        /// codex maupun petak papan yang berkali-kali lebih besar.
+        /// </summary>
+        void PlaceGlyph(Sprite glyph)
+        {
+            float span = 1f - 2f * GlyphInset;
+
+            // Sisi mana yang dipakai preserveAspect untuk memuat gambarnya. Gambar yang lebih
+            // tinggi daripada lebar menyusut mendatar, dan koreksi mendatarnya ikut menyusut.
+            float fitX = 1f, fitY = 1f;
+            if (glyph != null && glyph.rect.width > 0.001f && glyph.rect.height > 0.001f)
+            {
+                float aspect = glyph.rect.width / glyph.rect.height;
+                if (aspect >= 1f) fitY = 1f / aspect;
+                else fitX = aspect;
+            }
+
+            var ink = RuneTiles.InkOffset(glyph);
+            float dx = -ink.x * span * fitX + GlyphNudge.x;
+            float dy = -ink.y * span * fitY + GlyphNudge.y;
+
+            // Ditambatkan ke SUDUT petak, bukan diberi jarak dalam piksel: petak yang sama
+            // digambar 15 piksel di codex dan puluhan kali lebih besar di papan, dan jarak dalam
+            // piksel yang benar di salah satunya pasti salah di yang lain.
+            var rt = _glyph.rectTransform;
+            rt.anchorMin = new Vector2(GlyphInset + dx, GlyphInset + dy);
+            rt.anchorMax = new Vector2(1f - GlyphInset + dx, 1f - GlyphInset + dy);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
         }
 
         Image Child(string name)
@@ -151,7 +183,15 @@ namespace Proto
             if (_glyph != null)
             {
                 _glyph.enabled = glyph != null;
-                _glyph.sprite = glyph;
+
+                // Ditata ulang HANYA saat gambarnya berganti. Menyentuh anchor tiap frame
+                // menandai layout kotor untuk tiap petak di papan, tiap frame.
+                if (_placed != glyph)
+                {
+                    _glyph.sprite = glyph;
+                    _placed = glyph;
+                    PlaceGlyph(glyph);
+                }
 
                 // Putih penuh, SELALU. Mengalikannya dengan warna piece akan meredupkan gambar
                 // yang memang sudah digambar menyala, dan itu persis kebalikan dari gunanya.

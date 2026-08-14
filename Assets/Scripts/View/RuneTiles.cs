@@ -39,6 +39,36 @@ namespace Proto
             "Rune_S5_1"
         };
 
+        /// <summary>
+        /// Seberapa jauh TINTA tiap rune meleset dari pusat kanvas PNG-nya, dalam pecahan sisi
+        /// gambar (+x kanan, +y atas). Urutannya sejajar <see cref="SheetNames"/>.
+        ///
+        /// Ada karena runenya digambar tidak terpusat di kanvasnya sendiri, dan melesetnya
+        /// BERBEDA-BEDA: enam rune bintang satu turun 11-15%, yang bintang tiga ke atas justru
+        /// naik ~9%. Satu offset seragam akan membenarkan sebagian dan memperburuk sisanya.
+        ///
+        /// Diukur dengan memindai alpha tiap PNG (ambang 25/255), bukan dibaca dari mesh Tight
+        /// milik sprite-nya: mesh itu memeluk GLOW-nya, bukan tintanya, dan melaporkan lebar
+        /// tinta 1,000 untuk gambar yang tintanya cuma separuh kanvas. Kalau art runenya
+        /// digambar ulang, angka di sini harus ikut diukur ulang.
+        /// </summary>
+        static readonly Vector2[] SheetInk =
+        {
+            new Vector2(-0.002f, -0.111f), new Vector2( 0.053f, -0.125f),
+            new Vector2( 0.059f, -0.116f), new Vector2( 0.025f, -0.116f),
+            new Vector2( 0.020f, -0.147f), new Vector2( 0.084f, -0.120f),
+
+            new Vector2( 0.002f, -0.040f), new Vector2( 0.107f, -0.021f),
+            new Vector2(-0.004f, -0.043f), new Vector2( 0.076f, -0.037f),
+
+            new Vector2( 0.066f,  0.094f), new Vector2(-0.076f,  0.088f),
+
+            new Vector2( 0.043f,  0.087f), new Vector2( 0.018f,  0.089f),
+            new Vector2( 0.031f,  0.088f),
+
+            new Vector2( 0.039f,  0.089f)
+        };
+
         static Sprite[] _sheet;
         static GameObject _cellPrefab;
         static bool _cellPrefabTried;
@@ -101,6 +131,23 @@ namespace Proto
             int n = SheetNames.Length;
             var glyph = _sheet[(((at + index) % n) + n) % n];
             return glyph != null ? glyph : def.Icon;
+        }
+
+        /// <summary>
+        /// Koreksi yang harus DITERAPKAN supaya tintanya duduk di tengah: kebalikan dari
+        /// melesetnya. Sprite di luar sheet mengembalikan nol - tidak tahu bukan alasan untuk
+        /// menggeser gambar orang.
+        /// </summary>
+        public static Vector2 InkOffset(Sprite glyph)
+        {
+            if (glyph == null) return Vector2.zero;
+
+            for (int i = 0; i < SheetNames.Length; i++)
+            {
+                if (SheetNames[i] == glyph.name) return SheetInk[i];
+            }
+
+            return Vector2.zero;
         }
 
         static void EnsureSheet()

@@ -4479,7 +4479,12 @@ namespace Proto
                     var cell = new Vector2Int(x, y);
 
                     var baseRune = Book.BaseAt(cell);
-                    _baseCells[i].color = baseRune != null ? Tint(baseRune) : emptyColor;
+
+                    // Petak yang akan ditutup TILE rune tidak ikut diwarnai di sini. Warna piece
+                    // penuh ditambah pelat tile di atasnya menumpuk jadi kotak pekat, dan yang
+                    // diminta justru sebaliknya: tembus pandang, dengan runenya yang menang.
+                    bool tiled = baseRune != null && RuneTiles.IsRuneGlyph(baseRune.Def.Icon);
+                    _baseCells[i].color = baseRune != null && !tiled ? Tint(baseRune) : emptyColor;
 
                     // Ornamennya sekarang dibawa TILE yang digambar di atas petak ini — lihat
                     // DrawRuneTiles. Petaknya sendiri kembali jadi kotak warna polos: dua

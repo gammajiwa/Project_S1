@@ -45,6 +45,13 @@ namespace Proto
             _camera = camera;
             _enemies = enemies;
 
+            if (prefab == null)
+            {
+                Debug.LogWarning("[EnemyHpBars] EnemyHpBar.prefab tidak ada di Resources — " +
+                                 "palang darurat dipakai. Prefabnya ada di " +
+                                 "Assets/Prefabs/UI/Resources/EnemyHpBar.prefab.");
+            }
+
             for (int i = 0; i < PoolSize; i++)
             {
                 GameObject go;
@@ -55,10 +62,13 @@ namespace Proto
                 }
                 else
                 {
-                    // Tanpa prefab, kolam tetap DIBUAT, cuma kosong. Yang memanggilnya tiap frame
-                    // tidak boleh perlu tahu bahwa prefabnya hilang.
-                    go = new GameObject("EnemyHpBar", typeof(RectTransform));
-                    go.transform.SetParent(canvas, false);
+                    // Prefabnya hilang: palangnya dirakit di sini, sederhana tapi TERLIHAT.
+                    //
+                    // Versi sebelumnya cuma membuat objek kosong, dan hasilnya adalah kegagalan
+                    // paling mahal yang bisa dibuat UI — tidak ada error, tidak ada peringatan,
+                    // cuma fitur yang diam. Yang mencarinya akan menyalahkan kode barnya, bukan
+                    // prefab yang tidak ketemu.
+                    go = Fallback(canvas);
                 }
 
                 go.name = "EnemyHp_" + i;
@@ -73,6 +83,40 @@ namespace Proto
                 go.SetActive(false);
                 _pool[i] = bar;
             }
+        }
+
+        /// <summary>Palang darurat: dua kotak, bentuk yang sama dengan prefabnya.</summary>
+        static GameObject Fallback(Transform canvas)
+        {
+            var go = new GameObject("EnemyHpBar", typeof(RectTransform));
+            go.transform.SetParent(canvas, false);
+            ((RectTransform)go.transform).sizeDelta = new Vector2(52f, 8f);
+
+            Plate(go.transform, "Back", new Color(0.04f, 0.03f, 0.05f, 0.78f), 0f);
+            var fill = Plate(go.transform, "Fill", new Color(0.42f, 0.85f, 0.35f, 1f), 1f);
+
+            fill.type = UnityEngine.UI.Image.Type.Filled;
+            fill.fillMethod = UnityEngine.UI.Image.FillMethod.Horizontal;
+            fill.fillOrigin = (int)UnityEngine.UI.Image.OriginHorizontal.Left;
+
+            return go;
+        }
+
+        static UnityEngine.UI.Image Plate(Transform parent, string name, Color color, float inset)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            var rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(inset, inset);
+            rect.offsetMax = new Vector2(-inset, -inset);
+
+            var image = go.AddComponent<UnityEngine.UI.Image>();
+            image.color = color;
+            image.raycastTarget = false;
+            return image;
         }
 
         /// <summary>
