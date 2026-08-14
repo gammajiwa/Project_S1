@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using UnityEngine;
 
 namespace Proto
@@ -63,7 +63,8 @@ namespace Proto
                 }
             }
 
-            _sb.Append("<size=17><b>").Append(def.DisplayName).Append("</b></size>");
+            _sb.Append("<size=17><b>").Append(Loc.T("piece." + def.Id + ".name", def.DisplayName))
+               .Append("</b></size>");
             if (def.Stars > 0)
                 _sb.Append("  ").Append(Gold).Append(Shapes.StarText(def.Stars)).Append(End);
             _sb.Append('\n');
@@ -83,10 +84,12 @@ namespace Proto
             else AppendSkill(def, spell);
 
             _sb.Append("<size=11>").Append(Dim).Append("————————————————————\n");
-            _sb.Append("jual ").Append(_balance.SellValueOf(def)).Append(" koin").Append(End).Append("</size>");
+            _sb.Append(Loc.F("tip.sell", _balance.SellValueOf(def))).Append(End).Append("</size>");
 
             if (!string.IsNullOrEmpty(def.Blurb))
-                _sb.Append("\n<size=11><i>").Append(Dim).Append(def.Blurb).Append(End).Append("</i></size>");
+                _sb.Append("\n<size=11><i>").Append(Dim)
+                   .Append(Loc.T("piece." + def.Id + ".blurb", def.Blurb))
+                   .Append(End).Append("</i></size>");
 
             return _sb.ToString();
         }
@@ -94,12 +97,12 @@ namespace Proto
         /// <summary>Jenis, bentuk, dan luas — tiga fakta yang selalu ada, dalam satu baris.</summary>
         static string TypeLine(PieceDefinition def)
         {
-            string kind = def.Layer == Layer.Rune ? "rune alas"
-                : def.Kind == CastKind.Passive ? "segel pasif"
+            string kind = def.Layer == Layer.Rune ? Loc.T("tip.kind.rune")
+                : def.Kind == CastKind.Passive ? Loc.T("tip.kind.sigil")
                 : KindName(def.Kind);
 
-            string line = kind + "  ·  " + Shapes.NameOf(def.Shape) + "  ·  " + def.Cells.Length + " petak";
-            if (def.Layer == Layer.Rune) line += "  ·  " + def.Element;
+            string line = Loc.F("tip.typeline", kind, Shapes.NameOf(def.Shape), def.Cells.Length);
+            if (def.Layer == Layer.Rune) line += Loc.F("tip.typeline.element", def.Element);
             return line;
         }
 
@@ -111,24 +114,23 @@ namespace Proto
             switch (def.Aura)
             {
                 case AuraKind.DamagePct:
-                    AppendAura("+", "damage", def.AuraValue, perCell);
+                    AppendAura("+", Loc.T("tip.aura.damage"), def.AuraValue, perCell);
                     break;
                 case AuraKind.CooldownPct:
-                    AppendAura("-", "cooldown", def.AuraValue, perCell);
+                    AppendAura("-", Loc.T("tip.aura.cooldown"), def.AuraValue, perCell);
                     break;
                 case AuraKind.RadiusPct:
-                    AppendAura("+", "area", def.AuraValue, perCell);
+                    AppendAura("+", Loc.T("tip.aura.area"), def.AuraValue, perCell);
                     break;
                 default:
-                    _sb.Append("alas polos, nggak ngasih aura\n");
+                    _sb.Append(Loc.T("tip.rune.plain")).Append('\n');
                     break;
             }
 
             if (def.ElementMatchBonus > 0f)
             {
-                _sb.Append("skill ber-elemen ").Append(def.Element).Append(" di atasnya: +")
-                    .Append(Mathf.RoundToInt(def.ElementMatchBonus * 100f))
-                    .Append("% damage TOTAL\n");
+                _sb.Append(Loc.F("tip.rune.element", def.Element,
+                    Mathf.RoundToInt(def.ElementMatchBonus * 100f))).Append('\n');
             }
 
             AppendStats(def);
@@ -136,8 +138,8 @@ namespace Proto
 
         void AppendAura(string sign, string what, float value, int perCell)
         {
-            _sb.Append(sign).Append(Mathf.RoundToInt(value * 100f)).Append("% ").Append(what)
-                .Append(" TOTAL  (").Append(perCell).Append("% per petak)\n");
+            _sb.Append(Loc.F("tip.aura", sign, Mathf.RoundToInt(value * 100f), what, perCell))
+                .Append('\n');
         }
 
         void AppendSigil(PieceDefinition def, CompiledSpell spell, string origin)
@@ -152,7 +154,7 @@ namespace Proto
             bool aktif = spell == null && origin != null && origin.StartsWith("KEPASANG");
 
             _sb.Append("<size=11>").Append(aktif ? Good : Warn)
-                .Append(aktif ? "aktif" : "harus berdiri di atas rune biar aktif")
+                .Append(Loc.T(aktif ? "tip.sigil.active" : "tip.sigil.inactive"))
                 .Append(End).Append("</size>\n");
         }
 
@@ -170,43 +172,43 @@ namespace Proto
         {
             switch (mod.Type)
             {
-                case StatKind.MaxHp: return "+" + mod.Value.ToString("0") + " HP maksimum";
-                case StatKind.MaxMana: return "+" + mod.Value.ToString("0") + " mana maksimum";
-                case StatKind.ManaRegen: return "+" + mod.Value.ToString("0.0") + " mana / detik";
-                case StatKind.HpRegen: return "+" + mod.Value.ToString("0.0") + " HP / detik";
-                case StatKind.Defense: return "+" + mod.Value.ToString("0.#") + " pertahanan";
-                case StatKind.AilmentPoints: return "+" + mod.Value.ToString("0") + " poin ailment per tempel";
-                case StatKind.MoveSpeed: return Sign(mod.Value) + mod.Value.ToString("0.0") + " kecepatan menghindar";
-                case StatKind.DebuffResist: return Sign(mod.Value) + Pct(mod.Value) + "% tahan kutukan";
+                case StatKind.MaxHp: return Loc.F("stat.maxhp", mod.Value.ToString("0"));
+                case StatKind.MaxMana: return Loc.F("stat.maxmana", mod.Value.ToString("0"));
+                case StatKind.ManaRegen: return Loc.F("stat.manaregen", mod.Value.ToString("0.0"));
+                case StatKind.HpRegen: return Loc.F("stat.hpregen", mod.Value.ToString("0.0"));
+                case StatKind.Defense: return Loc.F("stat.defense", mod.Value.ToString("0.#"));
+                case StatKind.AilmentPoints: return Loc.F("stat.ailmentpoints", mod.Value.ToString("0"));
+                case StatKind.MoveSpeed: return Loc.F("stat.movespeed", Sign(mod.Value), Mathf.Abs(mod.Value).ToString("0.0"));
+                case StatKind.DebuffResist: return Loc.F("stat.debuffresist", Sign(mod.Value), Pct(mod.Value));
                 // Tandanya DIBACA, bukan diasumsikan. Keduanya dipakai sebagai `1 − nilai`, jadi
                 // nilai negatif berarti LEBIH MAHAL / LEBIH LAMBAT — dan baris yang selalu menulis
                 // "−" mengabarkan kebalikan persis dari yang sedang terjadi. Sebelum ada kutukan
                 // dan pakta, tidak ada yang pernah negatif, jadi kebohongannya belum bisa muncul.
                 case StatKind.ManaCostPct:
-                    return (mod.Value < 0f ? "+" : "-") + Pct(mod.Value) + "% biaya mana";
+                    return Loc.F("stat.manacost", mod.Value < 0f ? "+" : "-", Pct(mod.Value));
 
                 case StatKind.CooldownPct:
-                    return (mod.Value < 0f ? "+" : "-") + Pct(mod.Value) + "% cooldown";
-                case StatKind.DamagePct: return "+" + Pct(mod.Value) + "% damage";
-                case StatKind.AreaPct: return "+" + Pct(mod.Value) + "% area";
-                case StatKind.RangePct: return "+" + Pct(mod.Value) + "% jangkauan";
-                case StatKind.CritChance: return "+" + Pct(mod.Value) + "% peluang crit";
-                case StatKind.CritDamage: return "+" + Pct(mod.Value) + "% damage crit";
-                case StatKind.FireDamagePct: return "+" + Pct(mod.Value) + "% damage skill API";
-                case StatKind.IceDamagePct: return "+" + Pct(mod.Value) + "% damage skill ES";
-                case StatKind.LightningDamagePct: return "+" + Pct(mod.Value) + "% damage skill PETIR";
+                    return Loc.F("stat.cooldown", mod.Value < 0f ? "+" : "-", Pct(mod.Value));
+                case StatKind.DamagePct: return Loc.F("stat.damage", Pct(mod.Value));
+                case StatKind.AreaPct: return Loc.F("stat.area", Pct(mod.Value));
+                case StatKind.RangePct: return Loc.F("stat.range", Pct(mod.Value));
+                case StatKind.CritChance: return Loc.F("stat.critchance", Pct(mod.Value));
+                case StatKind.CritDamage: return Loc.F("stat.critdamage", Pct(mod.Value));
+                case StatKind.FireDamagePct: return Loc.F("stat.firedamage", Pct(mod.Value));
+                case StatKind.IceDamagePct: return Loc.F("stat.icedamage", Pct(mod.Value));
+                case StatKind.LightningDamagePct: return Loc.F("stat.lightningdamage", Pct(mod.Value));
 
                 // Stat perilaku. Ditulis sebagai kalimat, bukan sebagai angka bertanda: yang dibeli
                 // bukan besaran melainkan kata kerja, dan "+2 BonusBounces" tidak memberi tahu
                 // pemain bahwa pelurunya sekarang MEMANTUL.
                 case StatKind.BonusBounces:
-                    return "peluru & sinar MEMANTUL " + mod.Value.ToString("0") + "x lagi";
+                    return Loc.F("stat.bounces", mod.Value.ToString("0"));
 
                 case StatKind.BonusForks:
-                    return "rantai petir bercabang " + mod.Value.ToString("0") + " lagi";
+                    return Loc.F("stat.forks", mod.Value.ToString("0"));
 
                 case StatKind.BonusHits:
-                    return "+" + mod.Value.ToString("0") + " semburan / bilah / rudal / hantaman";
+                    return Loc.F("stat.hits", mod.Value.ToString("0"));
 
                 default: return mod.Type + " " + mod.Value.ToString("0.##");
             }
@@ -224,7 +226,8 @@ namespace Proto
                 _sb.Append(Describe(def.Mods[i]));
             }
 
-            if (!string.IsNullOrEmpty(def.Blurb)) _sb.Append('\n').Append(def.Blurb);
+            if (!string.IsNullOrEmpty(def.Blurb))
+                _sb.Append('\n').Append(Loc.T("buff." + def.Id + ".blurb", def.Blurb));
             return _sb.ToString();
         }
 
@@ -241,34 +244,38 @@ namespace Proto
             float radius = spell != null ? spell.Radius : def.Radius;
 
             // Bentuk piece-nya sudah dibawa baris jenis di kepala kartu; yang di sini murni angka.
-            _sb.Append(def.Kind == CastKind.Heal ? "heal " : "damage ").Append(BigNumber.Short(dmg));
-            _sb.Append("  ·  cd ").Append(cd.ToString("0.00")).Append('s');
-            _sb.Append("  ·  mana ").Append(Mathf.RoundToInt(def.ManaCost)).Append('\n');
+            _sb.Append(Loc.F(def.Kind == CastKind.Heal ? "tip.skill.heal" : "tip.skill.damage",
+                BigNumber.Short(dmg)));
+            _sb.Append(Loc.F("tip.skill.cd", cd.ToString("0.00")));
+            _sb.Append(Loc.F("tip.skill.mana", Mathf.RoundToInt(def.ManaCost))).Append('\n');
 
-            if (range > 0f) _sb.Append("jangkauan ").Append(range.ToString("0.0"));
-            if (def.Kind == CastKind.Nova) _sb.Append("  ·  radius ledak ").Append(radius.ToString("0.0"));
+            if (range > 0f) _sb.Append(Loc.F("tip.skill.range", range.ToString("0.0")));
+            if (def.Kind == CastKind.Nova)
+                _sb.Append(Loc.F("tip.skill.radius", radius.ToString("0.0")));
             if (def.Hits > 1)
             {
-                _sb.Append(def.Kind == CastKind.Radial ? "  ·  arah " : "  ·  lompatan ")
-                    .Append(def.Hits);
+                _sb.Append(Loc.F(def.Kind == CastKind.Radial ? "tip.skill.dirs" : "tip.skill.jumps",
+                    def.Hits));
             }
 
-            if (def.Forks > 1) _sb.Append("  ·  cabang ").Append(def.Forks);
-            if (def.Bounces > 0) _sb.Append("  ·  MEMANTUL ").Append(def.Bounces).Append('x');
-            if (def.ZoneDrift > 0f) _sb.Append("  ·  MENGEMBARA");
+            if (def.Forks > 1) _sb.Append(Loc.F("tip.skill.forks", def.Forks));
+            if (def.Bounces > 0) _sb.Append(Loc.F("tip.skill.bounces", def.Bounces));
+            if (def.ZoneDrift > 0f) _sb.Append(Loc.T("tip.skill.drift"));
 
             if (def.Kind == CastKind.Detonate && def.TriggerStatus != null)
             {
-                _sb.Append("\nmeledakkan semua musuh ber-").Append(def.TriggerStatus.DisplayName)
-                    .Append(", damage x POIN yang menumpuk");
+                _sb.Append(Loc.F("tip.skill.detonate",
+                    Loc.T("status." + def.TriggerStatus.Id + ".name", def.TriggerStatus.DisplayName)));
             }
             if (range > 0f || def.Hits > 1) _sb.Append('\n');
 
             if (def.AppliedStatus != null)
             {
-                _sb.Append("nempel ").Append(def.AppliedStatus.DisplayName);
-                if (def.AppliedPoints > 1) _sb.Append(" ").Append(def.AppliedPoints).Append(" poin");
-                _sb.Append(' ').Append(def.StatusDuration.ToString("0.0")).Append("s\n");
+                _sb.Append(Loc.F("tip.skill.applies",
+                    Loc.T("status." + def.AppliedStatus.Id + ".name", def.AppliedStatus.DisplayName)));
+                if (def.AppliedPoints > 1)
+                    _sb.Append(Loc.F("tip.skill.applies.points", def.AppliedPoints));
+                _sb.Append(Loc.F("tip.skill.applies.dur", def.StatusDuration.ToString("0.0"))).Append('\n');
             }
 
             AppendStats(def);
@@ -276,24 +283,24 @@ namespace Proto
             if (spell == null)
             {
                 _sb.Append("<size=11>").Append(Warn)
-                    .Append("angka dasar - belum kepasang di atas rune").Append(End).Append("</size>\n");
+                    .Append(Loc.T("tip.skill.base")).Append(End).Append("</size>\n");
                 return;
             }
 
             if (spell.DamageBonus <= 0f && spell.CooldownBonus <= 0f && spell.RadiusBonus <= 0f)
             {
                 _sb.Append("<size=11>").Append(Grey)
-                    .Append("rune di bawahnya nggak ngasih buff").Append(End).Append("</size>\n");
+                    .Append(Loc.T("tip.skill.nobuff")).Append(End).Append("</size>\n");
                 return;
             }
 
-            _sb.Append(Blue).Append("dari rune di bawah:");
+            _sb.Append(Blue).Append(Loc.T("tip.skill.frombelow"));
             if (spell.DamageBonus > 0f)
-                _sb.Append("  +").Append(Mathf.RoundToInt(spell.DamageBonus * 100f)).Append("% DMG");
+                _sb.Append(Loc.F("tip.skill.dmgbonus", Mathf.RoundToInt(spell.DamageBonus * 100f)));
             if (spell.CooldownBonus > 0f)
-                _sb.Append("  -").Append(Mathf.RoundToInt(spell.CooldownBonus * 100f)).Append("% CD");
+                _sb.Append(Loc.F("tip.skill.cdbonus", Mathf.RoundToInt(spell.CooldownBonus * 100f)));
             if (spell.RadiusBonus > 0f)
-                _sb.Append("  +").Append(Mathf.RoundToInt(spell.RadiusBonus * 100f)).Append("% AREA");
+                _sb.Append(Loc.F("tip.skill.areabonus", Mathf.RoundToInt(spell.RadiusBonus * 100f)));
             _sb.Append(End).Append('\n');
         }
 
@@ -301,18 +308,18 @@ namespace Proto
         {
             switch (kind)
             {
-                case CastKind.Projectile: return "proyektil";
-                case CastKind.Nova: return "ledakan melingkar";
-                case CastKind.Chain: return "sambaran beruntun";
-                case CastKind.Heal: return "penyembuh";
-                case CastKind.AreaAtTarget: return "ledakan di gerombolan";
-                case CastKind.Line: return "sapuan garis";
-                case CastKind.Zone: return "kubangan";
-                case CastKind.Passive: return "segel pasif";
-                case CastKind.Cleanse: return "pembersih kutukan";
-                case CastKind.Radial: return "semburan segala arah";
-                case CastKind.Detonate: return "peledak ailment";
-                default: return "alas";
+                case CastKind.Projectile: return Loc.T("kind.projectile");
+                case CastKind.Nova: return Loc.T("kind.nova");
+                case CastKind.Chain: return Loc.T("kind.chain");
+                case CastKind.Heal: return Loc.T("kind.heal");
+                case CastKind.AreaAtTarget: return Loc.T("kind.areaattarget");
+                case CastKind.Line: return Loc.T("kind.line");
+                case CastKind.Zone: return Loc.T("kind.zone");
+                case CastKind.Passive: return Loc.T("kind.passive");
+                case CastKind.Cleanse: return Loc.T("kind.cleanse");
+                case CastKind.Radial: return Loc.T("kind.radial");
+                case CastKind.Detonate: return Loc.T("kind.detonate");
+                default: return Loc.T("kind.rune");
             }
         }
 

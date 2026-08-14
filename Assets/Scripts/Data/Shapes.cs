@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Proto
 {
@@ -413,49 +413,16 @@ namespace Proto
             }
         }
 
-        /// <summary>Short label for the tooltip, so the footprint does not have to live in prose.</summary>
+        /// <summary>
+        /// Label pendek untuk tooltip, supaya bentuknya tidak perlu hidup di dalam prosa.
+        ///
+        /// Kuncinya diturunkan dari nama enum-nya, bukan ditulis satu per satu: bentuk baru cuma
+        /// perlu satu baris di enum dan satu baris di tabel bahasa, dan tidak ada switch ketiga
+        /// yang bisa lupa diperbarui. Nama enum sendiri jadi cadangan, jadi bentuk yang belum
+        /// punya terjemahan tampil sebagai "Cross", bukan sebagai kekosongan.
+        /// </summary>
         public static string NameOf(ShapeKind kind)
-        {
-            switch (kind)
-            {
-                case ShapeKind.Dot: return "TITIK";
-                case ShapeKind.Line2: return "GARIS 2";
-                case ShapeKind.Line3: return "GARIS 3";
-                case ShapeKind.Square: return "KOTAK 2x2";
-                case ShapeKind.Big3: return "BLOK 3x3";
-                case ShapeKind.Corner: return "SIKU";
-                case ShapeKind.SBend: return "BENGKOK S";
-                case ShapeKind.Tee: return "HURUF T";
-                case ShapeKind.Ell: return "HURUF L";
-                case ShapeKind.Cross: return "SALIB";
-                case ShapeKind.Cup: return "CAWAN";
-                case ShapeKind.Wedge: return "SUDUT V";
-                case ShapeKind.Slab: return "LEMPENG 3x2";
-                case ShapeKind.Hook: return "HURUF C";
-                case ShapeKind.Ring: return "CINCIN";
-                case ShapeKind.Chunk: return "BONGKAH";
-                case ShapeKind.Zed: return "HURUF Z";
-                case ShapeKind.Aitch: return "HURUF H";
-                case ShapeKind.Ess: return "HURUF S";
-                case ShapeKind.Fork: return "TRISULA";
-
-                case ShapeKind.Diag2: return "SERONG 2";
-                case ShapeKind.Diag3: return "SERONG 3";
-                case ShapeKind.Zee: return "BENGKOK Z";
-                case ShapeKind.Jay: return "HURUF J";
-                case ShapeKind.Nub: return "TONJOLAN";
-                case ShapeKind.Ex: return "SILANG X";
-                case ShapeKind.Arrow: return "PANAH";
-                case ShapeKind.Bolt: return "KILAT";
-                case ShapeKind.Twin: return "TIANG KEMBAR";
-                case ShapeKind.Stair: return "TANGGA";
-                case ShapeKind.Comb: return "SISIR";
-                case ShapeKind.Spiral: return "PUSARAN";
-                case ShapeKind.Maw: return "RAHANG";
-
-                default: return kind.ToString();
-            }
-        }
+            => Loc.T("shape." + kind.ToString().ToLowerInvariant(), kind.ToString());
 
         /// <summary>Rotates a footprint by 90 degrees `rot` times and re-normalises it to origin.</summary>
         public static Vector2Int[] Rotate(Vector2Int[] cells, int rot)
