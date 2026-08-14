@@ -42,7 +42,7 @@ namespace Proto
         {
             _theme = Resources.Load<AudioTheme>("AudioTheme");
 
-            if (_theme == null || _theme.MenuLoop == null)
+            if (_theme == null)
             {
                 // Tanpa tema, menu kembali sunyi seperti sebelumnya — bukan error.
                 Destroy(gameObject);
@@ -54,17 +54,23 @@ namespace Proto
                 gameObject.AddComponent<AudioListener>();
             }
 
-            _loop = gameObject.AddComponent<AudioSource>();
-            _loop.playOnAwake = false;
-            _loop.loop = true;
-            _loop.spatialBlend = 0f;
-            _loop.clip = _theme.MenuLoop;
-            _loop.volume = Volume();
-            _loop.Play();
-
+            // Blip dibuat TANPA syarat: kontrak AudioTheme bilang slot mana pun boleh
+            // kosong sendiri-sendiri — MenuLoop yang kosong tidak boleh ikut membunuh
+            // bunyi klik, dua slot itu tidak saling kenal.
             _blip = gameObject.AddComponent<AudioSource>();
             _blip.playOnAwake = false;
             _blip.spatialBlend = 0f;
+
+            if (_theme.MenuLoop != null)
+            {
+                _loop = gameObject.AddComponent<AudioSource>();
+                _loop.playOnAwake = false;
+                _loop.loop = true;
+                _loop.spatialBlend = 0f;
+                _loop.clip = _theme.MenuLoop;
+                _loop.volume = Volume();
+                _loop.Play();
+            }
         }
 
         float Volume() => Mathf.Clamp01(GameSettings.Load().MusicVolume) * _theme.MusicTrim;

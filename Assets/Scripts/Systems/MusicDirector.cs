@@ -65,12 +65,26 @@ namespace Proto
             if (_to == null || clip == null) return;
             if (_to.clip == clip && _to.isPlaying) return;
 
+            // Balik arah di tengah silih (rehat -> berangkat lagi dalam <1,6 dtk): sumber
+            // lama masih memutar klip yang diminta — cukup membalik arah fade-nya, TANPA
+            // Play() ulang. Restart dari sampel nol plus fade yang di-nol-kan terdengar
+            // sebagai musik yang tersandung.
+            if (_from != null && _from.clip == clip && _from.isPlaying)
+            {
+                (_from, _to) = (_to, _from);
+                _fade = 1f - _fade;
+                return;
+            }
+
             // Yang sedang menuju penuh jadi sumber silih berikutnya.
             (_from, _to) = (_to, _from);
 
             _to.clip = clip;
             _to.Play();
-            _fade = 0f;
+
+            // 1-fade, bukan nol: kalau pergantian datang di tengah silih, sumber yang
+            // berbalik meneruskan dari volume terkininya — bukan melompat penuh (pop).
+            _fade = 1f - _fade;
         }
 
         /// <summary>Hentikan loop — dipakai game over, supaya stinger kalah berbunyi sendirian.</summary>
@@ -82,7 +96,7 @@ namespace Proto
             (_from, _to) = (_to, _from);
             _to.clip = null;
             _to.Stop();
-            _fade = 0f;
+            _fade = 1f - _fade;
         }
 
         public void PlayStinger(AudioClip clip)
@@ -97,7 +111,11 @@ namespace Proto
         public void Duck(float amount, float seconds)
         {
             _duck = Mathf.Min(_duck, 1f - Mathf.Clamp01(amount));
-            _duckHeldUntil = Time.unscaledTime + Mathf.Max(0.1f, seconds);
+
+            // Max, bukan timpa: duck pendek yang menyusul (roar boss di tengah stinger
+            // evolve) tidak boleh memangkas masa tahan duck panjang yang masih berlaku.
+            _duckHeldUntil = Mathf.Max(_duckHeldUntil,
+                Time.unscaledTime + Mathf.Max(0.1f, seconds));
         }
 
         public void SetUserVolume(float volume) => _userVolume = Mathf.Clamp01(volume);

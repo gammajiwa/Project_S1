@@ -89,6 +89,13 @@ namespace Proto
         /// <summary>Pengeras suara UI, dititip composition root. Null = UI bisu, bukan rusak.</summary>
         public AudioDirector Sfx;
 
+        /// <summary>Sasaran hover terakhir yang sudah dibunyikan — gerbang anti-desis.</summary>
+        PieceDefinition _lastHovered;
+
+        /// <summary>Frame saat panel ditutup lewat klik-luar. Klik yang sama boleh lolos ke
+        /// logika pungut (disengaja), tapi bunyi pungutnya mengalah — satu klik satu bunyi.</summary>
+        int _panelCloseFrame = -1;
+
         bool _shopOpen;
         int _rerollCost;
         readonly PieceDefinition[] _shop = new PieceDefinition[ShopSlots];
@@ -2610,6 +2617,7 @@ namespace Proto
                         {
                             DropRiders();
                             _held = null;
+                            if (Sfx != null) Sfx.UiPlace();
                         }
                     }
 
@@ -2656,7 +2664,7 @@ namespace Proto
                 _held = _loose[looseIndex];
                 _heldRot = 0;
                 RemoveLoose(looseIndex);
-                if (Sfx != null) Sfx.UiPick();
+                if (Sfx != null && Time.frameCount != _panelCloseFrame) Sfx.UiPick();
                 return;
             }
 
@@ -2669,7 +2677,7 @@ namespace Proto
                     _held = stored.Def;
                     _heldRot = stored.Rot;
                     _bag.Remove(stored);
-                    if (Sfx != null) Sfx.UiPick();
+                    if (Sfx != null && Time.frameCount != _panelCloseFrame) Sfx.UiPick();
                 }
 
                 return;
@@ -2684,7 +2692,7 @@ namespace Proto
 
             _held = inst.Def;
             _heldRot = inst.Rot;
-            if (Sfx != null) Sfx.UiPick();
+            if (Sfx != null && Time.frameCount != _panelCloseFrame) Sfx.UiPick();
 
             // Lifting a base takes whatever is standing on it. Anything bridging two bases belongs
             // to neither, so Remove sends those to the floor as it always did.
@@ -2766,6 +2774,7 @@ namespace Proto
                     // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
                     // lebih mahal daripada satu klik yang terbuang.
                     _gambleOpen = false;
+                    _panelCloseFrame = Time.frameCount;
                     if (Sfx != null) Sfx.UiClose();
                     return _held != null;
                 }
@@ -2829,6 +2838,7 @@ namespace Proto
                 // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
                 // lebih mahal daripada satu klik yang terbuang.
                 _shopOpen = false;
+                _panelCloseFrame = Time.frameCount;
                 if (Sfx != null) Sfx.UiClose();
                 return _held != null;
             }
@@ -4976,7 +4986,16 @@ namespace Proto
                 _tipText.enabled = false;
                 _recipes.Hide();
                 Player.HideRange();
+                _lastHovered = null;
                 return;
+            }
+
+            // Berbunyi hanya saat SASARAN hover berganti. Tanpa gerbang ini ia berdesis
+            // tiap frame selama kursor diam di atas piece yang sama.
+            if (hovered != _lastHovered)
+            {
+                _lastHovered = hovered;
+                if (Sfx != null) Sfx.UiHover();
             }
 
             // ALT swaps the stat card for the recipe card. They occupy the same corner of the

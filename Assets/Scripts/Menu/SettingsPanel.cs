@@ -120,12 +120,18 @@ namespace Proto
             {
                 _settings.SfxVolume = value;
                 SetPercent(_sfxValue, value);
+
+                // Disimpan SEKARANG, bukan menunggu OnDisable: pemutar suara (AudioDirector,
+                // MusicDirector, MenuMusic) membaca ulang PlayerPrefs dua kali sedetik —
+                // tanpa Save di sini, slider baru terasa setelah panelnya ditutup.
+                _settings.Save();
             });
 
             BindSlider(_musicSlider, _settings.MusicVolume, value =>
             {
                 _settings.MusicVolume = value;
                 SetPercent(_musicValue, value);
+                _settings.Save();
             });
 
             // Nilai stepper juga boleh menyusut: "BEZ OGRANICHENIY" dan kawan-kawannya jauh

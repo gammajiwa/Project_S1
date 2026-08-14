@@ -73,6 +73,14 @@ namespace Proto
 
         [Range(0f, 1f)] public float StingerTrim = 0.8f;
 
+        [Header("Volume cast (di bawah slider SFX pemain)")]
+        [Tooltip("Cast biasa. Sengaja RENDAH: di game idle skill menembak sendiri terus-menerus, " +
+                 "dan hujan cast yang keras menelan musik dalam semenit. Petir boleh berbunyi " +
+                 "petir — tapi tidak boleh menggelegar di atas segalanya.")]
+        [Range(0f, 1f)] public float CastLightVolume = 0.38f;
+
+        [Range(0f, 1f)] public float CastHeavyVolume = 0.6f;
+
         [Tooltip("Lama silih ganti antar loop, detik. Pakai waktu UNSCALED — game punya " +
                  "kecepatan 1x-5x dan musik tidak boleh ikut ngebut.")]
         [Range(0.1f, 6f)] public float CrossfadeSeconds = 1.6f;

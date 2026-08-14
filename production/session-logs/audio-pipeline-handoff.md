@@ -154,6 +154,31 @@ Lewat Unity MCP (`execute_code` / `manage_scriptable_object`), klip sesuai
 yang dibuat per-play; dedup tidak memakan suara penting; musik pakai unscaled).
 Uji telinga = tugas user (QA loop visual/audio user pakai mata & kuping sendiri).
 
+## UPDATE 2026-08-14 (sesi lanjutan): musik & selera pemilik project
+
+**ATURAN MUSIK (keputusan user, final):**
+1. **Musik/BGM project_b DILARANG total** — 7 file BGM-nya sudah dihapus dari
+   Assets/Audio/Music (git rm). SFX project_b boleh.
+2. Kandidat musik dari project internal lain (Crimson/Toge) juga DITOLAK.
+3. Orkestra megah DITOLAK ("terlalu orkestra, ini game idle") — arah yang benar:
+   **dark tapi chill** = dungeon synth / dark ambient.
+4. Terpasang sekarang (semua dari OpenGameArt, lihat docs/audio/music-licenses.md):
+   Menu=Nymph of the Forest (dungeon synth), Combat=Creepy Forest (eerie ambient),
+   Shop=Cave Theme (ambient). Stinger MASIH KOSONG — cari yang chill juga.
+5. SFX: "matching per elemen" (petir=petir) tapi TIDAK menggelegar — elemen
+   dipindah ke satu keluarga EM_*, volume cast jadi knob SO
+   (CastLightVolume 0.38 / CastHeavyVolume 0.6), MusicTrim naik ke 0.7,
+   Death diganti satu splat (sfx_cat_death dinilai jelek).
+6. FreePD.com TUTUP permanen. CC-BY-SA dihindari (share-alike).
+
+**Review adversarial (6 agent) — 10 temuan confirmed, SEMUA SUDAH DIFIX:**
+jalur tema PlayCast/PlayReaction kini menghormati MinGap (temuan tinggi);
+crossfade anti-pop (fade dibalik, retarget-back tanpa restart); duck hold pakai
+Max; MenuMusic tidak bunuh diri saat MenuLoop kosong; slider SFX/MUSIC live
+(Save() per geser); klik tutup-panel tidak dobel bunyi dengan pungut
+(_panelCloseFrame); place lewat replace di tas berbunyi; UiHover akhirnya
+di-wire dengan debounce per-perubahan-sasaran.
+
 ## CATATAN TEKNIS KECIL
 
 - `AudioDirector` dibuat DI KODE oleh ProtoBootstrap (bukan di scene) — makanya

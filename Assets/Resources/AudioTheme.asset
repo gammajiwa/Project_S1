@@ -12,18 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 35f3c3f8e086ac944bc31f5f148db6f3, type: 3}
   m_Name: AudioTheme
   m_EditorClassIdentifier: Assembly-CSharp::Proto.AudioTheme
-  MenuLoop: {fileID: 8300000, guid: ec10fd851fc6d2649bdf595faa59eef9, type: 3}
-  CombatLoop: {fileID: 8300000, guid: 637c5437f9653d64eb39cfc71811b77a, type: 3}
-  ShopLoop: {fileID: 8300000, guid: 1902f4bd92c5d4c4ab87a5fc31ca9ac0, type: 3}
-  WinStinger: {fileID: 8300000, guid: 787e9d66c78ebb049a49af6092fe5f2a, type: 3}
-  LoseStinger: {fileID: 8300000, guid: 42d280072d6579f4ebdecdd58f11317f, type: 3}
-  EvolveStinger: {fileID: 8300000, guid: ce6e58305ad415f4e9d2fed08d82c7d5, type: 3}
-  MusicTrim: 0.55
+  MenuLoop: {fileID: 8300000, guid: d63b07ef3b058b64caec451c99404fdf, type: 3}
+  CombatLoop: {fileID: 8300000, guid: 7c55da5c7ab23494a9f2ce2f75ddb741, type: 3}
+  ShopLoop: {fileID: 8300000, guid: 0a2949eb98cd0654bb1f344027c9ff39, type: 3}
+  WinStinger: {fileID: 0}
+  LoseStinger: {fileID: 0}
+  EvolveStinger: {fileID: 0}
+  MusicTrim: 0.7
   StingerTrim: 0.8
   CrossfadeSeconds: 1.6
   Cast:
   - {fileID: 8300000, guid: 04f21775824b97043910e4821e4190a0, type: 3}
-  - {fileID: 8300000, guid: 4d393be24ed7ad14bad4b5cdd969a1f1, type: 3}
   Blast:
   - {fileID: 8300000, guid: 0eddab43b261eac48bec381b607eefff, type: 3}
   - {fileID: 8300000, guid: 34f60088526b4d44b97ad072de94f359, type: 3}
@@ -31,7 +30,6 @@ MonoBehaviour:
   Hit:
   - {fileID: 8300000, guid: 82ceb4143bed3d942979bbfd9dae5c0e, type: 3}
   Death:
-  - {fileID: 8300000, guid: 97d0b91cc5d694746a75567c33d0e66f, type: 3}
   - {fileID: 8300000, guid: 8b01b47131397f94786a6e499e0ad305, type: 3}
   Reaction: []
   Pickup:
@@ -42,16 +40,16 @@ MonoBehaviour:
   - {fileID: 8300000, guid: ade3fa78dd7a4554bad8b284dad71078, type: 3}
   Fire:
     Light: {fileID: 8300000, guid: 356e41eb7503c2c46a448a327c11d78a, type: 3}
-    Heavy: {fileID: 8300000, guid: 8d530c3462669b54ab13d44065f77721, type: 3}
+    Heavy: {fileID: 8300000, guid: 2af9d2a75fe4eea4c909ef984cf95952, type: 3}
   Ice:
     Light: {fileID: 8300000, guid: a90e92e635955674aa8dd0b930534a0a, type: 3}
     Heavy: {fileID: 8300000, guid: a707d21f69ec3314fb3c4cf87ca4c4b2, type: 3}
   Lightning:
     Light: {fileID: 8300000, guid: 4c47168b19fc63b4ab833aeef1b3d535, type: 3}
-    Heavy: {fileID: 8300000, guid: 4a6061ff78f052548badd65da50f9b5b, type: 3}
+    Heavy: {fileID: 8300000, guid: 4c47168b19fc63b4ab833aeef1b3d535, type: 3}
   Arcane:
-    Light: {fileID: 8300000, guid: df00f94be32e14f4398a6d92e565218a, type: 3}
-    Heavy: {fileID: 8300000, guid: 92f4d0c3cbc4ec94e8205b2a31eaf712, type: 3}
+    Light: {fileID: 8300000, guid: c434ab774537b0b4eafb2ef3cbc474fd, type: 3}
+    Heavy: {fileID: 8300000, guid: f05202cfc2da4fd45af0a7ac1c80e74b, type: 3}
   Pieces:
   - Piece: {fileID: 11400000, guid: fac0e9f21bcea134a85b29b8568c2f60, type: 2}
     Cast: {fileID: 8300000, guid: dabc64da482b32443ba5a6451a7d80e7, type: 3}

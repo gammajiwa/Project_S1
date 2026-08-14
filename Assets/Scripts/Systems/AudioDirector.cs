@@ -238,7 +238,17 @@ namespace Proto
 
             if (clip != null)
             {
-                PlayClip(clip, heavy ? 0.85f : 0.55f, heavy ? 0.95f : 1.05f);
+                // Rem per-kategori TETAP berlaku di jalur tema — tanpa ini, sepuluh skill
+                // yang cooldown-nya serempak menembakkan sepuluh klip berbeda di frame yang
+                // sama, dan dedup per-klip tidak menahan apa pun.
+                int gate = (int)(heavy ? Sound.Blast : Sound.Cast);
+                if (Time.unscaledTime - _lastPlayed[gate] < MinGap[gate]) return;
+                _lastPlayed[gate] = Time.unscaledTime;
+
+                // Volume dari tema, bukan angka mati — keseimbangan lawan musiknya disetel
+                // telinga pemilik project di Inspector, sambil play mode jalan.
+                PlayClip(clip, heavy ? Theme.CastHeavyVolume : Theme.CastLightVolume,
+                    heavy ? 0.95f : 1.05f);
                 return;
             }
 
@@ -251,8 +261,20 @@ namespace Proto
         {
             var clip = Theme != null ? Theme.ReactionClipFor(reaction) : null;
 
-            if (clip != null) PlayClip(clip, 0.9f, 1f, 2);
-            else Play(Sound.Reaction);
+            if (clip == null)
+            {
+                Play(Sound.Reaction);
+                return;
+            }
+
+            // Rem kategori yang sama dengan jalur sintesis. Tanpa stempel ini, gerombolan
+            // yang meledak berantai menembakkan puluhan reaction per detik dan satu-satunya
+            // rem tersisa cuma jendela 45 ms per-klip.
+            int gate = (int)Sound.Reaction;
+            if (Time.unscaledTime - _lastPlayed[gate] < MinGap[gate]) return;
+            _lastPlayed[gate] = Time.unscaledTime;
+
+            PlayClip(clip, 0.9f, 1f, 2);
         }
 
         // ---- antarmuka: prioritas 0, paling rela mengalah saat layar sedang ramai ----
