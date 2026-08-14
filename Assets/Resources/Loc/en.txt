@@ -543,3 +543,6 @@ menu.play=PLAY
 menu.quit=QUIT
 menu.settings=SETTINGS
 menu.startrun=START RUN
+
+settings.reset.hint=takes two clicks
+settings.row.resetcodex=Codex

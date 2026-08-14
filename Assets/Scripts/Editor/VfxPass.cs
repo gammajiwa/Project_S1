@@ -355,6 +355,121 @@ namespace Proto.EditorTools
                       (problems.Count > 0 ? "\n - " + string.Join("\n - ", problems) : ""));
         }
 
+        /// <summary>
+        /// HIT VFX per skill: efek di titik musuh kena, wrapper <c>HitVfx_&lt;nama&gt;</c> di folder
+        /// skill yang sama dengan wrapper cast-nya, kontrak yang sama — wrapper yang sudah ada
+        /// TIDAK dibangun ulang, pemilik project bebas menukar isinya lewat prefab.
+        ///
+        /// Elemen tiap skill DISIMPULKAN dari path prefab cast-nya di <see cref="Map"/> — tabel
+        /// itu sudah dikurasi tangan per keluarga elemen, jadi dialah sumber kebenaran termurah.
+        /// Kandidat prefab per keluarga diperiksa keberadaannya dulu; varian dirotasi supaya
+        /// dua skill sekeluarga sebisanya tidak kembar persis.
+        /// </summary>
+        [MenuItem("Tools/Grimoire/Assign Skill HIT VFX")]
+        public static void RunHit()
+        {
+            var families = new (string key, string[] candidates, float scale)[]
+            {
+                ("fire", new[] {
+                    Cfxr + "Fire/CFXR3 Hit Fire A (Air).prefab",
+                    Cfxr + "Fire/CFXR3 Hit Fire B (Air).prefab",
+                    Cfxr + "Fire/CFXR3 Hit Fire C (Air).prefab" }, 0.6f),
+                ("ice", new[] {
+                    Cfxr + "Ice/CFXR3 Hit Ice A (Air).prefab",
+                    Cfxr + "Ice/CFXR3 Hit Ice B (Air).prefab" }, 0.6f),
+                ("electric", new[] {
+                    Cfxr + "Electric/CFXR3 Hit Electric A (Air).prefab",
+                    Cfxr + "Electric/CFXR3 Hit Electric B (Air).prefab",
+                    Cfxr + "Electric/CFXR3 Hit Electric C (Air).prefab" }, 0.6f),
+                ("light", new[] {
+                    Cfxr + "Light/CFXR3 Hit Light A (Air).prefab",
+                    Cfxr + "Light/CFXR3 Hit Light Fireworks.prefab" }, 0.6f),
+                ("poison", new[] { Ga + "vfx_ImpactAoE04_Poison.prefab" }, 0.35f),
+                ("void", new[] {
+                    Ga + "vfx_ImpactAoE06_Void.prefab",
+                    Cfxr + "Explosions/CFXR4 Monster Explosion Purple (Small).prefab" }, 0.4f),
+                ("arcane", new[] { Ga + "vfx_ImpactAoE07_Arcane.prefab" }, 0.4f),
+                ("water", new[] { Ga + "vfx_ImpactAoE03_Water.prefab" }, 0.35f),
+                ("plain", new[] { Cfxr + "Impacts/CFXR2 Hit (Contrast).prefab" }, 0.7f),
+            };
+
+            // Saring kandidat yang beneran ada — nama file paket bukan kontrak.
+            var live = new Dictionary<string, (List<string> paths, float scale)>();
+            foreach (var (key, candidates, scale) in families)
+            {
+                var ok = new List<string>();
+                foreach (var c in candidates)
+                    if (AssetDatabase.LoadAssetAtPath<GameObject>(c) != null) ok.Add(c);
+                if (ok.Count == 0) ok.Add(Cfxr + "Impacts/CFXR2 Hit (Contrast).prefab");
+                live[key] = (ok, scale);
+            }
+
+            System.Func<string, string> familyOf = castPath =>
+            {
+                string p = castPath.ToLowerInvariant();
+                if (p.Contains("heal") || p.Contains("buff")) return null;  // tidak memukul musuh
+                if (p.Contains("fire") || p.Contains("flame") || p.Contains("burning") ||
+                    p.Contains("comet") || p.Contains("explosion orange")) return "fire";
+                if (p.Contains("ice") || p.Contains("snow") || p.Contains("frost")) return "ice";
+                if (p.Contains("electr") || p.Contains("lightning") || p.Contains("lightball") ||
+                    p.Contains("sparks") || p.Contains("orb_lightning")) return "electric";
+                if (p.Contains("poison") || p.Contains("flies")) return "poison";
+                if (p.Contains("void") || p.Contains("purple") || p.Contains("portal")) return "void";
+                if (p.Contains("arcane")) return "arcane";
+                if (p.Contains("water") || p.Contains("steam")) return "water";
+                if (p.Contains("/light/") || p.Contains("hit light")) return "light";
+                return "plain";
+            };
+
+            int built = 0, repointed = 0, kept = 0, skipped = 0;
+            var problems = new List<string>();
+            var rotation = new Dictionary<string, int>();
+
+            foreach (var (piece, path, _, _) in Map)
+            {
+                var def = AssetDatabase.LoadAssetAtPath<PieceDefinition>(
+                    $"{PieceFolder}/Piece_{piece}.asset");
+                if (def == null) { problems.Add($"piece hilang: {piece}"); continue; }
+                if (def.IsPassive || def.IsRune) { skipped++; continue; }
+
+                string family = familyOf(path);
+                if (family == null) { skipped++; continue; }
+
+                var (paths, scale) = live[family];
+                if (!rotation.ContainsKey(family)) rotation[family] = 0;
+                string chosen = paths[rotation[family] % paths.Count];
+                rotation[family]++;
+
+                string folder = Sanitize(def.DisplayName);
+                string wrapperPath = $"{SkillRoot}/{folder}/HitVfx_{folder}.prefab";
+
+                var wrapper = AssetDatabase.LoadAssetAtPath<GameObject>(wrapperPath);
+                if (wrapper == null)
+                {
+                    wrapper = BuildWrapper(wrapperPath, folder, chosen, 1f, problems);
+                    if (wrapper == null) continue;
+                    built++;
+                }
+
+                if (def.HitVfx == wrapper && Mathf.Approximately(def.HitVfxScale, scale))
+                {
+                    kept++;
+                    continue;
+                }
+
+                def.HitVfx = wrapper;
+                def.HitVfxScale = scale;
+                EditorUtility.SetDirty(def);
+                repointed++;
+            }
+
+            AssetDatabase.SaveAssets();
+
+            Debug.Log($"[VfxPass] HIT: wrapper dibangun {built}, pointer dibetulkan {repointed}, " +
+                      $"sudah benar {kept}, dilewati {skipped}, masalah {problems.Count}." +
+                      (problems.Count > 0 ? "\n - " + string.Join("\n - ", problems) : ""));
+        }
+
         [MenuItem("Tools/Grimoire/Assign Skill VFX")]
         public static void Run()
         {
@@ -425,7 +540,7 @@ namespace Proto.EditorTools
 
             if (!AssetDatabase.IsValidFolder(dir)) AssetDatabase.CreateFolder(SkillRoot, folder);
 
-            var root = new GameObject("Vfx_" + folder);
+            var root = new GameObject(System.IO.Path.GetFileNameWithoutExtension(wrapperPath));
             try
             {
                 var child = (GameObject)PrefabUtility.InstantiatePrefab(pack);

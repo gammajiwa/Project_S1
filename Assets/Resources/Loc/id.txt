@@ -543,3 +543,6 @@ menu.play=MULAI
 menu.quit=KELUAR
 menu.settings=SETELAN
 menu.startrun=MULAI RUN
+
+settings.reset.hint=butuh dua klik
+settings.row.resetcodex=Codex
