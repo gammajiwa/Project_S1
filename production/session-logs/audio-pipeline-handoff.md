@@ -179,6 +179,24 @@ Max; MenuMusic tidak bunuh diri saat MenuLoop kosong; slider SFX/MUSIC live
 (_panelCloseFrame); place lewat replace di tas berbunyi; UiHover akhirnya
 di-wire dengan debounce per-perubahan-sasaran.
 
+## UPDATE 2026-08-14 (ronde juice & reaction) — SEMUA SELESAI
+
+1. **Juice pass** (commit 3d4fb33): slot machine (serr + ckring naik + cascade +
+   jackpot heboh + kilat emas), taruh rune bersweetener, evolve berkilat hijau.
+   Fix: raungan grub (OnBossDied kini di-gate !Minion), arcane "tung-tung"
+   diganti Dark Pulse.
+2. **Evolve → harpsichord** (cac377b): ElectroBells "terlalu tech" kata user.
+3. **Pantulan berbunyi**: PlayerCaster.OnBounce (event baru) → PlayBounce()
+   (deflect x2, vol 0.55). KLIP & SLOT sudah commit (cac377b); wiring
+   PlayerCaster+ProtoBootstrap landas bersama hit-VFX sesi paralel.
+4. **9/9 reaction bersuara khas** (c739730) — pemetaan by-makna sfx_cat_*;
+   reaction = jualan game, prioritas mixing 2 + camera shake.
+5. **Vefects Anime (32 suara)** dari Crimson masuk Assets/Audio/Library/
+   VefectsAnime — GUID dicek 0 tabrakan. Belum dipetakan ke slot mana pun.
+6. **Selera user yang sudah final**: musik = dark-CHILL; SFX matching per elemen
+   tapi tidak menggelegar; UI mockup = MINIMALIS ELEGAN garis tipis (v1 realistis
+   dan v2 kayu-kartun DITOLAK). Stinger Win/Lose masih kosong — cari yang chill.
+
 ## CATATAN TEKNIS KECIL
 
 - `AudioDirector` dibuat DI KODE oleh ProtoBootstrap (bukan di scene) — makanya
