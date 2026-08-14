@@ -249,8 +249,9 @@ namespace Proto
 
             if (_area != null)
             {
-                _area.enabled = AreaAlpha > 0.001f;
-                _area.color = new Color(tint.r, tint.g, tint.b, AreaAlpha * alpha);
+                float wash = RuneTiles.AreaAlpha(AreaAlpha);
+                _area.enabled = wash > 0.001f;
+                _area.color = new Color(tint.r, tint.g, tint.b, wash * alpha);
             }
 
             if (_plate != null)

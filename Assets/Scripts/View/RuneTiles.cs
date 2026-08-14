@@ -158,7 +158,23 @@ namespace Proto
             if (BakedTileAt(def, index) == null) return fallback;
 
             int at = IndexForCell(def.Icon, index);
-            return at >= 0 && at < SheetTint.Length ? SheetTint[at] : fallback;
+            if (at < 0) return fallback;
+
+            // SO-nya yang berkuasa. Tabel di bawah cuma jaring pengaman untuk slot yang belum
+            // pernah diisi - hasil ukur, bukan keputusan, dan hasil ukur tidak boleh mengalahkan
+            // keputusan orang yang memutar slidernya sendiri.
+            var measured = at < SheetTint.Length ? SheetTint[at] : fallback;
+            return _tileSet != null ? _tileSet.TintAt(at, measured) : measured;
+        }
+
+        /// <summary>
+        /// Kepekatan sapuan area yang BERLAKU. SO menang atas nilai di prefab: dua tempat untuk
+        /// satu angka berarti setengah waktu memutar yang salah lalu bingung kenapa tidak berubah.
+        /// </summary>
+        public static float AreaAlpha(float prefabValue)
+        {
+            if (!_tileSetTried) { _tileSet = Resources.Load<RuneTileSet>("RuneTileSet"); _tileSetTried = true; }
+            return _tileSet != null ? _tileSet.AreaAlpha : prefabValue;
         }
 
         /// <summary>Ikon yang berasal dari sheet rune, satu-satunya yang digambar sebagai tile.</summary>

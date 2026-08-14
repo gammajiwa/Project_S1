@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -13,6 +13,13 @@ namespace Proto
         [Header("Data")]
         [SerializeField] ContentDatabase _database;
         [SerializeField] GameBalance _balance;
+
+        [Tooltip("Angka penataan panggung: letak & sudut kamera, tinggi/skala titik lahir " +
+                 "pemain, kelebihan lantai. Kosong = nilai bawaan, yang persis angka lama di kode.")]
+        [SerializeField] StageRig _rig_setup;
+
+        /// <summary>Penataan yang BERLAKU. Tidak pernah null - lihat <see cref="StageRig.Fallback"/>.</summary>
+        StageRig Stage => _rig_setup != null ? _rig_setup : StageRig.Fallback;
 
         [Header("Tampilan")]
         [Tooltip("Dipakai bareng scene menu, supaya dua-duanya tidak pernah beda cahaya.")]
@@ -175,7 +182,7 @@ namespace Proto
                 // bukan jadi siluet, tapi jadi tidak ada.
                 var carried = new GameObject("PlayerLight");
                 carried.transform.SetParent(playerGo.transform, false);
-                carried.transform.localPosition = new Vector3(0f, 2.2f, 0f);
+                carried.transform.localPosition = new Vector3(0f, Stage.CarriedLightHeight, 0f);
 
                 var glow = carried.AddComponent<Light>();
                 glow.type = LightType.Point;
@@ -305,12 +312,12 @@ namespace Proto
             var go = new GameObject("Main Camera");
             go.tag = "MainCamera";
             go.transform.SetParent(_rig, false);
-            go.transform.localPosition = new Vector3(0f, 18.5f, -7.5f);
-            go.transform.localRotation = Quaternion.Euler(68f, 0f, 0f);
+            go.transform.localPosition = Stage.CameraOffset;
+            go.transform.localRotation = Quaternion.Euler(Stage.CameraPitch, 0f, 0f);
 
             var cam = go.AddComponent<Camera>();
-            cam.orthographic = true;
-            cam.orthographicSize = 11f;
+            cam.orthographic = Stage.CameraOrthographic;
+            cam.orthographicSize = Stage.CameraSize;
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = RenderColor.Of(_look.HorizonColor);
 
@@ -384,7 +391,7 @@ namespace Proto
             // Diukur dari arena. Plane bawaan Unity 10 unit, jadi skalanya seperlimanya.
             // Marginnya untuk musuh yang lahir di luar arena — tanpa itu mereka berjalan masuk
             // sambil melayang di atas kekosongan.
-            float margin = 14f;
+            float margin = Stage.GroundMargin;
             go.transform.localScale = new Vector3(
                 (_balance.ArenaHalfX + margin) * 0.2f, 1f, (_balance.ArenaHalfZ + margin) * 0.2f);
 
@@ -545,7 +552,7 @@ namespace Proto
             // titik yang lebih pinggir membuat rig tertahan jepitan arena, dan pemain muncul
             // MENEPI di layar sejak frame pertama run.
             var dice = new System.Random(System.Environment.TickCount);
-            const float margin = 9f;
+            float margin = Stage.SpawnMargin;
 
             float halfWidth = cam.orthographicSize * cam.aspect;
             float halfDepth = cam.orthographicSize /
@@ -559,14 +566,14 @@ namespace Proto
             float x = ((float)dice.NextDouble() * 2f - 1f) * rx;
             float z = ((float)dice.NextDouble() * 2f - 1f) * rz;
 
-            go.transform.position = new Vector3(x, 0.9f, z);
+            go.transform.position = new Vector3(x, Stage.PlayerHeight, z);
 
             // Rig kamera menyusul ke titik lahir SEKARANG, sebelum ArenaCamera dipasang —
             // komponen itu merekam fokusnya di Awake, dan rig yang masih di titik nol membuka
             // run dengan panning panjang dari tengah arena ke pemain.
             if (_rig != null) _rig.position = new Vector3(x, 0f, z);
 
-            go.transform.localScale = new Vector3(0.9f, 0.9f, 0.9f);
+            go.transform.localScale = Vector3.one * Stage.PlayerScale;
 
             var col = go.GetComponent<Collider>();
             if (col != null) Destroy(col);
@@ -584,8 +591,8 @@ namespace Proto
                 Destroy(go.GetComponent<MeshFilter>());
 
                 var avatar = Instantiate(_playerAvatarPrefab, go.transform);
-                avatar.transform.localPosition = new Vector3(0f, -1f, 0f);
-                avatar.transform.localScale = Vector3.one * (1f / 0.9f);
+                avatar.transform.localPosition = Stage.AvatarOffset;
+                avatar.transform.localScale = Vector3.one / Mathf.Max(0.05f, Stage.PlayerScale);
             }
             else
             {

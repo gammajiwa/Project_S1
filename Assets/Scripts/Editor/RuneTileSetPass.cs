@@ -65,6 +65,31 @@ namespace Proto.EditorTools
             }
 
             set.Tiles = tiles;
+
+            // Warna sapuan hanya diisi untuk slot yang MASIH KOSONG. Yang sudah diputar tangan
+            // adalah keputusan, dan alat yang membatalkan keputusan tiap kali dijalankan akan
+            // berhenti dijalankan.
+            if (set.AreaTints == null || set.AreaTints.Length != tiles.Length)
+            {
+                var grown = new Color[tiles.Length];
+                if (set.AreaTints != null)
+                {
+                    for (int i = 0; i < set.AreaTints.Length && i < grown.Length; i++)
+                        grown[i] = set.AreaTints[i];
+                }
+
+                set.AreaTints = grown;
+            }
+
+            int filled = 0;
+            for (int i = 0; i < tiles.Length; i++)
+            {
+                if (set.AreaTints[i].a > 0.001f) continue;
+
+                set.AreaTints[i] = FrameColorOf(tiles[i]);
+                filled++;
+            }
+
             EditorUtility.SetDirty(set);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -76,8 +101,74 @@ namespace Proto.EditorTools
                    .Append(tiles[i] != null ? tiles[i].name : "KOSONG").Append('\n');
             }
 
+            log.Append("  warna sapuan: ").Append(filled).Append(" slot diisi otomatis, ")
+               .Append(tiles.Length - filled).Append(" dibiarkan (sudah diatur tangan)\n");
+
             Debug.Log("[RuneTileSetPass] " + OutputPath + " terisi:\n" + log, set);
             Selection.activeObject = set;
+        }
+
+        /// <summary>
+        /// Warna bingkai sebuah petak: rata-rata piksel paling JENUH di dalamnya. Latarnya
+        /// nyaris hitam dan glyphnya nyaris putih, jadi keduanya tersaring sendiri oleh syarat
+        /// kejenuhan — yang tersisa persis ornamen berwarnanya.
+        ///
+        /// Butuh tekstur yang bisa dibaca, dan itu dinyalakan sementara lalu dikembalikan:
+        /// membiarkan Read/Write menyala permanen untuk seluruh atlas cuma demi enam belas angka
+        /// yang dihitung sekali adalah memori yang dibayar sepanjang umur permainan.
+        /// </summary>
+        static Color FrameColorOf(Sprite sprite)
+        {
+            if (sprite == null) return Color.white;
+
+            var path = AssetDatabase.GetAssetPath(sprite.texture);
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) return Color.white;
+
+            bool was = importer.isReadable;
+            if (!was)
+            {
+                importer.isReadable = true;
+                importer.SaveAndReimport();
+            }
+
+            var result = Color.white;
+
+            try
+            {
+                var rect = sprite.textureRect;
+                var pixels = sprite.texture.GetPixels(
+                    (int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
+
+                float r = 0f, g = 0f, b = 0f;
+                int count = 0;
+
+                for (int i = 0; i < pixels.Length; i++)
+                {
+                    var c = pixels[i];
+                    if (c.a < 0.8f) continue;
+
+                    float max = Mathf.Max(c.r, Mathf.Max(c.g, c.b));
+                    float min = Mathf.Min(c.r, Mathf.Min(c.g, c.b));
+
+                    if (max < 0.35f) continue;                 // latar gelap
+                    if ((max - min) / max < 0.35f) continue;   // glyph nyaris putih
+
+                    r += c.r; g += c.g; b += c.b; count++;
+                }
+
+                if (count > 0) result = new Color(r / count, g / count, b / count, 1f);
+            }
+            finally
+            {
+                if (!was)
+                {
+                    importer.isReadable = false;
+                    importer.SaveAndReimport();
+                }
+            }
+
+            return result;
         }
 
         /// <summary>
