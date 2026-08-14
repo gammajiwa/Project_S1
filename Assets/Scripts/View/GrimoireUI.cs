@@ -397,6 +397,7 @@ namespace Proto
         Vector3[] _floatWorld;
 
         DamagePopups _popups;
+        EnemyHpBars _enemyBars;
         RecipePanel _recipes;
 
         readonly StringBuilder _sb = new StringBuilder(256);
@@ -436,6 +437,11 @@ namespace Proto
             // Built first on purpose: on this canvas creation order is draw order, so the damage
             // numbers pass UNDER the grimoire and the panels instead of covering them.
             _popups = new DamagePopups(_canvas.transform, _numberFont, cam);
+
+            // Ikut lewat di bawah grimoire dan panel, alasan yang sama dengan angka damage:
+            // palang di atas kepala musuh tidak pernah boleh menutupi papan yang sedang ditata.
+            _enemyBars = new EnemyHpBars(_canvas.transform, cam, Enemies,
+                Resources.Load<GameObject>("EnemyHpBar"));
 
             BuildGrid();
             BuildSkillWidgets();
@@ -2227,6 +2233,7 @@ namespace Proto
             Redraw();
             TickFloaters(Time.unscaledDeltaTime);
             _popups.Tick(Time.unscaledDeltaTime);
+            if (_enemyBars != null) _enemyBars.Tick();
             HandleBanner();
         }
 

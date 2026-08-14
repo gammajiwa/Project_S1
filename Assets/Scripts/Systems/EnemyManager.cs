@@ -74,6 +74,20 @@ namespace Proto
             public float Speed;
             public bool Alive;
 
+            /// <summary>
+            /// <see cref="Time.unscaledTime"/> saat musuh ini terakhir kena. Dipakai bar HP di
+            /// atas kepalanya untuk memutuskan muncul atau sembunyi.
+            ///
+            /// Disimpan sebagai WAKTU, bukan sebagai hitung mundur yang harus dikurangi tiap
+            /// frame. Musuh tidak punya GameObject dan tidak semuanya di-update tiap frame, jadi
+            /// hitung mundur akan macet di angka terakhirnya untuk yang sedang tidak diproses —
+            /// dan barnya menggantung selamanya. Selisih terhadap jam tidak pernah macet.
+            ///
+            /// Tak berskala, karena barnya urusan mata: pada kecepatan 5x ia akan berkedip hilang
+            /// sebelum sempat dibaca kalau ikut waktu permainan.
+            /// </summary>
+            public float HurtSeen;
+
             /// <summary>Reaksi tidak boleh meletus lagi sebelum ini nol. Mencegah kedip.</summary>
             public float ReactionLock;
 
@@ -161,6 +175,14 @@ namespace Proto
         public System.Action<Vector3, float, float, Color, bool> OnEnemyDamaged;
 
         /// <summary>
+        /// HIT LANGSUNG saja — sengaja bukan <see cref="OnEnemyDamaged"/>, yang juga menyala
+        /// untuk tiap tick DoT. VFX di tiap tick burn pada 500 musuh bukan umpan balik,
+        /// itu kabut. (pos, nama sumber, tint skill, crit) — nama ikut supaya pendengar bisa
+        /// mencari HitVfx milik skill-nya sendiri.
+        /// </summary>
+        public System.Action<Vector3, string, Color, bool> OnEnemyHit;
+
+        /// <summary>
         /// Peta DisplayName -> warna, dibangun SEKALI dari database saat pertama dibutuhkan.
         /// Kunci pakai nama karena seluruh jalur damage sudah membawa sourceName — menjahit
         /// Color ke belasan call-site cuma menduplikasi informasi yang sudah lewat sini.
@@ -203,6 +225,13 @@ namespace Proto
 
         /// <summary>How many living enemies currently carry each status, by database index.</summary>
         public int[] StatusCounts => _statusCounts;
+
+        /// <summary>
+        /// Seluruh slot kolam, hidup maupun mati. Baca-saja, dan pembacanya WAJIB memeriksa
+        /// <see cref="Enemy.Alive"/> sendiri: slot dipakai ulang, jadi yang mati masih memegang
+        /// posisi dan HP terakhirnya sampai ada yang lahir menempatinya.
+        /// </summary>
+        public System.Collections.Generic.IReadOnlyList<Enemy> All => _pool;
 
         readonly List<Enemy> _pool = new List<Enemy>(256);
         readonly Color _baseColor = new Color(0.55f, 0.5f, 0.62f);
@@ -1198,6 +1227,10 @@ namespace Proto
             e.LiftTimer = 0f;
             e.Knock = Vector3.zero;
 
+            // Slot bekas musuh yang baru saja dipukul akan lahir sambil memamerkan bar HP penuh
+            // kalau ini tidak dibersihkan.
+            e.HurtSeen = -999f;
+
             // Slot pool dipakai ulang. Tanpa dibersihkan, musuh biasa yang kebetulan mendapat
             // slot bekas ruas boss akan mewarisi kepemilikannya: damage-nya mengalir ke kolam HP
             // ular yang sudah mati, dan musuh itu sendiri tidak pernah bisa dibunuh.
@@ -2112,7 +2145,15 @@ namespace Proto
             if (dealt > 0f)
             {
                 OnDamage?.Invoke(sourceName ?? "?", dealt);
-                OnEnemyDamaged?.Invoke(e.Pos, dealt, e.MaxHp, TintFor(sourceName), crit);
+
+                // Dicatat di sini, di corong yang dilewati SEMUA jalur damage, bukan di tiap
+                // pemanggil. Satu tempat berarti tidak ada skill yang bisa lupa memunculkan
+                // bar HP korbannya.
+                e.HurtSeen = Time.unscaledTime;
+
+                var tint = TintFor(sourceName);
+                OnEnemyDamaged?.Invoke(e.Pos, dealt, e.MaxHp, tint, crit);
+                OnEnemyHit?.Invoke(e.Pos, sourceName, tint, crit);
             }
 
             if (status != null) ApplyStatus(e, status, duration, points, allowReaction, origin);
