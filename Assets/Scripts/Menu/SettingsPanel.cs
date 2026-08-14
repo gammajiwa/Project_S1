@@ -128,13 +128,12 @@ namespace Proto
                 SetPercent(_musicValue, value);
             });
 
-            if (_note != null)
-            {
-                _note.text = (Application.isEditor
-                    ? Loc.T("settings.note.editor")
-                    : Loc.T("settings.note.vsync"))
-                    + Loc.T("settings.note.performance");
-            }
+            // Nilai stepper juga boleh menyusut: "BEZ OGRANICHENIY" dan kawan-kawannya jauh
+            // lebih panjang daripada "UNLIMITED", dan kotaknya lebarnya tetap.
+            Fit(_languageValue); Fit(_fullscreenValue); Fit(_resolutionValue);
+            Fit(_vsyncValue); Fit(_frameCapValue);
+            Fit(_damageTextValue); Fit(_enemyShadowsValue); Fit(_weatherVfxValue);
+            Fit(_resetLabel); Fit(_resetHint); Fit(_note);
 
             Redraw();
         }
@@ -156,8 +155,17 @@ namespace Proto
             Redraw();
         }
 
+        void OnEnable()
+        {
+            // Bahasa bisa berganti dari mana saja; nilai stepper di panel ini tidak memakai
+            // LocText - ia ditulis kode - jadi ia harus ikut mendengarkan sendiri.
+            Loc.Changed += Redraw;
+        }
+
         void OnDisable()
         {
+            Loc.Changed -= Redraw;
+
             // Sliders fire every frame while dragged; writing prefs once on the way out is enough.
             _settings?.Save();
             DisarmReset();
@@ -265,8 +273,35 @@ namespace Proto
             Redraw();
         }
 
+        /// <summary>
+        /// Membiarkan sebuah label menyusut daripada tumpah. Dipanggil sekali per label; ukuran
+        /// aslinya jadi batas atas, jadi label yang sudah muat tidak pernah berubah sedikit pun.
+        /// </summary>
+        static void Fit(TextMeshProUGUI label, float minScale = 0.62f)
+        {
+            if (label == null || label.enableAutoSizing) return;
+
+            float basis = label.fontSize;
+            label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            label.enableAutoSizing = true;
+            label.fontSizeMax = basis;
+            label.fontSizeMin = Mathf.Max(6f, basis * minScale);
+        }
+
         void Redraw()
         {
+            // Catatan di kaki panel ditulis DI SINI, bukan di Init. Ia dulu ditulis sekali saat
+            // panel dibuka, jadi mengganti bahasa membuat seluruh layar berpindah kecuali satu
+            // kalimat ini - dan satu kalimat asing di layar yang sudah diterjemahkan terbaca
+            // sebagai terjemahan yang bolong, bukan sebagai catatan.
+            if (_note != null)
+            {
+                _note.text = (Application.isEditor
+                    ? Loc.T("settings.note.editor")
+                    : Loc.T("settings.note.vsync"))
+                    + Loc.T("settings.note.performance");
+            }
+
             // Nama yang AMAN DIGAMBAR, bukan selalu nama aslinya. Menulis "日本語" dengan font
             // yang tidak punya aksara itu menghasilkan tiga kotak kosong - dan kotak kosong lebih
             // buruk daripada nama Inggris, karena tidak bisa dibaca oleh siapa pun sama sekali.

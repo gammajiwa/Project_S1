@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,8 +31,20 @@ namespace Proto
                  "sedangkan label kosong lolos ke rilis tanpa ada yang sadar.")]
         [TextArea(1, 3)] public string Fallback;
 
+        [Header("Muat di kotaknya")]
+        [Tooltip("Mengecilkan hurufnya otomatis kalau kalimatnya tidak muat di kotak label. " +
+                 "Wajib untuk UI berbahasa banyak: satu kata Inggris hampir selalu jadi kata yang " +
+                 "jauh lebih panjang di bahasa lain - PERFORMANCE jadi ПРОИЗВОДИТЕЛЬНОСТЬ - dan " +
+                 "kotak yang dipas-paskan ke bahasa sumber pasti tumpah di bahasa lain.")]
+        public bool ShrinkToFit = true;
+
+        [Tooltip("Sekecil apa hurufnya boleh menyusut, sebagai pecahan ukuran aslinya. Terlalu " +
+                 "kecil membuat kalimatnya muat tapi tidak terbaca - itu bukan kemenangan.")]
+        [Range(0.4f, 1f)] public float MinScale = 0.62f;
+
         TextMeshProUGUI _tmp;
         Text _legacy;
+        float _baseSize;
         bool _found;
 
         void OnEnable()
@@ -60,6 +72,28 @@ namespace Proto
                 _tmp = GetComponent<TextMeshProUGUI>();
                 _legacy = GetComponent<Text>();
                 _found = true;
+
+                // Ukuran aslinya direkam SEBELUM penyusutan dinyalakan. Autosizing menulis balik
+                // ke fontSize, jadi membacanya belakangan akan mengambil ukuran hasil susut -
+                // dan tiap pergantian bahasa akan mengecilkannya lagi dari situ, terus-menerus,
+                // sampai tidak terbaca.
+                if (_tmp != null)
+                {
+                    _baseSize = _tmp.fontSize;
+
+                    if (ShrinkToFit)
+                    {
+                        // Tanpa bungkus baris: label satu baris yang dibungkus jadi dua baris
+                        // akan menabrak baris di bawahnya, dan itu justru tumpang tindih yang
+                        // sedang dihindari. Yang boleh mengalah cuma ukurannya.
+                        _tmp.textWrappingMode = TextWrappingModes.NoWrap;
+                        _tmp.overflowMode = TextOverflowModes.Overflow;
+
+                        _tmp.enableAutoSizing = true;
+                        _tmp.fontSizeMax = _baseSize;
+                        _tmp.fontSizeMin = Mathf.Max(6f, _baseSize * MinScale);
+                    }
+                }
             }
 
             var line = Loc.T(Key, Fallback);
