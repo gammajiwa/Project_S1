@@ -771,11 +771,19 @@ namespace Proto
             var tint = rx.FlashColor;
             if (rx.Vfx != null) tint.a *= 0.35f;
 
-            SpawnFlash(pos, rx.BurstRadius * (rx.Vfx != null ? 1.1f : 2f), 0.35f, tint);
+            // Dua kilatan, bukan satu: yang pertama sempit dan cepat (jedarnya), yang kedua
+            // lebih lebar dan lebih lama (gemanya). Reaksi adalah kejadian paling keren di
+            // lapangan — satu bola pudar 0,35 detik tidak pernah sepadan dengan namanya.
+            SpawnFlash(pos, rx.BurstRadius * (rx.Vfx != null ? 1.5f : 2.4f), 0.3f, tint);
+
+            var echo = tint;
+            echo.a *= 0.5f;
+            SpawnFlash(pos, rx.BurstRadius * (rx.Vfx != null ? 2.2f : 3.2f), 0.55f, echo);
 
             // Radius 3 unit = skala 1, aturan yang sama dengan skill — reaksi berdiameter 8
-            // tidak boleh terlihat sama besar dengan yang berdiameter 5.
-            _vfx.Burst(rx.Vfx, pos, rx.VfxScale * Mathf.Max(0.35f, rx.BurstRadius / 3f));
+            // tidak boleh terlihat sama besar dengan yang berdiameter 5. Pengali 1,35 di atas
+            // itu penilaian mata: efek reaksi harus menang dari efek skill yang memicunya.
+            _vfx.Burst(rx.Vfx, pos, rx.VfxScale * 1.35f * Mathf.Max(0.35f, rx.BurstRadius / 3f));
 
             // Inilah rantai intinya: reaksi -> buff -> skill berikutnya lebih kuat.
             if (rx.GrantBuff != null) ApplyBuff(rx.GrantBuff);

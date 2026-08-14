@@ -54,10 +54,25 @@ namespace Proto
 
             // Hanya badan yang dibakar. Player juga menggendong renderer lain yang lahir
             // belakangan (RangeRing pakai LineRenderer) — mereka bukan daging, jangan disentuh.
+            //
+            // BUKAN DAGING JUGA: quad VFX di buku (sigil Sprites/Default, glow MenuGlow).
+            // Versi lama menelan SEMUA MeshRenderer lalu MENGGANTI materialnya sejak Init —
+            // sigil ungu dan glow lahir sebagai kotak krem BurnAway polos, dan tiga ronde
+            // perbaikan prefab tampak "tidak ngefek" karena dirampas di sini tiap play.
+            // Saringannya sekarang: skinned mesh selalu ikut; MeshRenderer hanya ikut kalau
+            // material aslinya keluarga Lit yang buram — shader sprite/partikel/glow dilewati.
             var found = new System.Collections.Generic.List<Renderer>();
             foreach (var r in GetComponentsInChildren<Renderer>())
             {
-                if (r is MeshRenderer || r is SkinnedMeshRenderer) found.Add(r);
+                if (r is SkinnedMeshRenderer) { found.Add(r); continue; }
+                if (!(r is MeshRenderer)) continue;
+
+                var m = r.sharedMaterial;
+                string s = m != null && m.shader != null ? m.shader.name : "";
+                bool vfx = s.Contains("Sprites") || s.Contains("Particles") ||
+                           s.Contains("MenuGlow") || s.Contains("Additive") ||
+                           s.Contains("AoeRing") || s.Contains("Unlit");
+                if (!vfx) found.Add(r);
             }
 
             _renderers = found.ToArray();

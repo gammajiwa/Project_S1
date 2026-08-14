@@ -152,6 +152,12 @@ namespace Proto
                  "membelok ke arah yang sama, dan itu mulai terbaca sebagai pusaran lagi.")]
         public bool AlternateBend = true;
 
+        [Tooltip("Seberapa berbeda bentuk lengkung tiap aliran. Nol = semua aliran memakai " +
+                 "lengkung yang persis sama dan cuma arahnya yang berselang; makin besar, tiap " +
+                 "aliran menarik napasnya sendiri - ada yang menikung tajam di awal, ada yang " +
+                 "melayang jauh dulu baru berbelok.")]
+        [Range(0f, 1f)] public float BendVariety = 0.6f;
+
         [Tooltip("Jarak antar gerbong sepanjang lintasan, sebagai pecahan panjang lintasan. " +
                  "Kecil = rapat mengekor, besar = renggang.")]
         [Range(0.005f, 0.2f)] public float TrainSpacing = 0.045f;
@@ -167,6 +173,21 @@ namespace Proto
 
         [Tooltip("Mengecil sambil mendekat. 1 = tetap seukuran sampai tertelan.")]
         [Range(0.05f, 1f)] public float ShrinkAtSink = 0.35f;
+
+        [Header("Bokeh")]
+        [Tooltip("Rune berangkat besar dan tajam, lalu KEHILANGAN FOKUS begitu mendekati buku - " +
+                 "seperti titik cahaya yang keluar dari bidang fokus kamera. Nol mematikannya. " +
+                 "Kaburnya dibuat sekali dari versi kecil gambar runenya sendiri, bukan dari " +
+                 "shader, jadi harganya cuma satu Image ekstra per rune.")]
+        [Range(0f, 1f)] public float BokehStrength = 0.85f;
+
+        [Tooltip("Di titik mana sepanjang perjalanan fokusnya mulai lepas. 0 = kabur sejak " +
+                 "berangkat, 0,9 = baru buram sesaat sebelum tertelan.")]
+        [Range(0f, 0.9f)] public float BokehStart = 0.45f;
+
+        [Tooltip("Piringan kaburnya mengembang sebesar ini saat fokusnya benar-benar lepas - " +
+                 "cahaya yang keluar fokus memang MELEBAR, bukan cuma melunak.")]
+        [Range(1f, 2f)] public float BokehGrow = 1.4f;
 
         [Header("Cahaya")]
         [Range(0f, 1f)] public float AlphaMin = 0.05f;
@@ -205,6 +226,7 @@ namespace Proto
         {
             public RectTransform Rect;
             public Image Art;
+            public Image Blur;     // kembaran buramnya - null kalau bokeh mati
             public Vector2 Pos;
             public float Speed;
             public float Spin;
@@ -216,6 +238,8 @@ namespace Proto
             public int Lane;       // aliran ke berapa
             public int Slot;       // urutan di dalam alirannya
             public float BendSign; // ke mana alirannya membelok, -1 atau +1
+            public float BendAmount; // seberapa melengkung aliran ini sendiri
+            public float CtrlAt;   // di pecahan mana titik kendalinya duduk di sepanjang jalur
         }
 
         RectTransform _area;
@@ -226,6 +250,7 @@ namespace Proto
         float _flow;
 
         Sprite[] _sheet;
+        Sprite[] _blurSheet;
         Mote[] _motes;
         System.Random _dice;
 
@@ -391,6 +416,21 @@ namespace Proto
             // sebagai latar, ia terbaca sebagai layar yang belum selesai memuat.
             _dice = new System.Random(20260814);
 
+            // Tiap aliran menarik bentuk lengkungnya SENDIRI dari dadu - besar belokan dan letak
+            // titik kendalinya. Ditarik di sini, sebelum kolam diisi, supaya deret dadunya tetap
+            // dan susunan latarnya tidak berubah tiap kali dibangun ulang.
+            int laneTotal = Mathf.Max(1, Lanes);
+            var laneBend = new float[laneTotal];
+            var laneCtrl = new float[laneTotal];
+            for (int l = 0; l < laneTotal; l++)
+            {
+                laneBend[l] = Bend * (1f + BendVariety * (((float)_dice.NextDouble() * 2f - 1f) * 0.7f));
+                laneCtrl[l] = Mathf.Lerp(0.55f, Mathf.Lerp(0.3f, 0.8f, (float)_dice.NextDouble()), BendVariety);
+            }
+
+            bool pakaiBokeh = Layout == Mode.Inflow && BokehStrength > 0f;
+            if (pakaiBokeh) EnsureBlurSheet();
+
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var child = transform.GetChild(i).gameObject;
@@ -410,14 +450,38 @@ namespace Proto
                 int lane = Lanes <= 1 ? 0 : i % Lanes;
                 int slot = Lanes <= 1 ? i : i / Lanes;
 
+                int artAt = PickSprite(lane);
+
                 var img = go.AddComponent<Image>();
-                img.sprite = _sheet[PickSprite(lane)];
+                img.sprite = _sheet[artAt];
                 img.preserveAspect = true;
                 img.raycastTarget = false;
 
                 var rt = (RectTransform)go.transform;
                 rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
+
+                // Kembaran buram menumpang DI DALAM rune tajamnya: anchor merentang penuh, jadi
+                // ia mengikuti ukuran dan putaran induknya tanpa dihitung ulang tiap frame.
+                Image blur = null;
+                if (pakaiBokeh && _blurSheet != null && _blurSheet[artAt] != null)
+                {
+                    var kaburGo = new GameObject("Blur", typeof(RectTransform));
+                    kaburGo.transform.SetParent(go.transform, false);
+                    kaburGo.hideFlags = HideFlags.DontSave;
+
+                    blur = kaburGo.AddComponent<Image>();
+                    blur.sprite = _blurSheet[artAt];
+                    blur.preserveAspect = true;
+                    blur.raycastTarget = false;
+                    blur.color = new Color(1f, 1f, 1f, 0f);
+
+                    var kaburRt = (RectTransform)kaburGo.transform;
+                    kaburRt.anchorMin = Vector2.zero;
+                    kaburRt.anchorMax = Vector2.one;
+                    kaburRt.sizeDelta = Vector2.zero;
+                    kaburRt.pivot = new Vector2(0.5f, 0.5f);
+                }
 
                 float size = Mathf.Lerp(SizeMin, SizeMax, (float)_dice.NextDouble());
 
@@ -438,6 +502,9 @@ namespace Proto
                     Lane = lane,
                     Slot = slot,
                     BendSign = !AlternateBend || (lane % 2 == 0) ? 1f : -1f,
+                    BendAmount = laneBend[lane],
+                    CtrlAt = laneCtrl[lane],
+                    Blur = blur,
                     Pos = new Vector2(
                         ((float)_dice.NextDouble() - 0.5f) * box.x,
                         ((float)_dice.NextDouble() - 0.5f) * box.y)
@@ -504,9 +571,11 @@ namespace Proto
                     var pangkal = pusat + arah * SpawnRadius;
 
                     // Titik kendali digeser TEGAK LURUS dari garis lurusnya. Sejauh apa ia
-                    // digeser adalah seberapa melengkung alirannya.
-                    var tegak = new Vector2(-arah.y, arah.x) * (m.BendSign * Bend * SpawnRadius);
-                    var kendali = pusat + arah * (SpawnRadius * 0.55f) + tegak;
+                    // digeser adalah seberapa melengkung alirannya - dan tiap aliran membawa
+                    // besaran serta letak kendalinya sendiri, supaya tidak ada dua aliran yang
+                    // menikung dengan cara yang persis sama.
+                    var tegak = new Vector2(-arah.y, arah.x) * (m.BendSign * m.BendAmount * SpawnRadius);
+                    var kendali = pusat + arah * (SpawnRadius * m.CtrlAt) + tegak;
 
                     float sisa = 1f - jalan;
                     var titik = sisa * sisa * pangkal
@@ -524,9 +593,28 @@ namespace Proto
 
                     float tepi = Mathf.Min(Mathf.InverseLerp(0f, 0.12f, jalan),
                                            Mathf.InverseLerp(1f, 0.88f, jalan));
+                    float terang = Mathf.Lerp(AlphaMin, AlphaMax, Mathf.SmoothStep(0f, 1f, tepi));
+
+                    // Bokeh: menjelang buku, gambar tajam menyerahkan alphanya ke kembaran
+                    // buramnya. Silangnya di alpha - fokus yang lepas mengubah KEJELASAN;
+                    // memudarkan dua-duanya sekaligus terbaca sebagai menghilang, bukan kabur.
+                    float buram = BokehStrength * Mathf.SmoothStep(0f, 1f,
+                        Mathf.InverseLerp(BokehStart, 1f, jalan));
+
                     var warna = m.Art.color;
-                    warna.a = Mathf.Lerp(AlphaMin, AlphaMax, Mathf.SmoothStep(0f, 1f, tepi));
+                    warna.a = terang * (1f - buram);
                     m.Art.color = warna;
+
+                    if (m.Blur != null)
+                    {
+                        // Menurunkan resolusi ikut meratakan puncak terangnya; dikalikan balik
+                        // supaya persilangannya tidak terbaca sebagai meredup.
+                        var kabur = m.Blur.color;
+                        kabur.a = Mathf.Min(1f, terang * buram * 1.6f);
+                        m.Blur.color = kabur;
+                        m.Blur.rectTransform.localScale =
+                            Vector3.one * Mathf.Lerp(1f, BokehGrow, buram);
+                    }
 
                     if (m.Spin != 0f)
                         m.Rect.localRotation = Quaternion.Euler(0f, 0f,
@@ -669,6 +757,78 @@ namespace Proto
             }
 
             _sheet = found.ToArray();
+        }
+
+        /// <summary>
+        /// Cache kembaran buram, dibagi antar semua pemakai. Statik karena gambarnya milik
+        /// Resources, bukan milik satu komponen - ganti preset atau membangun ulang kolam tidak
+        /// perlu membuatnya dari awal lagi.
+        /// </summary>
+        static readonly System.Collections.Generic.Dictionary<Sprite, Sprite> BlurCache = new();
+
+        void EnsureBlurSheet()
+        {
+            if (_sheet == null || _sheet.Length == 0) return;
+            if (_blurSheet != null && _blurSheet.Length == _sheet.Length) return;
+
+            _blurSheet = new Sprite[_sheet.Length];
+            for (int i = 0; i < _sheet.Length; i++) _blurSheet[i] = BlurOf(_sheet[i]);
+        }
+
+        /// <summary>
+        /// Membuat versi lepas-fokus dari sebuah gambar dengan menurunkan resolusinya bertingkat
+        /// lewat blit. Tiap tingkat bilinear menyapu sedikit; tiga tingkat turun lalu satu naik
+        /// sudah terbaca sebagai bokeh. Tanpa shader, tanpa aset baru.
+        /// </summary>
+        static Sprite BlurOf(Sprite src)
+        {
+            if (src == null) return null;
+            if (BlurCache.TryGetValue(src, out var siap) && siap != null) return siap;
+
+            var tex = src.texture;
+            var r = src.textureRect;
+
+            // Blit membaca lewat GPU, jadi teksturnya tidak perlu Read/Write Enabled - syarat
+            // impor yang gampang terlupa dan tidak pantas diminta untuk latar dekoratif.
+            var skala = new Vector2(r.width / tex.width, r.height / tex.height);
+            var geser = new Vector2(r.x / tex.width, r.y / tex.height);
+
+            int w = Mathf.Max(8, (int)r.width);
+            int h = Mathf.Max(8, (int)r.height);
+
+            var setengah = RenderTexture.GetTemporary(Mathf.Max(4, w / 2), Mathf.Max(4, h / 2), 0);
+            var seperempat = RenderTexture.GetTemporary(Mathf.Max(4, w / 4), Mathf.Max(4, h / 4), 0);
+            var seperdelapan = RenderTexture.GetTemporary(Mathf.Max(4, w / 8), Mathf.Max(4, h / 8), 0);
+            var naik = RenderTexture.GetTemporary(Mathf.Max(4, w / 4), Mathf.Max(4, h / 4), 0);
+
+            var sebelumnya = RenderTexture.active;
+            Graphics.Blit(tex, setengah, skala, geser);
+            Graphics.Blit(setengah, seperempat);
+            Graphics.Blit(seperempat, seperdelapan);
+            Graphics.Blit(seperdelapan, naik);
+
+            RenderTexture.active = naik;
+            var hasil = new Texture2D(naik.width, naik.height, TextureFormat.RGBA32, false);
+            hasil.ReadPixels(new Rect(0f, 0f, naik.width, naik.height), 0, 0);
+            hasil.Apply(false, false);
+            hasil.filterMode = FilterMode.Bilinear;
+            hasil.wrapMode = TextureWrapMode.Clamp;
+            hasil.name = src.name + "_Blur";
+            hasil.hideFlags = HideFlags.DontSave;
+
+            RenderTexture.active = sebelumnya;
+            RenderTexture.ReleaseTemporary(naik);
+            RenderTexture.ReleaseTemporary(seperdelapan);
+            RenderTexture.ReleaseTemporary(seperempat);
+            RenderTexture.ReleaseTemporary(setengah);
+
+            var jadi = Sprite.Create(hasil,
+                new Rect(0f, 0f, hasil.width, hasil.height), new Vector2(0.5f, 0.5f));
+            jadi.name = hasil.name;
+            jadi.hideFlags = HideFlags.DontSave;
+
+            BlurCache[src] = jadi;
+            return jadi;
         }
     }
 }

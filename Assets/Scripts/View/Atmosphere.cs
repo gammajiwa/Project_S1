@@ -99,7 +99,11 @@ namespace Proto
                 // yang terlihat bukan awan yang melintas melainkan noda yang mendidih di tempat.
                 // Awan sungguhan memang berubah bentuk, tapi jauh lebih lambat daripada ia hanyut —
                 // dan mata membaca GERAK dari bentuk yang tetap sambil berpindah.
-                biome.CloudSize, biome.CloudCoverage, 0.18f,
+                // Softness 0,3 (dulu 0,18): tepi yang terlalu tajam membuat gumpalan kecil
+                // terbaca sebagai NODA di tanah, bukan bayangan awan — dan noda itulah yang
+                // dikeluhkan merusak lingkungannya. Tepi lembut + gumpalan besar di aset
+                // biome yang mengembalikannya jadi awan.
+                biome.CloudSize, biome.CloudCoverage, 0.3f,
                 wind, biome.CloudSpeed, 0.015f, 0.45f, Vector2.one, false);
 
             // Berkas cahaya DICOPOT dari sini, dan itu koreksi atas kesalahan yang mendasar.

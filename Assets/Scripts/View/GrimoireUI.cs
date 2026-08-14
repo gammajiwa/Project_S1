@@ -165,7 +165,7 @@ namespace Proto
         Image[] _mapNodes = System.Array.Empty<Image>();
         Image[] _mapRings = System.Array.Empty<Image>();
         Text[] _mapGlyphs = System.Array.Empty<Text>();
-        Text _mapYou;
+        Image[] _mapIcons = System.Array.Empty<Image>();
         int _mapSig = -1;
 
         // Bahan tampilan: kertas, bingkai, warna tinta. Boleh null — tiap pemakainya wajib jatuh
@@ -462,6 +462,8 @@ namespace Proto
         Text[] _floaters;
         float[] _floatLife;
         Vector3[] _floatWorld;
+        float[] _floatMax;   // umur lahir — buat menghitung sentakan pop di awal hidupnya
+        float[] _floatScale; // pengali ukuran; di atas 1 = pengumuman besar (reaksi)
 
         DamagePopups _popups;
         EnemyHpBars _enemyBars;
@@ -539,7 +541,10 @@ namespace Proto
             Player.OnHurt += () => _hurtGlow = 1f;
 
             Player.OnCast += OnSpellCast;
-            Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
+            // Reaksi = pengumuman, bukan kabar biasa. Skala 2,2 ≈ font 44 — sekelas judul,
+            // karena reaksi memang kejadian paling keren di lapangan dan hurufnya harus
+            // sepadan dengan ledakannya.
+            Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor, 2.2f);
 
             // Saklar curang tetap menang atas pilihan pemain: itu memang gunanya, dan starter yang
             // dipaksa dari DebugConfig harus tetap dipaksa walau menu barusan memilih yang lain.
@@ -2042,12 +2047,23 @@ namespace Proto
             _floaters = new Text[FloatPoolSize];
             _floatLife = new float[FloatPoolSize];
             _floatWorld = new Vector3[FloatPoolSize];
+            _floatMax = new float[FloatPoolSize];
+            _floatScale = new float[FloatPoolSize];
 
             for (int i = 0; i < FloatPoolSize; i++)
             {
-                _floaters[i] = MakeText($"Float_{i}", Vector2.zero, new Vector2(300, 28), 20,
+                _floaters[i] = MakeText($"Float_{i}", Vector2.zero, new Vector2(420, 60), 20,
                     Color.white, Vector2.zero, TextAnchor.MiddleCenter);
                 _floaters[i].text = "";
+                _floaters[i].horizontalOverflow = HorizontalWrapMode.Overflow;
+                _floaters[i].verticalOverflow = VerticalWrapMode.Overflow;
+
+                // Outline hitam empat penjuru — nama reaksi sekarang tampil BESAR di atas
+                // ledakan warna-warni miliknya sendiri, dan huruf polos tenggelam persis di
+                // momen yang paling harus terbaca. Alasannya sama dengan angka damage.
+                var outline = _floaters[i].gameObject.AddComponent<Outline>();
+                outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
+                outline.effectDistance = new Vector2(1.5f, 1.5f);
             }
         }
 
@@ -3440,6 +3456,7 @@ namespace Proto
             _mapNodes = new Image[nodeCap];
             _mapRings = new Image[nodeCap];
             _mapGlyphs = new Text[nodeCap];
+            _mapIcons = new Image[nodeCap];
 
             for (int i = 0; i < nodeCap; i++)
             {
@@ -3460,26 +3477,34 @@ namespace Proto
                 _mapGlyphs[i].transform.SetParent(_mapRoot, false);
                 Centre(_mapGlyphs[i].rectTransform);
                 _mapGlyphs[i].enabled = false;
+
+                // Icon jenis node — gambar dari tema, dibuat SETELAH glyph supaya tergambar di
+                // atas kotaknya sendiri. Glyph hurufnya tetap ada sebagai cadangan: tema tanpa
+                // icon kembali ke huruf, aturan yang sama dengan semua sprite tema lainnya.
+                _mapIcons[i] = MakeImage("MapIcon" + i, Vector2.zero, new Vector2(26f, 26f),
+                    Color.black, Vector2.zero);
+                _mapIcons[i].transform.SetParent(_mapRoot, false);
+                Centre(_mapIcons[i].rectTransform);
+                _mapIcons[i].preserveAspect = true;
+                _mapIcons[i].enabled = false;
             }
 
-            _mapYou = MakeText("MapYou", Vector2.zero, new Vector2(120f, 24f), 15,
-                _theme != null ? _theme.MapYouInk : new Color(1f, 0.85f, 0.4f),
-                Vector2.zero, TextAnchor.MiddleCenter);
-            _mapYou.transform.SetParent(_mapRoot, false);
-            Centre(_mapYou.rectTransform);
-            _mapYou.text = "KAMU";
-            _mapYou.enabled = false;
+            // KARAKTER pemain di peta: MERAH, bukan kuning. Kuning sudah dipakai jalur
+            // "bisa dituju" — token pemain yang ikut kuning tenggelam di antaranya, kata
+            // mata pemilik project. Merah tidak dipakai apa pun di perkamen ini, jadi
+            // "itu gw" terbaca dalam sekejap TANPA label; tulisan KAMU yang dulu menempel
+            // di atasnya dibuang atas permintaan yang sama — icon yang jelas tidak butuh
+            // keterangan. Gambarnya icon dari tema kalau ada; cadangannya bulatan `_circle`
+            // yang sudah dibuat BuildSkillWidgets (jalan lebih dulu, lihat Init) — sprite
+            // bulat bawaan Unity TIDAK bisa dipakai: GetBuiltinResource gagal saat runtime.
+            var youIcon = _theme != null ? _theme.MapIconYou : null;
 
-            // KARAKTER pemain di peta: token bulat kuning — warna yang sama dengan kapsul
-            // pemain di lapangan, supaya "itu gw" terbaca tanpa dijelaskan. Bulatnya memakai
-            // `_circle` yang sudah dibuat BuildSkillWidgets (jalan lebih dulu, lihat Init);
-            // sprite bulat bawaan Unity TIDAK bisa dipakai — GetBuiltinResource("UI/Skin/
-            // Knob.psd") gagal saat runtime.
-            _mapMark = MakeImage("MapMark", Vector2.zero, new Vector2(26f, 26f),
-                new Color(1f, 0.8f, 0.25f, 1f), Vector2.zero);
+            _mapMark = MakeImage("MapMark", Vector2.zero, new Vector2(48f, 48f),
+                new Color(0.85f, 0.12f, 0.08f, 1f), Vector2.zero);
             _mapMark.transform.SetParent(_mapRoot, false);
             Centre(_mapMark.rectTransform);
-            _mapMark.sprite = _circle;
+            _mapMark.sprite = youIcon != null ? youIcon : _circle;
+            _mapMark.preserveAspect = true;
             _mapMark.enabled = false;
 
             // Gloom tepi — dibuat TERAKHIR karena di kanvas ini urutan bikin adalah urutan
@@ -3854,7 +3879,6 @@ namespace Proto
             if (!open)
             {
                 _mapSig = -1;
-                if (_mapYou != null) _mapYou.enabled = false;
                 if (_mapMark != null) _mapMark.enabled = false;
 
                 for (int i = 0; i < _mapNodes.Length; i++)
@@ -3863,6 +3887,7 @@ namespace Proto
                     _mapNodes[i].enabled = false;
                     _mapRings[i].enabled = false;
                     _mapGlyphs[i].enabled = false;
+                    _mapIcons[i].enabled = false;
                 }
 
                 for (int i = 0; i < _mapEdges.Length; i++)
@@ -3962,9 +3987,9 @@ namespace Proto
         }
 
         /// <summary>
-        /// KARAKTER pemain di peta: token kuning yang berdiri di node sekarang — atau di ruang
+        /// KARAKTER pemain di peta: icon merah yang berdiri di node sekarang — atau di ruang
         /// tunggu bawah peta sebelum langkah pertama act — dan BERJALAN menyusuri jalur begitu
-        /// node berikutnya dipilih. Label KAMU menempel di atasnya.
+        /// node berikutnya dipilih. Tanpa label: icon yang jelas tidak butuh keterangan.
         /// </summary>
         void DrawMapMarker(RunMap map)
         {
@@ -4023,12 +4048,6 @@ namespace Proto
             bool visible = at.y > panel.yMin + 30f && at.y < panel.yMax - 44f;
             _mapMark.enabled = visible;
             _mapMark.rectTransform.anchoredPosition = at;
-
-            if (_mapYou != null)
-            {
-                _mapYou.enabled = visible;
-                _mapYou.rectTransform.anchoredPosition = at + new Vector2(0f, 34f);
-            }
         }
 
         /// <summary>Posisi layar satu node — BAWAH ke ATAS ala Slay the Spire (lajur jadi kolom,
@@ -4089,9 +4108,10 @@ namespace Proto
 
 
         /// <summary>Batas atas scroll: sisa tinggi act yang tidak muat di panel.
-        /// Konstantanya = ruang tunggu bawah (310) + kepala boss (70) + jendela atas (60).</summary>
+        /// Konstantanya = ruang tunggu bawah (310) + kepala boss (140 — node boss sekarang
+        /// 4x lipat, kepalanya butuh ruang dua kali dari dulu) + jendela atas (60).</summary>
         float MapScrollMax(RunMap map, Rect panel) =>
-            Mathf.Max(0f, (map.Floors - 1) * MapFloorGap - (panel.height - 440f));
+            Mathf.Max(0f, (map.Floors - 1) * MapFloorGap - (panel.height - 510f));
 
         /// <summary>Jendela vertikal tempat node boleh tergambar — di luarnya disembunyikan,
         /// supaya peta yang di-scroll tidak menimpa judul dan legenda.</summary>
@@ -4164,9 +4184,16 @@ namespace Proto
                 // Yang tergulung keluar jendela disembunyikan — bukan digambar menimpa judul.
                 bool show = live && MapInView(pos, panel);
 
-                _mapNodes[i].enabled = show;
-                _mapRings[i].enabled = show;
-                _mapGlyphs[i].enabled = show;
+                Sprite icon = live ? KindIcon(n.Kind) : null;
+
+                // Dengan icon, kotak DAN cincinnya ikut hilang — "gak usah pake holder,
+                // langsung warnai iconnya" kata pemilik project. Status yang dulu dibawa
+                // cincin pindah ke warna dan ukuran iconnya sendiri; jalur emas dan hijau
+                // di bawahnya tetap menunjukkan mana yang bisa dituju dan mana yang lewat.
+                _mapNodes[i].enabled = show && icon == null;
+                _mapRings[i].enabled = show && icon == null;
+                _mapGlyphs[i].enabled = show && icon == null;
+                _mapIcons[i].enabled = show && icon != null;
                 if (!show) continue;
 
                 bool now = map.At == n.Index;
@@ -4186,7 +4213,10 @@ namespace Proto
                 // Yang kedua JENIS, dan ini yang baru. Peta yang semua nodenya sebesar satu sama
                 // lain menuntut membaca hurufnya satu per satu untuk tahu ada apa di depan.
                 // Ukuran menjawab itu dari jarak pandang: yang besar berarti besar taruhannya.
-                float size = (now ? 46f : next ? 38f : 32f) * KindScale(n.Kind);
+                // Naik dari 46/38/32: "ini kekecilan" kata mata pemilik project, dan setelah
+                // holder dibuang, icon-nya sendirilah seluruh nodenya — ia boleh sebesar itu
+                // karena tidak ada lagi kotak yang menumpuk di belakangnya.
+                float size = (now ? 66f : next ? 56f : 46f) * KindScale(n.Kind);
 
                 // Jitter ber-seed, jadi diam di tempat. Boss dikecualikan: ia satu-satunya node
                 // yang ukurannya BERARTI SESUATU secara mutlak, dan boss yang kebetulan diundi
@@ -4213,31 +4243,45 @@ namespace Proto
                     ring = new Color(0f, 0f, 0f, 0.35f);
                 }
 
-                _mapRings[i].rectTransform.anchoredPosition = pos;
-                _mapRings[i].rectTransform.sizeDelta = new Vector2(size + 8f, size + 8f);
-                _mapRings[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
-                _mapRings[i].color = ring;
-
-                _mapNodes[i].rectTransform.anchoredPosition = pos;
-                _mapNodes[i].rectTransform.sizeDelta = new Vector2(size, size);
-                _mapNodes[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
-                _mapNodes[i].color = tone;
-
-                _mapGlyphs[i].rectTransform.anchoredPosition = pos;
-                _mapGlyphs[i].text = RunDirector.KindLabel(n.Kind).Substring(0, 1);
-                _mapGlyphs[i].color = new Color(0f, 0f, 0f, 0.85f);
-
-                // Hurufnya ikut membesar bersama kotaknya. Ukuran tetap membuat huruf di node
-                // boss yang dua kali lipat terlihat seperti tersasar di tengah kotak kosong —
-                // dan justru node itu yang paling perlu terbaca.
-                _mapGlyphs[i].fontSize = Mathf.Max(10, Mathf.RoundToInt(size * 0.46f));
-                _mapGlyphs[i].rectTransform.sizeDelta = new Vector2(size, size);
-
-                if (now && _mapYou != null)
+                if (icon != null)
                 {
-                    _mapYou.rectTransform.anchoredPosition =
-                        pos + new Vector2(0f, size * 0.5f + 16f);
+                    // Icon-nya SENDIRI yang jadi node — tanpa kotak, tanpa cincin. Silhouette
+                    // putihnya diwarnai warna jenisnya, digelapkan ~30% ke arah tinta: palet
+                    // KindColor dipilih untuk kotak berhuruf hitam, dan cyan atau emas murni
+                    // nyaris hilang di atas perkamen terang. Digelapkan, ia jadi tinta
+                    // berwarna yang kebaca dari jauh.
+                    var inkTone = Color.Lerp(tone, Color.black, 0.3f);
+                    inkTone.a = tone.a;
+
+                    _mapIcons[i].sprite = icon;
+                    _mapIcons[i].rectTransform.anchoredPosition = pos;
+                    _mapIcons[i].rectTransform.sizeDelta = new Vector2(size, size);
+                    _mapIcons[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
+                    _mapIcons[i].color = inkTone;
                 }
+                else
+                {
+                    _mapRings[i].rectTransform.anchoredPosition = pos;
+                    _mapRings[i].rectTransform.sizeDelta = new Vector2(size + 8f, size + 8f);
+                    _mapRings[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
+                    _mapRings[i].color = ring;
+
+                    _mapNodes[i].rectTransform.anchoredPosition = pos;
+                    _mapNodes[i].rectTransform.sizeDelta = new Vector2(size, size);
+                    _mapNodes[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
+                    _mapNodes[i].color = tone;
+
+                    _mapGlyphs[i].rectTransform.anchoredPosition = pos;
+                    _mapGlyphs[i].text = RunDirector.KindLabel(n.Kind).Substring(0, 1);
+                    _mapGlyphs[i].color = new Color(0f, 0f, 0f, 0.85f);
+
+                    // Hurufnya ikut membesar bersama kotaknya. Ukuran tetap membuat huruf di
+                    // node boss yang empat kali lipat terlihat seperti tersasar di tengah kotak
+                    // kosong — dan justru node itu yang paling perlu terbaca.
+                    _mapGlyphs[i].fontSize = Mathf.Max(10, Mathf.RoundToInt(size * 0.46f));
+                    _mapGlyphs[i].rectTransform.sizeDelta = new Vector2(size, size);
+                }
+
             }
         }
 
@@ -4257,12 +4301,32 @@ namespace Proto
         {
             switch (kind)
             {
-                case RunNodeKind.Boss: return 2.05f;
+                case RunNodeKind.Boss: return 4f;
                 case RunNodeKind.Elite: return 1.42f;
                 case RunNodeKind.Shop: return 1.22f;
                 case RunNodeKind.Gamble: return 1.16f;
                 case RunNodeKind.Event: return 1.1f;
                 default: return 1f;
+            }
+        }
+
+        /// <summary>
+        /// Icon jenis node dari tema. Null = tema belum membawa gambarnya, dan node itu kembali
+        /// ke huruf — aturan yang sama dengan seluruh sprite tema: art yang belum jadi tidak
+        /// pernah memblokir petanya.
+        /// </summary>
+        Sprite KindIcon(RunNodeKind kind)
+        {
+            if (_theme == null) return null;
+
+            switch (kind)
+            {
+                case RunNodeKind.Boss: return _theme.MapIconBoss;
+                case RunNodeKind.Elite: return _theme.MapIconElite;
+                case RunNodeKind.Shop: return _theme.MapIconShop;
+                case RunNodeKind.Event: return _theme.MapIconEvent;
+                case RunNodeKind.Gamble: return _theme.MapIconGamble;
+                default: return _theme.MapIconFight;
             }
         }
 
@@ -5547,16 +5611,27 @@ namespace Proto
             PushFloater(at ?? Player.transform.position + Vector3.up * 3f, message, color);
         }
 
-        void PushFloater(Vector3 world, string message, Color color)
+        /// <param name="scale">
+        /// Pengali ukuran huruf. 1 = kabar biasa. Di atas 1 = PENGUMUMAN — dipakai reaksi:
+        /// hurufnya membesar, umurnya lebih panjang, dan lahirnya menyentak seperti angka crit.
+        /// Ukuran font disetel DI SINI, bukan per frame — mengubah fontSize membangun ulang
+        /// mesh teksnya, dan itu hanya pantas dibayar sekali saat lahir.
+        /// </param>
+        void PushFloater(Vector3 world, string message, Color color, float scale = 1f)
         {
             for (int i = 0; i < FloatPoolSize; i++)
             {
                 if (_floatLife[i] > 0f) continue;
 
-                _floatLife[i] = 1.1f;
+                float life = scale > 1f ? 1.6f : 1.1f;
+                _floatLife[i] = life;
+                _floatMax[i] = life;
+                _floatScale[i] = scale;
                 _floatWorld[i] = world;
                 _floaters[i].text = message;
                 _floaters[i].color = color;
+                _floaters[i].fontSize = Mathf.RoundToInt(20f * scale);
+                _floaters[i].rectTransform.localScale = Vector3.one;
                 return;
             }
         }
@@ -5576,6 +5651,16 @@ namespace Proto
 
                 var screen = _camera.WorldToScreenPoint(_floatWorld[i]);
                 _floaters[i].rectTransform.anchoredPosition = new Vector2(screen.x, screen.y);
+
+                // Sentakan lahir untuk pengumuman besar — lewat localScale yang gratis, bukan
+                // fontSize yang membangun ulang mesh. Floater biasa tidak ikut menyentak:
+                // "+2 mana" yang berjedar sama kerasnya dengan FIRESTORM menghapus jedarnya.
+                if (_floatScale[i] > 1f)
+                {
+                    float age = _floatMax[i] - _floatLife[i];
+                    float pop = 1f + 0.55f * Mathf.Max(0f, 1f - age / 0.18f);
+                    _floaters[i].rectTransform.localScale = Vector3.one * pop;
+                }
 
                 var c = _floaters[i].color;
                 c.a = Mathf.Clamp01(_floatLife[i]);

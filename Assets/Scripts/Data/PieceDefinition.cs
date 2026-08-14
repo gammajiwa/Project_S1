@@ -69,6 +69,13 @@ namespace Proto
                  "pernah menimpa file yang sudah ada. Kosong = jatuh balik ke kotak warna.")]
         public Sprite Icon;
 
+        [Tooltip("VFX di titik musuh KENA skill ini. Wrapper per skill dari menu " +
+                 "'Assign Skill HIT VFX' — ganti efeknya lewat prefab wrapper, bukan kode.")]
+        public GameObject HitVfx;
+
+        [Tooltip("Skala HitVfx. Crit otomatis dikali 1,35 di runtime.")]
+        public float HitVfxScale = 0.6f;
+
         [Header("Behaviour")]
         public CastKind Kind = CastKind.Projectile;
 
