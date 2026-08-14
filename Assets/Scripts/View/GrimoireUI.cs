@@ -1079,7 +1079,7 @@ namespace Proto
 
             _overTitle = MakeText("OverTitle", new Vector2(0f, 170f), new Vector2(1200f, 130f), 92,
                 new Color(1f, 0.93f, 0.88f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
-            _overTitle.text = "GAME OVER";
+            _overTitle.text = Loc.T("hud.gameover.title");
 
             _overInfo = MakeText("OverInfo", new Vector2(0f, 88f), new Vector2(900f, 34f), 22,
                 new Color(1f, 0.76f, 0.7f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
@@ -1088,7 +1088,7 @@ namespace Proto
                 new Color(0.14f, 0.04f, 0.05f, 0.96f), Vector2.zero);
             _overMenuLabel = MakeText("OverMenuLabel", Vector2.zero, new Vector2(OverButtonW, 30f), 24,
                 new Color(1f, 0.9f, 0.86f), Vector2.zero, TextAnchor.MiddleCenter);
-            _overMenuLabel.text = "KE MENU UTAMA";
+            _overMenuLabel.text = Loc.T("hud.gameover.menu");
 
             ShowGameOver(false);
         }
@@ -1149,7 +1149,7 @@ namespace Proto
             SetAlpha(_overInfo, _overFade);
             SetAlpha(_overMenuLabel, _overFade);
 
-            _overInfo.text = "run berakhir di wave " + Enemies.Wave + "   -   " + _gold + " koin";
+            _overInfo.text = Loc.F("hud.gameover.info", Enemies.Wave, _gold);
 
             var menu = GameOverMenuRect();
             Seat(_overMenuBg.rectTransform, menu);
@@ -1359,7 +1359,7 @@ namespace Proto
             if (!_codex.Discover(piece.Id)) return;
 
             PushFloater(Player.transform.position + Vector3.up * 2.6f,
-                "BARU: " + piece.DisplayName, new Color(0.8f, 0.95f, 1f));
+                Loc.F("hud.newpiece", PieceName(piece)), new Color(0.8f, 0.95f, 1f));
         }
 
         void RollShop()
@@ -1402,7 +1402,7 @@ namespace Proto
             _spellTitle = MakeText("SpellTitle", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 6),
                 new Vector2(400, 22), 14, TextGold,
                 new Vector2(1f, 0f), TextAnchor.LowerRight);
-            _spellTitle.text = "SPELL AKTIF";
+            _spellTitle.text = Loc.T("hud.spells.title");
         }
 
         void BuildSpeedControl()
@@ -1427,7 +1427,7 @@ namespace Proto
 
             MakeText("SpeedHint", new Vector2(-Margin, -Margin - SpeedButtonH - 4), new Vector2(300, 20), 11,
                 TextDim, new Vector2(1f, 1f), TextAnchor.UpperRight).text =
-                "kecepatan  (tombol 1/2/3/4)";
+                Loc.T("hud.speed.hint");
 
             BuildTimeControl();
         }
@@ -1463,7 +1463,7 @@ namespace Proto
             if (_timeLabel == null || _biome == null) return;
 
             var face = _biome.Current;
-            _timeLabel.text = (face != null ? face.DisplayName : "?") + "   (T)";
+            _timeLabel.text = Loc.F("hud.time.suffix", face != null ? face.DisplayName : "?");
         }
 
         void ToggleTime()
@@ -1704,7 +1704,7 @@ namespace Proto
 
             _startLabel = MakeText("StartLabel", new Vector2(0, 120), new Vector2(StartButtonW, StartButtonH),
                 20, TextGold, new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
-            _startLabel.text = "MULAI WAVE   (SPACE)";
+            _startLabel.text = Loc.T("hud.start.wave");
         }
 
         void BuildMeter()
@@ -1815,7 +1815,7 @@ namespace Proto
             }
 
             _sb.Length = 0;
-            _sb.Append("total ").Append(Mathf.RoundToInt(_meter.Total));
+            _sb.Append(Loc.F("hud.meter.total", Mathf.RoundToInt(_meter.Total)));
 
             string others = _meter.BuildOtherSources(IsPlacedSkill, 4);
             if (others.Length > 0) _sb.Append("      ").Append(others);
@@ -1855,7 +1855,7 @@ namespace Proto
                 if (status == null || counts[i] <= 0) continue;
 
                 _ailmentStrip.Push(status.Icon, status.Color, counts[i].ToString(),
-                    status.DisplayName + "  -  " + counts[i] + " musuh terkena\n" + status.Blurb);
+                    Loc.F("hud.ailment.tip", StatusName(status), counts[i], status.Blurb));
             }
 
             _ailmentStrip.Apply();
@@ -1896,7 +1896,7 @@ namespace Proto
                 if (p == null) continue;
 
                 _sb.Length = 0;
-                _sb.Append(p.DisplayName).Append("   (PAKTA - permanen)\n");
+                _sb.Append(Loc.F("hud.pact.tip", p.DisplayName)).Append('\n');
                 if (!string.IsNullOrEmpty(p.BoonText)) _sb.Append("+ ").Append(p.BoonText).Append('\n');
                 if (!string.IsNullOrEmpty(p.BaneText)) _sb.Append("- ").Append(p.BaneText);
 
@@ -1923,7 +1923,7 @@ namespace Proto
                 string label = def.IsCharge ? stacks + "x" : slots[i].Remaining.ToString("0.0");
 
                 strip.Push(def.Icon, def.Color, label,
-                    def.DisplayName + (def.IsCharge ? "  -  " + stacks + "/" + def.MaxStacks + " charge" : "")
+                    BuffName(def) + (def.IsCharge ? "  -  " + Loc.F("hud.buff.charge", stacks, def.MaxStacks) : "")
                     + "  -  " + slots[i].Remaining.ToString("0.0") + "s\n" +
                     _tooltips.DescribeMods(def));
             }
@@ -1973,7 +1973,7 @@ namespace Proto
             // Baris regen hanya kalau ada. Menulis "pulih 0/dtk" itu janji palsu — pemain yang
             // membacanya akan menunggu isian yang tidak akan pernah datang.
             if (regen > 0f)
-                _sb.Append("\npulih ").Append(regen.ToString("0.#")).Append(" per detik");
+                _sb.Append(Loc.F("hud.regen", regen.ToString("0.#")));
 
             return _sb.ToString();
         }
@@ -1996,6 +1996,23 @@ namespace Proto
                 _floaters[i].text = "";
             }
         }
+
+        /// <summary>
+        /// Nama piece yang DIGAMBAR. Nilai di asetnya dipakai sebagai cadangan, jadi piece yang
+        /// belum punya kunci tetap tampil apa adanya alih-alih jadi kunci mentah di tengah papan.
+        ///
+        /// Yang dibaca di sini SELALU nama tampilan. Tempat lain yang memakai
+        /// <see cref="PieceDefinition.DisplayName"/> sebagai KUNCI - pencarian VFX hit, misalnya -
+        /// tidak boleh ikut lewat sini; kunci yang berpindah bahasa berhenti cocok.
+        /// </summary>
+        static string PieceName(PieceDefinition def)
+            => def == null ? "" : Loc.T("piece." + def.Id + ".name", def.DisplayName);
+
+        static string StatusName(StatusDefinition def)
+            => def == null ? "" : Loc.T("status." + def.Id + ".name", def.DisplayName);
+
+        static string BuffName(BuffDefinition def)
+            => def == null ? "" : Loc.T("buff." + def.Id + ".name", def.DisplayName);
 
         int ValueOf(PieceDefinition def) => _balance.SellValueOf(def);
 
@@ -2082,11 +2099,11 @@ namespace Proto
             if (count > 0 || _pendingGold > 0)
             {
                 _sb.Length = 0;
-                if (count > 0) _sb.Append(count).Append(" drop");
+                if (count > 0) _sb.Append(Loc.F("hud.drops", count));
                 if (_pendingGold > 0)
                 {
                     if (_sb.Length > 0) _sb.Append("   ");
-                    _sb.Append("kelebihan kejual +").Append(_pendingGold).Append(" koin");
+                    _sb.Append(Loc.F("hud.drops.sold", _pendingGold));
                 }
 
                 PushFloater(Player.transform.position + Vector3.up * 2.4f,
@@ -2103,7 +2120,7 @@ namespace Proto
                 // Screen is carpeted â€” the overflow is sold so nothing silently vanishes.
                 _gold += ValueOf(def);
                 PushFloater(Player.transform.position + Vector3.up * 2f,
-                    "penuh, " + def.DisplayName + " kejual +" + ValueOf(def), new Color(1f, 0.88f, 0.45f));
+                    Loc.F("hud.full.sold", PieceName(def), ValueOf(def)), new Color(1f, 0.88f, 0.45f));
                 return;
             }
 
@@ -2159,7 +2176,7 @@ namespace Proto
             _gold += value;
 
             PushFloater(Player.transform.position + Vector3.up * 2f,
-                sold + " tercecer kejual  +" + value + " koin", new Color(1f, 0.88f, 0.45f));
+                Loc.F("hud.loose.sold", sold, value), new Color(1f, 0.88f, 0.45f));
         }
 
         // ---------- setelan dalam permainan ----------
@@ -2237,7 +2254,7 @@ namespace Proto
             label.transform.SetParent(go.transform, false);
             label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
             label.rectTransform.anchoredPosition = Vector2.zero;
-            label.text = "KELUAR KE MENU";
+            label.text = Loc.T("hud.exit");
 
             var button = go.AddComponent<UnityEngine.UI.Button>();
             button.targetGraphic = image;
@@ -2403,7 +2420,7 @@ namespace Proto
             bool showStart = CanStartWave() || CanDepart();
             _startBg.enabled = showStart;
             _startLabel.enabled = showStart;
-            _startLabel.text = _run != null ? "LANJUT   (SPACE)" : "MULAI WAVE   (SPACE)";
+            _startLabel.text = Loc.T(_run != null ? "hud.start.depart" : "hud.start.wave");
 
             // Panel singgah duduk di tengah layar — persis tempat banner ini. Keduanya menyala
             // bersamaan berarti judul hijau mendarat di atas dagangan toko, dan itulah yang
@@ -2428,7 +2445,7 @@ namespace Proto
 
             if (!Enemies.WaveActive)
             {
-                _gridTitle.text = "GRIMOIRE   (bisa diubah)";
+                _gridTitle.text = Loc.T("hud.grid.open");
                 _bannerText.color = new Color(0.55f, 0.95f, 0.6f);
 
                 if (_run != null)
@@ -2444,16 +2461,16 @@ namespace Proto
                     // peta". Tombolnya sendiri sudah kelihatan di pojok layar, jadi yang tersisa
                     // cuma kalimat yang menutupi lapangan tiap kali wave berakhir.
                     if (_run.Resting)
-                        _bannerText.text = "PULAU REHAT — " + RunDirector.KindLabel(_run.RestKind);
+                        _bannerText.text = Loc.F("hud.banner.rest", RunDirector.KindLabel(_run.RestKind));
                     else if (Enemies.Wave == 0)
-                        _bannerText.text = "SUSUN GRIMOIRE-MU";
+                        _bannerText.text = Loc.T("hud.banner.build");
                     else
-                        _bannerText.text = "WAVE " + Enemies.Wave + " BERES";
+                        _bannerText.text = Loc.F("hud.banner.wavedone", Enemies.Wave);
 
                     if (Book.Spells.Count == 0)
                     {
                         _bannerText.color = new Color(1f, 0.75f, 0.4f);
-                        _bannerText.text += "\n\npasang minimal 1 SKILL di atas rune dulu";
+                        _bannerText.text += Loc.T("hud.banner.needskill");
                     }
                     else if (ProtoInput.RestartDown && _inputLock <= 0f && CanDepart())
                     {
@@ -2464,16 +2481,16 @@ namespace Proto
                 }
 
                 if (Enemies.Wave == 0)
-                    _bannerText.text = "SUSUN GRIMOIRE-MU";
+                    _bannerText.text = Loc.T("hud.banner.build");
                 else if (ShopEventActive)
-                    _bannerText.text = "WAVE " + Enemies.Wave + " BERES   -   TOKO BUKA";
+                    _bannerText.text = Loc.F("hud.banner.wavedone.shop", Enemies.Wave);
                 else
-                    _bannerText.text = "WAVE " + Enemies.Wave + " BERES";
+                    _bannerText.text = Loc.F("hud.banner.wavedone", Enemies.Wave);
 
                 if (!showStart)
                 {
                     _bannerText.color = new Color(1f, 0.75f, 0.4f);
-                    _bannerText.text += "\n\npasang minimal 1 SKILL di atas rune dulu";
+                    _bannerText.text += Loc.T("hud.banner.needskill");
                 }
                 else if (ProtoInput.RestartDown && _inputLock <= 0f)
                 {
@@ -2483,7 +2500,7 @@ namespace Proto
                 return;
             }
 
-            _gridTitle.text = "GRIMOIRE   (TERKUNCI - wave lagi jalan)";
+            _gridTitle.text = Loc.T("hud.grid.locked");
             _bannerText.text = "";
         }
 
@@ -2743,7 +2760,7 @@ namespace Proto
                 {
                     if (_gold < _balance.GambleCost)
                     {
-                        _slotResultLine = "koin kurang";
+                        _slotResultLine = Loc.T("slot.nogold");
                         return true;
                     }
 
@@ -2897,7 +2914,7 @@ namespace Proto
             if (evolutions.Count == 0) return;
 
             _sb.Length = 0;
-            _sb.Append("EVOLVE!   ");
+            _sb.Append(Loc.T("hud.evolve")).Append("   ");
             for (int i = 0; i < evolutions.Count; i++)
             {
                 if (i > 0) _sb.Append("   |   ");
@@ -2912,7 +2929,7 @@ namespace Proto
             // di sini sudah dipastikan ADA yang benar-benar berevolusi (baris keluar lebih awal
             // kalau daftarnya kosong), jadi runenya tidak pernah berputar untuk apa-apa.
             if (_rune != null) _rune.Celebrate();
-            PushFloater(Player.transform.position + Vector3.up * 3f, "EVOLVE!", new Color(0.55f, 1f, 0.7f));
+            PushFloater(Player.transform.position + Vector3.up * 3f, Loc.T("hud.evolve"), new Color(0.55f, 1f, 0.7f));
         }
 
         int _spilled;
@@ -2943,7 +2960,7 @@ namespace Proto
 
             AddLoose(def, pos);
             PushFloater(Player.transform.position + Vector3.up * 2.8f,
-                def.DisplayName + " kepental keluar", new Color(1f, 0.72f, 0.35f));
+                Loc.F("hud.bounced", PieceName(def)), new Color(1f, 0.72f, 0.35f));
         }
 
         void DrawEvoLines()
@@ -4017,16 +4034,10 @@ namespace Proto
             LayoutMapGloom(panel);
 
             _mapTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 30f);
-            _mapTitle.text = _mapChoose
-                ? "ACT " + _run.Act + "  -  PILIH TUJUANMU"
-                : "PETA RUN  -  ACT " + _run.Act;
+            _mapTitle.text = Loc.F(_mapChoose ? "map.title.choose" : "map.title.view", _run.Act);
 
             _mapLegend.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMin + 52f);
-            _mapLegend.text = _mapChoose
-                ? "klik node yang BERDENYUT   -   tarik / scroll buat geser peta\n" +
-                  "W wave    E elite    T toko    ? kejadian    S slot    B boss"
-                : "W wave    E elite    T toko    ? kejadian    S slot    B boss\n" +
-                  "tarik / scroll buat geser peta        M = tutup";
+            _mapLegend.text = Loc.T(_mapChoose ? "map.legend.choose" : "map.legend.view");
 
             int seg = 0;
 
@@ -4317,7 +4328,7 @@ namespace Proto
             // menggantung di luar panelnya.
             _slotBg.rectTransform.sizeDelta = panel.size;
             _slotTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
-            _slotTitle.text = "MESIN SLOT — " + _balance.GambleCost + " KOIN SEKALI PUTAR";
+            _slotTitle.text = Loc.F("slot.title", _balance.GambleCost);
 
             for (int i = 0; i < 3; i++)
             {
@@ -4329,13 +4340,13 @@ namespace Proto
             _slotSpinBg.rectTransform.anchoredPosition = spin.center;
             _slotSpinBg.rectTransform.sizeDelta = spin.size;
             _slotSpinLabel.rectTransform.anchoredPosition = spin.center;
-            _slotSpinLabel.text = _spinLeft > 0f ? ". . ." : "PUTAR!";
+            _slotSpinLabel.text = Loc.T(_spinLeft > 0f ? "slot.spinning" : "slot.spin");
 
             // Digantung dari ATAS tombol putar, bukan dari dasar panel: kotak reroll milik
             // prefab boleh duduk lebih tinggi, dan y tetap dari dasar membuat baris "koin:"
             // mendarat persis di atas tombolnya.
             _slotInfo.rectTransform.anchoredPosition = new Vector2(panel.center.x, spin.yMax + 36f);
-            _slotInfo.text = _slotResultLine + "\nkoin: " + _gold;
+            _slotInfo.text = Loc.F("slot.info", _slotResultLine, _gold);
 
             if (_spinLeft > 0f)
             {
@@ -4392,12 +4403,12 @@ namespace Proto
             {
                 case 1:
                     _gold += _balance.GambleSmallGold;
-                    _slotResultLine = "+" + _balance.GambleSmallGold + " koin";
+                    _slotResultLine = Loc.F("slot.win.small", _balance.GambleSmallGold);
                     break;
 
                 case 2:
                     _gold += _balance.GambleBigGold;
-                    _slotResultLine = "+" + _balance.GambleBigGold + " KOIN!";
+                    _slotResultLine = Loc.F("slot.win.big", _balance.GambleBigGold);
                     break;
 
                 case 3:
@@ -4409,7 +4420,7 @@ namespace Proto
                     {
                         AddLoose(prize, NearScatterPos(PanelRect().center, 1));
                         Discover(prize);
-                        _slotResultLine = "JACKPOT: " + prize.DisplayName + "!";
+                        _slotResultLine = Loc.F("slot.jackpot", PieceName(prize));
                     }
 
                     break;
@@ -4453,7 +4464,7 @@ namespace Proto
         void RefusePact()
         {
             _gold += _balance.EventGoldGift;
-            Announce("+" + _balance.EventGoldGift + " KOIN", new Color(1f, 0.84f, 0.32f));
+            Announce(Loc.F("event.gift", _balance.EventGoldGift), new Color(1f, 0.84f, 0.32f));
 
             _pactOffer[0] = null;
             _pactOffer[1] = null;
@@ -4485,11 +4496,10 @@ namespace Proto
             _eventBg.rectTransform.sizeDelta = panel.size;
 
             _eventTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
-            _eventTitle.text = "PERTAPA HUTAN";
+            _eventTitle.text = Loc.T("event.title");
 
             _eventBody.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 92f);
-            _eventBody.text = "\"Aku tidak menjual berkah, penyihir.\n" +
-                              "Aku menukarnya. Satu untuk satu, dan keduanya seumur hidupmu.\"";
+            _eventBody.text = Loc.T("event.body");
 
             PaintPactCard(0, EventOptionRect(0), _eventABg, _eventALabel);
             PaintPactCard(1, EventOptionRect(1), _eventBBg, _eventBLabel);
@@ -4498,7 +4508,7 @@ namespace Proto
             _eventCBg.rectTransform.anchoredPosition = c.center;
             _eventCBg.rectTransform.sizeDelta = c.size;
             _eventCLabel.rectTransform.anchoredPosition = c.center;
-            _eventCLabel.text = "PERGI SAJA   (+" + _balance.EventGoldGift + " koin)";
+            _eventCLabel.text = Loc.F("event.refuse", _balance.EventGoldGift);
         }
 
         /// <summary>
@@ -4522,8 +4532,7 @@ namespace Proto
             if (pact == null)
             {
                 bg.color = new Color(0.25f, 0.22f, 0.27f, 0.9f);
-                label.text = "TIDAK ADA LAGI YANG\nBISA DITAWARKAN\n\n+" +
-                             _balance.EventGoldGift + " koin";
+                label.text = Loc.F("event.nothing", _balance.EventGoldGift);
                 return;
             }
 
@@ -4918,7 +4927,7 @@ namespace Proto
                         if (stored != null)
                         {
                             hovered = stored.Def;
-                            origin = "DI TAS (nggak nembak)";
+                            origin = Loc.T("hud.origin.bag");
                         }
                     }
                 }
@@ -4936,9 +4945,7 @@ namespace Proto
                             // "aman, tidak akan hilang" — padahal artinya resep BUTA terhadap
                             // piece ini, jadi evolusi yang ditunggu tidak akan pernah jalan
                             // selama gemboknya terpasang.
-                            origin = inst.Locked
-                                ? "KEPASANG - TERKUNCI, nggak ikut evolusi"
-                                : "KEPASANG";
+                            origin = Loc.T(inst.Locked ? "hud.origin.locked" : "hud.origin.placed");
                             spell = FindSpell(inst);
                         }
                     }
@@ -5105,7 +5112,7 @@ namespace Proto
 
             _shopBtnBg.enabled = eventOn;
             _shopBtnLabel.enabled = eventOn;
-            _shopBtnLabel.text = "TOKO BUKA";
+            _shopBtnLabel.text = Loc.T("shop.button");
 
             _panelBg.enabled = _shopOpen;
             _panelTitle.enabled = _shopOpen;
@@ -5135,7 +5142,7 @@ namespace Proto
 
             _panelTitle.rectTransform.anchoredPosition = new Vector2(panel.xMin + 14f, panel.yMax - 8f);
             _panelTitle.rectTransform.pivot = new Vector2(0f, 1f);
-            _panelTitle.text = "TOKO   —   " + _gold + " koin";
+            _panelTitle.text = Loc.F("shop.title", _gold);
 
             for (int i = 0; i < ShopSlots; i++)
             {
@@ -5151,7 +5158,7 @@ namespace Proto
                 if (def == null)
                 {
                     _shopSlotBg[i].color = new Color(0.1f, 0.1f, 0.12f, 0.7f);
-                    _shopSlotText[i].text = "(kebeli)";
+                    _shopSlotText[i].text = Loc.T("shop.sold");
                     _shopSlotText[i].color = new Color(0.5f, 0.5f, 0.55f);
                     continue;
                 }
@@ -5164,8 +5171,8 @@ namespace Proto
                     : new Color(0.16f, 0.11f, 0.11f, 0.95f);
 
                 _sb.Length = 0;
-                _sb.Append(def.DisplayName).Append("  ").Append(Shapes.StarText(def.Stars)).Append('\n');
-                _sb.Append(price).Append(" koin");
+                _sb.Append(PieceName(def)).Append("  ").Append(Shapes.StarText(def.Stars)).Append('\n');
+                _sb.Append(Loc.F("shop.price", price));
                 _shopSlotText[i].text = _sb.ToString();
                 _shopSlotText[i].color = afford ? Color.white : new Color(0.95f, 0.55f, 0.5f);
 
@@ -5186,7 +5193,7 @@ namespace Proto
 
             _rerollLabel.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin + 8f);
             _rerollLabel.rectTransform.sizeDelta = new Vector2(reroll.width, 22f);
-            _rerollLabel.text = "REROLL   " + _rerollCost + " koin";
+            _rerollLabel.text = Loc.F("shop.reroll", _rerollCost);
 
             return cursor;
         }
@@ -5326,11 +5333,11 @@ namespace Proto
                 int share = _meter.ShareOf(s.Source.Def.DisplayName);
                 if (share > 0) _sb.Append("  ").Append(share).Append('%');
 
-                _sb.Append("   ").Append(BigNumber.Short(s.Damage)).Append(" dmg");
+                _sb.Append("   ").Append(BigNumber.Short(s.Damage)).Append(Loc.T("spell.dmg"));
                 _sb.Append("   ").Append(BigNumber.Short(s.Cooldown <= 0f ? 0f : s.Damage / s.Cooldown))
-                    .Append(" dps");
+                    .Append(Loc.T("spell.dps"));
                 _sb.Append("   ").Append(s.Cooldown.ToString("0.00")).Append('s');
-                _sb.Append("   ").Append(Mathf.RoundToInt(s.Source.Def.ManaCost)).Append(" mana");
+                _sb.Append("   ").Append(Mathf.RoundToInt(s.Source.Def.ManaCost)).Append(Loc.T("spell.mana"));
 
                 if (s.DamageBonus > 0f) _sb.Append("  +").Append(Mathf.RoundToInt(s.DamageBonus * 100f)).Append("%D");
                 if (s.CooldownBonus > 0f) _sb.Append("  -").Append(Mathf.RoundToInt(s.CooldownBonus * 100f)).Append("%CD");
@@ -5400,18 +5407,18 @@ namespace Proto
         void DrawHud()
         {
             _sb.Length = 0;
-            _sb.Append("<color=#E3C079>WAVE ").Append(Enemies.Wave).Append("</color>");
+            _sb.Append(Loc.F("hud.line.wave", Enemies.Wave));
 
             if (Enemies.WaveActive)
             {
                 _sb.Append(Enemies.Closing
-                    ? "   ·   HABISKAN SISANYA"
-                    : "   ·   sisa " + (Enemies.PendingSpawns + Enemies.AliveCount) + "/" + Enemies.WaveTotal);
+                    ? Loc.T("hud.line.finish")
+                    : Loc.F("hud.line.left", Enemies.PendingSpawns + Enemies.AliveCount, Enemies.WaveTotal));
             }
 
-            _sb.Append("   ·   musuh ").Append(Enemies.AliveCount);
-            _sb.Append("   ·   kills ").Append(Enemies.Kills);
-            _sb.Append("   ·   <color=#E3C079>").Append(_gold).Append(" koin</color>");
+            _sb.Append(Loc.F("hud.line.enemies", Enemies.AliveCount));
+            _sb.Append(Loc.F("hud.line.kills", Enemies.Kills));
+            _sb.Append(Loc.F("hud.line.gold", _gold));
             _hudText.text = _sb.ToString();
 
             // Plakat mengikuti panjang kalimat, bukan sebaliknya.
@@ -5420,12 +5427,13 @@ namespace Proto
             AnimateBars(Time.unscaledDeltaTime);
 
             if (_hpLabel != null)
-            _hpLabel.text = "HP  " + Mathf.CeilToInt(Player.Hp) + " / " + Mathf.RoundToInt(Player.MaxHp) +
-                            (Player.HpRegen > 0f ? "   (+" + Player.HpRegen.ToString("0.0") + "/s)" : "");
+            _hpLabel.text = Loc.F("hud.hp.label", Mathf.CeilToInt(Player.Hp), Mathf.RoundToInt(Player.MaxHp))
+                            + (Player.HpRegen > 0f
+                                ? Loc.F("hud.hp.regen", Player.HpRegen.ToString("0.0")) : "");
 
             if (_manaLabel != null)
-            _manaLabel.text = "MANA  " + Mathf.FloorToInt(Player.Mana) + " / " + Mathf.RoundToInt(Player.MaxMana) +
-                              "   (+" + Player.ManaRegen.ToString("0.0") + "/s)";
+            _manaLabel.text = Loc.F("hud.mana.label", Mathf.FloorToInt(Player.Mana), Mathf.RoundToInt(Player.MaxMana))
+                              + Loc.F("hud.mana.regen", Player.ManaRegen.ToString("0.0"));
 
             // Ailment tally moved to its own icon strip under the mana bar — see DrawBuffs.
         }

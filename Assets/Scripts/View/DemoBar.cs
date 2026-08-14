@@ -94,7 +94,7 @@ namespace Proto
             // Dua baris: wajah di atas, cuaca di bawah. Nama dipendekkan jadi 3-4 huruf —
             // di lebar 258 piksel, "TENGAH MALAM" tidak muat dan yang penting cuma bisa dibedakan.
             var faceRow = MakeRow(panel);
-            for (int i = 0; i < faceCount && i < FaceNames.Length; i++)
+            for (int i = 0; i < faceCount && i < FaceKeys.Length; i++)
             {
                 int index = i;
                 _faceButtons.Add(MakeButton(faceRow, Short(FaceName(i)), () =>

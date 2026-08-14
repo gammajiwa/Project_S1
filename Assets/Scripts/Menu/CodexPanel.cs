@@ -84,7 +84,7 @@ namespace Proto
             int used = 0;
             int cursor = 0;
 
-            for (int s = 0; s < SectionTitles.Length; s++)
+            for (int s = 0; s < SectionKeys.Length; s++)
             {
                 // _order sudah terurut per seksi, jadi tiap seksi adalah satu rentang utuh.
                 int first = cursor;
@@ -318,7 +318,7 @@ namespace Proto
 
             float x = 0f;
 
-            for (int i = 0; i < FilterLabels.Length; i++)
+            for (int i = 0; i < FilterKeys.Length; i++)
             {
                 float width = FilterLabel(i).Length > 5 ? 130f : 116f;
 
