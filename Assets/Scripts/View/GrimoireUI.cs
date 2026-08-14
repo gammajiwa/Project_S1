@@ -4565,7 +4565,18 @@ namespace Proto
             var origin = hover - AnchorOffset(_held, _heldRot);
             bool valid = Book.CanPlace(_held, origin, _heldRot);
             var shape = Shapes.Rotate(_held.Cells, _heldRot);
-            var tint = valid ? ValidCell : InvalidCell;
+
+            // Yang boleh ditaruh memakai warnanya SENDIRI, bukan hijau. Hijau adalah warna
+            // kelima di papan yang sudah penuh warna, dan ia menjawab pertanyaan yang sudah
+            // dijawab bentuknya: benda yang muncul rapi di petaknya berarti muat.
+            var tint = valid
+                ? new Color(_held.Color.r, _held.Color.g, _held.Color.b, 0.9f)
+                : InvalidCell;
+
+            // Rune sudah digambar sebagai dirinya sendiri oleh lapisan tile - lihat
+            // DrawHeldPreview - jadi menimpanya dengan kotak polos di sini akan mengembalikan
+            // persis yang baru saja dihapus.
+            bool tiledPreview = RuneTiles.IsRuneGlyph(_held.Icon);
 
             for (int i = 0; i < shape.Length; i++)
             {
@@ -4575,6 +4586,8 @@ namespace Proto
                 int idx = c.y * Grimoire.Width + c.x;
                 if (_held.Layer == Layer.Rune)
                 {
+                    if (tiledPreview) continue;
+
                     // Dinyalakan lagi: petak yang sedang jadi sasaran harus terbaca boleh atau
                     // tidak, dan itu berlaku juga di atas rune yang sudah duduk di situ - justru
                     // di situlah jawabannya "tidak boleh".
@@ -4611,13 +4624,13 @@ namespace Proto
         void DrawRuneTiles()
         {
             DrawTileLayer(ref _boardTiles, _baseCells, Grimoire.Width, Grimoire.Height,
-                c => Book.BaseAt(c));
+                c => Book.BaseAt(c), true);
         }
 
         void DrawBagTiles()
         {
             DrawTileLayer(ref _bagTiles, _bagCells, Backpack.Width, Backpack.Height,
-                c => _bag.At(c));
+                c => _bag.At(c), false);
         }
 
         /// <summary>
@@ -4626,7 +4639,7 @@ namespace Proto
         /// digeser atau petaknya diperbesar lewat prefab, tile-nya ikut tanpa diberi tahu.
         /// </summary>
         void DrawTileLayer(ref RuneTilePool pool, Image[] cells, int width, int height,
-            System.Func<Vector2Int, RuneInstance> at)
+            System.Func<Vector2Int, RuneInstance> at, bool previewHeld)
         {
             if (cells == null || cells.Length == 0 || cells[0] == null) return;
 
@@ -4687,7 +4700,43 @@ namespace Proto
                 }
             }
 
+            if (previewHeld) DrawHeldPreview(pool, cells, width, height);
+
             pool.End();
+        }
+
+        /// <summary>
+        /// Rune yang sedang dipegang, digambar SEBAGAI DIRINYA di petak yang akan ditempatinya:
+        /// utuh kalau boleh, merah kalau tidak.
+        ///
+        /// Sebelumnya petaknya cuma diwarnai hijau atau merah, dan itu salah dua kali. Hijau
+        /// mengajarkan bahasa yang tidak perlu ada - benda yang muncul rapi di tempatnya sudah
+        /// mengatakan "boleh" tanpa satu warna pun - dan kotak polos itu membuat rune yang
+        /// sedang dibawa BERUBAH WUJUD tepat pada saat pemain paling butuh melihat bentuknya,
+        /// yaitu saat sedang mengukur muat atau tidak.
+        /// </summary>
+        void DrawHeldPreview(RuneTilePool pool, Image[] cells, int width, int height)
+        {
+            if (_held == null || !RuneTiles.IsRuneGlyph(_held.Icon)) return;
+
+            var hover = ScreenToCell(ProtoInput.MousePosition);
+            if (hover.x < 0) return;
+
+            var origin = hover - AnchorOffset(_held, _heldRot);
+            bool blocked = !Book.CanPlace(_held, origin, _heldRot);
+            var shape = Shapes.Rotate(_held.Cells, _heldRot);
+            float bleed = CellGap / Mathf.Max(1f, CellSize);
+
+            for (int k = 0; k < shape.Length; k++)
+            {
+                var c = origin + shape[k];
+                if (c.x < 0 || c.y < 0 || c.x >= width || c.y >= height) continue;
+
+                var tile = pool.Take();
+                tile.Cover(cells[c.y * width + c.x].rectTransform, bleed);
+                tile.Bind(RuneTiles.BakedTileAt(_held, k), RuneTiles.GlyphAt(_held, k),
+                    _held.Color, 0.9f, blocked);
+            }
         }
 
         void DrawBackpack()

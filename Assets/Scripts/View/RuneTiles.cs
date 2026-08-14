@@ -294,10 +294,12 @@ namespace Proto
 
                 go.name = "RuneTile_" + _pool.Count;
 
-                // Disisipkan satu per satu di titik yang sama: tile tidak pernah saling menimpa,
-                // jadi urutan di antara mereka sendiri tidak menentukan apa-apa.
+                // Disisipkan berurutan, bukan bertumpuk di satu titik: urutan pakai kolam ini
+                // ADALAH urutan gambar, dan bayangan penempatan yang diambil belakangan harus
+                // jatuh DI ATAS petak yang sudah duduk - kalau tidak, merah "tidak boleh"
+                // tersembunyi persis di balik benda yang menghalanginya.
                 if (_after != null && _after.parent == _parent)
-                    go.transform.SetSiblingIndex(_after.GetSiblingIndex() + 1);
+                    go.transform.SetSiblingIndex(_after.GetSiblingIndex() + 1 + _pool.Count);
 
                 var view = go.GetComponent<RuneCellView>();
                 if (view == null) view = go.AddComponent<RuneCellView>();

@@ -50,6 +50,11 @@ namespace Proto
                  "mulai bersaing dengan runenya sendiri.")]
         [Range(0f, 1f)] public float AreaAlpha = 0.16f;
 
+        [Tooltip("Nada petak saat penempatannya DITOLAK. Yang boleh ditaruh digambar apa adanya - " +
+                 "warna kedua untuk 'boleh' cuma menambah bahasa yang tidak perlu dipelajari, " +
+                 "karena bentuk yang sudah duduk di tempatnya sudah mengatakannya.")]
+        public Color BlockedTint = new Color(1f, 0.25f, 0.25f, 1f);
+
         [Tooltip("Geser tambahan glyph SESUDAH dipusatkan, dalam pecahan sisi petak. +y naik. " +
                  "Pemusatannya sendiri otomatis per gambar; yang ini murni selera.")]
         public Vector2 GlyphNudge = new Vector2(0f, 0.03f);
@@ -231,9 +236,11 @@ namespace Proto
         /// menempati petak itu, jadi ia dibiarkan tembus pandang; runenya digambar penuh, tanpa
         /// diwarnai ulang, supaya glow yang sudah ada di gambarnya tetap glow.
         /// </summary>
-        public void Bind(Sprite baked, Sprite glyph, Color tint, float alpha)
+        public void Bind(Sprite baked, Sprite glyph, Color tint, float alpha, bool blocked = false)
         {
             Ensure();
+
+            if (blocked) tint = BlockedTint;
 
             // Petak yang sudah jadi membawa bingkai dan latarnya sendiri di dalam gambarnya.
             // Menyalakan pelat warna di bawahnya cuma menaruh kotak berwarna di belakang gambar
@@ -274,9 +281,12 @@ namespace Proto
                     else PlaceGlyph(wanted);
                 }
 
-                // Putih penuh, SELALU. Mengalikannya dengan warna piece akan meredupkan gambar
-                // yang memang sudah digambar menyala, dan itu persis kebalikan dari gunanya.
-                _glyph.color = new Color(1f, 1f, 1f, alpha);
+                // Putih penuh, kecuali saat ditolak. Mengalikannya dengan warna piece akan
+                // meredupkan gambar yang memang sudah digambar menyala - itu kebalikan dari
+                // gunanya - tapi merah "tidak boleh" harus menang atas apa pun di petak itu.
+                _glyph.color = blocked
+                    ? new Color(BlockedTint.r, BlockedTint.g, BlockedTint.b, alpha)
+                    : new Color(1f, 1f, 1f, alpha);
             }
         }
     }

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Proto
@@ -67,10 +67,33 @@ namespace Proto
                 // Dipaksa Filled di sini, bukan cuma diandalkan dari prefabnya: art pengganti
                 // hampir selalu masuk sebagai Simple, dan Simple mengabaikan fillAmount tanpa
                 // sepatah kata — barnya akan tampak penuh terus dan tidak ada yang tahu kenapa.
+                // Filled MENGABAIKAN fillAmount kalau sprite-nya kosong - Image tanpa sprite
+                // menggambar satu kotak putih polos dan berhenti di situ, jadi barnya tampak
+                // penuh terus tanpa satu pun error. Sepetak putih dipinjamkan di sini supaya
+                // pengisiannya bekerja bahkan sebelum art sungguhan dipasang.
+                if (_fill.sprite == null) _fill.sprite = White();
+
                 _fill.type = Image.Type.Filled;
                 _fill.fillMethod = Image.FillMethod.Horizontal;
                 _fill.fillOrigin = (int)Image.OriginHorizontal.Left;
             }
+        }
+
+        static Sprite _white;
+
+        /// <summary>Sepetak putih polos, dibuat sekali dan tidak pernah ikut tersimpan ke disk.</summary>
+        static Sprite White()
+        {
+            if (_white != null) return _white;
+
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
+            tex.Apply();
+            tex.hideFlags = HideFlags.HideAndDontSave;
+
+            _white = Sprite.Create(tex, new Rect(0f, 0f, 2f, 2f), new Vector2(0.5f, 0.5f), 100f);
+            _white.hideFlags = HideFlags.HideAndDontSave;
+            return _white;
         }
 
         Image Child(string name)

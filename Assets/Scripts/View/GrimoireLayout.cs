@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Proto
 {
@@ -187,15 +187,23 @@ namespace Proto
         public static Vector2Int ScreenToCell(Vector2 mouse)
         {
             float step = CellSize + CellGap;
-            int x = Mathf.FloorToInt((mouse.x - GridX) / step);
-            int y = Mathf.FloorToInt((mouse.y - GridY) / step);
+
+            // Celah antar petak DIBAGI DUA, separuh ke petak kiri separuh ke kanan - bukan
+            // ditolak sebagai "bukan petak mana pun".
+            //
+            // Menolaknya memang mencegah klik di seam nyasar ke tetangga, tapi ongkosnya jauh
+            // lebih mahal daripada yang dibelinya: selama piece diseret, tiap kali kursor
+            // melintasi satu garis papan ia dianggap KELUAR papan sesaat, jadi bayangan
+            // penempatannya berkedip hilang lalu muncul lagi. Papan yang berkedip tiap beberapa
+            // piksel gerakan mustahil terasa enak, dan itu yang membuat snap-nya terasa
+            // tersendat dibandingkan tas di game lain yang menempel tanpa usaha.
+            //
+            // Setengah celah di tepi luar papan ikut kebagian, jadi petak paling pinggir tidak
+            // lagi butuh ketelitian ekstra untuk dikenai.
+            int x = Mathf.FloorToInt((mouse.x - GridX + CellGap * 0.5f) / step);
+            int y = Mathf.FloorToInt((mouse.y - GridY + CellGap * 0.5f) / step);
 
             if (x < 0 || x >= Grimoire.Width || y < 0 || y >= Grimoire.Height) return new Vector2Int(-1, -1);
-
-            // Reject the gap between cells, so a click on the seam does not snap to a neighbour.
-            float offX = (mouse.x - GridX) - x * step;
-            float offY = (mouse.y - GridY) - y * step;
-            if (offX > CellSize || offY > CellSize) return new Vector2Int(-1, -1);
 
             return new Vector2Int(x, y);
         }
@@ -203,14 +211,14 @@ namespace Proto
         public static Vector2Int ScreenToBagCell(Vector2 mouse)
         {
             float step = BagCell + BagGap;
-            int x = Mathf.FloorToInt((mouse.x - RightX()) / step);
-            int y = Mathf.FloorToInt((mouse.y - BagY) / step);
+
+            // Celahnya dibagi dua, alasan yang sama persis dengan papan di atas. Tas dan papan
+            // dipakai dalam satu tarikan seret yang sama; yang satu menempel enak sementara yang
+            // lain berkedip akan terasa seperti dua game berbeda.
+            int x = Mathf.FloorToInt((mouse.x - RightX() + BagGap * 0.5f) / step);
+            int y = Mathf.FloorToInt((mouse.y - BagY + BagGap * 0.5f) / step);
 
             if (x < 0 || x >= Backpack.Width || y < 0 || y >= Backpack.Height) return new Vector2Int(-1, -1);
-
-            float offX = (mouse.x - RightX()) - x * step;
-            float offY = (mouse.y - BagY) - y * step;
-            if (offX > BagCell || offY > BagCell) return new Vector2Int(-1, -1);
 
             return new Vector2Int(x, y);
         }
@@ -304,13 +312,6 @@ namespace Proto
             float cx = Screen.width * 0.5f;
             float cy = Screen.height * 0.5f - 60f;
             return new Rect(cx - OverButtonW * 0.5f, cy - OverButtonH * 0.5f, OverButtonW, OverButtonH);
-        }
-
-        /// <summary>Tepat di bawah tombol menu, lebih kecil: mengulang itu pilihan kedua.</summary>
-        public static Rect GameOverRetryRect()
-        {
-            var menu = GameOverMenuRect();
-            return new Rect(menu.xMin + 40f, menu.yMin - 68f, OverButtonW - 80f, 48f);
         }
 
         /// <summary>Panel peta run saat MEMILIH: satu layar penuh, tegak ala Slay the Spire —
