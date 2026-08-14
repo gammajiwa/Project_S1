@@ -532,3 +532,14 @@ tip.skill.radius=  ·  blast radius {0}
 tip.skill.range=range {0}
 tip.typeline={0}  ·  {1}  ·  {2} cells
 tip.typeline.element=  ·  {0}
+
+# ---------------- menu utama ----------------
+menu.back=BACK
+menu.codex=CODEX
+menu.heading.codex=CODEX
+menu.heading.settings=SETTINGS
+menu.heading.starter=CHOOSE YOUR GRIMOIRE
+menu.play=PLAY
+menu.quit=QUIT
+menu.settings=SETTINGS
+menu.startrun=START RUN

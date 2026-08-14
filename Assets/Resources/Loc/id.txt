@@ -532,3 +532,14 @@ tip.skill.radius=  ·  radius ledak {0}
 tip.skill.range=jangkauan {0}
 tip.typeline={0}  ·  {1}  ·  {2} petak
 tip.typeline.element=  ·  {0}
+
+# ---------------- menu utama ----------------
+menu.back=KEMBALI
+menu.codex=CODEX
+menu.heading.codex=CODEX
+menu.heading.settings=SETELAN
+menu.heading.starter=PILIH GRIMOIRE
+menu.play=MULAI
+menu.quit=KELUAR
+menu.settings=SETELAN
+menu.startrun=MULAI RUN

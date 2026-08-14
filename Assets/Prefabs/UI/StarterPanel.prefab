@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1017027688414175518}
   - component: {fileID: 4138832890109436473}
   - component: {fileID: 2341274679645127914}
+  - component: {fileID: 2345692181000507350}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -65,7 +66,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: KEMBALI
+  m_text: BACK
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -137,6 +138,20 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &2345692181000507350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 481357457934221458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a486326736c07eb41bb82ba340d4019a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
+  Key: menu.back
+  Fallback: BACK
 --- !u!1 &1125257960232036533
 GameObject:
   m_ObjectHideFlags: 0
@@ -910,6 +925,8 @@ MonoBehaviour:
   _database: {fileID: 11400000, guid: 8708f361bba8963448777fbd31d0841e, type: 2}
   _balance: {fileID: 11400000, guid: 204b8609925fbdf4cb6815d958fd17d6, type: 2}
   _gameSceneName: Proto
+  _loadingSigil: {fileID: 0}
+  _loadingInk: {r: 0.72, g: 0.5, b: 1, a: 1}
   _nameLabel: {fileID: 6388123623379229800}
   _blurbLabel: {fileID: 8928356630313977279}
   _statsLabel: {fileID: 1132463899778882555}
@@ -955,6 +972,7 @@ GameObject:
   - component: {fileID: 5653850234800275926}
   - component: {fileID: 8216623986298863567}
   - component: {fileID: 2222097305524884100}
+  - component: {fileID: 8720263496320401037}
   m_Layer: 0
   m_Name: Heading
   m_TagString: Untagged
@@ -1009,7 +1027,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: PILIH GRIMOIRE
+  m_text: CHOOSE YOUR GRIMOIRE
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1081,6 +1099,20 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &8720263496320401037
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4305563298860342103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a486326736c07eb41bb82ba340d4019a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
+  Key: menu.heading.starter
+  Fallback: CHOOSE YOUR GRIMOIRE
 --- !u!1 &4866608992356645727
 GameObject:
   m_ObjectHideFlags: 0
@@ -1092,6 +1124,7 @@ GameObject:
   - component: {fileID: 2943393674539809360}
   - component: {fileID: 5425738594691230708}
   - component: {fileID: 3228144157311976178}
+  - component: {fileID: 2614709638030904148}
   m_Layer: 0
   m_Name: Label
   m_TagString: Untagged
@@ -1146,7 +1179,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: MULAI RUN
+  m_text: START RUN
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1218,6 +1251,20 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &2614709638030904148
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4866608992356645727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a486326736c07eb41bb82ba340d4019a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
+  Key: menu.startrun
+  Fallback: START RUN
 --- !u!1 &4884181927649833689
 GameObject:
   m_ObjectHideFlags: 0

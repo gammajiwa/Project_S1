@@ -1176,10 +1176,10 @@ namespace Proto
             var fitter = list.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            play = NewMenuLine(list, "Play", "MULAI");
-            codex = NewMenuLine(list, "Codex", "CODEX");
-            settings = NewMenuLine(list, "Settings", "SETELAN");
-            quit = NewMenuLine(list, "Quit", "KELUAR");
+            play = NewMenuLine(list, "Play", "PLAY", "menu.play");
+            codex = NewMenuLine(list, "Codex", "CODEX", "menu.codex");
+            settings = NewMenuLine(list, "Settings", "SETTINGS", "menu.settings");
+            quit = NewMenuLine(list, "Quit", "QUIT", "menu.quit");
 
             version = NewText("Version", page, "v0.0", _theme.SmallSize,
                 _theme.TextMuted, TextAlignmentOptions.Right);
@@ -1201,6 +1201,7 @@ namespace Proto
 
             var heading = NewText("Heading", panel, "CODEX", _theme.HeadingSize,
                 _theme.TextIdle, TextAlignmentOptions.Left, true);
+            Localise(heading, "menu.heading.codex");
             Place(heading.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -40f), new Vector2(600f, 52f));
 
             var counter = NewText("Counter", panel, "0 / 0 KETEMU", _theme.BodySize,
@@ -1227,7 +1228,7 @@ namespace Proto
                 .Set("_sectionTemplate", sectionTemplate)
                 .Apply();
 
-            back = NewMenuLine(panel, "Back", "KEMBALI");
+            back = NewMenuLine(panel, "Back", "BACK", "menu.back");
             var backRect = (RectTransform)back.transform;
             Place(backRect, new Vector2(0f, 0f), new Vector2(48f, 26f), new Vector2(360f, 46f));
 
@@ -1283,8 +1284,9 @@ namespace Proto
             panelComponent = panel.gameObject.AddComponent<StarterSelectPanel>();
             var rig = panel.gameObject.AddComponent<StarterRig>();
 
-            var heading = NewText("Heading", panel, "PILIH GRIMOIRE", _theme.HeadingSize,
+            var heading = NewText("Heading", panel, "CHOOSE YOUR GRIMOIRE", _theme.HeadingSize,
                 _theme.TextIdle, TextAlignmentOptions.Left, true);
+            Localise(heading, "menu.heading.starter");
             Place(heading.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -40f), new Vector2(700f, 52f));
 
             var page01 = NewText("PageLabel", panel, "1 / 1", _theme.BodySize,
@@ -1335,11 +1337,11 @@ namespace Proto
             Place((RectTransform)next.transform, new Vector2(0.5f, 0.5f), new Vector2(300f, 22f),
                 new Vector2(90f, 90f));
 
-            var play = NewMenuLine(panel, "Launch", "MULAI RUN");
+            var play = NewMenuLine(panel, "Launch", "START RUN", "menu.startrun");
             Place((RectTransform)play.transform, new Vector2(1f, 0f), new Vector2(-48f, 26f),
                 new Vector2(360f, 46f));
 
-            back = NewMenuLine(panel, "Back", "KEMBALI");
+            back = NewMenuLine(panel, "Back", "BACK", "menu.back");
             Place((RectTransform)back.transform, new Vector2(0f, 0f), new Vector2(48f, 26f),
                 new Vector2(360f, 46f));
 
@@ -1511,7 +1513,7 @@ namespace Proto
             height.minHeight = 48f;
             height.preferredHeight = 48f;
 
-            var title = NewText("Title", header, "SEKSI", _theme.BodySize + 6,
+            var title = NewText("Title", header, "SECTION", _theme.BodySize + 6,
                 _theme.Accent, TextAlignmentOptions.BottomLeft, true);
             title.rectTransform.anchorMin = new Vector2(0f, 0f);
             title.rectTransform.anchorMax = new Vector2(1f, 1f);
@@ -1624,8 +1626,9 @@ namespace Proto
             var panel = NewPanel(page, "SettingsPanel", new Vector2(1180f, 720f));
             panelComponent = panel.gameObject.AddComponent<SettingsPanel>();
 
-            var heading = NewText("Heading", panel, "SETELAN", _theme.HeadingSize,
+            var heading = NewText("Heading", panel, "SETTINGS", _theme.HeadingSize,
                 _theme.TextIdle, TextAlignmentOptions.Left, true);
+            Localise(heading, "menu.heading.settings");
             Place(heading.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -40f), new Vector2(600f, 52f));
 
             // Rail tab di kiri, badan halaman di kanan garis. Semuanya dipatok dari sudut
@@ -1641,30 +1644,30 @@ namespace Proto
             // Bahasa jadi tab PERTAMA, dan itu bukan selera urutan. Orang yang membuka setelan
             // karena tidak bisa membaca menunya harus menemukannya tanpa membaca apa pun; yang
             // paling atas adalah satu-satunya tempat yang bisa ditebak tanpa bahasa.
-            var bahasa = NewTabBody(panel, "Bahasa", BodyLeft, BodyTop, bodySize);
+            var bahasa = NewTabBody(panel, "Language", BodyLeft, BodyTop, bodySize);
             float y = 0f;
             var language = NewStepper(bahasa, "Language", ref y, "settings.row.language");
 
-            var layar = NewTabBody(panel, "Layar", BodyLeft, BodyTop, bodySize);
+            var layar = NewTabBody(panel, "Display", BodyLeft, BodyTop, bodySize);
             y = 0f;
-            var fullscreen = NewStepper(layar, "Mode layar", ref y, "settings.row.screenmode");
-            var resolution = NewStepper(layar, "Resolusi", ref y, "settings.row.resolution");
+            var fullscreen = NewStepper(layar, "Screen mode", ref y, "settings.row.screenmode");
+            var resolution = NewStepper(layar, "Resolution", ref y, "settings.row.resolution");
             var vsync = NewStepper(layar, "VSync", ref y, "settings.row.vsync");
-            var frameCap = NewStepper(layar, "Batas FPS", ref y, "settings.row.framecap");
+            var frameCap = NewStepper(layar, "FPS cap", ref y, "settings.row.framecap");
 
             // Toggle untuk yang mahal digambar. Mengubahnya baru terasa di run BERIKUTNYA -
             // scene game membacanya saat lahir; catatan di bawah panel yang bilang begitu.
-            var performa = NewTabBody(panel, "Performa", BodyLeft, BodyTop, bodySize);
+            var performa = NewTabBody(panel, "Performance", BodyLeft, BodyTop, bodySize);
             y = 0f;
-            var damageText = NewStepper(performa, "Teks damage", ref y, "settings.row.damagetext");
-            var enemyShadows = NewStepper(performa, "Bayangan musuh", ref y, "settings.row.enemyshadows");
-            var weatherVfx = NewStepper(performa, "VFX cuaca", ref y, "settings.row.weathervfx");
+            var damageText = NewStepper(performa, "Damage numbers", ref y, "settings.row.damagetext");
+            var enemyShadows = NewStepper(performa, "Enemy shadows", ref y, "settings.row.enemyshadows");
+            var weatherVfx = NewStepper(performa, "Weather VFX", ref y, "settings.row.weathervfx");
 
-            var suara = NewTabBody(panel, "Suara", BodyLeft, BodyTop, bodySize);
+            var suara = NewTabBody(panel, "Audio", BodyLeft, BodyTop, bodySize);
             y = 0f;
             var master = NewSliderRow(suara, "Master", ref y, "settings.row.master");
-            var sfx = NewSliderRow(suara, "Efek suara", ref y, "settings.row.sfx");
-            var music = NewSliderRow(suara, "Musik", ref y, "settings.row.music");
+            var sfx = NewSliderRow(suara, "Sound effects", ref y, "settings.row.sfx");
+            var music = NewSliderRow(suara, "Music", ref y, "settings.row.music");
 
             var data = NewTabBody(panel, "Data", BodyLeft, BodyTop, bodySize);
             y = 0f;
@@ -1673,9 +1676,9 @@ namespace Proto
             var tabs = panel.gameObject.AddComponent<SettingsTabs>();
             var tabLines = new Object[5];
             NewTabLine(panel, tabLines, 0, "LANGUAGE", BodyTop, "settings.tab.language");
-            NewTabLine(panel, tabLines, 1, "LAYAR", BodyTop, "settings.tab.display");
-            NewTabLine(panel, tabLines, 2, "PERFORMA", BodyTop, "settings.tab.performance");
-            NewTabLine(panel, tabLines, 3, "SUARA", BodyTop, "settings.tab.audio");
+            NewTabLine(panel, tabLines, 1, "DISPLAY", BodyTop, "settings.tab.display");
+            NewTabLine(panel, tabLines, 2, "PERFORMANCE", BodyTop, "settings.tab.performance");
+            NewTabLine(panel, tabLines, 3, "AUDIO", BodyTop, "settings.tab.audio");
             NewTabLine(panel, tabLines, 4, "DATA", BodyTop, "settings.tab.data");
 
             new Binder(tabs)
@@ -1731,7 +1734,7 @@ namespace Proto
                 .SetColor("_mutedColor", _theme.TextMuted)
                 .Apply();
 
-            back = NewMenuLine(panel, "Back", "KEMBALI");
+            back = NewMenuLine(panel, "Back", "BACK", "menu.back");
             Place((RectTransform)back.transform, new Vector2(0f, 0f), new Vector2(48f, 26f),
                 new Vector2(360f, 46f));
 
