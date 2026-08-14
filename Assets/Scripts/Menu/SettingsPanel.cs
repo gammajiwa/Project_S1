@@ -267,10 +267,10 @@ namespace Proto
 
         void Redraw()
         {
-            // Nama bahasa DALAM bahasanya sendiri. Daftar yang ditulis dalam bahasa yang sedang
-            // aktif tidak berguna untuk orang yang tidak bisa membacanya - dan orang itu persis
-            // yang sedang mencari daftar ini.
-            if (_languageValue != null) _languageValue.text = Loc.NativeNameOf(Loc.Current);
+            // Nama yang AMAN DIGAMBAR, bukan selalu nama aslinya. Menulis "日本語" dengan font
+            // yang tidak punya aksara itu menghasilkan tiga kotak kosong - dan kotak kosong lebih
+            // buruk daripada nama Inggris, karena tidak bisa dibaca oleh siapa pun sama sekali.
+            if (_languageValue != null) _languageValue.text = Loc.MenuNameOf(Loc.Current);
 
             SetText(_fullscreenValue, Loc.T(_settings.Fullscreen
                 ? "settings.fullscreen.on" : "settings.fullscreen.off"));

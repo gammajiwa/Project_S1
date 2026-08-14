@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -100,6 +100,30 @@ namespace Proto
                 case Language.Japanese: return "日本語";
                 case Language.Korean: return "한국어";
                 default: return "English";
+            }
+        }
+
+        /// <summary>
+        /// Nama bahasa yang AMAN DIGAMBAR font permainan sekarang.
+        ///
+        /// <see cref="NativeNameOf"/> benar secara prinsip - daftar bahasa yang ditulis dalam
+        /// bahasa yang sedang aktif tidak berguna untuk orang yang tidak bisa membacanya - tapi
+        /// prinsip itu berhenti berlaku begitu fontnya tidak punya aksaranya: yang muncul bukan
+        /// nama asing, melainkan tiga kotak kosong, dan kotak kosong tidak bisa dibaca siapa pun.
+        ///
+        /// Jadi yang beraksara Latin memakai nama aslinya, dan empat sisanya memakai nama Inggris
+        /// sampai font CJK/Cyrillic-nya ada. Begitu font itu masuk, cukup empat baris di bawah
+        /// yang berubah.
+        /// </summary>
+        public static string MenuNameOf(Language lang)
+        {
+            switch (lang)
+            {
+                case Language.Russian: return "Russian";
+                case Language.ChineseSimplified: return "Chinese (Simplified)";
+                case Language.Japanese: return "Japanese";
+                case Language.Korean: return "Korean";
+                default: return NativeNameOf(lang);
             }
         }
 
