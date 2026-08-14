@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.88, b: 0.55, a: 1}
   Icon: {fileID: 21300000, guid: 2a38eeaa7212f2644bdd2dd7b0a3b042, type: 3}
+  HitVfx: {fileID: 4680917742962833237, guid: 1c7cc8e4e84ef6a4ab4fbafd8bcb473c, type: 3}
+  HitVfxScale: 0.6
   Kind: 9
   Element: 3
   BaseDamage: 40
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Membuang semua kutukan dan menyembuhkan sekalian.
+  Blurb: EVOLVED. Strips every curse and heals on the way out.

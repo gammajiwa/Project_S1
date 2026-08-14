@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.72, g: 0.85, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 978d7cbb97651d94c9a35d3e0ca182ca, type: 3}
+  HitVfx: {fileID: 7649301091634561102, guid: 28e9b2210a6bda841b2a18453f99f9b6, type: 3}
+  HitVfxScale: 0.7
   Kind: 14
   Element: 3
   BaseDamage: 320
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Perisai menyerap 320 damage selama 10 detik, DAN mengeraskan kulit selama
-    perisainya berdiri.
+  Blurb: A shield absorbs 320 damage for 10 seconds, AND hardens your skin for as
+    long as it stands.

@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.HeroLoadout
   Id: frostwarden
   DisplayName: Frostwarden
-  Blurb: "Tahan pukul, lambat mengisi. Frost Shard dan Minor Heal berdiri menyilang
-    di alas es \u2014 yang satu membunuh, yang satu menambal, dan mendempetkannya
-    berarti memilih salah satunya untuk hilang."
+  Blurb: "Takes a beating, refills slowly. Frost Shard and Minor Heal stand crossed
+    on the frost rune \u2014 one kills, one patches, and pushing them together means
+    choosing which one to lose."
   Portrait: {fileID: 0}
   Accent: {r: 0.55, g: 0.82, b: 1, a: 1}
   MaxHp: 140

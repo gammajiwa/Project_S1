@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.8, g: 0.9, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 6b8f3f90af3c1ec4298e6589c3cf1e1a, type: 3}
+  HitVfx: {fileID: 7327317416298062276, guid: 6007aacb72fca574ebb2d6c3e21d4391, type: 3}
+  HitVfxScale: 0.7
   Kind: 25
   Element: 3
   BaseDamage: 8
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Gelombang yang melebar keluar dari kakimu dan MELONTARKAN yang disapunya.
-    Sampai ke tepi belakangan, jadi ia mengejar yang sudah kabur.
+  Blurb: A wave that widens out from your feet and LAUNCHES what it sweeps. It reaches
+    the edge late, so it catches what already fled.

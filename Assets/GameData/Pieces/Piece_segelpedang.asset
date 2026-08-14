@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.95, g: 0.5, b: 0.35, a: 1}
   Icon: {fileID: 21300000, guid: d28b626420ca4b24fa3bbad340133616, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -68,4 +70,4 @@ MonoBehaviour:
     Value: 0.12
   Stat: 0
   StatValue: 0
-  Blurb: Semua skill memukul 12% lebih keras.
+  Blurb: Every skill hits 12% harder.

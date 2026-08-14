@@ -17,8 +17,16 @@ MonoBehaviour:
   Stars: 4
   Layer: 0
   Shape: 12
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.9695, g: 0.634, b: 0.4754, a: 1}
-  Icon: {fileID: 21300000, guid: 80a8181550dfbc947a749aff7381b5a3, type: 3}
+  Icon: {fileID: 21300000, guid: e061fca5f711daa479ded19894b8c3a9, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 8
   Element: 0
   BaseDamage: 0
@@ -60,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 'Lempeng 3x2. Menara api: total +180% damage dibagi ke enam petak, api di
-    atasnya dapat lebih lagi.'
+  Blurb: 'A 3x2 slab. Fire tower: +180% damage total split across six cells, and
+    fire standing on it gets more still.'

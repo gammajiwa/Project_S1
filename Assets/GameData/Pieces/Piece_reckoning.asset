@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.5, b: 0.25, a: 1}
   Icon: {fileID: 21300000, guid: f40a2f076f9668e44a286e30cab33e32, type: 3}
+  HitVfx: {fileID: 5380031665724755774, guid: ded596618ae030049a513ff77e165683, type: 3}
+  HitVfxScale: 0.6
   Kind: 11
   Element: 3
   BaseDamage: 38
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Setiap musuh yang terbakar meledak sebesar tumpukan BURN-nya. Semakin
-    dalam kamu membakar, semakin besar tagihannya.
+  Blurb: EVOLVED. Every burning enemy detonates for the size of its BURN stack. The
+    deeper you burned, the bigger the bill.

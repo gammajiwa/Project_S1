@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.5, b: 0.2, a: 1}
   Icon: {fileID: 21300000, guid: 565cfc2b5f83f824992911849fd454a3, type: 3}
+  HitVfx: {fileID: 3613516555083383148, guid: 68c071a4288e86a45b35c1c891cd20a3, type: 3}
+  HitVfxScale: 0.6
   Kind: 21
   Element: 0
   BaseDamage: 24
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Delapan bilah bara mengitarimu selama 8 detik, MELONTARKAN yang tersapu
-    keluar. Selama ia berputar, tidak ada yang bisa sampai ke badanmu.
+  Blurb: Eight ember blades circle you for 8 seconds, LAUNCHING whatever they sweep
+    outward. While it spins, nothing reaches your body.

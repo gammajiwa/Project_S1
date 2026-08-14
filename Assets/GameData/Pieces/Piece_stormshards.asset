@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.75, g: 0.85, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: f1a6eb2df12fb224b92d71bc68101906, type: 3}
+  HitVfx: {fileID: 3849904724667652288, guid: bd8f6713cbb9a6a4aa50d3c6fc25196f, type: 3}
+  HitVfxScale: 0.6
   Kind: 12
   Element: 2
   BaseDamage: 145
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Lima pecahan mengambang dan menunggu, dan menjemput dari lebih jauh.
+  Blurb: Five shards float and wait, and they fetch from further out.

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_nullsphere
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: nullsphere
-  DisplayName: Segel Hampa
+  DisplayName: Null Sigil
   Stars: 3
   Layer: 1
   Shape: 3
@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.74840003, g: 0.5708, b: 0.963, a: 1}
   Icon: {fileID: 21300000, guid: 69e3edbd94663684eb94c9dde94a0e99, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -70,4 +72,4 @@ MonoBehaviour:
     Value: -0.12
   Stat: 0
   StatValue: 0
-  Blurb: 'Dua pantulan lagi. Bukan gratis: semua skill jadi sedikit lebih mahal.'
+  Blurb: 'Two more bounces. Not free: every skill costs a little more.'

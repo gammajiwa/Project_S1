@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.9, g: 0.35, b: 0.4, a: 1}
   Icon: {fileID: 21300000, guid: b74511d05a37a9249a68409356180bb4, type: 3}
+  HitVfx: {fileID: 4220070052570137762, guid: defea8a8ed2f41145847cab84eaf2ec3, type: 3}
+  HitVfxScale: 0.7
   Kind: 11
   Element: 3
   BaseDamage: 13
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Semua luka terbuka pecah sekaligus.
+  Blurb: EVOLVED. Every open wound bursts at once.

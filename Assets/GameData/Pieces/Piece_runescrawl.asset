@@ -24,7 +24,9 @@ MonoBehaviour:
   ArtRotation: 0
   ArtBehindCells: 0
   Color: {r: 0.85, g: 0.6, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: 6352efbaeb6d6994ea08589e7d1b809d, type: 3}
+  Icon: {fileID: 21300000, guid: 1046ae18999a13543a4ffb76f994c1b6, type: 3}
+  HitVfx: {fileID: 7737036563501527917, guid: f20fd833b2e9c4d46b231ede3723ce94, type: 3}
+  HitVfxScale: 0.4
   Kind: 23
   Element: 3
   BaseDamage: 710
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Delapan belas pantulan. Satu tembakan meninggalkan coretan yang menutupi
-    seluruh layar, dan semua yang disentuh garisnya ikut hangus.
+  Blurb: Eighteen bounces. One shot leaves a scrawl across the entire screen, and
+    everything its lines touch burns with it.

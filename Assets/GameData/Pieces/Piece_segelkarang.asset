@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.9, g: 0.55, b: 0.5, a: 1}
   Icon: {fileID: 21300000, guid: 3f921947f24226645858e0f21a1a54ea, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -68,4 +70,4 @@ MonoBehaviour:
     Value: 35
   Stat: 0
   StatValue: 0
-  Blurb: Siku 3 petak. +35 HP maksimum. Karang tumbuh lambat dan tidak mundur.
+  Blurb: A 3-cell corner. +35 maximum HP. Coral grows slowly and never retreats.

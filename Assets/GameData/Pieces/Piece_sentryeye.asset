@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.7, g: 0.75, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: b856e54565977ee4b9d7647bde160cb4, type: 3}
+  HitVfx: {fileID: 9098571671946471622, guid: dc50869b2a6f7ba4f9f6fc2d046ac37a, type: 3}
+  HitVfxScale: 0.7
   Kind: 24
   Element: 3
   BaseDamage: 36
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: "Menanam mata pengawas yang menembak sendiri selama 5 detik. Kamu boleh
-    lari \u2014 tembakannya tetap berlanjut di tempat yang kamu tinggalkan."
+  Blurb: "Plants a watching eye that fires on its own for 5 seconds. You are free
+    to run \u2014 the shooting continues where you left it."

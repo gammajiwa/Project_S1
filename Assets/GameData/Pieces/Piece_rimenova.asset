@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_rimenova
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: rimenova
-  DisplayName: Segel Embun Beku
+  DisplayName: Rime Sigil
   Stars: 3
   Layer: 1
   Shape: 2
@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.593, g: 0.8372, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: dbbe231692d722a4a9f007410d5d27d4, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 1
   BaseDamage: 0
@@ -70,4 +72,4 @@ MonoBehaviour:
     Value: 0.12
   Stat: 0
   StatValue: 0
-  Blurb: Menambah satu ke apa pun yang dihitung banyaknya, dan melebarkan semuanya.
+  Blurb: Adds one to whatever gets counted, and widens all of it.

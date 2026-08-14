@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_cinderpatch
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: cinderpatch
-  DisplayName: Segel Bara
+  DisplayName: Cinder Sigil
   Stars: 1
   Layer: 1
   Shape: 0
@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.95, g: 0.4, b: 0.14, a: 1}
   Icon: {fileID: 21300000, guid: 515c9dd7bad65764bb7e78353df9138b, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 0
   BaseDamage: 0
@@ -70,5 +72,4 @@ MonoBehaviour:
     Value: 0.15
   Stat: 0
   StatValue: 0
-  Blurb: "Tiap tempelan ailment membawa satu poin lagi \u2014 pemicu jadi lebih cepat
-    penuh."
+  Blurb: "Every ailment application carries one more point \u2014 triggers fill faster."

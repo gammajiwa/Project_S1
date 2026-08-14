@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.85, g: 0.4, b: 0.55, a: 1}
   Icon: {fileID: 21300000, guid: d646c0cd79aa4954493d5c5cb2398075, type: 3}
+  HitVfx: {fileID: 5903963928510030223, guid: 449007338792f8244a52053da11c280e, type: 3}
+  HitVfxScale: 0.35
   Kind: 27
   Element: 3
   BaseDamage: 200
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: "Rantai jiwa yang menempel 5 detik penuh dan menagih empat kali per detik.
-    Dibuat untuk yang bernyawa tebal \u2014 dan di buku ini itu berarti boss."
+  Blurb: "A soul chain that clings for a full 5 seconds and collects four times a
+    second. Built for the thick-blooded \u2014 and in this book that means bosses."

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_hailstorm
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: hailstorm
-  DisplayName: Segel Hujan Es
+  DisplayName: Hailstorm Sigil
   Stars: 1
   Layer: 1
   Shape: 1
@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.45, g: 0.78, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: a49b2f073641a70468dcc35641693056, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 1
   BaseDamage: 0
@@ -68,4 +70,4 @@ MonoBehaviour:
     Value: 1
   Stat: 0
   StatValue: 0
-  Blurb: Satu hantaman lagi di tiap hujan, satu pecahan lagi mengambang.
+  Blurb: One more strike per fall, one more shard afloat.

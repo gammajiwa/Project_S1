@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.45, g: 0.62, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 246a90f000818f24f9e5ebe9f847fd40, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -68,4 +70,4 @@ MonoBehaviour:
     Value: 55
   Stat: 0
   StatValue: 0
-  Blurb: +55 mana maksimum. Papan yang penuh butuh kolam yang dalam, bukan cuma regen.
+  Blurb: +55 maximum mana. A full board needs a deep pool, not just regen.

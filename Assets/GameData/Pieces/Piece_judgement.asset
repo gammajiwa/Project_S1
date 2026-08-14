@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.78, b: 0.35, a: 1}
   Icon: {fileID: 21300000, guid: e8e0beeba4859cd45ba2ff99f1fe3277, type: 3}
+  HitVfx: {fileID: 1748585129829024173, guid: 97d0a055ffe21ee48a5a061580c6b06d, type: 3}
+  HitVfxScale: 0.6
   Kind: 28
   Element: 0
   BaseDamage: 635
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Sembilan pilar cahaya jatuh beruntun selama hampir tiga detik. Lapangan
-    tempat ia turun tidak bisa dilewati sampai selesai.
+  Blurb: Nine pillars of light fall in sequence over almost three seconds. The ground
+    they land on cannot be crossed until it ends.

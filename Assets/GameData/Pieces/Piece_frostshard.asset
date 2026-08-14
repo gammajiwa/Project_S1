@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.45, g: 0.78, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 53c3e4a52b11c24459cb5d61340a29b2, type: 3}
+  HitVfx: {fileID: 3359553730185317069, guid: 79084d717ecfa0f4dba3d2b0a311eb80, type: 3}
+  HitVfxScale: 0.6
   Kind: 0
   Element: 1
   BaseDamage: 30

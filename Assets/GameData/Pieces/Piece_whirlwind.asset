@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.7, g: 0.9, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 41886a462fb15ea4188c271e13ffeab9, type: 3}
+  HitVfx: {fileID: 302592970451294099, guid: c3fda50433a59904dab20b3ee5a322f5, type: 3}
+  HitVfxScale: 0.7
   Kind: 19
   Element: 2
   BaseDamage: 9
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Pusaran berjalan yang menyeret musuh ke tengahnya dan MENGANGKAT yang sampai
-    ke mata. Yang terangkat tidak berjalan dan tidak menembak.
+  Blurb: A walking vortex that drags enemies to its middle and LIFTS whatever reaches
+    the eye. The lifted neither walk nor shoot.

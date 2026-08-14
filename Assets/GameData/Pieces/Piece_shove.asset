@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.8, g: 0.85, b: 0.9, a: 1}
   Icon: {fileID: 21300000, guid: 2803a8331e6ecae4791328ff66e657ad, type: 3}
+  HitVfx: {fileID: 4526672653767588113, guid: a7e5a623f419f5c41b9eda2cc94b1fcf, type: 3}
+  HitVfxScale: 0.4
   Kind: 20
   Element: 3
   BaseDamage: 11
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: "Melontarkan semua yang menempel ke luar. Damage-nya kecil \u2014 yang kamu
-    beli adalah jarak."
+  Blurb: "Launches everything clinging to you outward. The damage is small \u2014
+    what you buy is distance."

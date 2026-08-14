@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.8, b: 0.3, a: 1}
   Icon: {fileID: 21300000, guid: 81b56061dbbe12f45923c3838ba2e884, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 17
   Element: 0
   BaseDamage: 60
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Menandai tanah, lalu menghantam 0.9 detik kemudian. Yang sempat menyingkir,
-    selamat.
+  Blurb: Marks the ground, then strikes 0.9 seconds later. Whatever stepped aside
+    in time lives.

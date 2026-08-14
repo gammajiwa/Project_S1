@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.5, g: 0.8, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 4fe774ab03ce4eb4388ac8e25878cd81, type: 3}
+  HitVfx: {fileID: 1586650283835490211, guid: 2207dd6b3c87f71428aa6cc28417f0e4, type: 3}
+  HitVfxScale: 0.6
   Kind: 19
   Element: 2
   BaseDamage: 26
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Badai yang menelan setengah lapangan. Apa pun yang sampai ke matanya menggantung
-    tidak berdaya sampai badainya lewat.
+  Blurb: A storm that swallows half the field. Whatever reaches its eye hangs helpless
+    until the storm passes.

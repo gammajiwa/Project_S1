@@ -17,8 +17,16 @@ MonoBehaviour:
   Stars: 5
   Layer: 0
   Shape: 0
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.8368, g: 0.7216, b: 0.976, a: 1}
-  Icon: {fileID: 21300000, guid: 4a1c1249a654936459673ace2664b39a, type: 3}
+  Icon: {fileID: 21300000, guid: 1046ae18999a13543a4ffb76f994c1b6, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 8
   Element: 3
   BaseDamage: 0
@@ -60,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: SATU petak. +150% damage untuk skill yang menginjaknya. Seluruh menara dipadatkan
-    jadi satu batu kunci.
+  Blurb: ONE cell. +150% damage for the skill standing on it. A whole tower compressed
+    into a single keystone.

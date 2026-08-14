@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.8, g: 0.6, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 9f63c164a054b1d4baab16aff9499154, type: 3}
+  HitVfx: {fileID: 5558243406624793881, guid: c2108da9a822d884aaccb1c32a75d3bb, type: 3}
+  HitVfxScale: 0.6
   Kind: 26
   Element: 3
   BaseDamage: 58
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Empat rudal melengkung mengejar EMPAT musuh berbeda. Tidak ada dua yang
-    menghantam sasaran yang sama, jadi tidak ada satu pun yang meledak di mayat.
+  Blurb: Four curving missiles chase FOUR different enemies. No two hit the same
+    target, so none of them detonates on a corpse.

@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.6645, g: 0.86579996, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 595bec2c951bb1545ba4dbbdde7e856a, type: 3}
+  HitVfx: {fileID: 6844659718859678407, guid: d9dc7f98e09be2042ab4627d4965a7d5, type: 3}
+  HitVfxScale: 0.6
   Kind: 4
   Element: 1
   BaseDamage: 88
@@ -68,5 +70,5 @@ MonoBehaviour:
   StatValue: 0
   Blurb: 'EVOLVED. An eight-metre crater of ice, dropped where it hurts most.
 
-    PANEN:
-    tiap kill +0.35 HP.'
+    HARVEST:
+    +0.35 HP per kill.'

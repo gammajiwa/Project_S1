@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.6, g: 0.95, b: 0.68, a: 1}
   Icon: {fileID: 21300000, guid: 0cf7516a996a3634d8d165aa33fd253e, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 15
   Element: 3
   BaseDamage: 0
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Kecepatan menghindar naik drastis selama 5 detik.
+  Blurb: Evasion speed climbs sharply for 5 seconds.

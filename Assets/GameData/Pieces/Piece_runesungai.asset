@@ -17,8 +17,16 @@ MonoBehaviour:
   Stars: 4
   Layer: 0
   Shape: 9
+  CustomCells: []
+  Art: {fileID: 0}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
   Color: {r: 0.79260004, g: 0.6462, b: 0.9695, a: 1}
-  Icon: {fileID: 21300000, guid: dbd57003afc81e249bd2d9ae05143bc1, type: 3}
+  Icon: {fileID: 21300000, guid: 0f22585481ecaf146945c3ebe3604613, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 8
   Element: 3
   BaseDamage: 0
@@ -64,5 +72,5 @@ MonoBehaviour:
     Value: 2
   Stat: 0
   StatValue: 0
-  Blurb: 'Salib 5 petak. Sungai: total +110% damage dibagi lima petak, dan alirannya
-    mengisi mana maupun HP.'
+  Blurb: 'A 5-cell cross. River: +110% damage total split across five cells, and
+    the current refills both mana and HP.'

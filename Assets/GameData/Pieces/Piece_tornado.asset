@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.62, g: 0.88, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 87754848880a3624ea7bcd0751648e18, type: 3}
+  HitVfx: {fileID: 412950770071361060, guid: da923a7d339daa34c85d600e70c973ac, type: 3}
+  HitVfxScale: 0.7
   Kind: 19
   Element: 2
   BaseDamage: 19
@@ -66,5 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Puting beliung. Menyeret lebih kuat, mengangkat lebih lama, dan mengembara
-    sendiri melintasi lapangan.
+  Blurb: A twister. Drags harder, lifts longer, and wanders the field on its own.

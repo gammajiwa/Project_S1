@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.85, g: 0.9, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 7e470deb838253f4e8c37f00f7967f8d, type: 3}
+  HitVfx: {fileID: 7744872526680954919, guid: f9b4734474db1674ebdd21d045a8a24c, type: 3}
+  HitVfxScale: 0.6
   Kind: 23
   Element: 2
   BaseDamage: 390
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: "Sembilan pantulan. Lintasannya sudah tidak bisa diikuti mata \u2014 yang
-    terbaca cuma di mana ia LEWAT."
+  Blurb: "Nine bounces. The path is already past following \u2014 what reads is only
+    where it WENT."

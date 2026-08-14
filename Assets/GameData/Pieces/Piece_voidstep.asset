@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.62, g: 0.35, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: b0e90c662bf8a864c8209d637856a79d, type: 3}
+  HitVfx: {fileID: 1031914446252565965, guid: 6259497ca908424429da852fb76f8a91, type: 3}
+  HitVfxScale: 0.4
   Kind: 13
   Element: 3
   BaseDamage: 0
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 'Melompat 11 unit menjauh dan meninggalkan bayangan: +40% damage dan lari
-    lebih cepat selama 4 detik.'
+  Blurb: 'Jumps 11 units away and leaves a shade behind: +40% damage and faster movement
+    for 4 seconds.'

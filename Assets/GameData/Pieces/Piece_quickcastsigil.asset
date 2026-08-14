@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.98, g: 0.86, b: 0.45, a: 1}
   Icon: {fileID: 21300000, guid: 5cf15760a3c65534284080341f0abc3a, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 15
   Element: 3
   BaseDamage: 0
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: SEMUA skill di buku menembak 30% lebih sering selama 6 detik. Nilainya ikut
-    sebesar apa pun isi papanmu.
+  Blurb: EVERY skill in the book fires 30% more often for 6 seconds. Its worth scales
+    with however full your board is.

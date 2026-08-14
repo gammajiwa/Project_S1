@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.72, b: 0.22, a: 1}
   Icon: {fileID: 21300000, guid: 06fb3ec1b367bff43991c500e70ed91c, type: 3}
+  HitVfx: {fileID: 2597524650130164455, guid: 817b1d183949c034f9b49470f2c571dd, type: 3}
+  HitVfxScale: 0.6
   Kind: 17
   Element: 0
   BaseDamage: 115
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Pilar matahari. Lingkarannya lebih lebar dan aba-abanya lebih pendek.
+  Blurb: A pillar of sun. Wider circle, shorter warning.

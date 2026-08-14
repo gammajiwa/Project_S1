@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.5, g: 0.68, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 3eccf272ac5a83e47b92ef5be76ad0d5, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -68,4 +70,5 @@ MonoBehaviour:
     Value: 3
   Stat: 0
   StatValue: 0
-  Blurb: Siku 3 petak. +3 mana per detik. Gerimis kecil, tapi turun terus.
+  Blurb: A 3-cell corner. +3 mana per second. A small drizzle, but it never lets
+    up.

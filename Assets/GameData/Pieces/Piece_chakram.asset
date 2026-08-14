@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.9, g: 0.92, b: 0.7, a: 1}
   Icon: {fileID: 21300000, guid: a3b73c50b290eb8418c2167300077f0a, type: 3}
+  HitVfx: {fileID: 4605527887851271338, guid: 17ff8507c6f2f004db2a3cbbff4834a8, type: 3}
+  HitVfxScale: 0.6
   Kind: 22
   Element: 3
   BaseDamage: 12
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: "Dilempar keluar, lalu KEMBALI ke tanganmu \u2014 dan melukai di kedua kakinya.
-    Yang sedang mengejarmu berjalan sendiri ke jalur pulangnya."
+  Blurb: "Thrown out, then RETURNS to your hand \u2014 cutting on both legs of the
+    trip. Whatever is chasing you walks into the way home on its own."

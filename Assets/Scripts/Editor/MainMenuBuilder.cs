@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEditor;
@@ -1638,8 +1638,15 @@ namespace Proto
             Place(divider.rectTransform, new Vector2(0f, 1f), new Vector2(332f, BodyTop),
                 new Vector2(1f, bodySize.y));
 
-            var layar = NewTabBody(panel, "Layar", BodyLeft, BodyTop, bodySize);
+            // Bahasa jadi tab PERTAMA, dan itu bukan selera urutan. Orang yang membuka setelan
+            // karena tidak bisa membaca menunya harus menemukannya tanpa membaca apa pun; yang
+            // paling atas adalah satu-satunya tempat yang bisa ditebak tanpa bahasa.
+            var bahasa = NewTabBody(panel, "Bahasa", BodyLeft, BodyTop, bodySize);
             float y = 0f;
+            var language = NewStepper(bahasa, "Language", ref y);
+
+            var layar = NewTabBody(panel, "Layar", BodyLeft, BodyTop, bodySize);
+            y = 0f;
             var fullscreen = NewStepper(layar, "Mode layar", ref y);
             var resolution = NewStepper(layar, "Resolusi", ref y);
             var vsync = NewStepper(layar, "VSync", ref y);
@@ -1664,17 +1671,19 @@ namespace Proto
             var reset = NewResetRow(data, ref y);
 
             var tabs = panel.gameObject.AddComponent<SettingsTabs>();
-            var tabLines = new Object[4];
-            NewTabLine(panel, tabLines, 0, "LAYAR", BodyTop);
-            NewTabLine(panel, tabLines, 1, "PERFORMA", BodyTop);
-            NewTabLine(panel, tabLines, 2, "SUARA", BodyTop);
-            NewTabLine(panel, tabLines, 3, "DATA", BodyTop);
+            var tabLines = new Object[5];
+            NewTabLine(panel, tabLines, 0, "LANGUAGE", BodyTop);
+            NewTabLine(panel, tabLines, 1, "LAYAR", BodyTop);
+            NewTabLine(panel, tabLines, 2, "PERFORMA", BodyTop);
+            NewTabLine(panel, tabLines, 3, "SUARA", BodyTop);
+            NewTabLine(panel, tabLines, 4, "DATA", BodyTop);
 
             new Binder(tabs)
                 .SetArray("_lines", tabLines)
                 .SetArray("_pages", new Object[]
                 {
-                    layar.gameObject, performa.gameObject, suara.gameObject, data.gameObject
+                    bahasa.gameObject, layar.gameObject, performa.gameObject,
+                    suara.gameObject, data.gameObject
                 })
                 .Apply();
 
@@ -1684,6 +1693,9 @@ namespace Proto
             Place(note.rectTransform, new Vector2(1f, 0f), new Vector2(-48f, 84f), new Vector2(760f, 24f));
 
             new Binder(panelComponent)
+                .Set("_languagePrev", language.Prev)
+                .Set("_languageNext", language.Next)
+                .Set("_languageValue", language.Value)
                 .Set("_fullscreenPrev", fullscreen.Prev)
                 .Set("_fullscreenNext", fullscreen.Next)
                 .Set("_fullscreenValue", fullscreen.Value)

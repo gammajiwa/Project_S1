@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_frostbitefield
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: frostbitefield
-  DisplayName: Segel Gigit Beku
+  DisplayName: Frostbite Sigil
   Stars: 2
   Layer: 1
   Shape: 20
@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.5215, g: 0.80859995, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 14ae74c9a7dab0f488deed80a608ac19, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 1
   BaseDamage: 0
@@ -70,4 +72,4 @@ MonoBehaviour:
     Value: 0.08
   Stat: 0
   StatValue: 0
-  Blurb: Satu lagi di semua yang dihitung banyaknya.
+  Blurb: One more of whatever gets counted.

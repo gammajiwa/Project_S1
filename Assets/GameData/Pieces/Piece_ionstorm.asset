@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.9408, g: 0.89640003, b: 0.482, a: 1}
   Icon: {fileID: 21300000, guid: 453211df4c3933241af3ed6195ae5379, type: 3}
+  HitVfx: {fileID: 47166582790411865, guid: 5ad2d90c2b280064195e55b2af09569a, type: 3}
+  HitVfxScale: 0.6
   Kind: 6
   Element: 2
   BaseDamage: 10
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Petak bermuatan yang berjalan pelan sendiri, terus menembak lama
-    setelah kamu melemparkannya.
+  Blurb: EVOLVED. A charged field that drifts on its own, still firing long after
+    you threw it.

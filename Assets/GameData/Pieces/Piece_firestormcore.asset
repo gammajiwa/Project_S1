@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_firestormcore
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: firestormcore
-  DisplayName: Segel Inti Badai
+  DisplayName: Storm Core Sigil
   Stars: 3
   Layer: 1
   Shape: 5
@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.963, g: 0.556, b: 0.3636, a: 1}
   Icon: {fileID: 21300000, guid: d2318b6538cce1d449bc22cabc821c71, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 0
   BaseDamage: 0
@@ -70,5 +72,5 @@ MonoBehaviour:
     Value: -0.1
   Stat: 0
   StatValue: 0
-  Blurb: Dua lagi, di semua yang dihitung banyaknya. Menahannya membuat semua cooldown
-    sedikit lebih panjang.
+  Blurb: Two more of whatever gets counted. Holding it stretches every cooldown a
+    little.

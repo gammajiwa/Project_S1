@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.9512, g: 0.9146, b: 0.573, a: 1}
   Icon: {fileID: 21300000, guid: 5af63114c9faf394b8b5263f016d0e64, type: 3}
+  HitVfx: {fileID: 8081797436736803369, guid: 885568ada586c8a41815129cef25c192, type: 3}
+  HitVfxScale: 0.6
   Kind: 2
   Element: 2
   BaseDamage: 165
@@ -66,7 +68,7 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 'EVOLVED. Empat cabang, tiga lompatan masing-masing. Menyapu gerombolan
-    melebar, bukan menembus satu barisan.
+  Blurb: 'EVOLVED. Four branches, three jumps each. Sweeps a swarm wide instead of
+    punching through one line.
 
-    PANEN: tiap kill +0.5 mana.'
+    HARVEST: +0.5 mana per kill.'

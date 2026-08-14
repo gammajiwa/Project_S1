@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.7, g: 0.55, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 47a493f5422441b4ca194f5b68303bce, type: 3}
+  HitVfx: {fileID: 7505088250192538271, guid: 21dd35e6ddb51ec418002da648682d33, type: 3}
+  HitVfxScale: 0.7
   Kind: 13
   Element: 3
   BaseDamage: 0
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Melompat 7 unit menjauh dari kerumunan terpadat. Diam saja kalau tidak ada
-    yang mengepung.
+  Blurb: Jumps 7 units away from the densest crowd. Does nothing when nothing is
+    closing in.

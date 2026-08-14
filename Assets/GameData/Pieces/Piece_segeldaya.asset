@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.95, g: 0.72, b: 0.45, a: 1}
   Icon: {fileID: 21300000, guid: de1ab33947d6459418d9c6279122bf43, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Tiap musuh mati memberimu satu tumpukan POWER (maks 5).
+  Blurb: EVOLVED. Every enemy death grants you one POWER stack (max 5).

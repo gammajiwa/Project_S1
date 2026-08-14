@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.35, g: 0.55, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 52f2d3b0271fffe4183dcf7b43e37936, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -72,4 +74,4 @@ MonoBehaviour:
     Value: 0.12
   Stat: 0
   StatValue: 0
-  Blurb: +90 mana maksimum, regen lebih deras, dan semua skill lebih murah.
+  Blurb: +90 maximum mana, heavier regen, and every skill costs less.

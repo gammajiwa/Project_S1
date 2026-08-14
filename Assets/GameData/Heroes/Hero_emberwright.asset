@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.HeroLoadout
   Id: emberwright
   DisplayName: Emberwright
-  Blurb: "Dua alas, dua skill, dua segel. Fireball dan Frost Shard berdiri menyilang
-    di alas api \u2014 dempetkan kalau mau Steam Burst bintang 2 yang mengisi alas
-    itu utuh, atau biarkan keduanya tetap menembak."
+  Blurb: "Two runes, two skills, two sigils. Fireball and Frost Shard stand crossed
+    on the ember rune \u2014 push them together for a 2-star Steam Burst that fills
+    that rune whole, or leave both firing."
   Portrait: {fileID: 0}
   Accent: {r: 1, g: 0.62, b: 0.28, a: 1}
   MaxHp: -1

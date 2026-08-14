@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.55, g: 0.78, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 6a0834c3853f837469a2f3fed94036d0, type: 3}
+  HitVfx: {fileID: 6816050103330247409, guid: 0a51e40d5bee7344794ff967193e56eb, type: 3}
+  HitVfxScale: 0.7
   Kind: 14
   Element: 3
   BaseDamage: 38
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Perisai menyerap 38 damage selama 8 detik. Menolak dipasang ulang selama
-    perisai lama masih tebal.
+  Blurb: A shield absorbs 38 damage for 8 seconds. Refuses to be recast while the
+    old shield is still thick.

@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.7, g: 0.88, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: 119a697a6d568f440bdc282daafdc696, type: 3}
+  HitVfx: {fileID: 7148982040425555671, guid: 0a8ad3afa92021242b046a5e14f0feef, type: 3}
+  HitVfxScale: 0.6
   Kind: 22
   Element: 1
   BaseDamage: 56
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Sabit bulan yang terbang jauh dan pulang lambat, membekukan seluruh jalurnya
-    dua kali.
+  Blurb: A moon-scythe that flies far and returns slowly, freezing its whole path
+    twice.

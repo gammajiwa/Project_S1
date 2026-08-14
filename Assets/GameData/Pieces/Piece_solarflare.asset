@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.62, b: 0.15, a: 1}
   Icon: {fileID: 21300000, guid: 480507897e6930a418147f3de0243884, type: 3}
+  HitVfx: {fileID: 1223036755638954479, guid: aecd5e826fcbc2d429b2525cf553e2a7, type: 3}
+  HitVfxScale: 0.6
   Kind: 17
   Element: 0
   BaseDamage: 845
@@ -66,4 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Langit terbuka. Satu detik penuh aba-aba, lalu seperempat lapangan hangus.
+  Blurb: The sky opens. A full second of warning, then a quarter of the field is
+    scorched.

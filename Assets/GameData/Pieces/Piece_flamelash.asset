@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.95, g: 0.4, b: 0.14, a: 1}
   Icon: {fileID: 21300000, guid: 2732b3c5e26f00c439ff7e9c582e4b48, type: 3}
+  HitVfx: {fileID: 6689969395285827413, guid: d7e5a4ff51124974c94ea4d406b78942, type: 3}
+  HitVfxScale: 0.6
   Kind: 23
   Element: 0
   BaseDamage: 76
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Bara memantul dari musuh ke musuh. Menempelkan BURN di tiap pantulan.
+  Blurb: An ember that bounces from enemy to enemy. Applies BURN on every bounce.

@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.5, g: 0.82, b: 0.98, a: 1}
   Icon: {fileID: 21300000, guid: b61f7a13537a2104882d898799c78958, type: 3}
+  HitVfx: {fileID: 51417989794311593, guid: bcfcdc624f0cb354387f64db6b73f684, type: 3}
+  HitVfxScale: 0.7
   Kind: 14
   Element: 3
   BaseDamage: 95
@@ -66,4 +68,4 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Perisai menyerap 95 damage selama 9 detik.
+  Blurb: A shield absorbs 95 damage for 9 seconds.

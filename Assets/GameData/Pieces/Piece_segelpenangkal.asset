@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.85, g: 0.86, b: 0.7, a: 1}
   Icon: {fileID: 21300000, guid: 014df5c68162d7141a7637e28e2e63e4, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -68,4 +70,4 @@ MonoBehaviour:
     Value: 0.2
   Stat: 0
   StatValue: 0
-  Blurb: Kutukan yang menempel padamu berakhir 20% lebih cepat.
+  Blurb: Curses that stick to you end 20% sooner.

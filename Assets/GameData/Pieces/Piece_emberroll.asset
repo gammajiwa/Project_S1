@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.55, b: 0.25, a: 1}
   Icon: {fileID: 21300000, guid: 5ed9913382669144d9e5357a14e6642b, type: 3}
+  HitVfx: {fileID: 60489235223721455, guid: 7f990e43eb6209046a147cfaa3635409, type: 3}
+  HitVfxScale: 0.6
   Kind: 18
   Element: 0
   BaseDamage: 58
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Bola bara yang MENGGELINDING menembus gerombolan dan melindas semua yang
-    dilewatinya. Satu musuh cuma bisa dilindas sekali per bola.
+  Blurb: A ball of embers that ROLLS through the swarm and flattens everything it
+    passes. One enemy can only be run over once per ball.

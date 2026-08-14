@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,6 +12,11 @@ namespace Proto
     public class SettingsPanel : MonoBehaviour
     {
         [Header("Layar penuh")]
+        [Header("Bahasa")]
+        [SerializeField] Button _languagePrev;
+        [SerializeField] Button _languageNext;
+        [SerializeField] TextMeshProUGUI _languageValue;
+
         [SerializeField] Button _fullscreenPrev;
         [SerializeField] Button _fullscreenNext;
         [SerializeField] TextMeshProUGUI _fullscreenValue;
@@ -86,6 +91,8 @@ namespace Proto
             _frameCapIndex = System.Array.IndexOf(GameSettings.FrameCapChoices, _settings.FrameCap);
             if (_frameCapIndex < 0) _frameCapIndex = 0;
 
+            Wire(_languagePrev, () => StepLanguage(-1));
+            Wire(_languageNext, () => StepLanguage(1));
             Wire(_fullscreenPrev, () => ToggleFullscreen());
             Wire(_fullscreenNext, () => ToggleFullscreen());
             Wire(_resolutionPrev, () => StepResolution(-1));
@@ -129,6 +136,23 @@ namespace Proto
                     + "   Baris PERFORMA berlaku mulai run berikutnya.";
             }
 
+            Redraw();
+        }
+
+        /// <summary>
+        /// Bahasa berikutnya di daftar, melingkar. Berlaku SEKETIKA - bukan "berlaku setelah
+        /// restart" - karena orang yang sedang mencari bahasanya sendiri di menu asing perlu
+        /// tahu ia sudah menemukannya, dan satu-satunya bukti yang bisa dibacanya adalah
+        /// layarnya berubah.
+        /// </summary>
+        void StepLanguage(int direction)
+        {
+            var all = Loc.All;
+
+            int at = System.Array.IndexOf(all, Loc.Current);
+            if (at < 0) at = 0;
+
+            Loc.Use(all[((at + direction) % all.Length + all.Length) % all.Length]);
             Redraw();
         }
 
@@ -243,6 +267,11 @@ namespace Proto
 
         void Redraw()
         {
+            // Nama bahasa DALAM bahasanya sendiri. Daftar yang ditulis dalam bahasa yang sedang
+            // aktif tidak berguna untuk orang yang tidak bisa membacanya - dan orang itu persis
+            // yang sedang mencari daftar ini.
+            if (_languageValue != null) _languageValue.text = Loc.NativeNameOf(Loc.Current);
+
             SetText(_fullscreenValue, _settings.Fullscreen ? "LAYAR PENUH" : "JENDELA");
             SetText(_vsyncValue, _settings.VSync ? "HIDUP" : "MATI");
             SetText(_frameCapValue, GameSettings.FrameCapLabel(_settings.FrameCap));

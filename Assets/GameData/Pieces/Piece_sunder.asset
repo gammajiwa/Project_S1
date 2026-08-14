@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.7, g: 1, b: 0.4, a: 1}
   Icon: {fileID: 21300000, guid: 65e2dabdf25ae2a4cba7dde1de4d6342, type: 3}
+  HitVfx: {fileID: 3192177782302834247, guid: 340f6b06bff88a94a93144dfb440fac7, type: 3}
+  HitVfxScale: 0.7
   Kind: 11
   Element: 3
   BaseDamage: 8
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. Meledakkan SETIAP musuh ber-POISON sebesar poin yang menumpuk padanya,
-    lalu mencabut racunnya. Diam saja kalau tidak ada yang ditandai.
+  Blurb: EVOLVED. Detonates EVERY POISONED enemy for the points stacked on it, then
+    strips the poison. Does nothing if nothing is marked.

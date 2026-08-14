@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.6, g: 1, b: 0.8, a: 1}
   Icon: {fileID: 21300000, guid: 53de6d536134d1442bb02e4ee1e497aa, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 27
   Element: 3
   BaseDamage: 30
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: Sinar yang MENGUNCI satu musuh dan terus menggerusnya selama 3,5 detik sambil
-    menyeretnya mendekat. Mengunci ulang sendiri kalau sasarannya mati.
+  Blurb: A beam that LOCKS onto one enemy and grinds it down for 3.5 seconds while
+    dragging it closer. Re-locks on its own if the target dies.

@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.55, g: 0.5, b: 0.95, a: 1}
   Icon: {fileID: 21300000, guid: 91652cf4193e60b4eb13d8708debef79, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -68,5 +70,5 @@ MonoBehaviour:
     Value: 28
   Stat: 0
   StatValue: 0
-  Blurb: 'Siku 3 petak. +28 mana maksimum. Rongga kristal: kolamnya melebar, bukan
-    derasnya.'
+  Blurb: 'A 3-cell corner. +28 maximum mana. A crystal hollow: the pool widens, not
+    the flow.'

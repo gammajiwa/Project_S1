@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.HeroLoadout
   Id: stormcaller
   DisplayName: Stormcaller
-  Blurb: "Rapuh dan cepat. Sabetan Petir mengisi penuh alas garisnya, Fireball berdiri
-    sendirian di seberang papan \u2014 dua skill yang tidak akan pernah bertemu kecuali
-    kamu yang memindahkannya."
+  Blurb: "Fragile and fast. Lightning Slash fills its line rune whole, Fireball stands
+    alone across the board \u2014 two skills that will never meet unless you move
+    them."
   Portrait: {fileID: 0}
   Accent: {r: 0.86, g: 0.72, b: 1, a: 1}
   MaxHp: 78

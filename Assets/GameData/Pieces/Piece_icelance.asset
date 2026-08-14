@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Piece_icelance
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: icelance
-  DisplayName: Segel Tombak Es
+  DisplayName: Ice Lance Sigil
   Stars: 1
   Layer: 1
   Shape: 0
@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.45, g: 0.78, b: 1, a: 1}
   Icon: {fileID: 21300000, guid: cc0bdee05eeaa124784451d8d879231a, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 1
   BaseDamage: 0

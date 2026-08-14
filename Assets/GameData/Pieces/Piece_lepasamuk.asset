@@ -25,6 +25,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 1, g: 0.45, b: 0.2, a: 1}
   Icon: {fileID: 21300000, guid: 44076b8b57d584b45b74d3815ecdc627, type: 3}
+  HitVfx: {fileID: 9140939096722349379, guid: 79b5bb38b26e16949a7f33f810cdd5f6, type: 3}
+  HitVfxScale: 0.7
   Kind: 4
   Element: 0
   BaseDamage: 16
@@ -66,5 +68,5 @@ MonoBehaviour:
   Stats: []
   Stat: 0
   StatValue: 0
-  Blurb: 'EVOLVED. MENGHABISKAN semua tumpukan FRENZY: +55% damage per tumpukan.
-    Tidak akan menembak sama sekali kalau kamu belum mengumpulkan apa pun.'
+  Blurb: 'EVOLVED. SPENDS every FRENZY stack: +55% damage per stack. Fires nothing
+    at all if you have not banked any.'
