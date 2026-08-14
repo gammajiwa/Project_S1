@@ -23,7 +23,7 @@ MonoBehaviour:
   MaxMana: 100
   ManaRegen: 8.3
   HpRegen: 1
-  MoveSpeed: 3.4
+  MoveSpeed: 6.8
   Placed:
   - Piece: {fileID: 11400000, guid: 1e1bb25db22542c4b97a019267bd60ed, type: 2}
     Origin: {x: 2, y: 5}

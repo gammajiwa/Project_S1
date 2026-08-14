@@ -21,7 +21,7 @@ MonoBehaviour:
   BaseManaRegen: 6.5
   BaseHpRegen: 2
   HealPerWaveClear: 20
-  BaseMoveSpeed: 2.8
+  BaseMoveSpeed: 5.6
   DangerRadius: 3.5
   TurnRate: 6
   ArenaHalfX: 40

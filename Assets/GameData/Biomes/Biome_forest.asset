@@ -135,6 +135,24 @@ MonoBehaviour:
   GrassWidth: {x: 0.7, y: 1.3}
   TreeShadows: 1
   AmbientVfx:
+  - Prefab: {fileID: 6176111352669829206, guid: 68ef0619c899a214a8214db0c4b00a62, type: 3}
+    Chance: 1
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 4
+    MinDistance: 8
+    Spread: 26
+    Scale: 1
+    Grain: 1
+    CoverageOnly: 0
+    Height: 0
+    Offset: {x: 0, y: 0}
+    HideInRain: 1
+    OnlyClear: 0
+    Tint: {r: 1, g: 0.94, b: 0.7, a: 0.55}
+    CullSheets: 0
+    Stretch: 1
+    FollowCamera: 0
   - Prefab: {fileID: 885642106820311149, guid: 907a599345fcdce43a93e33092c9c23e, type: 3}
     Chance: 0.75
     RepeatEvery: 0
@@ -418,8 +436,8 @@ MonoBehaviour:
   GloomDrift: 0.5
   GloomDotSize: 16
   GloomSmooth: 0.6
-  CloudColor: {r: 0.05, g: 0.07, b: 0.13, a: 0.5}
-  CloudSize: 16
+  CloudColor: {r: 0.05, g: 0.07, b: 0.13, a: 0.28}
+  CloudSize: 42
   CloudCoverage: 0.26
   CloudSpeed: 7
   RayColor: {r: 1, g: 0.97, b: 0.82, a: 0}

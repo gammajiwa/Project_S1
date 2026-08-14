@@ -26,10 +26,10 @@ MonoBehaviour:
   SunColor: {r: 0.5, g: 0.62, b: 1, a: 1}
   SunPitch: 66
   SunYaw: 300
-  SunIntensity: 0.3
-  AmbientSky: {r: 0.08, g: 0.11, b: 0.2, a: 1}
-  AmbientEquator: {r: 0.06, g: 0.085, b: 0.16, a: 1}
-  AmbientGround: {r: 0.035, g: 0.05, b: 0.09, a: 1}
+  SunIntensity: 0.45
+  AmbientSky: {r: 0.12, g: 0.16, b: 0.28, a: 1}
+  AmbientEquator: {r: 0.09, g: 0.12, b: 0.22, a: 1}
+  AmbientGround: {r: 0.055, g: 0.075, b: 0.13, a: 1}
   FogEnabled: 1
   FogColor: {r: 0.05, g: 0.07, b: 0.13, a: 1}
   FogStart: 18
@@ -135,6 +135,24 @@ MonoBehaviour:
   GrassWidth: {x: 0.7, y: 1.3}
   TreeShadows: 1
   AmbientVfx:
+  - Prefab: {fileID: 6176111352669829206, guid: 68ef0619c899a214a8214db0c4b00a62, type: 3}
+    Chance: 1
+    RepeatEvery: 0
+    Lifetime: 14
+    Count: 3
+    MinDistance: 8
+    Spread: 26
+    Scale: 1
+    Grain: 1
+    CoverageOnly: 0
+    Height: 0
+    Offset: {x: 0, y: 0}
+    HideInRain: 1
+    OnlyClear: 0
+    Tint: {r: 0.55, g: 0.7, b: 1, a: 0.3}
+    CullSheets: 0
+    Stretch: 1
+    FollowCamera: 0
   - Prefab: {fileID: 59684608221799730, guid: 27df465e230ee984aa595bf69a6411e2, type: 3}
     Chance: 0.7
     RepeatEvery: 0
@@ -329,14 +347,14 @@ MonoBehaviour:
   RayColor: {r: 0.55, g: 0.68, b: 1, a: 0}
   RaySize: 34
   RayCoverage: 0.4
-  LampCount: 4
+  LampCount: 5
   LampColor: {r: 1, g: 0.72, b: 0.36, a: 1}
   LampColorCool: {r: 0.36, g: 0.58, b: 1, a: 1}
-  LampIntensity: 4.5
+  LampIntensity: 5
   LampRange: 22
   LampHeight: 5
-  PlayerLightIntensity: 6
+  PlayerLightIntensity: 8
   PlayerLightColor: {r: 0.62, g: 0.8, b: 1, a: 1}
-  PlayerLightRange: 14
+  PlayerLightRange: 17
   PlayerLightHeight: 2.2
   ClearingRadius: 10
