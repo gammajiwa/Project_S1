@@ -120,7 +120,12 @@ namespace Proto
         public const int ShopSlotW = 196;
         public const int ShopSlotH = 148;
         public const int PanelW = 632;
-        public const int PanelH = 372;
+
+        // 440, bukan 372: isi toko menuntut judul (46) + dua baris slot (304) + reroll (34)
+        // + napas antar barisnya = ±412. Di 372 baris slot bawah menindih tombol REROLL, dan
+        // di mesin slot baris "koin:" mendarat di tombol PUTAR. Hanya jalur TANPA prefab yang
+        // membaca angka ini — kotak ShopRig tetap berkuasa kalau ada.
+        public const int PanelH = 440;
 
         // ---------- shapes ----------
 
