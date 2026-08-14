@@ -11602,27 +11602,39 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: Spin
-      value: 5
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: Count
-      value: 22
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: Turns
-      value: 1.2
+      value: 0.85
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: Layout
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
+      propertyPath: Racikan
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: SizeMax
-      value: 74
+      value: 66
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: SizeMin
-      value: 30
+      value: 28
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
+      propertyPath: AlphaMax
+      value: 0.34
+      objectReference: {fileID: 0}
+    - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
+      propertyPath: AlphaMin
+      value: 0.06
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: SpeedMax
@@ -11646,19 +11658,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: InflowSpeed
-      value: 130
+      value: 165
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: SpawnRadius
-      value: 880
+      value: 980
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: ShrinkAtSink
-      value: 0.32
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 3353687404170860333, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: TrainSpacing
-      value: 0.05
+      value: 0.075
       objectReference: {fileID: 0}
     - target: {fileID: 5319297466926417133, guid: ec3bc416de98b7b41ba6f9dd08a5204f, type: 3}
       propertyPath: m_Pivot.x

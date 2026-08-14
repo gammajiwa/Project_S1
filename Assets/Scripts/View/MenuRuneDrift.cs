@@ -54,7 +54,16 @@ namespace Proto
             KeretaMendatar,
 
             /// <summary>Bintang bertebaran, tipis dan lambat.</summary>
-            BintangTenang
+            BintangTenang,
+
+            /// <summary>Empat sungai melengkung masuk dari empat penjuru, warna campur.</summary>
+            EmpatSungai,
+
+            /// <summary>Lima jalur, satu warna untuk tiap jalur.</summary>
+            LimaWarna,
+
+            /// <summary>Tiga jalur rapat dan deras, warna campur.</summary>
+            TigaDeras
         }
 
         [Header("Preset")]
@@ -103,9 +112,14 @@ namespace Proto
         public float TrainY = -250f;
 
         [Header("Sedotan ke buku")]
-        [Tooltip("Objek yang menyedot. Kosong = pakai titik di bawah. " +
-                 "Diseret dari scene supaya sedotannya tetap menempel di bukunya walau bukunya " +
-                 "digeser - titik dalam angka akan diam-diam meleset begitu tata letaknya berubah.")]
+        [Tooltip("Objek DUNIA yang menyedot - bukunya. Diikuti tiap frame, jadi sedotannya tetap " +
+                 "menempel walau dioramanya bergerak. Kosong = dicari sendiri saat mulai.")]
+        public Transform SinkWorld;
+
+        [Tooltip("Nama objek yang dicari kalau SinkWorld dikosongkan. Yang pertama cocok dipakai.")]
+        public string SinkName = "L1b_MagicCircleInner";
+
+        [Tooltip("Objek UI yang menyedot. Dipakai hanya kalau SinkWorld kosong.")]
         public RectTransform Sink;
 
         [Tooltip("Titik sedot terhadap tengah layar, dipakai kalau Sink kosong.")]
@@ -129,6 +143,15 @@ namespace Proto
                  "Kecil = rapat mengekor, besar = renggang.")]
         [Range(0.005f, 0.2f)] public float TrainSpacing = 0.045f;
 
+        [Tooltip("Berapa SUNGAI yang menuju buku, masing-masing datang dari arah berbeda. " +
+                 "Satu jalur terbaca sebagai satu barisan; beberapa jalur terbaca sebagai sesuatu " +
+                 "yang benar-benar sedang menarik dari segala penjuru.")]
+        [Range(1, 6)] public int Lanes = 4;
+
+        [Tooltip("Tiap jalur memakai SATU kelompok warna - jalur emas, jalur hijau, jalur biru, " +
+                 "dan seterusnya. Mati = tiap jalur campur warna.")]
+        public bool ColourPerLane;
+
         [Tooltip("Mengecil sambil mendekat. 1 = tetap seukuran sampai tertelan.")]
         [Range(0.05f, 1f)] public float ShrinkAtSink = 0.35f;
 
@@ -151,6 +174,20 @@ namespace Proto
             "Rune_S5_1"
         };
 
+        /// <summary>
+        /// Batas tiap kelompok warna di sheet: awal dan panjang. Gambar rune sudah diwarnai per
+        /// tingkat kelangkaan, jadi "satu warna per jalur" tidak butuh pewarnaan sama sekali -
+        /// cukup memilih dari kelompok yang benar.
+        /// </summary>
+        static readonly int[,] Tiers =
+        {
+            { 0, 6 },   // S1 emas-putih
+            { 6, 4 },   // S2 hijau
+            { 10, 2 },  // S3 biru
+            { 12, 3 },  // S4 magenta
+            { 15, 1 },  // S5 emas
+        };
+
         struct Mote
         {
             public RectTransform Rect;
@@ -161,11 +198,15 @@ namespace Proto
             public float Phase;
             public float Size;
             public float Rail;     // kereta: geser sepanjang barisan
-            public float Angle;    // sedotan: sudut sekarang, radian
+            public float Angle;    // sedotan: sudut pangkal jalurnya, radian
             public float Radius;   // sedotan: jarak ke titik sedot
+            public int Lane;       // sedotan: jalur ke berapa
+            public int Slot;       // sedotan: urutan gerbong di dalam jalurnya
         }
 
         RectTransform _area;
+        Canvas _canvas;
+        Camera _lens;
 
         /// <summary>Seberapa jauh barisan sudah berjalan, dalam pecahan panjang lintasan.</summary>
         float _flow;
@@ -177,8 +218,33 @@ namespace Proto
         void OnEnable()
         {
             _area = (RectTransform)transform;
+            _canvas = GetComponentInParent<Canvas>();
+            _lens = Camera.main;
+
+            FindSink();
             Apply(Racikan);
             Rebuild();
+        }
+
+        /// <summary>
+        /// Mencari objek penyedot kalau belum diseret tangan. Dicari lewat NAMA, sekali saat
+        /// mulai - bukan tiap frame: pencarian di seluruh scene tiap frame adalah harga yang
+        /// tidak masuk akal untuk satu titik yang objeknya tidak pernah berganti.
+        /// </summary>
+        void FindSink()
+        {
+            if (SinkWorld != null || string.IsNullOrEmpty(SinkName)) return;
+
+            var hit = GameObject.Find(SinkName);
+            if (hit != null) { SinkWorld = hit.transform; return; }
+
+            // Objek nonaktif tidak ketemu lewat Find; disapu manual sebelum menyerah.
+            foreach (var t in FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (t.name != SinkName) continue;
+                SinkWorld = t;
+                return;
+            }
         }
 
         /// <summary>
@@ -195,6 +261,7 @@ namespace Proto
                     SpawnRadius = 880f; SwallowRadius = 40f; InflowSpeed = 130f;
                     Turns = 1.2f; TrainSpacing = 0.05f; ShrinkAtSink = 0.32f;
                     AlphaMin = 0.05f; AlphaMax = 0.30f;
+                    Lanes = 1; ColourPerLane = false;
                     break;
 
                 case Preset.SedotanDeras:
@@ -203,6 +270,7 @@ namespace Proto
                     SpawnRadius = 960f; SwallowRadius = 36f; InflowSpeed = 260f;
                     Turns = 1.6f; TrainSpacing = 0.026f; ShrinkAtSink = 0.28f;
                     AlphaMin = 0.06f; AlphaMax = 0.38f;
+                    Lanes = 2; ColourPerLane = false;
                     break;
 
                 case Preset.PusaranKetat:
@@ -211,6 +279,7 @@ namespace Proto
                     SpawnRadius = 780f; SwallowRadius = 30f; InflowSpeed = 170f;
                     Turns = 2.8f; TrainSpacing = 0.03f; ShrinkAtSink = 0.2f;
                     AlphaMin = 0.05f; AlphaMax = 0.34f;
+                    Lanes = 1; ColourPerLane = false;
                     break;
 
                 case Preset.KeretaMendatar:
@@ -218,6 +287,30 @@ namespace Proto
                     SizeMin = 44f; SizeMax = 78f; Spin = 3f;
                     TrainSpeed = 46f; TrainGap = 132f; TrainWave = 22f; TrainY = -250f;
                     AlphaMin = 0.07f; AlphaMax = 0.32f;
+                    break;
+
+                case Preset.EmpatSungai:
+                    Layout = Mode.Inflow; Count = 40; Lanes = 4; ColourPerLane = false;
+                    SizeMin = 28f; SizeMax = 66f; Spin = 7f;
+                    SpawnRadius = 980f; SwallowRadius = 40f; InflowSpeed = 165f;
+                    Turns = 0.85f; TrainSpacing = 0.075f; ShrinkAtSink = 0.3f;
+                    AlphaMin = 0.06f; AlphaMax = 0.34f;
+                    break;
+
+                case Preset.LimaWarna:
+                    Layout = Mode.Inflow; Count = 45; Lanes = 5; ColourPerLane = true;
+                    SizeMin = 30f; SizeMax = 62f; Spin = 6f;
+                    SpawnRadius = 940f; SwallowRadius = 38f; InflowSpeed = 150f;
+                    Turns = 1.1f; TrainSpacing = 0.07f; ShrinkAtSink = 0.3f;
+                    AlphaMin = 0.07f; AlphaMax = 0.36f;
+                    break;
+
+                case Preset.TigaDeras:
+                    Layout = Mode.Inflow; Count = 48; Lanes = 3; ColourPerLane = false;
+                    SizeMin = 24f; SizeMax = 58f; Spin = 11f;
+                    SpawnRadius = 1000f; SwallowRadius = 34f; InflowSpeed = 250f;
+                    Turns = 1.5f; TrainSpacing = 0.038f; ShrinkAtSink = 0.24f;
+                    AlphaMin = 0.06f; AlphaMax = 0.4f;
                     break;
 
                 case Preset.BintangTenang:
@@ -273,8 +366,11 @@ namespace Proto
                 go.transform.SetParent(transform, false);
                 go.hideFlags = HideFlags.DontSave;
 
+                int lane = Lanes <= 1 ? 0 : i % Lanes;
+                int slot = Lanes <= 1 ? i : i / Lanes;
+
                 var img = go.AddComponent<Image>();
-                img.sprite = _sheet[_dice.Next(_sheet.Length)];
+                img.sprite = _sheet[PickSprite(lane)];
                 img.preserveAspect = true;
                 img.raycastTarget = false;
 
@@ -293,10 +389,13 @@ namespace Proto
                     Spin = ((float)_dice.NextDouble() * 2f - 1f) * Spin,
                     Phase = (float)_dice.NextDouble() * 100f,
                     Rail = i * TrainGap,
-                    // Sudut pangkal SAMA untuk semua: mereka satu barisan di satu lintasan, dan
-                    // yang membedakan posisinya cuma seberapa jauh masing-masing sudah berjalan.
-                    Angle = 0f,
+                    // Tiap JALUR punya sudut pangkalnya sendiri, disebar merata mengelilingi
+                    // buku. Di dalam satu jalur sudutnya sama, dan yang membedakan posisi cuma
+                    // seberapa jauh masing-masing sudah berjalan - itu yang membuatnya berbaris.
+                    Angle = Lanes <= 1 ? 0f : lane * (Mathf.PI * 2f / Lanes),
                     Radius = SpawnRadius,
+                    Lane = lane,
+                    Slot = slot,
                     Pos = new Vector2(
                         ((float)_dice.NextDouble() - 0.5f) * box.x,
                         ((float)_dice.NextDouble() - 0.5f) * box.y)
@@ -355,7 +454,7 @@ namespace Proto
                     // gerombolan: kalau tiap rune punya sudut sendiri, yang terbaca adalah benda
                     // berjatuhan dari segala arah - bukan barisan yang sedang ditarik masuk.
                     float panjang = Mathf.Max(1f, SpawnRadius - SwallowRadius);
-                    float jalan = _flow - i * TrainSpacing;
+                    float jalan = _flow - m.Slot * TrainSpacing;
 
                     // Dibungkus ke [0,1): begitu satu gerbong tertelan ia muncul lagi di pangkal,
                     // jadi barisannya tidak pernah putus.
@@ -419,10 +518,47 @@ namespace Proto
         /// </summary>
         Vector2 SinkOffset()
         {
-            if (Sink == null || _area == null) return SinkPoint;
+            if (_area == null) return SinkPoint;
 
-            var dunia = Sink.TransformPoint(Sink.rect.center);
-            return _area.InverseTransformPoint(dunia);
+            // Objek DUNIA menang. Bukunya hidup di scene 3D dan dioramanya menggesernya
+            // terus-menerus; titik yang ditulis sebagai angka akan meleset beberapa detik setelah
+            // permainan mulai, dan melesetnya pelan sehingga tidak pernah terlihat seperti bug.
+            if (SinkWorld != null)
+            {
+                var kamera = _lens != null ? _lens : Camera.main;
+                if (kamera != null)
+                {
+                    var layar = kamera.WorldToScreenPoint(SinkWorld.position);
+
+                    // Kanvas Overlay memakai koordinat layar apa adanya, jadi kameranya null.
+                    // Mengirim kamera di sana justru menggeser hasilnya.
+                    var kanvasCam = _canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                        ? _canvas.worldCamera : null;
+
+                    Vector2 lokal;
+                    if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                            _area, layar, kanvasCam, out lokal))
+                        return lokal;
+                }
+            }
+
+            if (Sink != null) return _area.InverseTransformPoint(Sink.TransformPoint(Sink.rect.center));
+            return SinkPoint;
+        }
+
+        /// <summary>
+        /// Gambar untuk sebuah jalur. Dengan <see cref="ColourPerLane"/> menyala, jalur ke-n
+        /// mengambil dari kelompok warna ke-n; kalau tidak, dari seluruh sheet.
+        /// </summary>
+        int PickSprite(int lane)
+        {
+            if (!ColourPerLane || _sheet.Length < 16) return _dice.Next(_sheet.Length);
+
+            int tier = lane % (Tiers.Length / 2);
+            int mulai = Tiers[tier, 0];
+            int panjang = Tiers[tier, 1];
+
+            return Mathf.Min(_sheet.Length - 1, mulai + _dice.Next(panjang));
         }
 
         /// <summary>
