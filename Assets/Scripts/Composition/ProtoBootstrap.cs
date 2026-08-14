@@ -251,6 +251,10 @@ namespace Proto
                 audio.PlayCast(inst.Def, heavy);
             };
 
+            // Pantulan berbunyi per pantulan — dedup & prioritas di dalam yang menahan
+            // hujannya saat dua puluh peluru memantul bersamaan.
+            caster.OnBounce += _ => audio.PlayBounce();
+
             enemies.OnKill += _ => audio.Play(AudioDirector.Sound.Death, 0.35f);
             enemies.OnWaveStarted += _ => audio.Play(AudioDirector.Sound.WaveStart, 0.8f);
 

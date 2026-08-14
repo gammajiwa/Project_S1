@@ -547,6 +547,10 @@ namespace Proto
         /// <summary>Raised with the rune instance that just fired, so the UI can pulse it.</summary>
         public System.Action<RuneInstance> OnCast;
 
+        /// <summary>Peluru memantul ke sasaran berikutnya. Buat bunyi "tuk" pantulan —
+        /// pantulan yang tidak terdengar membuat stat BonusBounces tidak terasa dibeli.</summary>
+        public System.Action<Vector3> OnBounce;
+
         EnemyManager _enemies;
         ContentDatabase _db;
         GameBalance _balance;
@@ -596,6 +600,47 @@ namespace Proto
         /// </summary>
         float VfxScale(PieceDefinition def, float radius) =>
             def.CastVfxScale * Mathf.Max(0.35f, radius / 3f);
+
+        Dictionary<string, PieceDefinition> _pieceByName;
+        int _hitVfxFrame;
+        int _hitVfxThisFrame;
+
+        /// <summary>
+        /// VFX di titik musuh kena hit — prefab MILIK skill-nya (def.HitVfx), bukan percikan
+        /// generik. sourceName datang dari jalur damage; skill dicari lewat DisplayName, pola
+        /// yang sama dengan TintFor di EnemyManager.
+        /// </summary>
+        void SpawnHitVfx(Vector3 pos, string sourceName, Color tint, bool crit)
+        {
+            if (string.IsNullOrEmpty(sourceName) || _vfx == null || _db == null) return;
+
+            if (_pieceByName == null)
+            {
+                _pieceByName = new Dictionary<string, PieceDefinition>(96);
+                for (int i = 0; i < _db.Pieces.Count; i++)
+                {
+                    var p = _db.Pieces[i];
+                    if (p != null && !string.IsNullOrEmpty(p.DisplayName) &&
+                        !_pieceByName.ContainsKey(p.DisplayName))
+                        _pieceByName.Add(p.DisplayName, p);
+                }
+            }
+
+            if (!_pieceByName.TryGetValue(sourceName, out var def) || def.HitVfx == null) return;
+
+            // Anggaran per frame: Nova yang menyentuh 200 musuh cukup diwakili sepuluh
+            // semburan pertama — pool di bawahnya juga menjatah 64 efek hidup sedunia.
+            if (Time.frameCount != _hitVfxFrame)
+            {
+                _hitVfxFrame = Time.frameCount;
+                _hitVfxThisFrame = 0;
+            }
+            if (_hitVfxThisFrame >= 10) return;
+            _hitVfxThisFrame++;
+
+            _vfx.Burst(def.HitVfx, pos + Vector3.up * 0.5f,
+                def.HitVfxScale * (crit ? 1.35f : 1f));
+        }
 
         /// <summary>Draws a ground ring showing a skill's reach while you hover it.</summary>
         public void ShowRange(float radius, Color color)
@@ -673,6 +718,11 @@ namespace Proto
             _bolts = new BoltPool(_fxRoot);
             _vfx = new SkillVfxPool(_fxRoot);
             _lights = new SkillLightPool(_fxRoot);
+
+            // VFX hit per skill: muaranya EnemyManager.Damage, jadi SEMUA jalur hit langsung
+            // (peluru, rantai, area, detonator) lewat satu langganan ini tanpa ada yang lupa.
+            _enemies.OnEnemyHit -= SpawnHitVfx;
+            _enemies.OnEnemyHit += SpawnHitVfx;
 
             // Disetel dari aset, bukan dipatok di kode: "jangan terlalu terang" adalah penilaian
             // mata, dan penilaian mata harus bisa digeser tanpa recompile.
@@ -1465,6 +1515,8 @@ namespace Proto
                 p.LastHit = hit;
                 p.Bounces--;
                 p.Life = Mathf.Max(p.Life, 0.9f);
+
+                OnBounce?.Invoke(p.T.position);
             }
         }
 
