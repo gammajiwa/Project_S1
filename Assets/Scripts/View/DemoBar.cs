@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,7 +26,10 @@ namespace Proto
         readonly List<Button> _faceButtons = new List<Button>();
         readonly List<Button> _moodButtons = new List<Button>();
 
-        static readonly string[] FaceNames = { "SIANG", "MALAM", "SENJA", "TENGAH MALAM" };
+        static readonly string[] FaceKeys =
+            { "demo.face.day", "demo.face.night", "demo.face.dusk", "demo.face.midnight" };
+
+        static string FaceName(int index) => Loc.T(FaceKeys[Mathf.Clamp(index, 0, FaceKeys.Length - 1)]);
 
         public void Init(BiomeDresser dresser, Weather weather, int faceCount)
         {
@@ -94,7 +97,7 @@ namespace Proto
             for (int i = 0; i < faceCount && i < FaceNames.Length; i++)
             {
                 int index = i;
-                _faceButtons.Add(MakeButton(faceRow, Short(FaceNames[i]), () =>
+                _faceButtons.Add(MakeButton(faceRow, Short(FaceName(i)), () =>
                 {
                     _dresser.Show(index);
 

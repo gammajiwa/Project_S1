@@ -131,9 +131,9 @@ namespace Proto
             if (_note != null)
             {
                 _note.text = (Application.isEditor
-                    ? "Resolusi & layar penuh cuma berlaku di build, bukan di Editor."
-                    : "Batas FPS diabaikan selama VSync hidup.")
-                    + "   Baris PERFORMA berlaku mulai run berikutnya.";
+                    ? Loc.T("settings.note.editor")
+                    : Loc.T("settings.note.vsync"))
+                    + Loc.T("settings.note.performance");
             }
 
             Redraw();
@@ -231,7 +231,7 @@ namespace Proto
                 _resetArmedUntil = Time.unscaledTime + ResetArmSeconds;
                 if (_resetLabel != null)
                 {
-                    _resetLabel.text = "KLIK LAGI KALAU YAKIN";
+                    _resetLabel.text = Loc.T("settings.reset.armed");
                     _resetLabel.color = _dangerColor;
                 }
 
@@ -242,7 +242,7 @@ namespace Proto
             log.Clear();
 
             DisarmReset();
-            if (_resetHint != null) _resetHint.text = "Codex dikosongkan.";
+            if (_resetHint != null) _resetHint.text = Loc.T("settings.reset.done");
         }
 
         void DisarmReset()
@@ -251,7 +251,7 @@ namespace Proto
 
             if (_resetLabel != null)
             {
-                _resetLabel.text = "KOSONGKAN CODEX";
+                _resetLabel.text = Loc.T("settings.reset.idle");
                 _resetLabel.color = _mutedColor;
             }
         }
@@ -272,8 +272,9 @@ namespace Proto
             // yang sedang mencari daftar ini.
             if (_languageValue != null) _languageValue.text = Loc.NativeNameOf(Loc.Current);
 
-            SetText(_fullscreenValue, _settings.Fullscreen ? "LAYAR PENUH" : "JENDELA");
-            SetText(_vsyncValue, _settings.VSync ? "HIDUP" : "MATI");
+            SetText(_fullscreenValue, Loc.T(_settings.Fullscreen
+                ? "settings.fullscreen.on" : "settings.fullscreen.off"));
+            SetText(_vsyncValue, Loc.T(_settings.VSync ? "settings.on" : "settings.off"));
             SetText(_frameCapValue, GameSettings.FrameCapLabel(_settings.FrameCap));
 
             SetText(_resolutionValue, _resolutions != null && _resolutions.Count > 0

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,8 +34,13 @@ namespace Proto
         [Tooltip("Opsional — kalau kosong, cetakan badan seksi dibangun sendiri saat runtime.")]
         [SerializeField] RectTransform _sectionTemplate;
 
-        static readonly string[] SectionTitles = { "RUNE DASAR", "SEGEL", "SKILL" };
-        static readonly string[] FilterLabels = { "SEMUA", "RUNE", "SEGEL", "SKILL" };
+        // Dibaca lewat fungsi, bukan disimpan sebagai larik siap pakai: larik static dibekukan
+        // sekali seumur permainan, dan bahasa boleh berganti di tengah jalan.
+        static readonly string[] SectionKeys = { "codex.section.rune", "codex.section.sigil", "codex.section.skill" };
+        static readonly string[] FilterKeys = { "codex.filter.all", "codex.filter.rune", "codex.filter.sigil", "codex.filter.skill" };
+
+        static string SectionTitle(int index) => Loc.T(SectionKeys[Mathf.Clamp(index, 0, SectionKeys.Length - 1)]);
+        static string FilterLabel(int index) => Loc.T(FilterKeys[Mathf.Clamp(index, 0, FilterKeys.Length - 1)]);
 
         // Keluarga warna yang sama dengan HUD in-run dan menu: emas antik di atas indigo-hitam.
         static readonly Color InkGold = new Color(0.85f, 0.72f, 0.45f, 1f);
@@ -109,7 +114,7 @@ namespace Proto
                     EntryAt(used++, section).Bind(_order[i], known);
                 }
 
-                SetHeader(header, SectionTitles[s], found, total);
+                SetHeader(header, SectionTitle(s), found, total);
             }
 
             // Spare entries stay alive but hidden — the list only ever grows when content is added.
@@ -120,7 +125,7 @@ namespace Proto
 
             if (_counter != null)
             {
-                _counter.text = log.Count + " / " + _order.Count + " KETEMU";
+                _counter.text = Loc.F("codex.counter", log.Count, _order.Count);
             }
 
             if (_emptyHint != null)
@@ -315,9 +320,9 @@ namespace Proto
 
             for (int i = 0; i < FilterLabels.Length; i++)
             {
-                float width = FilterLabels[i].Length > 5 ? 130f : 116f;
+                float width = FilterLabel(i).Length > 5 ? 130f : 116f;
 
-                var tile = NewRect("Filter_" + FilterLabels[i], row);
+                var tile = NewRect("Filter_" + FilterLabel(i), row);
                 tile.anchorMin = tile.anchorMax = new Vector2(0f, 0f);
                 tile.pivot = new Vector2(0f, 0f);
                 tile.anchoredPosition = new Vector2(x, 0f);
@@ -341,7 +346,7 @@ namespace Proto
                 label.rectTransform.anchorMax = Vector2.one;
                 label.rectTransform.offsetMin = Vector2.zero;
                 label.rectTransform.offsetMax = Vector2.zero;
-                label.text = FilterLabels[i];
+                label.text = FilterLabel(i);
 
                 _filterBg.Add(bg);
                 _filterText.Add(label);

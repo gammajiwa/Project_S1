@@ -141,7 +141,16 @@ namespace Proto
             if (_ready) return;
 
             var saved = PlayerPrefs.GetString(PrefKey, null);
-            var lang = Detect();
+
+            // Bawaannya INGGRIS, bukan bahasa sistem pemain. Keputusan pemilik project, dan
+            // pilihan yang bisa dipertahankan: Inggris satu-satunya tabel yang dijamin lengkap,
+            // sedangkan sembilan lainnya menyusul. Membuka permainan langsung dalam bahasa yang
+            // separuh barisnya masih Inggris terbaca sebagai terjemahan yang RUSAK — jauh lebih
+            // buruk daripada terjemahan yang belum ada.
+            //
+            // <see cref="Detect"/> tetap ada dan tetap benar; ia menunggu sampai tabelnya layak
+            // dipercaya, dan saat itu tiba cukup satu baris di sini yang berubah.
+            var lang = Language.English;
 
             if (!string.IsNullOrEmpty(saved))
             {

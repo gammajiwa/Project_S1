@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Proto
@@ -147,8 +147,10 @@ namespace Proto
             return list;
         }
 
-        public static string FrameCapLabel(int cap) => cap <= 0 ? "TANPA BATAS" : cap + " FPS";
+        public static string FrameCapLabel(int cap)
+            => cap <= 0 ? Loc.T("settings.framecap.unlimited") : Loc.F("settings.framecap.value", cap);
 
-        public static string ResolutionLabel(Vector2Int size) => size.x + " x " + size.y;
+        public static string ResolutionLabel(Vector2Int size)
+            => Loc.F("settings.resolution.value", size.x, size.y);
     }
 }

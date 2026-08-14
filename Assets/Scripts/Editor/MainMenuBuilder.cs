@@ -1643,28 +1643,28 @@ namespace Proto
             // paling atas adalah satu-satunya tempat yang bisa ditebak tanpa bahasa.
             var bahasa = NewTabBody(panel, "Bahasa", BodyLeft, BodyTop, bodySize);
             float y = 0f;
-            var language = NewStepper(bahasa, "Language", ref y);
+            var language = NewStepper(bahasa, "Language", ref y, "settings.row.language");
 
             var layar = NewTabBody(panel, "Layar", BodyLeft, BodyTop, bodySize);
             y = 0f;
-            var fullscreen = NewStepper(layar, "Mode layar", ref y);
-            var resolution = NewStepper(layar, "Resolusi", ref y);
-            var vsync = NewStepper(layar, "VSync", ref y);
-            var frameCap = NewStepper(layar, "Batas FPS", ref y);
+            var fullscreen = NewStepper(layar, "Mode layar", ref y, "settings.row.screenmode");
+            var resolution = NewStepper(layar, "Resolusi", ref y, "settings.row.resolution");
+            var vsync = NewStepper(layar, "VSync", ref y, "settings.row.vsync");
+            var frameCap = NewStepper(layar, "Batas FPS", ref y, "settings.row.framecap");
 
             // Toggle untuk yang mahal digambar. Mengubahnya baru terasa di run BERIKUTNYA -
             // scene game membacanya saat lahir; catatan di bawah panel yang bilang begitu.
             var performa = NewTabBody(panel, "Performa", BodyLeft, BodyTop, bodySize);
             y = 0f;
-            var damageText = NewStepper(performa, "Teks damage", ref y);
-            var enemyShadows = NewStepper(performa, "Bayangan musuh", ref y);
-            var weatherVfx = NewStepper(performa, "VFX cuaca", ref y);
+            var damageText = NewStepper(performa, "Teks damage", ref y, "settings.row.damagetext");
+            var enemyShadows = NewStepper(performa, "Bayangan musuh", ref y, "settings.row.enemyshadows");
+            var weatherVfx = NewStepper(performa, "VFX cuaca", ref y, "settings.row.weathervfx");
 
             var suara = NewTabBody(panel, "Suara", BodyLeft, BodyTop, bodySize);
             y = 0f;
-            var master = NewSliderRow(suara, "Master", ref y);
-            var sfx = NewSliderRow(suara, "Efek suara", ref y);
-            var music = NewSliderRow(suara, "Musik", ref y);
+            var master = NewSliderRow(suara, "Master", ref y, "settings.row.master");
+            var sfx = NewSliderRow(suara, "Efek suara", ref y, "settings.row.sfx");
+            var music = NewSliderRow(suara, "Musik", ref y, "settings.row.music");
 
             var data = NewTabBody(panel, "Data", BodyLeft, BodyTop, bodySize);
             y = 0f;
@@ -1672,11 +1672,11 @@ namespace Proto
 
             var tabs = panel.gameObject.AddComponent<SettingsTabs>();
             var tabLines = new Object[5];
-            NewTabLine(panel, tabLines, 0, "LANGUAGE", BodyTop);
-            NewTabLine(panel, tabLines, 1, "LAYAR", BodyTop);
-            NewTabLine(panel, tabLines, 2, "PERFORMA", BodyTop);
-            NewTabLine(panel, tabLines, 3, "SUARA", BodyTop);
-            NewTabLine(panel, tabLines, 4, "DATA", BodyTop);
+            NewTabLine(panel, tabLines, 0, "LANGUAGE", BodyTop, "settings.tab.language");
+            NewTabLine(panel, tabLines, 1, "LAYAR", BodyTop, "settings.tab.display");
+            NewTabLine(panel, tabLines, 2, "PERFORMA", BodyTop, "settings.tab.performance");
+            NewTabLine(panel, tabLines, 3, "SUARA", BodyTop, "settings.tab.audio");
+            NewTabLine(panel, tabLines, 4, "DATA", BodyTop, "settings.tab.data");
 
             new Binder(tabs)
                 .SetArray("_lines", tabLines)
@@ -1789,9 +1789,10 @@ namespace Proto
             return body;
         }
 
-        static void NewTabLine(RectTransform panel, Object[] into, int index, string label, float top)
+        static void NewTabLine(RectTransform panel, Object[] into, int index, string label, float top,
+            string key = null)
         {
-            var button = NewMenuLine(panel, "Tab" + index, label);
+            var button = NewMenuLine(panel, "Tab" + index, label, key);
 
             Place((RectTransform)button.transform, new Vector2(0f, 1f),
                 new Vector2(48f, top - index * 56f), new Vector2(268f, 52f));
@@ -1799,13 +1800,28 @@ namespace Proto
             into[index] = button.GetComponent<MenuLine>();
         }
 
-        static RectTransform NewRow(RectTransform host, string name, string label, ref float y)
+        /// <summary>
+        /// Menempelkan pengikat bahasa pada sebuah label. Teks yang sudah tertulis dipakai
+        /// sebagai cadangan, jadi label tetap terbaca walau kuncinya belum ada di tabel.
+        /// </summary>
+        static void Localise(TMP_Text label, string key)
+        {
+            if (label == null || string.IsNullOrEmpty(key)) return;
+
+            var loc = label.gameObject.AddComponent<LocText>();
+            loc.Key = key;
+            loc.Fallback = label.text;
+        }
+
+        static RectTransform NewRow(RectTransform host, string name, string label, ref float y,
+            string key = null)
         {
             var row = NewRect("Row_" + name, host);
             Place(row, new Vector2(0f, 1f), new Vector2(0f, y), new Vector2(host.rect.width, 48f));
 
             var text = NewText("Label", row, label, _theme.BodySize,
                 _theme.TextIdle, TextAlignmentOptions.Left);
+            Localise(text, key);
             Place(text.rectTransform, new Vector2(0f, 0.5f), new Vector2(6f, 0f), new Vector2(320f, 30f));
 
             y -= 58f;
@@ -1817,9 +1833,9 @@ namespace Proto
         /// 340/740 yang dulu di-hardcode benar hanya selama barisnya selebar panel penuh; badan
         /// sub-halaman lebih sempit, dan di sana keduanya menggantung keluar baris.
         /// </summary>
-        static Stepper NewStepper(RectTransform host, string label, ref float y)
+        static Stepper NewStepper(RectTransform host, string label, ref float y, string key = null)
         {
-            var row = NewRow(host, label, label, ref y);
+            var row = NewRow(host, label, label, ref y, key);
 
             const float Arrow = 44f;
             const float Value = 240f;
@@ -1839,9 +1855,9 @@ namespace Proto
             return stepper;
         }
 
-        static SliderRow NewSliderRow(RectTransform host, string label, ref float y)
+        static SliderRow NewSliderRow(RectTransform host, string label, ref float y, string key = null)
         {
-            var row = NewRow(host, label, label, ref y);
+            var row = NewRow(host, label, label, ref y, key);
 
             const float Track = 260f;
             const float Value = 70f;
@@ -1887,7 +1903,7 @@ namespace Proto
 
         // ---------- widgets ----------
 
-        static Button NewMenuLine(RectTransform parent, string name, string label)
+        static Button NewMenuLine(RectTransform parent, string name, string label, string key = null)
         {
             var line = NewRect("MenuLine_" + name, parent);
 
@@ -1906,6 +1922,7 @@ namespace Proto
             var text = NewText("Label", line, label, _theme.MenuItemSize,
                 _theme.TextIdle, TextAlignmentOptions.Left);
             Place(text.rectTransform, new Vector2(0f, 0.5f), new Vector2(28f, 0f), new Vector2(460f, 44f));
+            Localise(text, key);
 
             var button = line.gameObject.AddComponent<Button>();
             button.targetGraphic = hit;

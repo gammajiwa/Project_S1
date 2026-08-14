@@ -150,9 +150,8 @@ namespace Proto
 
             if (!any)
             {
-                if (_nameLabel != null) _nameLabel.text = "BELUM ADA STARTER";
-                if (_blurbLabel != null)
-                    _blurbLabel.text = "ContentDatabase belum memuat satu pun HeroLoadout.";
+                if (_nameLabel != null) _nameLabel.text = Loc.T("starter.empty.title");
+                if (_blurbLabel != null) _blurbLabel.text = Loc.T("starter.empty.hint");
                 if (_statsLabel != null) _statsLabel.text = "";
                 if (_pageLabel != null) _pageLabel.text = "";
                 DrawBoard(null);
@@ -163,11 +162,12 @@ namespace Proto
 
             if (_nameLabel != null)
             {
-                _nameLabel.text = string.IsNullOrEmpty(hero.DisplayName) ? hero.Id : hero.DisplayName;
+                _nameLabel.text = Loc.T("hero." + hero.Id + ".name",
+                    string.IsNullOrEmpty(hero.DisplayName) ? hero.Id : hero.DisplayName);
                 _nameLabel.color = hero.Accent;
             }
 
-            if (_blurbLabel != null) _blurbLabel.text = hero.Blurb;
+            if (_blurbLabel != null) _blurbLabel.text = Loc.T("hero." + hero.Id + ".blurb", hero.Blurb);
             if (_statsLabel != null) _statsLabel.text = DescribeStats(hero);
             if (_pageLabel != null) _pageLabel.text = (_index + 1) + " / " + _heroes.Count;
 
@@ -198,9 +198,10 @@ namespace Proto
             float hpRegen = HeroLoadout.Pick(hero.HpRegen, _balance.BaseHpRegen);
             float speed = HeroLoadout.Pick(hero.MoveSpeed, _balance.BaseMoveSpeed);
 
-            return "NYAWA " + Mathf.RoundToInt(hp) + "  (+" + hpRegen.ToString("0.#") + "/dtk)" +
-                   "      MANA " + Mathf.RoundToInt(mana) + "  (+" + manaRegen.ToString("0.#") + "/dtk)" +
-                   "      LAJU " + speed.ToString("0.#");
+            return Loc.F("starter.stats",
+                Mathf.RoundToInt(hp), hpRegen.ToString("0.#"),
+                Mathf.RoundToInt(mana), manaRegen.ToString("0.#"),
+                speed.ToString("0.#"));
         }
 
         void DrawBoard(HeroLoadout hero)
