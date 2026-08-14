@@ -1050,7 +1050,8 @@ namespace Proto
 
                 var tile = _looseTiles.Take();
                 tile.Cover(img.rectTransform, LooseCellGap / Mathf.Max(1f, LooseCellSize));
-                tile.Bind(RuneTiles.BakedTileAt(def, i), RuneTiles.GlyphAt(def, i), def.Color, alpha);
+                tile.Bind(RuneTiles.BakedTileAt(def, i), RuneTiles.GlyphAt(def, i),
+                    RuneTiles.AreaTint(def, i, def.Color), alpha);
             }
 
             return cursor;
@@ -1066,7 +1067,7 @@ namespace Proto
         void BuildGameOver()
         {
             _overVeil = MakeImage("OverVeil", Vector2.zero, Vector2.zero,
-                new Color(0.34f, 0.02f, 0.02f, 0.94f), Vector2.zero);
+                new Color(0.17f, 0.02f, 0.03f, 1f), Vector2.zero);
             _overVeil.rectTransform.anchorMin = Vector2.zero;
             _overVeil.rectTransform.anchorMax = Vector2.one;
             _overVeil.rectTransform.offsetMin = Vector2.zero;
@@ -1136,7 +1137,10 @@ namespace Proto
             // Memerah dalam ~0,7 detik, bukan menjeglek. Unscaled: kematian boleh saja
             // terjadi saat timescale sedang diperlambat lewat Ruang Uji.
             _overFade = Mathf.MoveTowards(_overFade, 1f, Time.unscaledDeltaTime * 1.4f);
-            SetAlpha(_overVeil, 0.94f * _overFade);
+            // Turun dari 0,94 merah pekat. Layar mati harus MENUTUP, bukan mengecat: yang
+            // pekat menghapus arena yang baru saja membunuh pemain, dan justru itu satu-satunya
+            // hal yang masih ingin dilihatnya sedetik setelah mati.
+            SetAlpha(_overVeil, 0.66f * _overFade);
             SetAlpha(_overTitle, _overFade);
             SetAlpha(_overInfo, _overFade);
             SetAlpha(_overMenuLabel, _overFade);
@@ -4695,7 +4699,7 @@ namespace Proto
                         var tile = pool.Take();
                         tile.Cover(under.rectTransform, CellGap / Mathf.Max(1f, CellSize));
                         tile.Bind(RuneTiles.BakedTileAt(inst.Def, k), RuneTiles.GlyphAt(inst.Def, k),
-                            inst.Def.Color, alpha);
+                            RuneTiles.AreaTint(inst.Def, k, inst.Def.Color), alpha);
                     }
                 }
             }
@@ -4735,7 +4739,7 @@ namespace Proto
                 var tile = pool.Take();
                 tile.Cover(cells[c.y * width + c.x].rectTransform, bleed);
                 tile.Bind(RuneTiles.BakedTileAt(_held, k), RuneTiles.GlyphAt(_held, k),
-                    _held.Color, 0.9f, blocked);
+                    RuneTiles.AreaTint(_held, k, _held.Color), 0.9f, blocked);
             }
         }
 

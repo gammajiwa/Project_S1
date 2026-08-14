@@ -291,7 +291,7 @@ namespace Proto
                             var tile = _tiles.Take();
                             tile.Cover(img.rectTransform, Gap / Mathf.Max(1f, cell));
                             tile.Bind(RuneTiles.BakedTileAt(seat.Piece, c), RuneTiles.GlyphAt(seat.Piece, c),
-                                seat.Piece.Color, 1f);
+                                RuneTiles.AreaTint(seat.Piece, c, seat.Piece.Color), 1f);
                         }
 
                         if (gx < minX) minX = gx;

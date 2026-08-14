@@ -76,6 +76,35 @@ namespace Proto
             new Vector2( 0.039f,  0.089f)
         };
 
+        /// <summary>
+        /// Warna bingkai tiap petak di atlas, diukur dari piksel paling jenuh di dalamnya.
+        /// Urutannya sejajar <see cref="SheetNames"/>.
+        ///
+        /// Ada karena warna piece dan warna petaknya BUKAN hal yang sama. Warna piece dipakai
+        /// di seluruh papan untuk membedakan satu benda dari benda lain; warna petak menyatakan
+        /// RARITY, dan keduanya kebetulan tidak pernah cocok — Ember Rune merah tua duduk di
+        /// petak emas. Sapuan area yang memakai warna piece jadi tampak seperti bayangan milik
+        /// benda lain yang kebetulan ada di bawahnya.
+        ///
+        /// Diukur ulang kalau atlasnya diwarnai ulang.
+        /// </summary>
+        static readonly Color[] SheetTint =
+        {
+            new Color(0.773f, 0.580f, 0.318f), new Color(0.784f, 0.584f, 0.306f),
+            new Color(0.780f, 0.569f, 0.286f), new Color(0.792f, 0.569f, 0.278f),
+            new Color(0.808f, 0.588f, 0.275f), new Color(0.757f, 0.549f, 0.259f),
+
+            new Color(0.529f, 0.843f, 0.059f), new Color(0.494f, 0.804f, 0.055f),
+            new Color(0.502f, 0.804f, 0.059f), new Color(0.514f, 0.800f, 0.059f),
+
+            new Color(0.047f, 0.557f, 0.878f), new Color(0.027f, 0.565f, 0.894f),
+
+            new Color(0.796f, 0.118f, 0.827f), new Color(0.851f, 0.133f, 0.875f),
+            new Color(0.839f, 0.122f, 0.867f),
+
+            new Color(0.855f, 0.675f, 0.212f)
+        };
+
         static Sprite[] _sheet;
         static RuneTileSet _tileSet;
         static bool _tileSetTried;
@@ -114,6 +143,22 @@ namespace Proto
             if (at < 0) return null;
 
             return _tileSet.At(at);
+        }
+
+        /// <summary>
+        /// Warna yang harus dipakai sapuan area di belakang petak ke-<paramref name="index"/>:
+        /// warna PETAKNYA sendiri, supaya sapuan dan petak yang duduk di atasnya terbaca sebagai
+        /// satu benda.
+        ///
+        /// Jatuh balik ke <paramref name="fallback"/> begitu petak jadi tidak dipakai — di jalur
+        /// lama petaknya memang diwarnai warna piece, jadi di situ warna piece justru yang benar.
+        /// </summary>
+        public static Color AreaTint(PieceDefinition def, int index, Color fallback)
+        {
+            if (BakedTileAt(def, index) == null) return fallback;
+
+            int at = IndexForCell(def.Icon, index);
+            return at >= 0 && at < SheetTint.Length ? SheetTint[at] : fallback;
         }
 
         /// <summary>Ikon yang berasal dari sheet rune, satu-satunya yang digambar sebagai tile.</summary>
