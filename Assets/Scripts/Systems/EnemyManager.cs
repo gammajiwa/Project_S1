@@ -1071,7 +1071,11 @@ namespace Proto
                 OnKill?.Invoke(segments[i].Pos);
             }
 
-            OnBossDied?.Invoke(boss.HeadPos);
+            // Gerbang yang sama dengan OnBossSpawned di atas: grub minion bukan boss.
+            // Tanpa ini tiap grub kecil yang mati membunyikan raungan, fanfare kemenangan,
+            // dan banner SLAIN — tiga upacara untuk seekor belatung.
+            if (!boss.Def.Minion) OnBossDied?.Invoke(boss.HeadPos);
+
             boss.End();
         }
 

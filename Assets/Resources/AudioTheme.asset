@@ -20,6 +20,8 @@ MonoBehaviour:
   EvolveStinger: {fileID: 0}
   MusicTrim: 0.7
   StingerTrim: 0.8
+  CastLightVolume: 0.38
+  CastHeavyVolume: 0.6
   CrossfadeSeconds: 1.6
   Cast:
   - {fileID: 8300000, guid: 04f21775824b97043910e4821e4190a0, type: 3}
@@ -48,8 +50,8 @@ MonoBehaviour:
     Light: {fileID: 8300000, guid: 4c47168b19fc63b4ab833aeef1b3d535, type: 3}
     Heavy: {fileID: 8300000, guid: 4c47168b19fc63b4ab833aeef1b3d535, type: 3}
   Arcane:
-    Light: {fileID: 8300000, guid: c434ab774537b0b4eafb2ef3cbc474fd, type: 3}
-    Heavy: {fileID: 8300000, guid: f05202cfc2da4fd45af0a7ac1c80e74b, type: 3}
+    Light: {fileID: 8300000, guid: 92f4d0c3cbc4ec94e8205b2a31eaf712, type: 3}
+    Heavy: {fileID: 8300000, guid: f7afcf37c81b9e2459d6ca885ced6ce8, type: 3}
   Pieces:
   - Piece: {fileID: 11400000, guid: fac0e9f21bcea134a85b29b8568c2f60, type: 2}
     Cast: {fileID: 8300000, guid: dabc64da482b32443ba5a6451a7d80e7, type: 3}
@@ -67,6 +69,16 @@ MonoBehaviour:
   Reroll: {fileID: 8300000, guid: 6e1feee5a366e2249a2f50c7f72d72c7, type: 3}
   Click: {fileID: 8300000, guid: 0ff4c2c11b17b490dae85965a94f6238, type: 3}
   PanelClose: {fileID: 8300000, guid: e396893fb086372419348fbc5029853e, type: 3}
+  PlaceSweetener: {fileID: 8300000, guid: 5ccab251d7b10e140ba4c32752783225, type: 3}
+  SlotSpin: {fileID: 8300000, guid: a4f5a6a7f4a80464f9f43a140c56031b, type: 3}
+  CoinTick:
+  - {fileID: 8300000, guid: 7d2e42f2c483fc4488a9f22329b86907, type: 3}
+  - {fileID: 8300000, guid: 1307037645c6aac4b9203930912ef741, type: 3}
+  - {fileID: 8300000, guid: 3168c148c96f4dd4eb7051de98e64aa0, type: 3}
+  - {fileID: 8300000, guid: c85df364c9204b94c905728bde323e18, type: 3}
+  CoinShower: {fileID: 8300000, guid: 89389b6296cdf47499115335585cfbd9, type: 3}
+  Jackpot: {fileID: 8300000, guid: 80ae81a70d49bd0458769c97808b6b52, type: 3}
+  EvolveBurst: {fileID: 8300000, guid: f50cf22efbda3224184e84333927bf70, type: 3}
   SameClipWindow: 0.045
   DuckAmount: 0.45
   DuckSeconds: 0.9

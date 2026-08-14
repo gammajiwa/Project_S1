@@ -280,20 +280,78 @@ namespace Proto
         // ---- antarmuka: prioritas 0, paling rela mengalah saat layar sedang ramai ----
 
         public void UiPick() => PlayClip(Theme != null ? Theme.PiecePick : null, 0.8f, 1f, 0);
-        public void UiPlace() => PlayClip(Theme != null ? Theme.PiecePlace : null, 0.85f, 1f, 0);
+
+        public void UiPlace()
+        {
+            PlayClip(Theme != null ? Theme.PiecePlace : null, 0.85f, 1f, 0);
+
+            // Gemerincing tipis di atas bunyi taruh. Volume 0.3 itu disengaja: hadiahnya
+            // harus terasa, bukan terdengar — di atas itu ia berhenti jadi candu dan mulai
+            // jadi berisik.
+            PlayClip(Theme != null ? Theme.PlaceSweetener : null, 0.3f, 1.05f, 0);
+        }
         public void UiHover() => PlayClip(Theme != null ? Theme.PieceHover : null, 0.45f, 1f, 0);
         public void UiBuy() => PlayClip(Theme != null ? Theme.Buy : null, 0.85f, 1f, 0);
         public void UiReroll() => PlayClip(Theme != null ? Theme.Reroll : null, 0.85f, 1f, 0);
         public void UiClick() => PlayClip(Theme != null ? Theme.Click : null, 0.7f, 1f, 0);
         public void UiClose() => PlayClip(Theme != null ? Theme.PanelClose : null, 0.7f, 1f, 0);
 
+        // ---- hadiah: bunyi yang membuat orang menekan tombolnya sekali lagi ----
+
+        public void SlotSpinStart() =>
+            PlayClip(Theme != null ? Theme.SlotSpin : null, 0.7f, 1f, 1);
+
+        /// <summary>Ckring kecil per langkah gulungan; nadanya merangkak naik.</summary>
+        public void SlotTick(int step)
+        {
+            var pool = Theme != null ? Theme.CoinTick : null;
+            if (pool == null || pool.Length == 0) return;
+
+            PlayClip(pool[Random.Range(0, pool.Length)], 0.4f,
+                1f + Mathf.Min(step, 12) * 0.02f, 0);
+        }
+
+        /// <summary>
+        /// Hujan ckring beruntun dengan nada MENANJAK. Menanjaknya yang bikin candu:
+        /// telinga membaca deretan naik sebagai hadiah yang masih bertambah.
+        /// </summary>
+        public void CoinCascade(int count) => StartCoroutine(CascadeRoutine(count));
+
+        System.Collections.IEnumerator CascadeRoutine(int count)
+        {
+            var pool = Theme != null ? Theme.CoinTick : null;
+            if (pool == null || pool.Length == 0) yield break;
+
+            for (int i = 0; i < count; i++)
+            {
+                PlayClip(pool[Random.Range(0, pool.Length)], 0.55f, 1f + i * 0.05f, 1);
+
+                // Realtime, bukan scaled: hujan koin tidak boleh molor saat game dijeda
+                // di panel, dan tidak boleh rapat jadi satu letupan di kecepatan 5x.
+                yield return new WaitForSecondsRealtime(0.085f);
+            }
+        }
+
+        /// <summary>Jackpot: lonceng, tumpahan koin, dan hujan ckring — sekaligus, heboh.</summary>
+        public void JackpotBlast()
+        {
+            if (Theme == null) return;
+
+            PlayClip(Theme.Jackpot, 0.95f, 1f, 3);
+            PlayClip(Theme.CoinShower, 0.8f, 1f, 2);
+            CoinCascade(10);
+        }
+
         // ---- fanfare: kejadian yang layak menyentuh musiknya ----
 
         public void EvolveFanfare()
         {
+            // Kilau dulu, stinger menyusul — dua lapis itu yang bikin momennya terasa BESAR.
+            PlayClip(Theme != null ? Theme.EvolveBurst : null, 0.85f, 1f, 2);
+
             if (Music != null && Theme != null && Theme.EvolveStinger != null)
                 Music.PlayStinger(Theme.EvolveStinger);
-            else Play(Sound.Reaction);
+            else if (Theme == null || Theme.EvolveBurst == null) Play(Sound.Reaction);
         }
 
         /// <summary>Boss tumbang. Fanfare penuh sengaja disimpan untuk ini — bukan tiap wave.</summary>

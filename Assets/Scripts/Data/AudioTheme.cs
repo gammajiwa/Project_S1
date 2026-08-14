@@ -131,6 +131,28 @@ namespace Proto
         public AudioClip Click;
         public AudioClip PanelClose;
 
+        // ------------------------------------------------------------------ hadiah
+
+        [Header("Hadiah & mesin slot")]
+        [Tooltip("Lapisan gemerincing TIPIS di atas PiecePlace — kepuasan kecil tiap menaruh, " +
+                 "itu yang membuat menata papan terasa seperti memasukkan koin ke celengan.")]
+        public AudioClip PlaceSweetener;
+
+        [Tooltip("Serrr mekanis saat gulungan slot mulai berputar.")]
+        public AudioClip SlotSpin;
+
+        [Tooltip("Ckring pendek — dirotasi acak untuk detak gulungan dan hujan koin kemenangan.")]
+        public AudioClip[] CoinTick;
+
+        [Tooltip("Tumpahan koin sekaligus, menang besar.")]
+        public AudioClip CoinShower;
+
+        [Tooltip("Lonceng heboh saat jackpot piece.")]
+        public AudioClip Jackpot;
+
+        [Tooltip("Kilau evolve — berbunyi bersama stinger musiknya (atau sendirian).")]
+        public AudioClip EvolveBurst;
+
         // ------------------------------------------------------------------ mixing
 
         [Header("Mixing — rem anti tubruk-tubrukan")]

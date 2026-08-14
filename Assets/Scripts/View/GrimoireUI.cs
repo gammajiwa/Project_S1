@@ -96,6 +96,46 @@ namespace Proto
         /// logika pungut (disengaja), tapi bunyi pungutnya mengalah — satu klik satu bunyi.</summary>
         int _panelCloseFrame = -1;
 
+        // ---------- kilat hadiah & detak gulungan ----------
+        Image _flashVeil;
+        float _flashAlpha;
+        Color _flashInk = new Color(1f, 0.85f, 0.4f);
+        float _slotTickAt;
+        int _slotTickStep;
+
+        /// <summary>
+        /// Kilat sekejap menutup layar — emas untuk hadiah, hijau untuk evolve. VFX termurah
+        /// yang terbaca di atas panel apa pun, dan memudar sendiri dalam sepertiga detik.
+        /// </summary>
+        void Flash(float strength, Color? ink = null)
+        {
+            if (_flashVeil == null)
+            {
+                _flashVeil = MakeImage("RewardFlash", Vector2.zero, Vector2.zero,
+                    Color.clear, Vector2.zero);
+                _flashVeil.rectTransform.anchorMin = Vector2.zero;
+                _flashVeil.rectTransform.anchorMax = Vector2.one;
+                _flashVeil.rectTransform.offsetMin = Vector2.zero;
+                _flashVeil.rectTransform.offsetMax = Vector2.zero;
+            }
+
+            // Selalu ke paling depan: panel slot dan toko lahir belakangan dari kanvas ini,
+            // dan kilat yang tertimbun panel adalah kilat yang tidak pernah ada.
+            _flashVeil.transform.SetAsLastSibling();
+            _flashInk = ink ?? new Color(1f, 0.85f, 0.4f);
+            _flashAlpha = Mathf.Max(_flashAlpha, Mathf.Clamp01(strength));
+        }
+
+        void DrawFlash(float dt)
+        {
+            if (_flashVeil == null) return;
+
+            _flashAlpha = Mathf.Max(0f, _flashAlpha - dt * 2.6f);
+            _flashVeil.color = new Color(_flashInk.r, _flashInk.g, _flashInk.b,
+                _flashAlpha * 0.5f);
+            _flashVeil.enabled = _flashAlpha > 0.001f;
+        }
+
         bool _shopOpen;
         int _rerollCost;
         readonly PieceDefinition[] _shop = new PieceDefinition[ShopSlots];
@@ -2792,6 +2832,9 @@ namespace Proto
                     _gold -= _balance.GambleCost;
                     _slotOutcome = RollGambleOutcome();
                     _spinLeft = 1.15f;
+
+                    _slotTickStep = 0;
+                    if (Sfx != null) Sfx.SlotSpinStart();
                 }
 
                 return true;
@@ -2957,6 +3000,9 @@ namespace Proto
             // kalau daftarnya kosong), jadi runenya tidak pernah berputar untuk apa-apa.
             if (_rune != null) _rune.Celebrate();
             if (Sfx != null) Sfx.EvolveFanfare();
+
+            // Kilat hijau sekejap: evolve harus TERLIHAT terjadi, bukan cuma tertulis.
+            Flash(0.4f, new Color(0.6f, 1f, 0.7f));
             PushFloater(Player.transform.position + Vector3.up * 3f, Loc.T("hud.evolve"), new Color(0.55f, 1f, 0.7f));
         }
 
@@ -4388,6 +4434,14 @@ namespace Proto
                     _slotReels[i].text = SlotFaces[face];
                 }
 
+                // Ckring kecil tiap ~90 ms selama berputar, nadanya merangkak naik — "serrr
+                // ckring ckring" ala mesin sungguhan, bukan gulungan bisu.
+                if (Time.unscaledTime >= _slotTickAt)
+                {
+                    _slotTickAt = Time.unscaledTime + 0.09f;
+                    if (Sfx != null) Sfx.SlotTick(_slotTickStep++);
+                }
+
                 if (_spinLeft <= 0f) SettleGamble();
             }
         }
@@ -4432,11 +4486,14 @@ namespace Proto
                 case 1:
                     _gold += _balance.GambleSmallGold;
                     _slotResultLine = Loc.F("slot.win.small", _balance.GambleSmallGold);
+                    if (Sfx != null) Sfx.CoinCascade(4);
                     break;
 
                 case 2:
                     _gold += _balance.GambleBigGold;
                     _slotResultLine = Loc.F("slot.win.big", _balance.GambleBigGold);
+                    if (Sfx != null) Sfx.CoinCascade(8);
+                    Flash(0.3f);
                     break;
 
                 case 3:
@@ -4449,6 +4506,11 @@ namespace Proto
                         AddLoose(prize, NearScatterPos(PanelRect().center, 1));
                         Discover(prize);
                         _slotResultLine = Loc.F("slot.jackpot", PieceName(prize));
+
+                        // JACKPOT: lonceng + tumpahan koin + kilat emas. Ini satu-satunya
+                        // tempat di game yang boleh norak — mesin judi memang harus norak.
+                        if (Sfx != null) Sfx.JackpotBlast();
+                        Flash(0.55f);
                     }
 
                     break;
@@ -4591,6 +4653,7 @@ namespace Proto
             UpdateTooltip();
 
             DrawHurtVeil();
+            DrawFlash(Time.unscaledDeltaTime);
 
             // Paling akhir: kerudungnya harus menutupi SEMUA yang digambar di atas, termasuk
             // kartu hover dan panel yang kebetulan masih terbuka saat pemain mati.
