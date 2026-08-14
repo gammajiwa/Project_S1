@@ -21,9 +21,16 @@ namespace Proto
     public static class RuneTiles
     {
         /// <summary>
-        /// Urutan sheet rune, dan urutan inilah yang menentukan glyph tiap petak: petak ke-0
-        /// memakai ikon piece-nya sendiri, petak berikutnya melangkah satu di daftar ini dan
-        /// memutar balik ke awal setelah yang terakhir.
+        /// Urutan sheet rune. Angka di tengah nama adalah KELOMPOK RARITY-nya, dan kelompok
+        /// itu punya warna sendiri: S1 putih, S2 hijau, S3 biru, S4 magenta, S5 emas — makin
+        /// tinggi makin langka.
+        ///
+        /// Glyph tiap petak melangkah di daftar ini, TAPI tidak pernah keluar dari kelompoknya:
+        /// petak ke-0 memakai ikon piece-nya sendiri, petak berikutnya melangkah satu, dan
+        /// setelah anggota terakhir kelompoknya ia memutar balik ke anggota pertama kelompok
+        /// yang sama. Aturan itu keputusan pemilik project: "random yang sewarna aja, jangan
+        /// campur-campur dengan warna lain" — karena warnanya MENYATAKAN rarity, dan satu rune
+        /// yang petaknya berganti-ganti warna berarti menyatakan lima rarity sekaligus.
         ///
         /// Aturan itu bukan karangan di sini — ia dibaca balik dari prefab
         /// <c>RuneTile_*</c> yang sudah ditata tangan, dan cocok untuk keenam belasnya. Menaruh
@@ -103,10 +110,10 @@ namespace Proto
 
             if (_tileSet == null) return null;
 
-            int at = IndexOfIcon(def.Icon);
+            int at = IndexForCell(def.Icon, index);
             if (at < 0) return null;
 
-            return _tileSet.At(at + index);
+            return _tileSet.At(at);
         }
 
         /// <summary>Ikon yang berasal dari sheet rune, satu-satunya yang digambar sebagai tile.</summary>
@@ -156,11 +163,10 @@ namespace Proto
             // Ikon rune yang namanya tidak ada di daftar: sheet-nya bertambah tanpa daftar ini
             // ikut diperbarui. Jatuh balik ke ikonnya sendiri di semua petak — salah, tapi
             // terbaca; melempar exception di tengah gambar papan tidak.
-            int at = IndexOfIcon(def.Icon);
+            int at = IndexForCell(def.Icon, index);
             if (at < 0) return def.Icon;
 
-            int n = SheetNames.Length;
-            var glyph = _sheet[(((at + index) % n) + n) % n];
+            var glyph = _sheet[at];
             return glyph != null ? glyph : def.Icon;
         }
 
@@ -179,6 +185,41 @@ namespace Proto
             }
 
             return Vector2.zero;
+        }
+
+        /// <summary>
+        /// Gambar mana yang dipakai petak ke-<paramref name="cell"/>, dikunci di dalam kelompok
+        /// rarity milik piece itu sendiri. -1 = ikonnya bukan dari sheet.
+        ///
+        /// Batas kelompoknya dibaca dari NAMA, bukan ditulis sebagai angka: menambah rune baru
+        /// ke sebuah tier cuma berarti menambah satu baris di <see cref="SheetNames"/>, dan
+        /// tabel batas yang harus ikut disunting adalah tabel yang cepat atau lambat lupa
+        /// disunting.
+        /// </summary>
+        static int IndexForCell(Sprite icon, int cell)
+        {
+            int at = IndexOfIcon(icon);
+            if (at < 0) return -1;
+
+            string tier = TierOf(SheetNames[at]);
+
+            int start = at, end = at;
+            while (start > 0 && TierOf(SheetNames[start - 1]) == tier) start--;
+            while (end + 1 < SheetNames.Length && TierOf(SheetNames[end + 1]) == tier) end++;
+
+            int count = end - start + 1;
+            return start + ((((at - start + cell) % count) + count) % count);
+        }
+
+        /// <summary>"Rune_S3_2" -&gt; "S3". Bagian tengah nama, yang menyatakan kelompoknya.</summary>
+        static string TierOf(string name)
+        {
+            int first = name.IndexOf('_');
+            if (first < 0) return name;
+
+            int second = name.IndexOf('_', first + 1);
+            return second < 0 ? name.Substring(first + 1)
+                              : name.Substring(first + 1, second - first - 1);
         }
 
         static int IndexOfIcon(Sprite icon)

@@ -4480,16 +4480,14 @@ namespace Proto
 
                     var baseRune = Book.BaseAt(cell);
 
-                    // Petak yang akan ditutup TILE rune tidak ikut diwarnai di sini. Warna piece
-                    // penuh ditambah pelat tile di atasnya menumpuk jadi kotak pekat, dan yang
-                    // diminta justru sebaliknya: tembus pandang, dengan runenya yang menang.
-                    bool tiled = baseRune != null && RuneTiles.IsRuneGlyph(baseRune.Def.Icon);
-                    _baseCells[i].color = baseRune != null && !tiled ? Tint(baseRune) : emptyColor;
+                    // Dinyalakan ulang tiap gambar: lapisan tile di bawah ini MEMATIKAN petak
+                    // yang ditutupnya, dan yang tidak pernah dinyalakan lagi akan tetap padam
+                    // setelah runenya diangkat.
+                    _baseCells[i].enabled = true;
+                    _baseCells[i].color = baseRune != null ? Tint(baseRune) : emptyColor;
 
-                    // Ornamennya sekarang dibawa TILE yang digambar di atas petak ini — lihat
-                    // DrawRuneTiles. Petaknya sendiri kembali jadi kotak warna polos: dua
-                    // ornamen bertumpuk cuma saling mengaburkan, dan yang di bawah tidak
-                    // pernah terlihat.
+                    // Ornamennya dibawa TILE yang digambar di atas petak ini — lihat
+                    // DrawRuneTiles. Petaknya sendiri kembali jadi kotak warna polos.
                     _baseCells[i].sprite = null;
 
                     var skill = Book.SkillAt(cell);
@@ -4518,7 +4516,14 @@ namespace Proto
                 if (!Grimoire.InBounds(c)) continue;
 
                 int idx = c.y * Grimoire.Width + c.x;
-                if (_held.Layer == Layer.Rune) _baseCells[idx].color = tint;
+                if (_held.Layer == Layer.Rune)
+                {
+                    // Dinyalakan lagi: petak yang sedang jadi sasaran harus terbaca boleh atau
+                    // tidak, dan itu berlaku juga di atas rune yang sudah duduk di situ - justru
+                    // di situlah jawabannya "tidak boleh".
+                    _baseCells[idx].enabled = true;
+                    _baseCells[idx].color = tint;
+                }
                 else
                 {
                     _skillCells[idx].enabled = true;
@@ -4604,8 +4609,21 @@ namespace Proto
                         var c = inst.Origin + shape[k];
                         if (c.x < 0 || c.y < 0 || c.x >= width || c.y >= height) continue;
 
+                        var under = cells[c.y * width + c.x];
+
+                        // Kotak warna di bawahnya DIMATIKAN, bukan sekadar diwarnai netral.
+                        // Sprite petaknya punya tepi transparan, jadi apa pun yang tersisa di
+                        // belakang menyembul sebagai pita berwarna mengelilingi runenya — dan
+                        // pita itu persis "objek primitif" yang diminta hilang.
+                        //
+                        // Dimatikan DI SINI, oleh yang benar-benar menggambar tile-nya, bukan
+                        // lewat syarat kembar di tempat lain: dua syarat yang mengira dirinya
+                        // menjawab pertanyaan yang sama akan berbeda pendapat suatu hari, dan
+                        // hari itu tidak akan ada yang tahu mana yang salah.
+                        under.enabled = false;
+
                         var tile = pool.Take();
-                        tile.Cover(cells[c.y * width + c.x].rectTransform);
+                        tile.Cover(under.rectTransform);
                         tile.Bind(RuneTiles.BakedTileAt(inst.Def, k), RuneTiles.GlyphAt(inst.Def, k),
                             inst.Def.Color, alpha);
                     }
