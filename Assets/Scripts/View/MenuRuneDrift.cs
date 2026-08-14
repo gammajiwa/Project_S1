@@ -63,7 +63,16 @@ namespace Proto
             LimaWarna,
 
             /// <summary>Tiga jalur rapat dan deras, warna campur.</summary>
-            TigaDeras
+            TigaDeras,
+
+            /// <summary>EMPAT aliran angin pelan, satu warna untuk tiap aliran.</summary>
+            AnginEmpatWarna,
+
+            /// <summary>Empat aliran angin pelan, warna campur di semuanya.</summary>
+            AnginCampur,
+
+            /// <summary>Enam aliran tipis, lengkungnya lebar, paling lembut.</summary>
+            AnginLebar
         }
 
         [Header("Preset")]
@@ -132,12 +141,16 @@ namespace Proto
         [Min(4f)] public float SwallowRadius = 40f;
 
         [Tooltip("Laju mengalir sepanjang lintasan, piksel per detik.")]
-        [Min(1f)] public float InflowSpeed = 150f;
+        [Min(1f)] public float InflowSpeed = 80f;
 
-        [Tooltip("Berapa PUTARAN penuh yang ditempuh barisan dari pangkal sampai tertelan. " +
-                 "Inilah yang membuatnya BELOK-BELOK alih-alih menukik lurus. Nol = garis lurus " +
-                 "ke tengah; 1,5 sudah terbaca jelas sebagai pusaran.")]
-        [Range(0f, 4f)] public float Turns = 1.4f;
+        [Tooltip("Seberapa melengkung tiap aliran, sebagai pecahan jaraknya ke buku. Nol = garis " +
+                 "lurus; 0,5 sudah terbaca sebagai tiupan angin. Ini BUKAN putaran - alirannya " +
+                 "membelok lalu MAJU ke buku, bukan mengitarinya.")]
+        [Range(0f, 1.2f)] public float Bend = 0.45f;
+
+        [Tooltip("Aliran berselang-seling membelok ke kiri dan ke kanan. Mati = semuanya " +
+                 "membelok ke arah yang sama, dan itu mulai terbaca sebagai pusaran lagi.")]
+        public bool AlternateBend = true;
 
         [Tooltip("Jarak antar gerbong sepanjang lintasan, sebagai pecahan panjang lintasan. " +
                  "Kecil = rapat mengekor, besar = renggang.")]
@@ -200,8 +213,9 @@ namespace Proto
             public float Rail;     // kereta: geser sepanjang barisan
             public float Angle;    // sedotan: sudut pangkal jalurnya, radian
             public float Radius;   // sedotan: jarak ke titik sedot
-            public int Lane;       // sedotan: jalur ke berapa
-            public int Slot;       // sedotan: urutan gerbong di dalam jalurnya
+            public int Lane;       // aliran ke berapa
+            public int Slot;       // urutan di dalam alirannya
+            public float BendSign; // ke mana alirannya membelok, -1 atau +1
         }
 
         RectTransform _area;
@@ -258,8 +272,8 @@ namespace Proto
                 case Preset.SedotanPelan:
                     Layout = Mode.Inflow; Count = 22;
                     SizeMin = 30f; SizeMax = 74f; Spin = 5f;
-                    SpawnRadius = 880f; SwallowRadius = 40f; InflowSpeed = 130f;
-                    Turns = 1.2f; TrainSpacing = 0.05f; ShrinkAtSink = 0.32f;
+                    SpawnRadius = 880f; SwallowRadius = 40f; InflowSpeed = 72f;
+                    Bend = 0.35f; AlternateBend = true; TrainSpacing = 0.05f; ShrinkAtSink = 0.32f;
                     AlphaMin = 0.05f; AlphaMax = 0.30f;
                     Lanes = 1; ColourPerLane = false;
                     break;
@@ -267,8 +281,8 @@ namespace Proto
                 case Preset.SedotanDeras:
                     Layout = Mode.Inflow; Count = 40;
                     SizeMin = 26f; SizeMax = 66f; Spin = 9f;
-                    SpawnRadius = 960f; SwallowRadius = 36f; InflowSpeed = 260f;
-                    Turns = 1.6f; TrainSpacing = 0.026f; ShrinkAtSink = 0.28f;
+                    SpawnRadius = 960f; SwallowRadius = 36f; InflowSpeed = 120f;
+                    Bend = 0.55f; AlternateBend = true; TrainSpacing = 0.026f; ShrinkAtSink = 0.28f;
                     AlphaMin = 0.06f; AlphaMax = 0.38f;
                     Lanes = 2; ColourPerLane = false;
                     break;
@@ -276,8 +290,8 @@ namespace Proto
                 case Preset.PusaranKetat:
                     Layout = Mode.Inflow; Count = 34;
                     SizeMin = 22f; SizeMax = 58f; Spin = 14f;
-                    SpawnRadius = 780f; SwallowRadius = 30f; InflowSpeed = 170f;
-                    Turns = 2.8f; TrainSpacing = 0.03f; ShrinkAtSink = 0.2f;
+                    SpawnRadius = 780f; SwallowRadius = 30f; InflowSpeed = 88f;
+                    Bend = 0.9f;  AlternateBend = true; TrainSpacing = 0.03f; ShrinkAtSink = 0.2f;
                     AlphaMin = 0.05f; AlphaMax = 0.34f;
                     Lanes = 1; ColourPerLane = false;
                     break;
@@ -292,25 +306,52 @@ namespace Proto
                 case Preset.EmpatSungai:
                     Layout = Mode.Inflow; Count = 40; Lanes = 4; ColourPerLane = false;
                     SizeMin = 28f; SizeMax = 66f; Spin = 7f;
-                    SpawnRadius = 980f; SwallowRadius = 40f; InflowSpeed = 165f;
-                    Turns = 0.85f; TrainSpacing = 0.075f; ShrinkAtSink = 0.3f;
+                    SpawnRadius = 980f; SwallowRadius = 40f; InflowSpeed = 85f;
+                    Bend = 0.4f;  AlternateBend = true; TrainSpacing = 0.075f; ShrinkAtSink = 0.3f;
                     AlphaMin = 0.06f; AlphaMax = 0.34f;
                     break;
 
                 case Preset.LimaWarna:
                     Layout = Mode.Inflow; Count = 45; Lanes = 5; ColourPerLane = true;
                     SizeMin = 30f; SizeMax = 62f; Spin = 6f;
-                    SpawnRadius = 940f; SwallowRadius = 38f; InflowSpeed = 150f;
-                    Turns = 1.1f; TrainSpacing = 0.07f; ShrinkAtSink = 0.3f;
+                    SpawnRadius = 940f; SwallowRadius = 38f; InflowSpeed = 80f;
+                    Bend = 0.5f;  AlternateBend = true; TrainSpacing = 0.07f; ShrinkAtSink = 0.3f;
                     AlphaMin = 0.07f; AlphaMax = 0.36f;
                     break;
 
                 case Preset.TigaDeras:
                     Layout = Mode.Inflow; Count = 48; Lanes = 3; ColourPerLane = false;
                     SizeMin = 24f; SizeMax = 58f; Spin = 11f;
-                    SpawnRadius = 1000f; SwallowRadius = 34f; InflowSpeed = 250f;
-                    Turns = 1.5f; TrainSpacing = 0.038f; ShrinkAtSink = 0.24f;
+                    SpawnRadius = 1000f; SwallowRadius = 34f; InflowSpeed = 115f;
+                    Bend = 0.65f; AlternateBend = true; TrainSpacing = 0.038f; ShrinkAtSink = 0.24f;
                     AlphaMin = 0.06f; AlphaMax = 0.4f;
+                    break;
+
+                case Preset.AnginEmpatWarna:
+                    Layout = Mode.Inflow; Count = 36; Lanes = 4; ColourPerLane = true;
+                    SizeMin = 32f; SizeMax = 66f; Spin = 4f;
+                    SpawnRadius = 1020f; SwallowRadius = 44f; InflowSpeed = 78f;
+                    Bend = 0.45f; AlternateBend = true;
+                    TrainSpacing = 0.1f; ShrinkAtSink = 0.32f;
+                    AlphaMin = 0.07f; AlphaMax = 0.36f;
+                    break;
+
+                case Preset.AnginCampur:
+                    Layout = Mode.Inflow; Count = 36; Lanes = 4; ColourPerLane = false;
+                    SizeMin = 32f; SizeMax = 66f; Spin = 4f;
+                    SpawnRadius = 1020f; SwallowRadius = 44f; InflowSpeed = 78f;
+                    Bend = 0.45f; AlternateBend = true;
+                    TrainSpacing = 0.1f; ShrinkAtSink = 0.32f;
+                    AlphaMin = 0.07f; AlphaMax = 0.36f;
+                    break;
+
+                case Preset.AnginLebar:
+                    Layout = Mode.Inflow; Count = 48; Lanes = 6; ColourPerLane = true;
+                    SizeMin = 26f; SizeMax = 54f; Spin = 3f;
+                    SpawnRadius = 1080f; SwallowRadius = 46f; InflowSpeed = 62f;
+                    Bend = 0.75f; AlternateBend = true;
+                    TrainSpacing = 0.12f; ShrinkAtSink = 0.3f;
+                    AlphaMin = 0.06f; AlphaMax = 0.3f;
                     break;
 
                 case Preset.BintangTenang:
@@ -396,6 +437,7 @@ namespace Proto
                     Radius = SpawnRadius,
                     Lane = lane,
                     Slot = slot,
+                    BendSign = !AlternateBend || (lane % 2 == 0) ? 1f : -1f,
                     Pos = new Vector2(
                         ((float)_dice.NextDouble() - 0.5f) * box.x,
                         ((float)_dice.NextDouble() - 0.5f) * box.y)
@@ -450,22 +492,28 @@ namespace Proto
                 }
                 else if (Layout == Mode.Inflow)
                 {
-                    // SATU lintasan, semua gerbong mengekor di atasnya. Itu bedanya dengan
-                    // gerombolan: kalau tiap rune punya sudut sendiri, yang terbaca adalah benda
-                    // berjatuhan dari segala arah - bukan barisan yang sedang ditarik masuk.
-                    float panjang = Mathf.Max(1f, SpawnRadius - SwallowRadius);
+                    // Lintasan MELENGKUNG yang berujung di buku, bukan orbit yang mengitarinya.
+                    // Bedanya menentukan: koordinat polar membuat rune berputar mengelilingi
+                    // pusat - itu pusaran. Kurva Bezier membuatnya membelok sekali lalu MAJU
+                    // terus ke satu titik, dan itu yang terbaca sebagai tiupan angin.
                     float jalan = _flow - m.Slot * TrainSpacing;
-
-                    // Dibungkus ke [0,1): begitu satu gerbong tertelan ia muncul lagi di pangkal,
-                    // jadi barisannya tidak pernah putus.
                     jalan -= Mathf.Floor(jalan);
 
-                    float radius = Mathf.Lerp(SpawnRadius, SwallowRadius, jalan);
-                    float sudut = m.Angle + jalan * Turns * Mathf.PI * 2f;
-
                     var pusat = SinkOffset();
-                    m.Rect.anchoredPosition = pusat + new Vector2(
-                        Mathf.Cos(sudut) * radius, Mathf.Sin(sudut) * radius);
+                    var arah = new Vector2(Mathf.Cos(m.Angle), Mathf.Sin(m.Angle));
+                    var pangkal = pusat + arah * SpawnRadius;
+
+                    // Titik kendali digeser TEGAK LURUS dari garis lurusnya. Sejauh apa ia
+                    // digeser adalah seberapa melengkung alirannya.
+                    var tegak = new Vector2(-arah.y, arah.x) * (m.BendSign * Bend * SpawnRadius);
+                    var kendali = pusat + arah * (SpawnRadius * 0.55f) + tegak;
+
+                    float sisa = 1f - jalan;
+                    var titik = sisa * sisa * pangkal
+                              + 2f * sisa * jalan * kendali
+                              + jalan * jalan * pusat;
+
+                    m.Rect.anchoredPosition = titik;
 
                     // Mengecil dan memudar sambil mendekat - itu yang membuatnya terbaca TERTELAN
                     // alih-alih menghilang begitu saja di atas bukunya. Memudarnya juga di
