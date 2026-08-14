@@ -919,7 +919,7 @@ MonoBehaviour:
   _prevButton: {fileID: 4271341086122329464}
   _nextButton: {fileID: 4996940856444913678}
   _playButton: {fileID: 9129439102121197602}
-  _cellInk: {r: 1, g: 0.93, b: 0.78, a: 0.1}
+  _cellInk: {r: 0.24, g: 0.15, b: 0.06, a: 0.42}
 --- !u!114 &2170542998436998962
 MonoBehaviour:
   m_ObjectHideFlags: 0

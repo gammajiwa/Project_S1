@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -50,10 +50,14 @@ namespace Proto
         [SerializeField] Button _playButton;
 
         [Header("Warna petak")]
-        [SerializeField] Color _cellInk = new Color(1f, 0.93f, 0.78f, 0.10f);
+        // Krem tipis benar waktu papan preview masih kotak gelap, dan tak terlihat sama sekali
+        // begitu latarnya jadi halaman perkamen. Di atas kertas terang yang harus dipakai tinta
+        // gelap — angka yang sama dengan `UiTheme.GridCellIdle` di papan in-run.
+        [SerializeField] Color _cellInk = new Color(0.24f, 0.15f, 0.06f, 0.42f);
 
         readonly List<HeroLoadout> _heroes = new List<HeroLoadout>();
         readonly List<Image> _cells = new List<Image>();
+        RuneTilePool _tiles;
         readonly List<Image> _pips = new List<Image>();
 
         int _index;
@@ -221,6 +225,9 @@ namespace Proto
 
             int used = 0;
 
+            if (_tiles == null) _tiles = new RuneTilePool(_board);
+            _tiles.Begin();
+
             // Petak kosongnya dulu, seluruhnya. Digambar belakangan ia akan menutupi piece —
             // urutan anak DI SINI adalah urutan gambar.
             for (int y = 0; y < Grimoire.Height; y++)
@@ -229,6 +236,7 @@ namespace Proto
                 {
                     var img = CellAt(used++);
                     img.sprite = null;
+                    img.preserveAspect = false;
                     img.color = _cellInk;
                     Put(img, padX + x * step, padY + y * step, cell, cell);
                 }
@@ -241,7 +249,14 @@ namespace Proto
                     var seat = hero.Placed[i];
                     if (seat.Piece == null) continue;
 
-                    var shape = Shapes.Rotate(Shapes.Of(seat.Piece.Shape), seat.Rot);
+                    // `Cells`, bukan `Shapes.Of(Shape)`: piece bergambar tangan menyimpan
+                    // bentuknya di CustomCells, dan membaca Shape mentah membuat preview
+                    // menggambar bentuk yang bukan miliknya.
+                    var shape = Shapes.Rotate(seat.Piece.Cells, seat.Rot);
+
+                    int minX = int.MaxValue, minY = int.MaxValue;
+                    int maxX = int.MinValue, maxY = int.MinValue;
+                    int seated = 0;
 
                     for (int c = 0; c < shape.Length; c++)
                     {
@@ -255,16 +270,56 @@ namespace Proto
                         if (gx < 0 || gy < 0 || gx >= Grimoire.Width || gy >= Grimoire.Height) continue;
 
                         var img = CellAt(used++);
-                        img.sprite = seat.Piece.Icon;
-
-                        // Ikon dipakai apa adanya kalau ada; tanpa ikon, warna piece yang harus
-                        // membawa identitasnya — Image tanpa sprite menggambar kotak putih.
-                        img.color = seat.Piece.Icon != null ? Color.white : seat.Piece.Color;
+                        img.sprite = null;
+                        img.preserveAspect = false;
+                        img.color = seat.Piece.Color;
 
                         Put(img, padX + gx * step, padY + gy * step, cell, cell);
+
+                        // SATU tile rune utuh per PETAK, sama persis dengan papan in-run dan
+                        // codex. Indeksnya `c`, bukan urutan petak yang lolos batas papan:
+                        // glyph tiap petak terikat ke posisinya di dalam bentuk piece, jadi
+                        // melewatkan satu petak tidak boleh menggeser gambar petak sesudahnya.
+                        if (RuneTiles.IsRuneGlyph(seat.Piece.Icon))
+                        {
+                            var tile = _tiles.Take();
+                            tile.Cover(img.rectTransform);
+                            tile.Bind(RuneTiles.GlyphAt(seat.Piece, c), seat.Piece.Color, 1f);
+                        }
+
+                        if (gx < minX) minX = gx;
+                        if (gy < minY) minY = gy;
+                        if (gx > maxX) maxX = gx;
+                        if (gy > maxY) maxY = gy;
+                        seated++;
                     }
+
+                    // Rune sudah selesai digambar sebagai tile per petak di atas; ikon tunggal
+                    // di tengah cuma untuk piece yang BUKAN rune.
+                    if (seated == 0 || seat.Piece.Icon == null) continue;
+                    if (RuneTiles.IsRuneGlyph(seat.Piece.Icon)) continue;
+
+                    // SATU ikon per piece, di pusat petaknya. Dulu ikonnya digambar ulang di
+                    // tiap sel: rune 2x2 tampil sebagai empat salinan glyph yang sama — wallpaper,
+                    // bukan satu benda. Papan in-run sudah lama memakai aturan satu-glyph-per-piece;
+                    // layar inilah yang ketinggalan.
+                    int cols = maxX - minX + 1;
+                    int rows = maxY - minY + 1;
+                    float side = Mathf.Min(cols, rows) * cell * 0.92f;
+
+                    var glyph = CellAt(used++);
+                    glyph.sprite = seat.Piece.Icon;
+                    glyph.color = Color.white;
+                    glyph.preserveAspect = true;
+
+                    Put(glyph,
+                        padX + minX * step + (cols * step - Gap - side) * 0.5f,
+                        padY + minY * step + (rows * step - Gap - side) * 0.5f,
+                        side, side);
                 }
             }
+
+            _tiles.End();
 
             for (int i = used; i < _cells.Count; i++) _cells[i].enabled = false;
 

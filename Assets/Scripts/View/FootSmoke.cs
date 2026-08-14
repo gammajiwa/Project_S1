@@ -50,13 +50,52 @@ namespace Proto
             // Laju ASLI tiap sistem disimpan sebagai patokan proporsi. Efek pack sering punya
             // beberapa sistem dengan laju yang jauh berbeda — inti, kepulan, dan percikan — dan
             // menyeragamkan angkanya akan membuang keseimbangan yang sudah disetel pembuatnya.
+            //
+            // Laju NOL berarti sistem itu bukan pengepul: dia sub-emitter (gelembung yang
+            // meletus saat mati) dan hanya boleh menyala lewat induknya. Versi lama menclamp
+            // 0 -> 1 lalu ikut memodulasi — sub-emitter-nya bocor jadi keran kedua yang
+            // mengepul dari titik yang salah.
             for (int i = 0; i < _systems.Length; i++)
-            {
                 _baseRate[i] = _systems[i].emission.rateOverTime.constant;
-                if (_baseRate[i] <= 0.001f) _baseRate[i] = 1f;
-            }
 
             _lastPos = transform.position;
+        }
+
+        /// <summary>
+        /// Menyalakan pengepulnya sendiri. Efek ini diauthor dengan <b>Play On Awake mati di
+        /// SEMUA sistemnya</b> — termasuk dua pengepul aslinya — jadi tanpa ini tidak ada satu
+        /// pun yang pernah mulai, dan menyetel <c>rateOverTime</c> ke sistem yang berhenti tidak
+        /// mengeluarkan satu partikel pun: keran diputar di pipa yang belum dibuka.
+        ///
+        /// Dinyalakan dari sini, bukan dengan mencentang balik Play On Awake di prefab, karena
+        /// centang itu berlaku untuk sub-emitter juga — dan sub-emitter yang berjalan sendiri
+        /// mengepul dari titiknya sendiri alih-alih menunggu partikel induknya mati. Aturan
+        /// "laju nol = sub-emitter" sudah dipakai keran di bawah; di sini ia dipakai lagi.
+        ///
+        /// <c>Play(false)</c>, bukan <c>Play()</c>: yang terakhir ikut menyalakan anak-anaknya
+        /// dan mengembalikan kebocoran yang sama lewat pintu belakang.
+        /// </summary>
+        void OnEnable()
+        {
+            if (_systems == null) return;
+
+            for (int i = 0; i < _systems.Length; i++)
+            {
+                if (_systems[i] == null) continue;
+                if (_baseRate[i] <= 0.001f) continue;   // sub-emitter: induknya yang menyalakan
+                if (!_systems[i].isPlaying) _systems[i].Play(false);
+            }
+        }
+
+        /// <summary>Laju asli pengepul pertama yang benar-benar mengepul. Tak ada = 1.</summary>
+        float Reference()
+        {
+            for (int i = 0; i < _baseRate.Length; i++)
+            {
+                if (_baseRate[i] > 0.001f) return _baseRate[i];
+            }
+
+            return 1f;
         }
 
         void LateUpdate()
@@ -74,16 +113,28 @@ namespace Proto
 
             float t = Mathf.Clamp01(_speed / FullSpeed);
             float wanted = Mathf.Lerp(IdleRate, MoveRate, t);
+            // Patokannya pengepul PERTAMA yang lajunya bukan nol, bukan `_baseRate[0]` mentah:
+            // kalau sistem paling atas kebetulan sub-emitter, membaginya dengan 0,001 melipatkan
+            // laju semua yang lain seribu kali.
+            float reference = Reference();
 
             for (int i = 0; i < _systems.Length; i++)
             {
                 if (_systems[i] == null) continue;
+                if (_baseRate[i] <= 0.001f) continue;  // sub-emitter: bukan urusan keran ini
 
                 var emission = _systems[i].emission;
                 var rate = emission.rateOverTime;
 
+                // Dipaksa jadi satu angka. Pengepul utamanya diauthor sebagai DUA konstanta
+                // (2..5), dan menulis `constant` ke kurva semacam itu cuma mengganti batas
+                // ATASNYA — batas bawahnya tetap 2, jadi laju yang diminta 30 keluar sebagai
+                // undian 2..30. Yang sedang dikendalikan di sini adalah lajunya sendiri; ia
+                // harus berarti persis angka itu.
+                rate.mode = ParticleSystemCurveMode.Constant;
+
                 // Proporsional terhadap laju aslinya, bukan diseragamkan.
-                rate.constant = wanted * (_baseRate[i] / _baseRate[0]);
+                rate.constant = wanted * (_baseRate[i] / reference);
                 emission.rateOverTime = rate;
             }
         }

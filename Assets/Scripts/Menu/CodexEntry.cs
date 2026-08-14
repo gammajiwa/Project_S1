@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -27,6 +27,8 @@ namespace Proto
         [SerializeField] Color _unknownText = new Color(0.45f, 0.45f, 0.5f, 1f);
         [SerializeField] Color _unknownCell = new Color(0.22f, 0.22f, 0.27f, 1f);
 
+        RuneTilePool _tiles;
+
         public void Bind(PieceDefinition piece, bool known)
         {
             if (piece == null)
@@ -53,6 +55,51 @@ namespace Proto
             }
 
             DrawShape(piece, known ? piece.Color : _unknownCell);
+            DrawTiles(piece, known);
+        }
+
+        /// <summary>
+        /// Tile rune di atas siluet bentuknya — <b>satu tile per petak</b>, sama persis dengan
+        /// papan in-run. Hanya untuk rune yang SUDAH ditemukan; yang belum tetap siluet buta,
+        /// sesuai kontrak codex.
+        ///
+        /// Dulu di sini ada SATU gambar yang dibentangkan menutupi seluruh kotak 3x3, dan itu
+        /// membuat entri codex berbohong dua kali: bentuknya hilang di balik gambar, dan berapa
+        /// petak yang dimakan rune itu di papan jadi tidak terbaca sama sekali.
+        /// </summary>
+        void DrawTiles(PieceDefinition piece, bool known)
+        {
+            if (_shapeCells == null || _shapeCells.Length == 0 || _shapeCells[0] == null) return;
+
+            var parent = _shapeCells[0].transform.parent;
+            if (_tiles == null) _tiles = new RuneTilePool(parent);
+
+            _tiles.Begin();
+
+            if (known && RuneTiles.IsRuneGlyph(piece.Icon))
+            {
+                // Kotak siluetnya ditata GridLayoutGroup, dan letak tiap sel baru benar SETELAH
+                // layout dihitung — sedangkan entri ini diisi saat panel dibuka, sebelum itu.
+                // Tanpa baris ini tile mendarat di posisi sel dari entri SEBELUMNYA.
+                var box = parent as RectTransform;
+                if (box != null) LayoutRebuilder.ForceRebuildLayoutImmediate(box);
+
+                // Dinormalkan ke titik nol, karena bentuk gambaran tangan boleh disimpan
+                // dengan petak yang tidak menempel di sumbu.
+                var cells = Shapes.Rotate(piece.Cells, 0);
+
+                for (int i = 0; i < cells.Length; i++)
+                {
+                    int index = IndexOf(cells[i]);
+                    if (index < 0) continue;
+
+                    var tile = _tiles.Take();
+                    tile.Cover(_shapeCells[index].rectTransform);
+                    tile.Bind(RuneTiles.GlyphAt(piece, i), piece.Color, 1f);
+                }
+            }
+
+            _tiles.End();
         }
 
         void DrawShape(PieceDefinition piece, Color color)
@@ -68,18 +115,27 @@ namespace Proto
 
             for (int i = 0; i < cells.Length; i++)
             {
-                int x = cells[i].x;
-                int y = cells[i].y;
-                if (x < 0 || x >= ShapeGrid || y < 0 || y >= ShapeGrid) continue;
-
-                // Grid layout fills top-down, but footprint y counts up — flip the row.
-                int index = (ShapeGrid - 1 - y) * ShapeGrid + x;
-                if (index < 0 || index >= _shapeCells.Length) continue;
-                if (_shapeCells[index] == null) continue;
+                int index = IndexOf(cells[i]);
+                if (index < 0) continue;
 
                 _shapeCells[index].enabled = true;
                 _shapeCells[index].color = color;
+
+                // Ornamennya milik tile di atasnya sekarang (lihat DrawTiles); petak siluet
+                // kembali jadi kotak polos supaya piece yang BUKAN rune tidak ikut kebagian
+                // bingkai yang bukan bahasanya.
+                _shapeCells[index].sprite = null;
             }
+        }
+
+        /// <summary>
+        /// Petak footprint -&gt; slot di kotak 3x3. Grid layout mengisi dari atas ke bawah
+        /// sedangkan y footprint menghitung ke atas, jadi barisnya dibalik. -1 = di luar kotak.
+        /// </summary>
+        static int IndexOf(Vector2Int cell)
+        {
+            if (cell.x < 0 || cell.x >= ShapeGrid || cell.y < 0 || cell.y >= ShapeGrid) return -1;
+            return (ShapeGrid - 1 - cell.y) * ShapeGrid + cell.x;
         }
 
         static string KindLabel(PieceDefinition piece)

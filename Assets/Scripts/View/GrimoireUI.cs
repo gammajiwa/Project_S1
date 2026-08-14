@@ -263,8 +263,18 @@ namespace Proto
         Text _overInfo;
         Image _overMenuBg;
         Text _overMenuLabel;
-        Image _overRetryBg;
-        Text _overRetryLabel;
+        float _overFade;
+
+        // --- umpan balik player kena hit ---
+        Image _hurtVeil;
+        float _hurtGlow;
+
+        // --- tile rune: SATU tile utuh per PETAK yang diduduki, di papan maupun di tas ---
+        RuneTilePool _boardTiles;
+        RuneTilePool _bagTiles;
+        RuneTilePool _looseTiles;
+        readonly System.Collections.Generic.HashSet<RuneInstance> _tiledPieces =
+            new System.Collections.Generic.HashSet<RuneInstance>();
 
         /// <summary>
         /// Every drop lands scattered across the screen. Whatever is still lying around when a
@@ -451,6 +461,10 @@ namespace Proto
             // diperiksa. Wave besar melahirkan ratusan hit per detik, dan gerbang yang dibayar
             // per event harganya nyata justru di mesin yang toggle ini coba selamatkan.
             if (GameSettings.Load().DamageText) Enemies.OnEnemyDamaged += _popups.Push;
+
+            // VFX hit per skill hidup di PlayerCaster (SpawnHitVfx) — bukan di sini.
+            Player.OnHurt += () => _hurtGlow = 1f;
+
             Player.OnCast += OnSpellCast;
             Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor);
 
@@ -664,18 +678,29 @@ namespace Proto
             // dalam — sampul buku memeluk seluruh papan, bingkai emas memeluk petaknya saja.
             BuildGridFrames();
 
+            // Dua lapisan dibuat TERPISAH, bukan berselang-seling per petak. Urutan bikin adalah
+            // urutan gambar di kanvas ini, dan tile rune harus disisipkan di ANTARA keduanya:
+            // di atas kotak warna dasar, tapi di bawah kotak skill — skill berdiri DI ATAS rune,
+            // dan tile yang latarnya pekat akan menelannya kalau urutannya terbalik.
             for (int y = 0; y < Grimoire.Height; y++)
             {
                 for (int x = 0; x < Grimoire.Width; x++)
                 {
                     int i = y * Grimoire.Width + x;
-                    var pos = CellAnchor(x, y);
 
-                    _baseCells[i] = MakeImage($"Base_{x}_{y}", pos,
+                    _baseCells[i] = MakeImage($"Base_{x}_{y}", CellAnchor(x, y),
                         new Vector2(CellSize, CellSize), CellIdle, Vector2.zero);
+                }
+            }
+
+            for (int y = 0; y < Grimoire.Height; y++)
+            {
+                for (int x = 0; x < Grimoire.Width; x++)
+                {
+                    int i = y * Grimoire.Width + x;
 
                     _skillCells[i] = MakeImage($"Skill_{x}_{y}",
-                        pos + new Vector2(SkillInset, SkillInset),
+                        CellAnchor(x, y) + new Vector2(SkillInset, SkillInset),
                         new Vector2(CellSize - SkillInset * 2, CellSize - SkillInset * 2),
                         Color.white, Vector2.zero);
                     _skillCells[i].enabled = false;
@@ -967,55 +992,63 @@ namespace Proto
             float inner = isSkill ? LooseCellSize - SkillInset * 2f : LooseCellSize;
             var color = new Color(def.Color.r, def.Color.g, def.Color.b, alpha);
 
+            // Rune sudah berwujud rune SEJAK JATUH, bukan sejak didudukkan di papan. Sebelumnya
+            // ia jatuh sebagai kotak warna dan baru berubah jadi tile begitu ditaruh — dan barang
+            // yang berganti rupa saat dipindahkan membuat pemain mengira ia mengambil benda yang
+            // lain. Petaknya tetap dihitung di sini; yang berbeda cuma apa yang digambar di atasnya.
+            bool tiled = RuneTiles.IsRuneGlyph(def.Icon);
+
             for (int i = 0; i < shape.Length && cursor < _looseCells.Length; i++, cursor++)
             {
                 var img = _looseCells[cursor];
-                img.enabled = true;
+
+                // Kotak warnanya tetap DITATA walau tidak digambar: letak dan ukurannya yang
+                // dipakai tile di bawah ini, jadi satu rumus posisi melayani dua rupa.
+                img.enabled = !tiled;
                 img.color = color;
                 img.rectTransform.sizeDelta = new Vector2(inner, inner);
                 img.rectTransform.anchoredPosition = origin + new Vector2(
                     shape[i].x * step + LooseCellSize * 0.5f,
                     shape[i].y * step + LooseCellSize * 0.5f);
+
+                if (!tiled || _looseTiles == null) continue;
+
+                var tile = _looseTiles.Take();
+                tile.Cover(img.rectTransform);
+                tile.Bind(RuneTiles.GlyphAt(def, i), def.Color, alpha);
             }
 
             return cursor;
         }
 
         /// <summary>
-        /// Layar GAME OVER: kerudung gelap sepenuh layar, judul, dan dua pintu keluar.
+        /// Layar GAME OVER: seluruh layar MEMERAH, judul besar, dan satu pintu keluar.
         ///
-        /// Dulu kematian cuma mengganti teks banner jadi "MATI di wave N - SPACE buat ulang,
-        /// ESC buat balik ke menu". Dua tombol keyboard yang harus dihafal, di layar yang sudah
-        /// tidak menerima input lain, sementara arena tetap terlihat hidup di belakangnya —
-        /// run yang berakhir terbaca seperti run yang menggantung.
+        /// Tombol ULANG RUN dibuang atas perintah pemilik project — dan labelnya "(SPACE)"
+        /// memang bohong sejak lahir: tidak pernah ada handler SPACE, cuma klik. Mati berarti
+        /// balik ke menu; layar yang cuma punya satu jawaban tidak butuh pilihan kedua.
         /// </summary>
         void BuildGameOver()
         {
             _overVeil = MakeImage("OverVeil", Vector2.zero, Vector2.zero,
-                new Color(0.03f, 0.02f, 0.04f, 0.88f), Vector2.zero);
+                new Color(0.34f, 0.02f, 0.02f, 0.94f), Vector2.zero);
             _overVeil.rectTransform.anchorMin = Vector2.zero;
             _overVeil.rectTransform.anchorMax = Vector2.one;
             _overVeil.rectTransform.offsetMin = Vector2.zero;
             _overVeil.rectTransform.offsetMax = Vector2.zero;
 
-            _overTitle = MakeText("OverTitle", new Vector2(0f, 150f), new Vector2(900f, 90f), 64,
-                new Color(1f, 0.35f, 0.3f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
+            _overTitle = MakeText("OverTitle", new Vector2(0f, 170f), new Vector2(1200f, 130f), 92,
+                new Color(1f, 0.93f, 0.88f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
             _overTitle.text = "GAME OVER";
 
-            _overInfo = MakeText("OverInfo", new Vector2(0f, 90f), new Vector2(900f, 34f), 20,
-                new Color(0.8f, 0.78f, 0.85f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
+            _overInfo = MakeText("OverInfo", new Vector2(0f, 88f), new Vector2(900f, 34f), 22,
+                new Color(1f, 0.76f, 0.7f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
 
             _overMenuBg = MakeImage("OverMenuBg", Vector2.zero, Vector2.zero,
-                new Color(0.42f, 0.16f, 0.15f, 0.95f), Vector2.zero);
+                new Color(0.14f, 0.04f, 0.05f, 0.96f), Vector2.zero);
             _overMenuLabel = MakeText("OverMenuLabel", Vector2.zero, new Vector2(OverButtonW, 30f), 24,
                 new Color(1f, 0.9f, 0.86f), Vector2.zero, TextAnchor.MiddleCenter);
             _overMenuLabel.text = "KE MENU UTAMA";
-
-            _overRetryBg = MakeImage("OverRetryBg", Vector2.zero, Vector2.zero,
-                new Color(0.16f, 0.17f, 0.22f, 0.95f), Vector2.zero);
-            _overRetryLabel = MakeText("OverRetryLabel", Vector2.zero, new Vector2(OverButtonW, 26f), 18,
-                new Color(0.85f, 0.85f, 0.9f), Vector2.zero, TextAnchor.MiddleCenter);
-            _overRetryLabel.text = "ULANG RUN   (SPACE)";
 
             ShowGameOver(false);
         }
@@ -1026,7 +1059,7 @@ namespace Proto
             // segalanya — termasuk peta layar-penuh, yang juga naik ke puncak saat dibuka.
             // Diangkat hanya kalau BELUM di puncak, bukan tiap frame: memindahkan sibling tiap
             // frame memaksa kanvas membangun ulang batch-nya.
-            var last = _overRetryLabel.transform;
+            var last = _overMenuLabel.transform;
             bool onTop = last.GetSiblingIndex() == last.parent.childCount - 1;
 
             if (on && !onTop)
@@ -1036,8 +1069,6 @@ namespace Proto
                 _overInfo.transform.SetAsLastSibling();
                 _overMenuBg.transform.SetAsLastSibling();
                 _overMenuLabel.transform.SetAsLastSibling();
-                _overRetryBg.transform.SetAsLastSibling();
-                _overRetryLabel.transform.SetAsLastSibling();
             }
 
             _overVeil.enabled = on;
@@ -1045,8 +1076,6 @@ namespace Proto
             _overInfo.enabled = on;
             _overMenuBg.enabled = on;
             _overMenuLabel.enabled = on;
-            _overRetryBg.enabled = on;
-            _overRetryLabel.enabled = on;
         }
 
         /// <summary>Menempatkan kotak &amp; label tombolnya. Tiap frame — layar bisa diubah ukurannya.</summary>
@@ -1054,6 +1083,7 @@ namespace Proto
         {
             if (Player.Alive)
             {
+                _overFade = 0f;
                 ShowGameOver(false);
                 return;
             }
@@ -1067,24 +1097,103 @@ namespace Proto
             _gambleOpen = false;
 
             ShowGameOver(true);
+
+            // Memerah dalam ~0,7 detik, bukan menjeglek. Unscaled: kematian boleh saja
+            // terjadi saat timescale sedang diperlambat lewat Ruang Uji.
+            _overFade = Mathf.MoveTowards(_overFade, 1f, Time.unscaledDeltaTime * 1.4f);
+            SetAlpha(_overVeil, 0.94f * _overFade);
+            SetAlpha(_overTitle, _overFade);
+            SetAlpha(_overInfo, _overFade);
+            SetAlpha(_overMenuLabel, _overFade);
+
             _overInfo.text = "run berakhir di wave " + Enemies.Wave + "   -   " + _gold + " koin";
 
             var menu = GameOverMenuRect();
             Seat(_overMenuBg.rectTransform, menu);
             Seat(_overMenuLabel.rectTransform, menu);
 
-            var retry = GameOverRetryRect();
-            Seat(_overRetryBg.rectTransform, retry);
-            Seat(_overRetryLabel.rectTransform, retry);
-
             // Menyorot tombolnya: satu-satunya umpan balik yang tersisa di layar ini.
             var mouse = ProtoInput.MousePosition;
             _overMenuBg.color = menu.Contains(mouse)
-                ? new Color(0.72f, 0.24f, 0.2f, 0.98f)
-                : new Color(0.42f, 0.16f, 0.15f, 0.95f);
-            _overRetryBg.color = retry.Contains(mouse)
-                ? new Color(0.28f, 0.3f, 0.38f, 0.98f)
-                : new Color(0.16f, 0.17f, 0.22f, 0.95f);
+                ? new Color(0.32f, 0.09f, 0.08f, 0.98f * _overFade)
+                : new Color(0.14f, 0.04f, 0.05f, 0.96f * _overFade);
+        }
+
+        static void SetAlpha(UnityEngine.UI.Graphic g, float a)
+        {
+            var c = g.color;
+            c.a = a;
+            g.color = c;
+        }
+
+        /// <summary>
+        /// Pinggiran layar memerah TIPIS saat damage benar-benar menembus ke HP — dan cuma
+        /// pinggirannya: tengah layar milik pertarungan, bukan milik umpan balik. Kontak
+        /// musuh menguras per frame, jadi selama masih ditempel vignette-nya bertahan, dan
+        /// baru memudar begitu pemain lepas — itu bukan bug, itu informasinya.
+        /// </summary>
+        void BuildHurtVeil()
+        {
+            _hurtVeil = MakeImage("HurtVeil", Vector2.zero, Vector2.zero, Color.white, Vector2.zero);
+            _hurtVeil.sprite = VignetteSprite();
+            _hurtVeil.rectTransform.anchorMin = Vector2.zero;
+            _hurtVeil.rectTransform.anchorMax = Vector2.one;
+            _hurtVeil.rectTransform.offsetMin = Vector2.zero;
+            _hurtVeil.rectTransform.offsetMax = Vector2.zero;
+            _hurtVeil.color = new Color(0.72f, 0.05f, 0.05f, 0f);
+            _hurtVeil.enabled = false;
+        }
+
+        void DrawHurtVeil()
+        {
+            if (_hurtVeil == null) return;
+
+            // Mati = layar kematian yang memerah penuh; vignette tipis di bawahnya cuma noise.
+            if (!Player.Alive)
+            {
+                _hurtVeil.enabled = false;
+                return;
+            }
+
+            _hurtGlow = Mathf.MoveTowards(_hurtGlow, 0f, Time.deltaTime * 2.4f);
+
+            float a = 0.34f * _hurtGlow;  // puncaknya pun tetap tipis — permintaannya "tipis aja"
+            _hurtVeil.enabled = a > 0.005f;
+            if (!_hurtVeil.enabled) return;
+
+            var c = _hurtVeil.color;
+            c.a = a;
+            _hurtVeil.color = c;
+        }
+
+        /// <summary>
+        /// Gradasi radial — bening di tengah, pekat di tepi. Digenerate sekali, bukan aset:
+        /// 128 piksel bilinear yang direntangkan sepenuh layar sudah mulus untuk gradasi.
+        /// </summary>
+        static Sprite VignetteSprite()
+        {
+            const int size = 128;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+            };
+
+            float half = (size - 1) * 0.5f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float nx = (x - half) / half;
+                    float ny = (y - half) / half;
+                    float d = Mathf.Sqrt(nx * nx + ny * ny);
+                    float a = Mathf.InverseLerp(0.62f, 1.05f, d);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
+                }
+            }
+            tex.Apply(false, true);
+
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
         }
 
         static void Seat(RectTransform rect, Rect box)
@@ -1166,6 +1275,7 @@ namespace Proto
                 Color.white, Vector2.zero, TextAnchor.LowerCenter);
             _rerollLabel.enabled = false;
 
+            BuildHurtVeil();
             BuildGameOver();
 
             // Piece TERCECER naik ke paling depan, sesudah semua panel dibangun.
@@ -2311,7 +2421,6 @@ namespace Proto
 
                 var dead = ProtoInput.MousePosition;
                 if (GameOverMenuRect().Contains(dead)) LoadScene(MainMenuSceneName);
-                else if (GameOverRetryRect().Contains(dead)) LoadScene(GameSceneName);
 
                 return;
             }
@@ -4344,6 +4453,8 @@ namespace Proto
             DrawRunPanels(Time.deltaTime);
             UpdateTooltip();
 
+            DrawHurtVeil();
+
             // Paling akhir: kerudungnya harus menutupi SEMUA yang digambar di atas, termasuk
             // kartu hover dan panel yang kebetulan masih terbuka saat pemain mati.
             DrawGameOver();
@@ -4363,11 +4474,19 @@ namespace Proto
                     var baseRune = Book.BaseAt(cell);
                     _baseCells[i].color = baseRune != null ? Tint(baseRune) : emptyColor;
 
+                    // Ornamennya sekarang dibawa TILE yang digambar di atas petak ini — lihat
+                    // DrawRuneTiles. Petaknya sendiri kembali jadi kotak warna polos: dua
+                    // ornamen bertumpuk cuma saling mengaburkan, dan yang di bawah tidak
+                    // pernah terlihat.
+                    _baseCells[i].sprite = null;
+
                     var skill = Book.SkillAt(cell);
                     _skillCells[i].enabled = skill != null;
                     if (skill != null) _skillCells[i].color = Tint(skill);
                 }
             }
+
+            DrawRuneTiles();
 
             UpdateHeldText();
 
@@ -4402,6 +4521,87 @@ namespace Proto
             return inst.Locked ? Color.Lerp(inst.Def.Color, Color.white, 0.55f) : inst.Def.Color;
         }
 
+        /// <summary>
+        /// Tile rune di atas petak papan: <b>SATU tile utuh per PETAK yang diduduki</b>, disusun
+        /// mengikuti bentuk piece-nya. Rune salib jadi lima tile berbentuk salib, rune tiga petak
+        /// jadi tiga tile berjajar.
+        ///
+        /// Yang dipakai sebelumnya adalah satu glyph besar dibentangkan di kotak pembatas
+        /// footprint-nya, dan itu berbohong soal bentuk: salib dan blok 3x3 punya kotak pembatas
+        /// yang sama persis, jadi dua bentuk yang paling berbeda di seluruh permainan tampil
+        /// identik. Petak yang digambar satu per satu tidak pernah bisa berbohong.
+        ///
+        /// Hanya piece yang ikonnya dari sheet rune (nama "Rune_S...") yang ditile-kan; kotak
+        /// warna tetap bahasa dasar papan, tile cuma identitas di atasnya.
+        /// </summary>
+        void DrawRuneTiles()
+        {
+            DrawTileLayer(ref _boardTiles, _baseCells, Grimoire.Width, Grimoire.Height,
+                c => Book.BaseAt(c));
+        }
+
+        void DrawBagTiles()
+        {
+            DrawTileLayer(ref _bagTiles, _bagCells, Backpack.Width, Backpack.Height,
+                c => _bag.At(c));
+        }
+
+        /// <summary>
+        /// Lapisan tile generik untuk grid petak mana pun (papan &amp; tas). Letak tiap tile
+        /// diambil dari petak yang bersangkutan, bukan dihitung ulang dari rumus: begitu papan
+        /// digeser atau petaknya diperbesar lewat prefab, tile-nya ikut tanpa diberi tahu.
+        /// </summary>
+        void DrawTileLayer(ref RuneTilePool pool, Image[] cells, int width, int height,
+            System.Func<Vector2Int, RuneInstance> at)
+        {
+            if (cells == null || cells.Length == 0 || cells[0] == null) return;
+
+            if (pool == null)
+            {
+                pool = new RuneTilePool(cells[0].transform.parent,
+                    cells[cells.Length - 1].transform);
+            }
+
+            pool.Begin();
+            _tiledPieces.Clear();
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    var inst = at(new Vector2Int(x, y));
+                    if (inst == null || !RuneTiles.IsRuneGlyph(inst.Def.Icon)) continue;
+
+                    // Sekali per PIECE, bukan sekali per petak: piece yang sama akan ditemui lagi
+                    // begitu pemindaian sampai ke petaknya yang berikutnya, dan menggambarnya
+                    // ulang berarti satu piece 9 petak menghabiskan 81 tile.
+                    if (!_tiledPieces.Add(inst)) continue;
+
+                    // Urutan petak diambil dari piece-nya sendiri, bukan dari urutan pemindaian:
+                    // glyph petak ke-k ditentukan oleh k, jadi urutan yang salah menukar gambar
+                    // antar petak tiap kali piece-nya diputar.
+                    var shape = Shapes.Rotate(inst.Def.Cells, inst.Rot);
+
+                    // Piece terkunci dibuat pudar, bukan diwarnai ulang: yang harus terbaca
+                    // adalah "evolusi melewati yang ini", dan pudar mengatakan itu tanpa
+                    // menghapus warna yang jadi identitasnya.
+                    float alpha = inst.Locked ? 0.5f : 1f;
+
+                    for (int k = 0; k < shape.Length; k++)
+                    {
+                        var c = inst.Origin + shape[k];
+                        if (c.x < 0 || c.y < 0 || c.x >= width || c.y >= height) continue;
+
+                        var tile = pool.Take();
+                        tile.Cover(cells[c.y * width + c.x].rectTransform);
+                        tile.Bind(RuneTiles.GlyphAt(inst.Def, k), inst.Def.Color, alpha);
+                    }
+                }
+            }
+
+            pool.End();
+        }
+
         void DrawBackpack()
         {
             var emptyColor = _held != null ? ShownBagCell : HiddenBagCell;
@@ -4415,6 +4615,8 @@ namespace Proto
                     _bagCells[i].color = stored != null ? stored.Def.Color : emptyColor;
                 }
             }
+
+            DrawBagTiles();
 
             if (_held == null) return;
 
@@ -4436,6 +4638,17 @@ namespace Proto
 
         void DrawLoose()
         {
+            // Disisipkan tepat sesudah blok petak tercecer, yang sendirinya sudah dinaikkan ke
+            // depan panel saat dibangun. Ditaruh paling belakang ia akan menimpa peta dan layar
+            // GAME OVER; ditaruh sebelum blok itu, barang belanjaan hilang di balik panel toko.
+            if (_looseTiles == null && _looseCells != null && _looseCells.Length > 0)
+            {
+                _looseTiles = new RuneTilePool(_canvas.transform,
+                    _looseCells[_looseCells.Length - 1].transform);
+            }
+
+            if (_looseTiles != null) _looseTiles.Begin();
+
             int cursor = 0;
 
             for (int i = 0; i < _loose.Count; i++)
@@ -4457,6 +4670,8 @@ namespace Proto
             }
 
             for (int i = cursor; i < _looseCells.Length; i++) _looseCells[i].enabled = false;
+
+            if (_looseTiles != null) _looseTiles.End();
         }
 
         /// <summary>

@@ -1,0 +1,162 @@
+﻿using UnityEngine;
+using UnityEngine.UI;
+
+namespace Proto
+{
+    /// <summary>
+    /// Satu petak rune di layar: bingkai ornamen, latar gelap, dan SATU glyph di dalamnya.
+    ///
+    /// Bagian-bagiannya boleh disambungkan di prefab, dan kalau tidak disambungkan komponen ini
+    /// mencarinya sendiri lewat nama anak. Itu bukan kemalasan: <c>RuneCell.prefab</c> sudah
+    /// ditata tangan sebelum komponen ini ada, dan memaksa tiap prefab dibuka ulang cuma untuk
+    /// menyeret dua referensi adalah cara memastikan perbaikannya tidak pernah dipakai.
+    /// </summary>
+    [AddComponentMenu("Grimoire/Rune Cell View")]
+    [RequireComponent(typeof(RectTransform))]
+    public class RuneCellView : MonoBehaviour
+    {
+        [Tooltip("Kotak warna di belakang glyph. Kosong = dicari dari anak bernama \"BG\".")]
+        [SerializeField] Image _plate;
+
+        [Tooltip("Bingkai ornamen. Kosong = anak bernama \"Frame\". Lihat ShowBorder.")]
+        [SerializeField] Image _border;
+
+        [Tooltip("Gambar rune di dalamnya. Kosong = anak bernama \"Glyph\", dibuat kalau belum ada.")]
+        [SerializeField] Image _glyph;
+
+        [Header("Tampang")]
+        [Tooltip("Sepekat apa kotak warnanya. Petak rune duduk di atas HALAMAN PERKAMEN yang " +
+                 "terang, dan kotak pekat di atasnya terbaca sebagai lubang hitam, bukan sebagai " +
+                 "petak. Yang harus menang di petak ini adalah runenya.")]
+        [Range(0f, 1f)] public float PlateAlpha = 0.38f;
+
+        [Tooltip("Bingkai ornamennya dipakai atau tidak. Mati secara bawaan: ornamen yang " +
+                 "digambar untuk petak 128 piksel jadi bubur begitu dikecilkan ke ukuran petak " +
+                 "papan, dan bubur di tepi petak cuma mengaburkan runenya.")]
+        public bool ShowBorder;
+
+        [Tooltip("Seberapa jauh glyph masuk ke dalam petak, sebagai pecahan sisinya. Kecil = " +
+                 "runenya besar dan tegas.")]
+        [Range(0f, 0.4f)] public float GlyphInset = 0.06f;
+
+        RectTransform _rect;
+        bool _ready;
+
+        void Awake() => Ensure();
+
+        void Ensure()
+        {
+            if (_ready) return;
+            _ready = true;
+
+            _rect = (RectTransform)transform;
+
+            // Petak ini sering menumpang di induk ber-GridLayoutGroup (kotak siluet codex). Tanpa
+            // ini ia ikut ditata sebagai sel tambahan: dipaksa seukuran petak layout lalu dibuang
+            // ke ujung barisan, dan letaknya yang sudah dihitung dengan benar dibuang diam-diam.
+            var ignore = GetComponent<LayoutElement>();
+            if (ignore == null) ignore = gameObject.AddComponent<LayoutElement>();
+            ignore.ignoreLayout = true;
+
+            if (_plate == null) _plate = Child("BG");
+            if (_border == null) _border = Child("Frame");
+            if (_glyph == null) _glyph = Child("Glyph");
+
+            if (_glyph == null)
+            {
+                var go = new GameObject("Glyph", typeof(RectTransform));
+                go.transform.SetParent(transform, false);
+
+                _glyph = go.AddComponent<Image>();
+                _glyph.preserveAspect = true;
+            }
+
+            // Ditambatkan ke SUDUT petak, bukan diberi jarak dalam piksel: petak yang sama
+            // digambar 15 piksel di codex dan puluhan kali lebih besar di papan, dan jarak dalam
+            // piksel yang benar di salah satunya pasti salah di yang lain.
+            var rt = _glyph.rectTransform;
+            rt.anchorMin = new Vector2(GlyphInset, GlyphInset);
+            rt.anchorMax = new Vector2(1f - GlyphInset, 1f - GlyphInset);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+
+            // Terakhir di antara saudaranya = digambar paling atas. Glyph yang tertutup kotak
+            // warnanya sendiri adalah keluhan yang sama dengan yang sedang diperbaiki.
+            _glyph.transform.SetAsLastSibling();
+
+            if (_plate != null) _plate.raycastTarget = false;
+            if (_border != null) _border.raycastTarget = false;
+            _glyph.raycastTarget = false;
+        }
+
+        Image Child(string name)
+        {
+            var found = transform.Find(name);
+            return found != null ? found.GetComponent<Image>() : null;
+        }
+
+        /// <summary>
+        /// Menempatkan petak ini persis menutupi <paramref name="cell"/>, apa pun induk keduanya.
+        ///
+        /// Lewat posisi DUNIA, bukan dengan menyalin anchor dan anchoredPosition: sel yang ditata
+        /// GridLayoutGroup baru punya anchoredPosition yang benar setelah layout dihitung, dan
+        /// membacanya sebelum itu memberi angka dari ronde sebelumnya.
+        /// </summary>
+        public void Cover(RectTransform cell)
+        {
+            if (cell == null) return;
+            Ensure();
+
+            _rect.localRotation = Quaternion.identity;
+            _rect.localScale = Vector3.one;
+            _rect.pivot = new Vector2(0.5f, 0.5f);
+
+            var parent = _rect.parent as RectTransform;
+            float px = parent != null ? Mathf.Max(0.0001f, Mathf.Abs(parent.lossyScale.x)) : 1f;
+            float py = parent != null ? Mathf.Max(0.0001f, Mathf.Abs(parent.lossyScale.y)) : 1f;
+
+            var size = cell.rect.size;
+            _rect.sizeDelta = new Vector2(
+                size.x * Mathf.Abs(cell.lossyScale.x) / px,
+                size.y * Mathf.Abs(cell.lossyScale.y) / py);
+
+            // Ukuran dulu, letak belakangan: mengubah sizeDelta menahan anchoredPosition, jadi
+            // menyetelnya sesudah posisi akan menggeser petaknya lagi.
+            _rect.position = cell.TransformPoint(cell.rect.center);
+        }
+
+        /// <summary>
+        /// Isi petak ini: gambar runenya, warna petaknya, dan sepekat apa keseluruhannya.
+        ///
+        /// Yang harus menang di sini adalah RUNENYA. Warna cuma memberi tahu piece mana yang
+        /// menempati petak itu, jadi ia dibiarkan tembus pandang; runenya digambar penuh, tanpa
+        /// diwarnai ulang, supaya glow yang sudah ada di gambarnya tetap glow.
+        /// </summary>
+        public void Bind(Sprite glyph, Color tint, float alpha)
+        {
+            Ensure();
+
+            if (_plate != null)
+            {
+                _plate.enabled = true;
+                _plate.color = new Color(tint.r, tint.g, tint.b, PlateAlpha * alpha);
+            }
+
+            if (_border != null)
+            {
+                _border.enabled = ShowBorder;
+                if (ShowBorder) _border.color = new Color(tint.r, tint.g, tint.b, alpha);
+            }
+
+            if (_glyph != null)
+            {
+                _glyph.enabled = glyph != null;
+                _glyph.sprite = glyph;
+
+                // Putih penuh, SELALU. Mengalikannya dengan warna piece akan meredupkan gambar
+                // yang memang sudah digambar menyala, dan itu persis kebalikan dari gunanya.
+                _glyph.color = new Color(1f, 1f, 1f, alpha);
+            }
+        }
+    }
+}
