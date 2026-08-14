@@ -3046,3 +3046,181 @@ transisi yang sah). Klip diverifikasi in-place; driver polos; tidak ada penyangg
 > Jebakan probe baru: memaksa `anim.SetFloat` dari `EditorApplication.update` KALAH oleh
 > `PlayerAvatar.Update` yang menulis param yang sama tiap frame — hasil "Run tidak pernah
 > main" itu artefak rebutan penulis, bukan bug. Uji lewat gerak sungguhan (wave + motor).
+
+## 42. Paket feedback: FootSmoke kolam, hit sparks, vignette, game over merah, sigil buku (2026-08-14)
+
+Lima permintaan pemilik project dalam satu napas; semua terpasang, compile bersih,
+mekanika terverifikasi angka di play mode. **Penilaian mata belum** — play mode sesi ini
+berkali-kali tumbang gara-gara bug package MCP (lihat jebakan di bawah).
+
+**FootSmoke (spec final, dikonfirmasi):** diam = KOLAM menggenang (bukan kabut mengalir);
+jejak saat gerak 2–3 detik. Implementasi:
+- Bug `FootSmoke.cs`: base rate 0 diclamp jadi 1 → sub-emitter Death ("Bubble Burst
+  Foam/Stretch") bocor jadi keran kedua. Sekarang base 0 = di-skip (sub-emitter memang
+  bukan pengepul). Ini salah satu biang lima percobaan gagal sebelumnya.
+- Droplets (PS induk): life 0,5–0,8 (mati pas mendarat → sub-emitter meletus di titik
+  jatuh), size 0,10–0,22, grav 0,9, cone 30°.
+- Child baru `Puddle`: HORIZONTAL billboard (blob rebah di tanah), life 2,2–2,8 = jejak,
+  world space, shape Circle r=0,2 dirotasi (90,0,0), rot-over-life ±0,6 rad/s (bergolak),
+  size curve besar→kering, mat `cfxr bubble ab` yang sama. Emisi setara droplets, ikut
+  modulasi kecepatan FootSmoke.cs.
+
+**Hit VFX per skill** (`View/HitSparks.cs` + event baru `EnemyManager.OnEnemyHit`):
+- Event SENGAJA terpisah dari `OnEnemyDamaged` — yang lama ikut menyala per tick DoT;
+  percikan per tick burn di 500 musuh = kabut. Invoke hanya di jalur hit langsung
+  (`Damage()`, sebelah OnEnemyDamaged), payload (pos, TintFor(sourceName), crit).
+- SATU ParticleSystem sedunia, `Emit(EmitParams)`, budget 48 hit/frame, 3 partikel/hit
+  (crit 7, 1,5× lebih besar, ditarik ke putih). Material Sprites/Default + tekstur titik
+  digenerate. Nol GameObject per hit. Di-wire di GrimoireUI (selalu, TIDAK ikut saklar
+  DamageText) dan PlaygroundBootstrap.
+
+**Vignette merah tipis** (`GrimoireUI.BuildHurtVeil/DrawHurtVeil`): sprite radial
+digenerate (bening tengah, pekat tepi), `Player.OnHurt → _hurtGlow=1`, decay 2,4/dtk,
+alpha puncak 0,34. Kontak musuh menguras per frame → vignette bertahan selama ditempel,
+pudar begitu lepas. Saat mati disembunyikan (layar kematian yang ambil alih).
+
+**Game over:** veil MERAH (0,34, 0,02, 0,02, a 0,94) fade-in 0,7 dtk unscaled; judul 92px;
+tombol tinggal SATU (KE MENU UTAMA). Tombol ULANG RUN dibuang — labelnya "(SPACE)" bohong
+sejak lahir, tidak pernah ada handler SPACE. `GameOverRetryRect` ikut dicabut dari
+GrimoireLayout.
+
+**Buku grimoire player** (prefab `PlayerAvatar_Reaper`):
+- Lingkaran partikel lama `L1b_MagicCircleInner` DIMATIKAN (renderer+emisi) — billboard
+  Hovl hadapnya tak terkendali (jebakan §sesi 2026-08-12). Ganti: child `BookSigil` =
+  QUAD polos + mat `MagicCircle2` + `View/SlowSpin.cs` (40°/dtk, sumbu normal) — orientasi
+  100% milik transform.
+- Light buku: dulu putih 0,25 DISABLED (tak pernah terlihat) → ungu (0,62, 0,45, 1)
+  intensitas 1,3 range 3, NYALA. Sparks/DarkSparks putih → violet, rate 30 → 12.
+
+**JEBAKAN BARU (mahal, 3 kali tumbang):** tool screenshot MCP (`manage_camera`) saat play
+mode memicu "PlayerLoop internal function has been called recursively" dari
+`ScreenshotUtility.cs` package MCP → play mode MATI. `ScreenCapture.CaptureScreenshot`
+in-game pun percuma kalau editor di background (Game View tidak repaint → PNG hitam).
+Verifikasi visual play mode = tangan pemilik project, atau fokuskan editor dulu.
+
+**Adendum §42 (masih 2026-08-14):** feedback mata user ronde 1: FootSmoke tak terlihat,
+sigil buku solid, percikan damage kegedean. Respons:
+- FootSmoke pindah ke **RENDER MODE MESH** (permintaan eksplisit user: "bentuknya mesh
+  jangan png"): drops = bola 3D 0,18–0,32; puddle = bola GEPENG (size3D X/Z 0,55–0,95,
+  Y 0,10–0,16) setengah terbenam di y −0,95 = kubah genangan; letusan = bola kecil.
+  Material baru `Art/VFX/M_InkBlob.mat` — URP Particles/Lit **OPAQUE** + instancing,
+  warna dari startColor (ungu-tinta 0,13/0,09/0,20). Opaque = tidak bisa invisible.
+  colorOverLifetime puddle dimatikan (alpha tak berlaku di opaque); rotasi bergolak
+  pindah ke sumbu Y. `Bubble Burst Stretch` nonaktif di disk — TIDAK disentuh.
+- Sigil buku: mat Hovl tidak transparan di mesh biasa → `Art/VFX/M_BookSigil.mat`
+  (Sprites/Default + tekstur MagicCircle2, tint ungu, y 0,14, scale 0,5).
+- HitSparks: size 0,17→0,11 (crit 0,19), alpha 0,72, umur 0,18–0,34.
+
+**Adendum §42 ronde 3:** (a) Buku tidak pernah dianimasikan — dua klip Reaper.fbx
+(Idle_Float, Walk_Fly) hanya menganimasikan tulang lengan, tidak ada kurva SM_Grimoire.
+Solusi: `View/HoverBob.cs` (sinus bob + sway, LateUpdate) di SM_Grimoire. (b) "VFX di
+buku solid semua" — Sparks/DarkSparks/Sides pakai material Hovl bershader
+`Particles/Standard Unlit` = shader BUILT-IN, rusak di URP. Diganti `M_SoftDot.mat`
+(Sprites/Default + `T_SoftDot.asset` titik radial digenerate); Sides ikut pindah ke
+billboard kecil. AWAS: material Hovl lain di pack ini sama-sama built-in — kalau ada
+VFX Hovl lain terlihat solid/magenta, ini biangnya. (c) Genangan kaki: user minta
+smoke PADAT bukan gepeng — bola bulat 0,35–0,6 duduk di tanah (y −0,88), porsi emisi
+genangan = 1/2 tetesan (basis 2,5 vs 5), IdleRate 5 / MoveRate 22.
+
+**Adendum §42 ronde 4 (buku, akar masalah ketemu):** rotasi lokal SM_Grimoire =
+(315, 224, 344) — miring 3 sumbu. SEMUA VFX yang jadi anaknya ikut miring; dari kamera
+top-down jadi edge-on (garis/hilang). Plus tekstur Hovl didesain ADDITIVE (latar tidak
+transparan) → di shader alpha-blend tampil kotak solid. Solusi:
+- Shader baru `Art/VFX/Shaders/AdditiveSigil.shader` ("Grimoire/AdditiveSigil", URP
+  unlit Blend One One) — latar hitam otomatis hilang, sisanya menyala. Alpha _Color =
+  intensitas, bukan transparansi.
+- `BookSigil` DILEPAS dari buku → anak `Model`, flat dunia (yaw player tidak
+  memiringkan quad flat), melayang +0,32 di atas buku, scale 0,7, tetap SlowSpin.
+- L0c_Glow direbahkan (masih anak buku — sisa miring HoverBob ditoleransi), sparks
+  0,12–0,22 ungu terang, light buku i=2,2 r=3,5.
+- Error console "Sprite Shaders Ultimate/2D Lit URP SSU: redefinition of
+  FragmentOutput" = bentrok package SSU vs versi URP, SUDAH ADA sebelumnya, bukan
+  dari sesi ini. Varian 2D Lit SSU tidak dipakai project (yang dipakai teknik VAT/SSU
+  non-2D), aman diabaikan sampai SSU diupdate.
+- Kaki DISETUJUI user ronde ini ("yg kaki udah ok") setelah: bola bulat (bukan gepeng),
+  idle 5 / move 22, porsi genangan = 1/2 tetesan.
+
+**Adendum §42 ronde 5:** permintaan tambahan user — bola yang menyentuh tanah
+meninggalkan JEJAK cair. Child baru `FootSmoke/Splat` = sub-emitter Death ke-3 pada
+tetesan (InheritNothing, burst 1/mati): noda horizontal-billboard `M_SoftDot` warna
+tinta, MENYEBAR cepat di 22% awal umurnya (kunci kesan cair), menahan, lalu kering
+menyusut; umur 1,8–2,4 dtk; world space = menetap jadi jejak. Basis emisi 0 → aman
+dari modulasi FootSmoke.cs.
+
+**Adendum §42 ronde 6:** (a) Kotak krem "solid" di atas player ternyata DUA lapis:
+buku memakai `M_Grimoire` (URP Lit auto-import FBX, TANPA tekstur) + sigil yang gagal
+sample tekstur (quad additive menyala polos). Fix: buku -> `M_MenuGrimoire` (material
+menu bertekstur yang sudah disetujui); sigil berhenti pakai shader custom — tekstur
+dibake `Art/VFX/T_SigilCircle.png` (luminance MagicCircle2 -> ALPHA beneran) + balik
+ke Sprites/Default. `AdditiveSigil.shader` masih ada tapi tidak dipakai. (b) Jejak
+kurang terlihat saat lari: Splat 0,42–0,68, alpha 0,95, umur 2,0–2,8, MoveRate 30.
+(c) RUNE: `Art/UI/runeText.png` (1536x1024, 3 baris: 6 putih ★1 / 4 hijau ★2 /
+2 biru ★3 + 3 magenta ★4 + 1 emas ★5 kanan-bawah) dipotong jadi 16 PNG di
+`Art/UI/Runes/` (PPU 256), 16 prefab SpriteRenderer + `RuneGrid.prefab` (3 baris,
+urutan rarity dipertahankan) di `Assets/Prefabs/Runes/`. Latar tile masih opaque
+bawaan sheet — user bilang akan buatkan asset grid sendiri kalau jelek.
+
+**Adendum §42 ronde 7 — BIANG SEBENARNYA kotak krem (ditemukan USER):**
+`PlayerBurnout.Init` MENGGANTI material SEMUA MeshRenderer anak player sejak spawn
+(r.material = BurnAway) — sigil & glow buku lahir sebagai kotak krem polos TIAP PLAY,
+sehingga tiga ronde perbaikan prefab tampak tak berefek (di disk benar, di runtime
+dirampas). Fix: saringan di Init — SkinnedMeshRenderer selalu ikut; MeshRenderer
+dilewati kalau shader-nya keluarga sprite/partikel/unlit (Sprites, Particles,
+MenuGlow, Additive, AoeRing, Unlit). Badan + buku (URP Lit) tetap terbakar saat mati.
+PELAJARAN: kalau perubahan prefab visual "tidak ngefek" di play mode, curigai kode
+yang menulis renderer di runtime SEBELUM menyalahkan aset.
+
+**Rune dipasang sebagai IKON piece (keputusan user):** 11 piece rune di
+GameData/Pieces dipetakan ke glyph per rarity — ★2: arus/asah/benteng/siphon →
+S2_1..4; ★3: badai/nadir → S3_1..2; ★4: gema/mercu/sungai → S4_1..3; ★5: inti &
+scrawl KEDUANYA → S5_1 (glyph emas cuma satu). 6 glyph putih ★1 belum terpakai
+(tidak ada piece rune ★1). Latar tile opaque bawaan sheet — user menilai di papan.
+
+**Adendum §42 ronde 8:** (a) Glyph rune tampil di PAPAN: `GrimoireUI.DrawRuneGlyphs()`
+(dipanggil dari DrawGrid) — SATU Image per piece rune yang duduk, di pusat bounding
+box sel-selnya (pakai posisi DUNIA sel, jadi bebas urusan anchor/pivot), pool 16,
+hanya piece berikon "Rune_S*"; Locked = alpha 0,55. (b) Buku: L1b_MagicCircleInner
+DIAKTIFKAN lagi (light+sparks selama ini mati karena parent nonaktif), light i=3 r=4,
+sparks 20/14 per dtk, `BookSigil2` counter-rotate (-22°/dtk, `M_BookSigil2.mat` ungu
+dalam), HoverBob 0,18/2,2 dtk/sway 7° (0,06 tak terbaca di zoom gameplay).
+(c) 11 prefab `RunePiece_<nama>.prefab` (SpriteRenderer + glyph terpasang) menemani
+16 prefab glyph mentah + RuneGrid di Assets/Prefabs/Runes/.
+
+**Adendum §42 ronde 9 — HIT VFX PER SKILL (prefab pack, bukan primitif):**
+- `PieceDefinition.HitVfx` + `HitVfxScale` (crit ×1,35 runtime). `EnemyManager.OnEnemyHit`
+  kini membawa sourceName. Spawner: `PlayerCaster.SpawnHitVfx` (langganan di Init) —
+  lookup DisplayName→def (pola TintFor), `_vfx.Burst(def.HitVfx, ...)`, anggaran 10
+  semburan/frame + jatah pool 64 tetap berlaku. HitSparks.cs (titik generated) DIHAPUS.
+- Pass baru `Tools/Grimoire/Assign Skill HIT VFX` (VfxPass.RunHit): wrapper
+  `HitVfx_<nama>` per skill di folder skill yang sama, kontrak sama (wrapper yang ada
+  tidak dibangun ulang — tukar isi lewat prefab). Elemen disimpulkan dari path prefab
+  cast di Map; kandidat dicek keberadaannya; varian dirotasi per keluarga.
+  HASIL: 67 wrapper dibangun + dipasang, 25 dilewati (heal/buff/pasif), 0 masalah.
+- BuildWrapper kini menamai root dari nama file wrapper (bukan hardcode "Vfx_").
+
+**Adendum §42 ronde 10 — RUNE tuntas di UI (permintaan user diklarifikasi):**
+- Potong ulang glyph pakai DETEKSI posisi (profil alpha per kolom) — potongan grid rata
+  sempat menjepit glyph baris 2. 16 PNG ditimpa di tempat, semua referensi ikut.
+- Prefab paketan UI per rune: `Assets/Prefabs/UI/Runes/UIRune_<nama>.prefab` (11 biji) —
+  root RectTransform + "Grid" (Image per sel BENTUK piece, warna piece) + "Glyph"
+  (Image rune) — user akan merombak isinya sendiri. Inventaris: 11 rune, 9 bentuk
+  (Line2/Line3/Big3/Square/Ess/Dot/Slab/Wedge/Cross).
+- In-game: `GrimoireUI.DrawGlyphLayer` generik — papan (BaseAt) DAN tas (_bag.At).
+  Codex: `CodexEntry.DrawGlyph` — glyph di atas siluet bentuk, hanya untuk yang SUDAH
+  ditemukan (yang belum tetap siluet buta, kontrak codex dijaga).
+
+**Adendum §42 ronde 11 — RUNE FINAL (bentuk + bingkai + glyph per kotak):**
+KOREKSI PENTING: rune = piece dengan `IsRune` — 16 biji (6★1/4★2/2★3/3★4/1★5),
+BUKAN 11; filter nama file "Piece_rune*" kelewat 5 rune bernama Inggris (chronorune,
+emberrune, frostrune, plainrune, sparkrune, voidrune). Distribusi bintang PAS 1:1
+dengan 16 glyph runeText.png — ikon dipasang tanpa duplikat.
+Bentuk final (permintaan user, mockup tile berbingkai):
+- `Assets/Prefabs/UI/Runes/RuneCell.prefab` = blok satu sel (BG gelap + bingkai
+  `gridgrimoireUI` di-tint rarity). Restyle di sini = semua ikut.
+- 16 × `RuneTile_<nama>.prefab` = BERBENTUK sesuai shape piece; TIAP KOTAK berisi
+  glyph rune-nya di tengah (permintaan eksplisit). `RuneTileGrid.prefab` 3 kolom.
+- In-game: sel papan yang diduduki rune memakai sprite bingkai (Resources/
+  RuneCellFrame.png — salinan gridgrimoireUI); codex: sel bentuk rune yang SUDAH
+  ditemukan ikut berbingkai. Glyph layer papan/tas/codex tetap jalan.
+- "Problem detected while importing" saat batch = noise penghapusan; verifikasi
+  akhir: 16 prefab utuh, sel=glyph match, grid 74 sel.

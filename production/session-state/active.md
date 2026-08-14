@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: VFX per-skill bisa ditukar tangan + avatar LizMage hidup
-Task: 74 wrapper VFX, ring AOE baru, player beranimasi+cloth; menunggu penilaian mata
+Feature: Paket feedback tempur (FootSmoke, hit sparks, vignette, game over, buku)
+Task: 5 item terpasang & terverifikasi angka; menunggu penilaian mata pemilik project
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -2594,6 +2594,9 @@ seluruh buku sampai albedonya tidak terbaca sama sekali.
 
 ## YANG MASIH SALAH (prioritas 1)
 
+> **UPDATE 2026-08-14: DIKERJAKAN ULANG dengan spec yang akhirnya dijawab user —
+> lihat bagian "Paket feedback 2026-08-14" di bawah. Menunggu mata.**
+
 **Efek partikel di kaki pemain (Reaper) — belum benar setelah 5 percobaan.**
 
 Lokasi: `Assets/Prefabs/Characters/PlayerAvatar_Reaper.prefab` -> anak `FootSmoke`
@@ -2663,3 +2666,89 @@ top-down + isinya · Ruang Uji (`Tools/Grimoire/Ruang Uji`) · model + animasi R
 `Tools/Grimoire/Ruang Uji` — jendela editor: lompat ke wave mana pun, isi papan
 bintang 5, munculkan boss, isi HP/mana, ubah kecepatan. Semuanya runtime saja,
 tidak menyentuh satu pun aset (jebakan #22).
+
+# ============================================================
+# PAKET FEEDBACK 2026-08-14 (Fable) — 5 item, semua terpasang
+# ============================================================
+
+Detail teknis lengkap: **docs/AI-HANDOFF.md §42**. Ringkas:
+
+1. **FootSmoke Reaper** — spec akhirnya dijawab user: diam = KOLAM menggenang,
+   jejak gerak 2–3 dtk. Bug FootSmoke.cs (sub-emitter bocor karena clamp base 0→1)
+   dibunuh; child `Puddle` baru (horizontal billboard, life 2,2–2,8, world space);
+   droplets mati pas mendarat → letusan foam di titik jatuh.
+2. **Hit sparks per skill** — `View/HitSparks.cs` + event `EnemyManager.OnEnemyHit`
+   (hit LANGSUNG saja, DoT sengaja tidak; warna = TintFor skill; crit lebih besar).
+   Satu PS sedunia, Emit(), budget 48 hit/frame — aman 500 musuh.
+3. **Vignette merah tipis** saat damage tembus (`_hurtVeil`, alpha puncak 0,34,
+   decay 2,4/dtk). Nempel musuh = bertahan; lepas = pudar.
+4. **Game over** — layar MERAH penuh fade 0,7 dtk, judul 92px, tombol tinggal SATU
+   (KE MENU UTAMA). Retry + "(SPACE)" bohong dibuang.
+5. **Buku grimoire** — sigil `BookSigil` quad `MagicCircle2` muter 40°/dtk
+   (`SlowSpin.cs`), light ungu NYALA (dulu disabled), sparks violet.
+
+**Terverifikasi angka di play mode:** puddle 13 blob saat idle + foam meletus 22;
+_hurtGlow 1→0 decay; veil mati = (0.34,0.02,0.02, a 0.94), judul+1 tombol, retry nihil.
+**BELUM dinilai mata** — punch list buat user:
+- kolam & jejak FootSmoke (bentuk, tebal, kecepatan kering)
+- warna percikan hit per skill + rasa "heboh"-nya
+- tipisnya vignette pas ketempel musuh
+- layar merah + text GAME OVER
+- sigil buku: ukuran/posisi/kecepatan muter, terang light ungu
+
+**JEBAKAN BARU:** tool screenshot MCP saat play = "PlayerLoop called recursively"
+→ play mode TUMBANG (3× sesi ini). Jangan dipakai selama play; verifikasi visual =
+mata user atau fokuskan editor + ScreenCapture in-game.
+
+**Catatan file:** Assets/Screenshots/ ketambahan 4 PNG percobaan capture (boleh
+dihapus). Wave/HP yang diutak-atik cuma runtime, nol aset tersentuh.
+
+**Ronde 2 (feedback mata user):** FootSmoke pindah ke MESH render mode — drops bola 3D,
+puddle bola gepeng setengah terbenam (mat `M_InkBlob.mat`, URP Particles/Lit OPAQUE);
+sigil buku ganti `M_BookSigil.mat` (Sprites/Default + MagicCircle2, ungu transparan);
+percikan damage dikecilkan + alpha 0,72. Detail: AI-HANDOFF §42 adendum. Menunggu mata ronde 2.
+
+**Ronde 3 (2026-08-14, request user):** MenuRuneDrift dapat dua fitur baru:
+1. `BendVariety` (default 0.6) — tiap aliran Inflow narik bentuk lengkung sendiri
+   (besar belokan ±0.7×variety, titik kendali 0.3–0.75 sepanjang jalur), deterministic
+   dari seed tetap. Arah belok tetap selang-seling via `AlternateBend`.
+2. Bokeh (`BokehStrength` 0.85 / `BokehStart` 0.45 / `BokehGrow` 1.4) — rune tajam
+   crossfade ke kembaran buram menjelang buku. Buram = downscale blit chain
+   (1/2→1/4→1/8→naik 1/4) sekali per sprite, cache statik `BlurCache`, child Image
+   "Blur" anchor-stretch di tiap rune. Alpha blur di-boost 1.6× kompensasi downscale.
+   Compile bersih 0 error. BELUM dinilai mata — cek: variasi lengkung antar aliran,
+   timing mulai blur, lebar piringan blur, total alpha pas crossfade.
+
+**Error console "Unknown error loading Library/BuildProfileContext.asset +
+EditorSnapSettings.asset" (15:16):** sisa crash editor sebelumnya; Unity nulis ulang
+keduanya 15:26, isi sekarang YAML valid. Tidak perlu tindakan. Kalau muncul lagi di
+launch berikutnya: hapus dua file itu saat Unity TERTUTUP (regenerable).
+
+**Ronde 4 (2026-08-14, 8 request user sekaligus):**
+1. REAKSI: floater reaksi skala 2.2 (font 44) + Outline hitam + pop lahir 0.18s + umur 1.6s
+   (GrimoireUI); VFX reaksi dobel flash (jedar + gema 0.55s) + burst 1.35x (PlayerCaster).
+2. SPEED 2x: GameBalance BaseMoveSpeed 2.8-5.6; frostwarden 4.8, stormcaller 6.8.
+3. MAP: KindScale Boss 2.05-4.0; MapScrollMax konstanta 440-510 (kepala boss); marker
+   pemain MERAH (0.85,0.12,0.08) pakai iconPlayer, MapYouInk merah.
+4. ICON MAP (request susulan): UiTheme dapat 7 slot sprite MapIcon*; dipilih iconEnemy/
+   iconElit/iconShop/iconEvent/iconSlot/iconBOSS/iconPlayer (varian-2 TIDAK dipakai);
+   node fallback ke huruf kalau slot kosong. Icon = silhouette putih di-tint tinta hitam.
+5. AWAN TANAH: softness shader 0.18-0.3 (Atmosphere); forest a 0.5-0.28 size 16-42;
+   sore a 1.0-0.3 (!) size 16-42 coverage 0.34. Malam tidak disentuh (sudah tipis).
+6. GOD RAY: Prefabs/World/GodRay.prefab TIDAK direferensikan biome mana pun - itu sebab
+   tak pernah muncul. Ditambah entry AmbientVfx di 4 biome forest: siang emas a0.55 x4,
+   sore oranye x4, night biru a0.4 x3, midnight biru a0.3 x3; HideInRain, jarak 8-26.
+7. MALAM: AKAR GELAP = m_AdditionalLightsPerObjectLimit URP cuma 4 (PC+Mobile) - 8 lampu
+   arena rebutan, light player kalah di lantai. Limit dinaikkan ke 8; night lamp 8-6
+   intensitas 5, PlayerLight 5-7.5 range 17; midnight lamp 5, PlayerLight 8 range 17;
+   ambient+sun dinaikkan halus di keduanya (night sky 0.21,0.29,0.52; midnight 0.12,0.16,0.28).
+Compile bersih 0 error. BELUM dinilai mata - punch list: ukuran text reaksi, heboh VFX
+reaksi, rasa speed 2x (musuh kekejar?), boss node 4x kegedean/pas, icon map kebaca di
+ukuran kecil, marker merah, god ray kelihatan siang+malam, malam masih hambar/nggak,
+awan tanah masih ganggu/nggak.
+
+**Ronde 4b (feedback mata - screenshot map):** marker player ganti iconPlayer2 (guid
+33c72215...) ukuran 48; tulisan KAMU + field _mapYou DIBUANG total; holder kotak+cincin
+node dihapus saat icon ada - icon full-size diwarnai KindColor digelapkan 30% ke tinta
+(palet asli terlalu terang buat perkamen); ukuran node naik 46/38/32 - 66/56/46 (boss
+tetap 4x). Fallback tanpa icon tetap kotak+huruf. Compile 0 error. Menunggu mata.
