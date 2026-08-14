@@ -98,6 +98,17 @@ map.legend.view=W wave    E elite    T toko    ? kejadian    S slot    B boss\nt
 map.title.choose=ACT {0}  -  PILIH TUJUANMU
 map.title.view=PETA RUN  -  ACT {0}
 
+# ---------------- menu ----------------
+menu.back=KEMBALI
+menu.codex=CODEX
+menu.heading.codex=CODEX
+menu.heading.settings=SETELAN
+menu.heading.starter=PILIH GRIMOIRE
+menu.play=MULAI
+menu.quit=KELUAR
+menu.settings=SETELAN
+menu.startrun=MULAI RUN
+
 # ---------------- piece ----------------
 piece.absolutezero.blurb=EVOLVED. Reaches further than anything else in the book. Applies CHILL.
 piece.absolutezero.name=Absolute Zero
@@ -384,6 +395,7 @@ settings.off=MATI
 settings.on=HIDUP
 settings.reset.armed=KLIK LAGI KALAU YAKIN
 settings.reset.done=Codex dikosongkan.
+settings.reset.hint=butuh dua klik
 settings.reset.idle=KOSONGKAN CODEX
 settings.resolution.value={0} x {1}
 settings.row.damagetext=Teks damage
@@ -392,6 +404,7 @@ settings.row.framecap=Batas FPS
 settings.row.language=Bahasa
 settings.row.master=Master
 settings.row.music=Musik
+settings.row.resetcodex=Codex
 settings.row.resolution=Resolusi
 settings.row.screenmode=Mode layar
 settings.row.sfx=Efek suara
@@ -532,17 +545,3 @@ tip.skill.radius=  ·  radius ledak {0}
 tip.skill.range=jangkauan {0}
 tip.typeline={0}  ·  {1}  ·  {2} petak
 tip.typeline.element=  ·  {0}
-
-# ---------------- menu utama ----------------
-menu.back=KEMBALI
-menu.codex=CODEX
-menu.heading.codex=CODEX
-menu.heading.settings=SETELAN
-menu.heading.starter=PILIH GRIMOIRE
-menu.play=MULAI
-menu.quit=KELUAR
-menu.settings=SETELAN
-menu.startrun=MULAI RUN
-
-settings.reset.hint=butuh dua klik
-settings.row.resetcodex=Codex

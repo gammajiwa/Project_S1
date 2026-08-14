@@ -98,6 +98,17 @@
 # TODO map.title.choose=ACT {0}  -  CHOOSE YOUR PATH
 # TODO map.title.view=RUN MAP  -  ACT {0}
 
+# ---------------- menu ----------------
+# TODO menu.back=BACK
+# TODO menu.codex=CODEX
+# TODO menu.heading.codex=CODEX
+# TODO menu.heading.settings=SETTINGS
+# TODO menu.heading.starter=CHOOSE YOUR GRIMOIRE
+# TODO menu.play=PLAY
+# TODO menu.quit=QUIT
+# TODO menu.settings=SETTINGS
+# TODO menu.startrun=START RUN
+
 # ---------------- piece ----------------
 # TODO piece.absolutezero.blurb=EVOLVED. Reaches further than anything else in the book. Applies CHILL.
 # TODO piece.absolutezero.name=Absolute Zero
@@ -384,6 +395,7 @@
 # TODO settings.on=ON
 # TODO settings.reset.armed=CLICK AGAIN TO CONFIRM
 # TODO settings.reset.done=Codex cleared.
+# TODO settings.reset.hint=takes two clicks
 # TODO settings.reset.idle=CLEAR CODEX
 # TODO settings.resolution.value={0} x {1}
 # TODO settings.row.damagetext=Damage numbers
@@ -392,6 +404,7 @@
 # TODO settings.row.language=Language
 # TODO settings.row.master=Master
 # TODO settings.row.music=Music
+# TODO settings.row.resetcodex=Codex
 # TODO settings.row.resolution=Resolution
 # TODO settings.row.screenmode=Screen mode
 # TODO settings.row.sfx=Sound effects
