@@ -63,8 +63,9 @@ namespace Proto
                  "Saat bermain, tekan tombol di bawah untuk memutar antar preset tanpa berhenti.")]
         public Preset Racikan = Preset.SedotanPelan;
 
-        [Tooltip("Tombol untuk memutar preset saat bermain. None = mati.")]
-        public KeyCode CycleKey = KeyCode.V;
+        [Tooltip("Memutar preset saat bermain lewat tombol V. Matikan kalau sudah ketemu " +
+                 "racikan yang pas - ia cuma alat banding, bukan fitur permainan.")]
+        public bool CycleWithV = true;
 
         [Header("Bentuk")]
         public Mode Layout = Mode.Scatter;
@@ -307,7 +308,7 @@ namespace Proto
 
         void Update()
         {
-            if (CycleKey != KeyCode.None && Input.GetKeyDown(CycleKey)) Cycle();
+            if (CycleWithV && CyclePressed()) Cycle();
 
             if (_motes == null || _motes.Length == 0) return;
 
@@ -441,6 +442,22 @@ namespace Proto
             Rebuild();
 
             Debug.Log("[MenuRuneDrift] preset: " + Racikan, this);
+        }
+
+        /// <summary>
+        /// Tombol V, lewat Input System - project ini memakai package-nya, dan kelas Input
+        /// warisan melempar exception TIAP FRAME kalau dipakai di situ. Pagarnya mengikuti pola
+        /// yang sudah dipakai <see cref="ProtoInput"/>, jadi berpindah kembali ke Input lama
+        /// tidak akan menyisakan satu berkas yang ketinggalan.
+        /// </summary>
+        static bool CyclePressed()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            return kb != null && kb.vKey.wasPressedThisFrame;
+#else
+            return Input.GetKeyDown(KeyCode.V);
+#endif
         }
 
         Vector2 Box()
