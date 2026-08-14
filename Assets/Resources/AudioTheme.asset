@@ -15,8 +15,8 @@ MonoBehaviour:
   MenuLoop: {fileID: 8300000, guid: d63b07ef3b058b64caec451c99404fdf, type: 3}
   CombatLoop: {fileID: 8300000, guid: 7c55da5c7ab23494a9f2ce2f75ddb741, type: 3}
   ShopLoop: {fileID: 8300000, guid: 0a2949eb98cd0654bb1f344027c9ff39, type: 3}
-  WinStinger: {fileID: 0}
-  LoseStinger: {fileID: 0}
+  WinStinger: {fileID: 8300000, guid: 7e41bb31cadc23a4185c503bec476320, type: 3}
+  LoseStinger: {fileID: 8300000, guid: d34fc742d3165d4498934b9703430f88, type: 3}
   EvolveStinger: {fileID: 0}
   MusicTrim: 0.7
   StingerTrim: 0.8
@@ -36,6 +36,7 @@ MonoBehaviour:
   Reaction: []
   Pickup:
   - {fileID: 8300000, guid: 69a301a895b10463eac5eab717f29252, type: 3}
+  - {fileID: 8300000, guid: 392320453da1f6b4881da0a03f842fb9, type: 3}
   BossRoar:
   - {fileID: 8300000, guid: f557b7818486b4ee3be6cd8dd2aa01bb, type: 3}
   WaveStart:
@@ -60,6 +61,18 @@ MonoBehaviour:
     Cast: {fileID: 8300000, guid: dabc64da482b32443ba5a6451a7d80e7, type: 3}
   - Piece: {fileID: 11400000, guid: bffff3d1ea834514eb3cc4568a020a45, type: 2}
     Cast: {fileID: 8300000, guid: cb4a6f6fd0fd6094c9985b56e7dbeecf, type: 3}
+  - Piece: {fileID: 11400000, guid: ee919a1a5da5d8f4b97aa075d211bb5b, type: 2}
+    Cast: {fileID: 8300000, guid: c9062e41a99f83d4c83cb0e76d4c0a84, type: 3}
+  - Piece: {fileID: 11400000, guid: d02da196c2024074c9d463cd3d77ff2f, type: 2}
+    Cast: {fileID: 8300000, guid: 23a0dbf98120a4346b5ed20940149a00, type: 3}
+  - Piece: {fileID: 11400000, guid: 8f525914244c3f24eb57f8cad2d80c83, type: 2}
+    Cast: {fileID: 8300000, guid: fb276463bd6b0464ab1822cc7937587d, type: 3}
+  - Piece: {fileID: 11400000, guid: f658eb28bf506854d9ac13a91d22a66d, type: 2}
+    Cast: {fileID: 8300000, guid: fb276463bd6b0464ab1822cc7937587d, type: 3}
+  - Piece: {fileID: 11400000, guid: 09cfc3e71ff8a2e4f8433d2440fcbf0d, type: 2}
+    Cast: {fileID: 8300000, guid: 944fc21edac9d7b47b9c38f0c6ae4671, type: 3}
+  - Piece: {fileID: 11400000, guid: 8ec2df811dcf9074da78528935253b86, type: 2}
+    Cast: {fileID: 8300000, guid: 944fc21edac9d7b47b9c38f0c6ae4671, type: 3}
   Reactions:
   - Reaction: {fileID: 11400000, guid: f961d9524b1cf94498fe33e811530bc9, type: 2}
     Clip: {fileID: 8300000, guid: 1da8456a871f0ae4eb66189ee6ee382f, type: 3}
