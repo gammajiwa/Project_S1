@@ -160,3 +160,14 @@ Assets/Art/VFX/Packs/Cartoon Coffee.meta
 Assets/Art/VFX/Packs/118 sprite effects bundle.meta
 Assets/Art/VFX/Packs/Hovl Studio.meta
 Assets/Art/VFX/Packs/Adrift Team.meta
+
+# Pustaka SFX mentah (~2 GB), dipulihkan dari riwayat git project_b commit
+# d5f52879 yang memangkasnya. DI LUAR Assets/ dengan sengaja: Unity tidak
+# meng-import isinya, jadi 8.500 WAV ini nol ongkos bagi waktu refresh maupun
+# Library cache. Ini rak bahan untuk dipilih — yang benar-benar dipakai disalin
+# ke Assets/Audio/ satu per satu.
+#
+# Tidak ikut git meski repo ini punya LFS: kuota LFS GitHub dihitung per byte
+# yang di-push, dan 2 GB bahan mentah yang 99%-nya tidak akan dipakai bukan
+# tempat menghabiskannya. Sumbernya aman di riwayat project_b.
+SoundSource/
