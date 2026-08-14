@@ -296,6 +296,19 @@ namespace Proto
         public void UiClick() => PlayClip(Theme != null ? Theme.Click : null, 0.7f, 1f, 0);
         public void UiClose() => PlayClip(Theme != null ? Theme.PanelClose : null, 0.7f, 1f, 0);
 
+        /// <summary>
+        /// "Tuk" pantulan peluru. Volume 0.55 dengan sengaja DI ATAS cast biasa: pantulan
+        /// adalah stat yang dibeli pemain lewat segel, dan pantulan yang tidak terdengar
+        /// tidak pernah terasa dimiliki. Prioritas 1 + dedup per-klip menahan hujannya.
+        /// </summary>
+        public void PlayBounce()
+        {
+            var pool = Theme != null ? Theme.Bounce : null;
+            if (pool == null || pool.Length == 0) return;
+
+            PlayClip(pool[Random.Range(0, pool.Length)], 0.55f, 1f, 1);
+        }
+
         // ---- hadiah: bunyi yang membuat orang menekan tombolnya sekali lagi ----
 
         public void SlotSpinStart() =>

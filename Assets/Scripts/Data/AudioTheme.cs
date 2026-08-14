@@ -107,6 +107,11 @@ namespace Proto
 
         // ------------------------------------------------------------------ khusus
 
+        [Header("Pantulan peluru")]
+        [Tooltip("\"Tuk\" tiap peluru memantul ke sasaran berikutnya — dirotasi acak. " +
+                 "Harus TERDENGAR: pantulan adalah stat yang dibeli pemain.")]
+        public AudioClip[] Bounce;
+
         [Header("Per piece (paling spesifik, menang atas semuanya)")]
         public PieceSfx[] Pieces;
 

@@ -52,6 +52,9 @@ MonoBehaviour:
   Arcane:
     Light: {fileID: 8300000, guid: 92f4d0c3cbc4ec94e8205b2a31eaf712, type: 3}
     Heavy: {fileID: 8300000, guid: f7afcf37c81b9e2459d6ca885ced6ce8, type: 3}
+  Bounce:
+  - {fileID: 8300000, guid: 27de11142eb835042ae7cc3b6b01c40a, type: 3}
+  - {fileID: 8300000, guid: d400700762dc3e94fb75f60f0563fc65, type: 3}
   Pieces:
   - Piece: {fileID: 11400000, guid: fac0e9f21bcea134a85b29b8568c2f60, type: 2}
     Cast: {fileID: 8300000, guid: dabc64da482b32443ba5a6451a7d80e7, type: 3}
@@ -78,7 +81,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: c85df364c9204b94c905728bde323e18, type: 3}
   CoinShower: {fileID: 8300000, guid: 89389b6296cdf47499115335585cfbd9, type: 3}
   Jackpot: {fileID: 8300000, guid: 80ae81a70d49bd0458769c97808b6b52, type: 3}
-  EvolveBurst: {fileID: 8300000, guid: f50cf22efbda3224184e84333927bf70, type: 3}
+  EvolveBurst: {fileID: 8300000, guid: 6722aa02e8a0e694d836f4011054f52b, type: 3}
   SameClipWindow: 0.045
   DuckAmount: 0.45
   DuckSeconds: 0.9
