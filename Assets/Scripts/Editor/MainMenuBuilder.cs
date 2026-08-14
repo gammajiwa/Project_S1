@@ -1213,6 +1213,8 @@ namespace Proto
             Place(hint.rectTransform, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 40f));
 
             var content = BuildScrollArea(panel, out var viewport);
+            var headerTemplate = BuildCodexHeaderTemplate(content);
+            var sectionTemplate = BuildCodexSectionTemplate(content);
             var template = BuildCodexEntryTemplate(content);
 
             new Binder(panelComponent)
@@ -1221,6 +1223,8 @@ namespace Proto
                 .Set("_emptyHint", hint)
                 .Set("_content", content)
                 .Set("_entryTemplate", template)
+                .Set("_headerTemplate", headerTemplate)
+                .Set("_sectionTemplate", sectionTemplate)
                 .Apply();
 
             back = NewMenuLine(panel, "Back", "KEMBALI");
@@ -1472,12 +1476,18 @@ namespace Proto
             content.offsetMin = new Vector2(0f, 0f);
             content.offsetMax = new Vector2(0f, 0f);
 
-            var grid = content.gameObject.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(250f, 118f);
-            grid.spacing = new Vector2(14f, 14f);
-            grid.padding = new RectOffset(4, 4, 4, 12);
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 5;
+            // Tumpukan vertikal, bukan grid rata: isinya sekarang berseksi — judul, lalu grid
+            // kartu, lalu judul berikutnya. Grid kartunya milik tiap seksi (lihat
+            // BuildCodexSectionTemplate); tinggi tiap anak dibaca dari preferredHeight-nya,
+            // itulah sebabnya childControlHeight menyala.
+            var stack = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            stack.spacing = 10f;
+            stack.padding = new RectOffset(8, 8, 4, 16);
+            stack.childAlignment = TextAnchor.UpperLeft;
+            stack.childControlWidth = true;
+            stack.childControlHeight = true;
+            stack.childForceExpandWidth = true;
+            stack.childForceExpandHeight = false;
 
             var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
@@ -1488,6 +1498,63 @@ namespace Proto
             return content;
         }
 
+        /// <summary>
+        /// Judul satu seksi codex: nama rak di kiri (emas), hitungan ketemu di kanan, garis
+        /// tipis di dasar. Teksnya sengaja bernama "Title" dan "Count" — CodexPanel mengisinya
+        /// lewat nama, supaya cetakan ini tidak butuh komponen rig sendiri.
+        /// </summary>
+        static RectTransform BuildCodexHeaderTemplate(RectTransform content)
+        {
+            var header = NewRect("HeaderTemplate", content);
+
+            var height = header.gameObject.AddComponent<LayoutElement>();
+            height.minHeight = 48f;
+            height.preferredHeight = 48f;
+
+            var title = NewText("Title", header, "SEKSI", _theme.BodySize + 6,
+                _theme.Accent, TextAlignmentOptions.BottomLeft, true);
+            title.rectTransform.anchorMin = new Vector2(0f, 0f);
+            title.rectTransform.anchorMax = new Vector2(1f, 1f);
+            title.rectTransform.offsetMin = new Vector2(6f, 9f);
+            title.rectTransform.offsetMax = new Vector2(-280f, 0f);
+
+            var count = NewText("Count", header, "0 / 0 KETEMU", _theme.SmallSize,
+                _theme.TextMuted, TextAlignmentOptions.BottomRight);
+            count.rectTransform.anchorMin = new Vector2(1f, 0f);
+            count.rectTransform.anchorMax = new Vector2(1f, 1f);
+            count.rectTransform.offsetMin = new Vector2(-266f, 11f);
+            count.rectTransform.offsetMax = new Vector2(-6f, 0f);
+
+            var rule = NewImage("Rule", header, _theme.PanelLine);
+            rule.rectTransform.anchorMin = new Vector2(0f, 0f);
+            rule.rectTransform.anchorMax = new Vector2(1f, 0f);
+            rule.rectTransform.sizeDelta = new Vector2(0f, 1f);
+            rule.rectTransform.anchoredPosition = new Vector2(0f, 2f);
+
+            header.gameObject.SetActive(false);
+            return header;
+        }
+
+        /// <summary>
+        /// Badan satu seksi codex: grid tempat kartu-kartu rak itu berbaris. Tanpa
+        /// ContentSizeFitter — tingginya dilaporkan GridLayoutGroup sebagai preferredHeight
+        /// dan dibaca tumpukan vertikal di atasnya.
+        /// </summary>
+        static RectTransform BuildCodexSectionTemplate(RectTransform content)
+        {
+            var section = NewRect("SectionTemplate", content);
+
+            var grid = section.gameObject.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(305f, 132f);
+            grid.spacing = new Vector2(16f, 16f);
+            grid.padding = new RectOffset(0, 0, 0, 8);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 4;
+
+            section.gameObject.SetActive(false);
+            return section;
+        }
+
         static CodexEntry BuildCodexEntryTemplate(RectTransform content)
         {
             var entry = NewRect("EntryTemplate", content);
@@ -1496,12 +1563,14 @@ namespace Proto
             var background = NewImage("Background", entry, _theme.SlotKnown, _theme.PanelSprite);
             Stretch(background.rectTransform);
 
+            // Kartu sekarang 305x132 (lihat BuildCodexSectionTemplate) — siluet bentuknya ikut
+            // membesar; 52 piksel yang lama dipilih waktu kartunya masih 250 dan lima kolom.
             var shape = NewRect("Shape", entry);
-            Place(shape, new Vector2(0f, 1f), new Vector2(14f, -14f), new Vector2(52f, 52f));
+            Place(shape, new Vector2(0f, 1f), new Vector2(16f, -16f), new Vector2(64f, 64f));
             shape.pivot = new Vector2(0f, 1f);
 
             var grid = shape.gameObject.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(15f, 15f);
+            grid.cellSize = new Vector2(19f, 19f);
             grid.spacing = new Vector2(2f, 2f);
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = CodexEntry.ShapeGrid;
@@ -1516,12 +1585,12 @@ namespace Proto
 
             var label = NewText("Name", entry, "Nama", _theme.BodySize,
                 _theme.TextIdle, TextAlignmentOptions.TopLeft);
-            Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(80f, -16f), new Vector2(156f, 52f));
+            Place(label.rectTransform, new Vector2(0f, 1f), new Vector2(94f, -18f), new Vector2(196f, 60f));
             label.rectTransform.pivot = new Vector2(0f, 1f);
 
             var meta = NewText("Meta", entry, "*", _theme.SmallSize,
                 _theme.TextMuted, TextAlignmentOptions.BottomLeft);
-            Place(meta.rectTransform, new Vector2(0f, 0f), new Vector2(14f, 12f), new Vector2(220f, 22f));
+            Place(meta.rectTransform, new Vector2(0f, 0f), new Vector2(16f, 12f), new Vector2(273f, 22f));
             meta.rectTransform.pivot = new Vector2(0f, 0f);
 
             new Binder(component)
