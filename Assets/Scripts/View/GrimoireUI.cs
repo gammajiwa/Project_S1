@@ -1015,16 +1015,20 @@ namespace Proto
             }
         }
 
-        /// <summary>Draws one piece centred on <paramref name="center"/>. Returns cells consumed.</summary>
-        int DrawPiece(PieceDefinition def, int rot, Vector2 center, int cursor, float alpha)
+        /// <summary>Draws one piece centred on <paramref name="center"/>. Returns cells consumed.
+        /// <paramref name="scale"/> mengecilkan seluruh piece; 1 = ukuran petak papan. Ada untuk
+        /// kotak yang lebih sempit dari papan (slot toko) — piece 3x3 seukuran papan tidak pernah
+        /// muat di sana, dan tanpa ini ia meluber menutupi teks harga dan slot tetangganya.</summary>
+        int DrawPiece(PieceDefinition def, int rot, Vector2 center, int cursor, float alpha,
+            float scale = 1f)
         {
             var shape = Shapes.Rotate(def.Cells, rot);
-            var size = PieceSize(shape);
-            float step = LooseCellSize + LooseCellGap;
+            var size = PieceSize(shape) * scale;
+            float step = (LooseCellSize + LooseCellGap) * scale;
             Vector2 origin = center - size * 0.5f;
 
             bool isSkill = def.Layer == Layer.Skill;
-            float inner = isSkill ? LooseCellSize - SkillInset * 2f : LooseCellSize;
+            float inner = (isSkill ? LooseCellSize - SkillInset * 2f : LooseCellSize) * scale;
             var color = new Color(def.Color.r, def.Color.g, def.Color.b, alpha);
 
             // Rune sudah berwujud rune SEJAK JATUH, bukan sejak didudukkan di papan. Sebelumnya
@@ -1043,8 +1047,8 @@ namespace Proto
                 img.color = color;
                 img.rectTransform.sizeDelta = new Vector2(inner, inner);
                 img.rectTransform.anchoredPosition = origin + new Vector2(
-                    shape[i].x * step + LooseCellSize * 0.5f,
-                    shape[i].y * step + LooseCellSize * 0.5f);
+                    shape[i].x * step + LooseCellSize * scale * 0.5f,
+                    shape[i].y * step + LooseCellSize * scale * 0.5f);
 
                 if (!tiled || _looseTiles == null) continue;
 
@@ -1196,7 +1200,7 @@ namespace Proto
 
             _hurtGlow = Mathf.MoveTowards(_hurtGlow, 0f, Time.deltaTime * 2.4f);
 
-            float a = 0.34f * _hurtGlow;  // puncaknya pun tetap tipis — permintaannya "tipis aja"
+            float a = 0.20f * _hurtGlow;  // puncaknya pun tetap tipis — permintaannya "tipis aja"
             _hurtVeil.enabled = a > 0.005f;
             if (!_hurtVeil.enabled) return;
 
@@ -1226,8 +1230,13 @@ namespace Proto
                     float nx = (x - half) / half;
                     float ny = (y - half) / half;
                     float d = Mathf.Sqrt(nx * nx + ny * ny);
-                    float a = Mathf.InverseLerp(0.62f, 1.05f, d);
-                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a));
+
+                    // Mulai jauh lebih ke luar (0,62 -> 0,86) dan meluruh lebih tajam (pangkat
+                    // dua -> tiga. Yang lama menjalar sampai sepertiga layar dari tiap tepi, dan
+                    // kabut selebar itu bukan lagi tanda "barusan kena" - ia menutupi arena
+                    // persis saat pemain paling perlu melihat apa yang memukulnya.
+                    float a = Mathf.InverseLerp(0.86f, 1.12f, d);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a * a * a));
                 }
             }
             tex.Apply(false, true);
@@ -1245,9 +1254,10 @@ namespace Proto
         {
             var shopRect = ShopButtonRect();
             _shopBtnBg = MakeImage("ShopBtn", new Vector2(shopRect.xMin, shopRect.yMin),
-                shopRect.size, new Color(0.2f, 0.3f, 0.45f, 0.92f), Vector2.zero);
+                shopRect.size, PanelInk, Vector2.zero);
+            Frame(_shopBtnBg);
             _shopBtnLabel = MakeText("ShopBtnLabel", new Vector2(shopRect.xMin, shopRect.yMin + 8f),
-                new Vector2(shopRect.width, 20), 14, Color.white, Vector2.zero, TextAnchor.LowerCenter);
+                new Vector2(shopRect.width, 20), 14, TextGold, Vector2.zero, TextAnchor.LowerCenter);
             _shopBtnLabel.text = "TOKO";
 
             // Baris "ALT + hover = lihat resep" dulu duduk di sini: teks selebar 220 px di atas
@@ -1297,6 +1307,7 @@ namespace Proto
                     paper != null
                         ? new Color(0.16f, 0.115f, 0.085f, 0.94f)
                         : new Color(0.13f, 0.13f, 0.18f, 0.95f), Vector2.zero);
+                Frame(_shopSlotBg[i]);
                 _shopSlotBg[i].enabled = false;
 
                 _shopSlotText[i] = MakeText($"ShopSlotText_{i}", Vector2.zero, new Vector2(ShopSlotW - 10, 40), 13,
@@ -1308,6 +1319,7 @@ namespace Proto
                 paper != null
                     ? new Color(0.26f, 0.33f, 0.18f, 0.95f)
                     : new Color(0.32f, 0.45f, 0.28f, 0.95f), Vector2.zero);
+            Frame(_rerollBg);
             _rerollBg.enabled = false;
 
             _rerollLabel = MakeText("RerollLabel", Vector2.zero, new Vector2(240, 22), 15,
@@ -3400,16 +3412,21 @@ namespace Proto
             _mapLegend.enabled = false;
 
             // ---- slot ----
+            // Pink neon -> keluarga emas-indigo yang sama dengan HUD dan menu. Mesin judi boleh
+            // genit, tapi genitnya lewat gulungan yang berputar — bukan lewat panel yang
+            // warnanya bukan bagian dari game ini.
             _slotBg = MakeImage("SlotBg", Vector2.zero, new Vector2(PanelW, PanelH),
-                new Color(0.1f, 0.05f, 0.11f, 0.97f), Vector2.zero);
+                new Color(0.055f, 0.05f, 0.09f, 0.97f), Vector2.zero);
+            Frame(_slotBg, 1.5f);
             _slotTitle = MakeText("SlotTitle", Vector2.zero, new Vector2(500f, 30f), 22,
-                new Color(1f, 0.45f, 0.85f), Vector2.zero, TextAnchor.MiddleCenter);
+                TextGold, Vector2.zero, TextAnchor.MiddleCenter);
             _slotInfo = MakeText("SlotInfo", Vector2.zero, new Vector2(500f, 44f), 15,
-                new Color(0.9f, 0.9f, 0.95f), Vector2.zero, TextAnchor.MiddleCenter);
+                TextBone, Vector2.zero, TextAnchor.MiddleCenter);
             _slotSpinBg = MakeImage("SlotSpin", Vector2.zero, Vector2.zero,
-                new Color(0.75f, 0.2f, 0.5f, 0.95f), Vector2.zero);
+                new Color(0.09f, 0.07f, 0.055f, 0.94f), Vector2.zero);
+            Frame(_slotSpinBg, 1.5f);
             _slotSpinLabel = MakeText("SlotSpinLabel", Vector2.zero, new Vector2(240f, 34f), 18,
-                Color.white, Vector2.zero, TextAnchor.MiddleCenter);
+                TextGold, Vector2.zero, TextAnchor.MiddleCenter);
 
             Centre(_slotBg.rectTransform);
             Centre(_slotTitle.rectTransform);
@@ -3433,15 +3450,18 @@ namespace Proto
 
             // ---- kejadian ----
             _eventBg = MakeImage("EventBg", Vector2.zero, new Vector2(PanelW, PanelH),
-                new Color(0.08f, 0.06f, 0.12f, 0.97f), Vector2.zero);
+                new Color(0.055f, 0.05f, 0.09f, 0.97f), Vector2.zero);
+            Frame(_eventBg, 1.5f);
             _eventTitle = MakeText("EventTitle", Vector2.zero, new Vector2(500f, 30f), 22,
-                new Color(0.75f, 0.5f, 1f), Vector2.zero, TextAnchor.MiddleCenter);
+                TextGold, Vector2.zero, TextAnchor.MiddleCenter);
             _eventBody = MakeText("EventBody", Vector2.zero, new Vector2(540f, 140f), 17,
-                new Color(0.92f, 0.92f, 0.97f), Vector2.zero, TextAnchor.MiddleCenter);
+                TextBone, Vector2.zero, TextAnchor.MiddleCenter);
             _eventABg = MakeImage("EventA", Vector2.zero, Vector2.zero,
                 new Color(0.2f, 0.4f, 0.25f, 0.95f), Vector2.zero);
+            Frame(_eventABg);
             _eventBBg = MakeImage("EventB", Vector2.zero, Vector2.zero,
                 new Color(0.4f, 0.24f, 0.45f, 0.95f), Vector2.zero);
+            Frame(_eventBBg);
             // Kartu pakta membawa tiga baris — nama, berkah, kutuk — jadi kotaknya lebih tinggi
             // dan hurufnya lebih kecil dari label tombol biasa. Dua baris pertama boleh dibaca
             // sekilas; baris kutuk justru yang harus dibaca pelan, dan itu tidak muat di 60 piksel.
@@ -3451,9 +3471,10 @@ namespace Proto
                 Color.white, Vector2.zero, TextAnchor.MiddleCenter);
 
             _eventCBg = MakeImage("EventC", Vector2.zero, Vector2.zero,
-                new Color(0.22f, 0.22f, 0.26f, 0.9f), Vector2.zero);
+                PanelInk, Vector2.zero);
+            Frame(_eventCBg);
             _eventCLabel = MakeText("EventCLabel", Vector2.zero, new Vector2(240f, 30f), 13,
-                new Color(0.78f, 0.78f, 0.82f), Vector2.zero, TextAnchor.MiddleCenter);
+                TextDim, Vector2.zero, TextAnchor.MiddleCenter);
 
             Centre(_eventBg.rectTransform);
             Centre(_eventTitle.rectTransform);
@@ -4290,6 +4311,11 @@ namespace Proto
 
             var panel = PanelRect();
             _slotBg.rectTransform.anchoredPosition = panel.center;
+
+            // Ukuran ikut kotak panel yang berlaku — kotak itu boleh milik prefab ShopRig, dan
+            // latar seukuran konstanta di bawah kotak tataan tangan meninggalkan isi yang
+            // menggantung di luar panelnya.
+            _slotBg.rectTransform.sizeDelta = panel.size;
             _slotTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
             _slotTitle.text = "MESIN SLOT — " + _balance.GambleCost + " KOIN SEKALI PUTAR";
 
@@ -4305,7 +4331,10 @@ namespace Proto
             _slotSpinLabel.rectTransform.anchoredPosition = spin.center;
             _slotSpinLabel.text = _spinLeft > 0f ? ". . ." : "PUTAR!";
 
-            _slotInfo.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMin + 58f);
+            // Digantung dari ATAS tombol putar, bukan dari dasar panel: kotak reroll milik
+            // prefab boleh duduk lebih tinggi, dan y tetap dari dasar membuat baris "koin:"
+            // mendarat persis di atas tombolnya.
+            _slotInfo.rectTransform.anchoredPosition = new Vector2(panel.center.x, spin.yMax + 36f);
             _slotInfo.text = _slotResultLine + "\nkoin: " + _gold;
 
             if (_spinLeft > 0f)
@@ -4451,6 +4480,9 @@ namespace Proto
 
             var panel = PanelRect();
             _eventBg.rectTransform.anchoredPosition = panel.center;
+
+            // Alasan yang sama dengan latar mesin slot: kotak panelnya boleh milik prefab.
+            _eventBg.rectTransform.sizeDelta = panel.size;
 
             _eventTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
             _eventTitle.text = "PERTAPA HUTAN";
@@ -5109,7 +5141,11 @@ namespace Proto
             {
                 var rect = ShopSlotRect(i);
                 _shopSlotBg[i].rectTransform.anchoredPosition = new Vector2(rect.xMin, rect.yMin);
+
+                // Ukuran ikut kotak prefab, bukan konstanta — sama seperti badan panel di atas.
+                _shopSlotBg[i].rectTransform.sizeDelta = rect.size;
                 _shopSlotText[i].rectTransform.anchoredPosition = new Vector2(rect.xMin + 5f, rect.yMin + 6f);
+                _shopSlotText[i].rectTransform.sizeDelta = new Vector2(rect.width - 10f, 40f);
 
                 var def = _shop[i];
                 if (def == null)
@@ -5133,16 +5169,23 @@ namespace Proto
                 _shopSlotText[i].text = _sb.ToString();
                 _shopSlotText[i].color = afford ? Color.white : new Color(0.95f, 0.55f, 0.5f);
 
-                cursor = DrawPiece(def, 0, new Vector2(rect.center.x, rect.center.y + 18f), cursor, 1f);
+                // Dipaskan ke kotaknya: 40 px bawah milik teks harga, sisanya milik piece.
+                var pieceSize = PieceSize(Shapes.Rotate(def.Cells, 0));
+                float fit = Mathf.Min(1f, (rect.width - 24f) / Mathf.Max(1f, pieceSize.x),
+                    (rect.height - 60f) / Mathf.Max(1f, pieceSize.y));
+
+                cursor = DrawPiece(def, 0, new Vector2(rect.center.x, rect.center.y + 18f), cursor, 1f, fit);
             }
 
             var reroll = RerollRect();
             _rerollBg.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin);
+            _rerollBg.rectTransform.sizeDelta = reroll.size;
             _rerollBg.color = _gold >= _rerollCost
-                ? new Color(0.32f, 0.45f, 0.28f, 0.95f)
-                : new Color(0.3f, 0.18f, 0.18f, 0.95f);
+                ? new Color(0.28f, 0.36f, 0.18f, 0.95f)
+                : new Color(0.3f, 0.15f, 0.13f, 0.95f);
 
             _rerollLabel.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin + 8f);
+            _rerollLabel.rectTransform.sizeDelta = new Vector2(reroll.width, 22f);
             _rerollLabel.text = "REROLL   " + _rerollCost + " koin";
 
             return cursor;
