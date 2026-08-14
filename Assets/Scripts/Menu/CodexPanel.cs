@@ -408,7 +408,7 @@ namespace Proto
             for (int i = 0; i < texts.Length; i++)
             {
                 if (texts[i].name == "Title") texts[i].text = title;
-                else if (texts[i].name == "Count") texts[i].text = found + " / " + total + " KETEMU";
+                else if (texts[i].name == "Count") texts[i].text = Loc.F("codex.counter", found, total);
             }
         }
 
