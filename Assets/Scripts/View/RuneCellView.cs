@@ -15,6 +15,11 @@ namespace Proto
     [RequireComponent(typeof(RectTransform))]
     public class RuneCellView : MonoBehaviour
     {
+        [Tooltip("Sapuan warna PALING BELAKANG, yang melebar sampai menutup celah antar petak " +
+                 "sehingga seluruh footprint rune terbaca sebagai satu bidang. Kosong = anak " +
+                 "bernama \"Area\", dibuat kalau belum ada.")]
+        [SerializeField] Image _area;
+
         [Tooltip("Kotak warna di belakang glyph. Kosong = dicari dari anak bernama \"BG\".")]
         [SerializeField] Image _plate;
 
@@ -39,6 +44,12 @@ namespace Proto
                  "runenya besar dan tegas.")]
         [Range(0f, 0.4f)] public float GlyphInset = 0.06f;
 
+        [Tooltip("Sepekat apa sapuan area di belakang seluruh footprint. Harus KECIL: gunanya " +
+                 "cuma mengikat petak-petak yang terpisah celah supaya terbaca sebagai satu " +
+                 "rune. Begitu ia cukup pekat untuk diperhatikan, ia berhenti jadi pengikat dan " +
+                 "mulai bersaing dengan runenya sendiri.")]
+        [Range(0f, 1f)] public float AreaAlpha = 0.16f;
+
         [Tooltip("Geser tambahan glyph SESUDAH dipusatkan, dalam pecahan sisi petak. +y naik. " +
                  "Pemusatannya sendiri otomatis per gambar; yang ini murni selera.")]
         public Vector2 GlyphNudge = new Vector2(0f, 0.03f);
@@ -62,6 +73,19 @@ namespace Proto
             var ignore = GetComponent<LayoutElement>();
             if (ignore == null) ignore = gameObject.AddComponent<LayoutElement>();
             ignore.ignoreLayout = true;
+
+            if (_area == null) _area = Child("Area");
+            if (_area == null)
+            {
+                var go = new GameObject("Area", typeof(RectTransform));
+                go.transform.SetParent(transform, false);
+                _area = go.AddComponent<Image>();
+            }
+
+            // Paling depan di daftar anak = digambar paling BELAKANG. Sapuan area yang menimpa
+            // runenya sendiri adalah kebalikan dari gunanya.
+            _area.transform.SetAsFirstSibling();
+            _area.raycastTarget = false;
 
             if (_plate == null) _plate = Child("BG");
             if (_border == null) _border = Child("Frame");
@@ -156,10 +180,31 @@ namespace Proto
         /// GridLayoutGroup baru punya anchoredPosition yang benar setelah layout dihitung, dan
         /// membacanya sebelum itu memberi angka dari ronde sebelumnya.
         /// </summary>
-        public void Cover(RectTransform cell)
+        /// <param name="bleed">
+        /// Seberapa jauh sapuan area melebar keluar petak, sebagai pecahan sisi petak. Diisi
+        /// dengan <c>celah / sisi petak</c>: dengan angka itu sapuan tiap petak persis
+        /// BERSENTUHAN dengan tetangganya, tidak kurang dan tidak lebih.
+        ///
+        /// Keduanya penting. Kurang sedikit menyisakan garis latar di antara petak, dan
+        /// footprint-nya kembali terbaca sebagai ubin lepas. Lebih sedikit membuat sapuan
+        /// bertindih, dan dua lapis warna tembus pandang yang bertindih menggelap di
+        /// sambungannya — persis kisi yang justru sedang dihapus.
+        /// </param>
+        public void Cover(RectTransform cell, float bleed = 0f)
         {
             if (cell == null) return;
             Ensure();
+
+            if (_area != null)
+            {
+                float k = Mathf.Max(0f, bleed) * 0.5f;
+
+                var art = _area.rectTransform;
+                art.anchorMin = new Vector2(-k, -k);
+                art.anchorMax = new Vector2(1f + k, 1f + k);
+                art.offsetMin = Vector2.zero;
+                art.offsetMax = Vector2.zero;
+            }
 
             _rect.localRotation = Quaternion.identity;
             _rect.localScale = Vector3.one;
@@ -194,6 +239,12 @@ namespace Proto
             // Menyalakan pelat warna di bawahnya cuma menaruh kotak berwarna di belakang gambar
             // yang latarnya sudah pekat - tidak terlihat, dan satu draw call per petak percuma.
             bool hasBaked = baked != null;
+
+            if (_area != null)
+            {
+                _area.enabled = AreaAlpha > 0.001f;
+                _area.color = new Color(tint.r, tint.g, tint.b, AreaAlpha * alpha);
+            }
 
             if (_plate != null)
             {

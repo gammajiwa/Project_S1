@@ -305,7 +305,14 @@ namespace Proto
 
         Image[] _spellBg;
         Image[] _spellFill;
+        Image[] _spellNotch;
         Text[] _spellText;
+        Text _spellTitle;
+
+        /// <summary>Jumlah baris spell yang terakhir ditata; -1 memaksa penataan pertama.</summary>
+        int _spellRowsShown = -1;
+
+        Image _hudPlaque;
 
         /// <summary>Row order for the panel: indices into Book.Spells, sorted by damage.</summary>
         readonly int[] _spellOrder = new int[MaxSpellRows];
@@ -381,6 +388,16 @@ namespace Proto
         static readonly Color HpFillColor = new Color(0.85f, 0.28f, 0.3f, 0.95f);
         static readonly Color HpChipColor = new Color(1f, 0.78f, 0.6f, 0.75f);
         static readonly Color ManaFillColor = new Color(0.35f, 0.6f, 1f, 0.95f);
+
+        // ---------- pakaian HUD: satu keluarga warna untuk semua panel yang digambar kode ----------
+        // Diambil dari menu utama (emas antik di atas indigo-hitam), supaya HUD run dan menu
+        // terbaca sebagai satu game. Panel gambar-kode yang keluar dari keluarga ini langsung
+        // terbaca sebagai alat debug — persis keluhan atas HUD yang lama.
+        static readonly Color PanelInk = new Color(0.055f, 0.05f, 0.09f, 0.88f);
+        static readonly Color PanelEdge = new Color(0.76f, 0.62f, 0.34f, 0.8f);
+        static readonly Color TextBone = new Color(0.9f, 0.86f, 0.76f, 1f);
+        static readonly Color TextGold = new Color(0.89f, 0.75f, 0.46f, 1f);
+        static readonly Color TextDim = new Color(0.58f, 0.53f, 0.45f, 1f);
         Image _tipBg;
         Text _tipText;
         Text _heldText;
@@ -671,6 +688,18 @@ namespace Proto
             rt.sizeDelta = size;
             rt.anchoredPosition = pos;
             return text;
+        }
+
+        /// <summary>
+        /// Bingkai emas serambut di tepi sebuah Graphic, lewat komponen Outline — bukan empat
+        /// Image anak. Sengaja: Outline ikut mati saat Graphic-nya di-.enabled = false,
+        /// sedangkan GameObject anak tetap tergambar dan meninggalkan bingkai hantu.
+        /// </summary>
+        static void Frame(Graphic g, float px = 1f)
+        {
+            var line = g.gameObject.AddComponent<Outline>();
+            line.effectColor = PanelEdge;
+            line.effectDistance = new Vector2(px, px);
         }
 
         void BuildGrid()
@@ -1020,7 +1049,7 @@ namespace Proto
                 if (!tiled || _looseTiles == null) continue;
 
                 var tile = _looseTiles.Take();
-                tile.Cover(img.rectTransform);
+                tile.Cover(img.rectTransform, LooseCellGap / Mathf.Max(1f, LooseCellSize));
                 tile.Bind(RuneTiles.BakedTileAt(def, i), RuneTiles.GlyphAt(def, i), def.Color, alpha);
             }
 
@@ -1326,15 +1355,18 @@ namespace Proto
         {
             _spellBg = new Image[MaxSpellRows];
             _spellFill = new Image[MaxSpellRows];
+            _spellNotch = new Image[MaxSpellRows];
             _spellText = new Text[MaxSpellRows];
 
             for (int i = 0; i < MaxSpellRows; i++)
             {
                 // Row 0 is the TOP row. The list is sorted by damage, so the heaviest skill has to
                 // sit where the eye lands first — the old bottom-up order buried it.
+                // Posisi y di sini cuma tebakan awal: DrawSpells menata ulang begitu tahu
+                // berapa baris yang benar-benar terpakai.
                 float y = Margin + (MaxSpellRows - 1 - i) * 44;
                 _spellBg[i] = MakeImage($"SpellBg_{i}", new Vector2(-Margin, y), new Vector2(SpellPanelW, 40),
-                    new Color(0.1f, 0.1f, 0.14f, 0.85f), new Vector2(1f, 0f));
+                    PanelInk, new Vector2(1f, 0f));
 
                 _spellFill[i] = MakeImage($"SpellFill_{i}", new Vector2(-Margin, y), new Vector2(SpellPanelW, 40),
                     new Color(0.3f, 0.3f, 0.45f, 0.55f), new Vector2(1f, 0f));
@@ -1343,12 +1375,18 @@ namespace Proto
                 _spellFill[i].fillOrigin = 0;
 
                 _spellText[i] = MakeText($"SpellText_{i}", new Vector2(-Margin - 8, y + 4),
-                    new Vector2(SpellPanelW - 10, 36), 13, Color.white, new Vector2(1f, 0f), TextAnchor.LowerRight);
+                    new Vector2(SpellPanelW - 10, 36), 13, TextBone, new Vector2(1f, 0f), TextAnchor.LowerRight);
+
+                // Takik warna piece di bibir kiri baris — dibuat SETELAH teks supaya tergambar
+                // paling atas. Warnanya diisi DrawSpells dari warna piece yang menempati baris.
+                _spellNotch[i] = MakeImage($"SpellNotch_{i}", new Vector2(-Margin - (SpellPanelW - 3), y),
+                    new Vector2(3, 40), Color.clear, new Vector2(1f, 0f));
             }
 
-            MakeText("SpellTitle", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 6),
-                new Vector2(400, 22), 15, new Color(0.85f, 0.82f, 0.95f),
-                new Vector2(1f, 0f), TextAnchor.LowerRight).text = "SPELL AKTIF";
+            _spellTitle = MakeText("SpellTitle", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 6),
+                new Vector2(400, 22), 14, TextGold,
+                new Vector2(1f, 0f), TextAnchor.LowerRight);
+            _spellTitle.text = "SPELL AKTIF";
         }
 
         void BuildSpeedControl()
@@ -1362,16 +1400,17 @@ namespace Proto
                 var pos = new Vector2(x, -Margin);
 
                 _speedButtons[i] = MakeImage($"Speed_{i}", pos, new Vector2(SpeedButtonW, SpeedButtonH),
-                    new Color(0.14f, 0.14f, 0.18f, 0.9f), new Vector2(1f, 1f));
+                    PanelInk, new Vector2(1f, 1f));
+                Frame(_speedButtons[i]);
 
                 _speedLabels[i] = MakeText($"SpeedLabel_{i}", pos + new Vector2(0, -7),
-                    new Vector2(SpeedButtonW, SpeedButtonH), 16, Color.white,
+                    new Vector2(SpeedButtonW, SpeedButtonH), 15, TextBone,
                     new Vector2(1f, 1f), TextAnchor.UpperCenter);
                 _speedLabels[i].text = SpeedLabels[i];
             }
 
-            MakeText("SpeedHint", new Vector2(-Margin, -Margin - SpeedButtonH - 4), new Vector2(300, 20), 12,
-                new Color(0.6f, 0.6f, 0.68f), new Vector2(1f, 1f), TextAnchor.UpperRight).text =
+            MakeText("SpeedHint", new Vector2(-Margin, -Margin - SpeedButtonH - 4), new Vector2(300, 20), 11,
+                TextDim, new Vector2(1f, 1f), TextAnchor.UpperRight).text =
                 "kecepatan  (tombol 1/2/3/4)";
 
             BuildTimeControl();
@@ -1393,10 +1432,11 @@ namespace Proto
             var pos = new Vector2(-Margin, y);
 
             _timeButton = MakeImage("TimeToggle", pos, new Vector2(width, SpeedButtonH),
-                new Color(0.16f, 0.18f, 0.26f, 0.9f), new Vector2(1f, 1f));
+                PanelInk, new Vector2(1f, 1f));
+            Frame(_timeButton);
 
             _timeLabel = MakeText("TimeToggleLabel", pos + new Vector2(0, -7),
-                new Vector2(width, SpeedButtonH), 15, new Color(0.92f, 0.9f, 0.7f),
+                new Vector2(width, SpeedButtonH), 15, TextGold,
                 new Vector2(1f, 1f), TextAnchor.UpperCenter);
 
             RefreshTimeLabel();
@@ -1433,6 +1473,7 @@ namespace Proto
         {
             _bossBg = MakeImage("BossBg", new Vector2(-320f, -14f), new Vector2(640f, 22f),
                 new Color(0.1f, 0.03f, 0.05f, 0.92f), new Vector2(0.5f, 1f));
+            Frame(_bossBg);
 
             _bossFill = MakeImage("BossFill", new Vector2(-320f, -14f), new Vector2(640f, 22f),
                 new Color(0.85f, 0.2f, 0.24f, 0.95f), new Vector2(0.5f, 1f));
@@ -1441,7 +1482,7 @@ namespace Proto
             _bossFill.fillOrigin = 0;
 
             _bossLabel = MakeText("BossLabel", new Vector2(-320f, -15f), new Vector2(640f, 22f), 14,
-                Color.white, new Vector2(0.5f, 1f), TextAnchor.UpperCenter);
+                TextBone, new Vector2(0.5f, 1f), TextAnchor.UpperCenter);
 
             SetBossBar(false);
         }
@@ -1565,8 +1606,15 @@ namespace Proto
 
         void BuildHud()
         {
-            _hudText = MakeText("Hud", new Vector2(Margin, -Margin), new Vector2(600, 26), 18,
-                Color.white, new Vector2(0f, 1f), TextAnchor.UpperLeft);
+            // Plakat di belakang baris wave — teks putih telanjang di atas rumput terbaca
+            // sebagai overlay debug, bukan HUD. Lebarnya dipaskan tiap frame di DrawHud
+            // karena kalimatnya berubah-ubah ("HABISKAN SISANYA" jauh lebih panjang).
+            _hudPlaque = MakeImage("HudPlaque", new Vector2(Margin - 12, -(Margin - 8)),
+                new Vector2(430, 36), PanelInk, new Vector2(0f, 1f));
+            Frame(_hudPlaque);
+
+            _hudText = MakeText("Hud", new Vector2(Margin, -Margin), new Vector2(600, 26), 17,
+                TextBone, new Vector2(0f, 1f), TextAnchor.UpperLeft);
 
             // Prefab lebih dulu. Kalau ia menyediakan bar, blok bawaan di bawah dilewati —
             // membangun keduanya berarti bar kotak datar lama menempel di belakang art baru.
@@ -1626,11 +1674,20 @@ namespace Proto
                 Color.white, new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
             _bannerText.text = "";
 
+            // Banner melayang tanpa panel di atas arena yang bisa sangat terang — bayangan
+            // tipis ini yang membuatnya tetap terbaca di rumput hijau muda.
+            var bannerShadow = _bannerText.gameObject.AddComponent<Shadow>();
+            bannerShadow.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            bannerShadow.effectDistance = new Vector2(2f, -2f);
+
+            // Hijau stabilo -> plakat gelap berbingkai emas, satu keluarga dengan menu utama.
+            // Yang mengundang bukan warnanya melainkan satu-satunya bingkai terang di tengah layar.
             _startBg = MakeImage("StartBg", new Vector2(0, 120), new Vector2(StartButtonW, StartButtonH),
-                new Color(0.35f, 0.75f, 0.4f, 0.95f), new Vector2(0.5f, 0.5f));
+                new Color(0.09f, 0.07f, 0.055f, 0.94f), new Vector2(0.5f, 0.5f));
+            Frame(_startBg, 1.5f);
 
             _startLabel = MakeText("StartLabel", new Vector2(0, 120), new Vector2(StartButtonW, StartButtonH),
-                20, new Color(0.06f, 0.12f, 0.07f), new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
+                20, TextGold, new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
             _startLabel.text = "MULAI WAVE   (SPACE)";
         }
 
@@ -1639,7 +1696,7 @@ namespace Proto
             // A single line now, tucked under the panel title — the whole meter block it replaced
             // was a second copy of information the rows already carry.
             _meterText = MakeText("Meter", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 26),
-                new Vector2(SpellPanelW + 120, 20), 12, new Color(0.72f, 0.76f, 0.85f),
+                new Vector2(SpellPanelW + 120, 20), 12, TextDim,
                 new Vector2(1f, 0f), TextAnchor.LowerRight);
 
             BuildStripAnchors();
@@ -2283,9 +2340,9 @@ namespace Proto
             {
                 bool on = i == _speedSlot;
                 _speedButtons[i].color = on
-                    ? new Color(0.9f, 0.75f, 0.3f, 0.95f)
-                    : new Color(0.14f, 0.14f, 0.18f, 0.9f);
-                _speedLabels[i].color = on ? new Color(0.1f, 0.1f, 0.12f) : Color.white;
+                    ? new Color(0.89f, 0.75f, 0.46f, 0.95f)
+                    : PanelInk;
+                _speedLabels[i].color = on ? new Color(0.12f, 0.09f, 0.05f) : TextBone;
             }
         }
 
@@ -4623,7 +4680,7 @@ namespace Proto
                         under.enabled = false;
 
                         var tile = pool.Take();
-                        tile.Cover(under.rectTransform);
+                        tile.Cover(under.rectTransform, CellGap / Mathf.Max(1f, CellSize));
                         tile.Bind(RuneTiles.BakedTileAt(inst.Def, k), RuneTiles.GlyphAt(inst.Def, k),
                             inst.Def.Color, alpha);
                     }
@@ -5123,11 +5180,38 @@ namespace Proto
             var spells = Book.Spells;
             int count = SortSpellsByDamage();
 
+            // Baris yang terpakai MERAPAT ke pojok kanan-bawah. Slotnya dulu dipaku untuk 8
+            // baris, jadi dua spell pertama melayang di tengah tepi kanan dengan ruang kosong
+            // di bawahnya — panel terbaca patah justru di awal run, saat bukunya belum penuh.
+            if (count != _spellRowsShown)
+            {
+                _spellRowsShown = count;
+
+                for (int i = 0; i < MaxSpellRows; i++)
+                {
+                    float y = Margin + (count - 1 - i) * 44;
+                    _spellBg[i].rectTransform.anchoredPosition = new Vector2(-Margin, y);
+                    _spellFill[i].rectTransform.anchoredPosition = new Vector2(-Margin, y);
+                    _spellNotch[i].rectTransform.anchoredPosition =
+                        new Vector2(-Margin - (SpellPanelW - 3), y);
+                    _spellText[i].rectTransform.anchoredPosition = new Vector2(-Margin - 8, y + 4);
+                }
+
+                _spellTitle.rectTransform.anchoredPosition =
+                    new Vector2(-Margin, Margin + count * 44 + 6);
+                _meterText.rectTransform.anchoredPosition =
+                    new Vector2(-Margin, Margin + count * 44 + 26);
+
+                // Judul tanpa satu pun baris di bawahnya cuma label yatim di pojok layar.
+                _spellTitle.enabled = count > 0;
+            }
+
             for (int i = 0; i < MaxSpellRows; i++)
             {
                 bool used = i < count;
                 _spellBg[i].enabled = used;
                 _spellFill[i].enabled = used;
+                _spellNotch[i].enabled = used;
                 _spellText[i].enabled = used;
                 if (!used) continue;
 
@@ -5136,6 +5220,8 @@ namespace Proto
                 _spellFill[i].fillAmount = progress;
                 _spellFill[i].color = new Color(s.Source.Def.Color.r, s.Source.Def.Color.g,
                     s.Source.Def.Color.b, 0.35f);
+                _spellNotch[i].color = new Color(s.Source.Def.Color.r, s.Source.Def.Color.g,
+                    s.Source.Def.Color.b, 0.95f);
 
                 _sb.Length = 0;
                 _sb.Append(i + 1).Append(". ").Append(s.Source.Def.DisplayName);
@@ -5157,7 +5243,7 @@ namespace Proto
                 _spellText[i].text = _sb.ToString();
                 _spellText[i].color = s.DamageBonus + s.CooldownBonus + s.RadiusBonus > 0f
                     ? new Color(1f, 0.92f, 0.55f)
-                    : Color.white;
+                    : TextBone;
             }
         }
 
@@ -5218,19 +5304,22 @@ namespace Proto
         void DrawHud()
         {
             _sb.Length = 0;
-            _sb.Append("WAVE ").Append(Enemies.Wave);
+            _sb.Append("<color=#E3C079>WAVE ").Append(Enemies.Wave).Append("</color>");
 
             if (Enemies.WaveActive)
             {
                 _sb.Append(Enemies.Closing
-                    ? "    HABISKAN SISANYA"
-                    : "    sisa " + (Enemies.PendingSpawns + Enemies.AliveCount) + "/" + Enemies.WaveTotal);
+                    ? "   ·   HABISKAN SISANYA"
+                    : "   ·   sisa " + (Enemies.PendingSpawns + Enemies.AliveCount) + "/" + Enemies.WaveTotal);
             }
 
-            _sb.Append("    musuh ").Append(Enemies.AliveCount);
-            _sb.Append("    kills ").Append(Enemies.Kills);
-            _sb.Append("    koin ").Append(_gold);
+            _sb.Append("   ·   musuh ").Append(Enemies.AliveCount);
+            _sb.Append("   ·   kills ").Append(Enemies.Kills);
+            _sb.Append("   ·   <color=#E3C079>").Append(_gold).Append(" koin</color>");
             _hudText.text = _sb.ToString();
+
+            // Plakat mengikuti panjang kalimat, bukan sebaliknya.
+            _hudPlaque.rectTransform.sizeDelta = new Vector2(_hudText.preferredWidth + 24f, 36f);
 
             AnimateBars(Time.unscaledDeltaTime);
 

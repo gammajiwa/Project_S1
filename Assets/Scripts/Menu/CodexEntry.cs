@@ -84,6 +84,13 @@ namespace Proto
                 var box = parent as RectTransform;
                 if (box != null) LayoutRebuilder.ForceRebuildLayoutImmediate(box);
 
+                // Celahnya dibaca dari layout yang sedang berlaku, bukan ditulis sebagai angka:
+                // kotak siluet ini ditata GridLayoutGroup, dan menyalin ukurannya ke sini berarti
+                // menaruh angka yang akan diam-diam salah begitu petaknya diperbesar di scene.
+                float bleed = 0f;
+                var grid = parent.GetComponent<GridLayoutGroup>();
+                if (grid != null && grid.cellSize.x > 0.001f) bleed = grid.spacing.x / grid.cellSize.x;
+
                 // Dinormalkan ke titik nol, karena bentuk gambaran tangan boleh disimpan
                 // dengan petak yang tidak menempel di sumbu.
                 var cells = Shapes.Rotate(piece.Cells, 0);
@@ -98,7 +105,7 @@ namespace Proto
                     _shapeCells[index].enabled = false;
 
                     var tile = _tiles.Take();
-                    tile.Cover(_shapeCells[index].rectTransform);
+                    tile.Cover(_shapeCells[index].rectTransform, bleed);
                     tile.Bind(RuneTiles.BakedTileAt(piece, i), RuneTiles.GlyphAt(piece, i), piece.Color, 1f);
                 }
             }
