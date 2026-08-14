@@ -231,6 +231,20 @@ namespace Proto
         [Tooltip("Warna cincin di sekeliling node. Putih hilang di perkamen; ini penggantinya.")]
         public Color MapRingInk = new Color(0.28f, 0.17f, 0.07f, 1f);
 
+        [Header("Icon peta")]
+        [Tooltip("Icon per jenis node, silhouette putih — kode yang mewarnainya jadi tinta. " +
+                 "Kosongkan salah satu = node itu kembali ke huruf pertama nama jenisnya, " +
+                 "seperti sebelum ada art.")]
+        public Sprite MapIconFight;
+        public Sprite MapIconElite;
+        public Sprite MapIconShop;
+        public Sprite MapIconEvent;
+        public Sprite MapIconGamble;
+        public Sprite MapIconBoss;
+
+        [Tooltip("Token pemain di peta. Kosong = bulatan polos seperti sebelumnya.")]
+        public Sprite MapIconYou;
+
         // ------------------------------------------------------------------ ukuran peta kecil
 
         [Header("Peta kecil (intip lewat M)")]

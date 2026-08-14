@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.UiTheme
   MapPaper: {fileID: 21300000, guid: b997f644670c7b040a65f899ad7baa66, type: 3}
   LoadingSigil: {fileID: 21300000, guid: 60ad9ecc59aaf4b4f9b5f53582ec4c31, type: 3}
+  PanelPaper: {fileID: 0}
   UiFont: {fileID: 12800000, guid: ed53511e9e19952459410f4520c7318b, type: 3}
   NumberFont: {fileID: 12800000, guid: a40fde09f47fe214ca9c245fb51abf40, type: 3}
   GrimoirePanelPrefab: {fileID: 4725670757830398596, guid: 9e613509076f1824bb2986daeac17b35, type: 3}
@@ -49,6 +50,13 @@ MonoBehaviour:
   MapTitleInk: {r: 0.24, g: 0.13, b: 0.05, a: 1}
   MapLegendInk: {r: 0.36, g: 0.24, b: 0.13, a: 1}
   MapPathInk: {r: 0.42, g: 0.3, b: 0.18, a: 0.85}
-  MapYouInk: {r: 0.45, g: 0.2, b: 0.03, a: 1}
+  MapYouInk: {r: 0.8, g: 0.1, b: 0.06, a: 1}
   MapRingInk: {r: 0.28, g: 0.17, b: 0.07, a: 1}
+  MapIconFight: {fileID: 21300000, guid: a4c91da0f5a812549a44570b4eaf4427, type: 3}
+  MapIconElite: {fileID: 21300000, guid: 4858855bb3ebaa342ae4232d71b47000, type: 3}
+  MapIconShop: {fileID: 21300000, guid: badbcc80793eab54dac34506786ea571, type: 3}
+  MapIconEvent: {fileID: 21300000, guid: 0e833415ee8c8a24f9cbfd85766fd78d, type: 3}
+  MapIconGamble: {fileID: 21300000, guid: 3bb9324018b608946852d2cc4d10fce7, type: 3}
+  MapIconBoss: {fileID: 21300000, guid: a0a72733ae7075649854db9db9cf1ff0, type: 3}
+  MapIconYou: {fileID: 21300000, guid: 33c72215c0fa8a741a832b131f037526, type: 3}
   PeekScreenFraction: {x: 0.56, y: 0.78}
