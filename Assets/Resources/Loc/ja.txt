@@ -4,6 +4,29 @@
 # HAPUS tanda TODO-nya, supaya laporan berikutnya menghitungnya.
 # \n = ganti baris. Pemisahnya tanda sama dengan PERTAMA.
 
+# ---------------- codex ----------------
+# TODO codex.counter={0} / {1} FOUND
+# TODO codex.filter.all=ALL
+# TODO codex.filter.rune=RUNES
+# TODO codex.filter.sigil=SIGILS
+# TODO codex.filter.skill=SKILLS
+# TODO codex.section.rune=BASE RUNES
+# TODO codex.section.sigil=SIGILS
+# TODO codex.section.skill=SKILLS
+
+# ---------------- demo ----------------
+# TODO demo.face.day=DAY
+# TODO demo.face.dusk=DUSK
+# TODO demo.face.midnight=MIDNIGHT
+# TODO demo.face.night=NIGHT
+
+# ---------------- event ----------------
+# TODO event.body="I do not sell blessings, witch.\nI trade them. One for one, and both for the rest of your life."
+# TODO event.gift=+{0} COINS
+# TODO event.nothing=NOTHING LEFT TO\nOFFER\n\n+{0} coins
+# TODO event.refuse=WALK AWAY   (+{0} coins)
+# TODO event.title=FOREST HERMIT
+
 # ---------------- hero ----------------
 # TODO hero.emberwright.blurb=Two runes, two skills, two sigils. Fireball and Frost Shard stand crossed on the ember rune — push them together for a 2-star Steam Burst that fills that rune whole, or leave both firing.
 # TODO hero.emberwright.name=Emberwright
@@ -11,6 +34,69 @@
 # TODO hero.frostwarden.name=Frostwarden
 # TODO hero.stormcaller.blurb=Fragile and fast. Lightning Slash fills its line rune whole, Fireball stands alone across the board — two skills that will never meet unless you move them.
 # TODO hero.stormcaller.name=Stormcaller
+
+# ---------------- hud ----------------
+# TODO hud.ailment.tip={0}  -  {1} enemies affected\n{2}
+# TODO hud.banner.build=BUILD YOUR GRIMOIRE
+# TODO hud.banner.needskill=\n\nplace at least 1 SKILL on a rune first
+# TODO hud.banner.rest=REST ISLE — {0}
+# TODO hud.banner.wavedone=WAVE {0} CLEAR
+# TODO hud.banner.wavedone.shop=WAVE {0} CLEAR   -   SHOP OPEN
+# TODO hud.bounced={0} bounced out
+# TODO hud.buff.charge={0}/{1} charge
+# TODO hud.drops={0} drops
+# TODO hud.drops.sold=overflow sold +{0} coins
+# TODO hud.evolve=EVOLVE!
+# TODO hud.exit=EXIT TO MENU
+# TODO hud.full.sold=full, {0} sold +{1}
+# TODO hud.gameover.info=run ended on wave {0}   -   {1} coins
+# TODO hud.gameover.menu=TO MAIN MENU
+# TODO hud.gameover.title=GAME OVER
+# TODO hud.grid.locked=GRIMOIRE   (LOCKED - wave running)
+# TODO hud.grid.open=GRIMOIRE   (editable)
+# TODO hud.hp.label=HP  {0} / {1}
+# TODO hud.hp.regen=   (+{0}/s)
+# TODO hud.line.enemies=   ·   enemies {0}
+# TODO hud.line.finish=   ·   FINISH THE REST
+# TODO hud.line.gold=   ·   <color=#E3C079>{0} coins</color>
+# TODO hud.line.kills=   ·   kills {0}
+# TODO hud.line.left=   ·   left {0}/{1}
+# TODO hud.line.wave=<color=#E3C079>WAVE {0}</color>
+# TODO hud.loose.sold={0} loose sold  +{1} coins
+# TODO hud.mana.label=MANA  {0} / {1}
+# TODO hud.mana.regen=   (+{0}/s)
+# TODO hud.meter.total=total {0}
+# TODO hud.newpiece=NEW: {0}
+# TODO hud.origin.bag=IN BAG (not firing)
+# TODO hud.origin.locked=PLACED - LOCKED, skipped by evolution
+# TODO hud.origin.placed=PLACED
+# TODO hud.pact.tip={0}   (PACT - permanent)
+# TODO hud.regen=\nheals {0} per second
+# TODO hud.speed.hint=speed  (keys 1/2/3/4)
+# TODO hud.spells.title=ACTIVE SPELLS
+# TODO hud.start.depart=CONTINUE   (SPACE)
+# TODO hud.start.wave=START WAVE   (SPACE)
+# TODO hud.time.suffix={0}   (T)
+
+# ---------------- kind ----------------
+# TODO kind.areaattarget=blast in the crowd
+# TODO kind.chain=chain strike
+# TODO kind.cleanse=curse cleanser
+# TODO kind.detonate=ailment detonator
+# TODO kind.heal=healer
+# TODO kind.line=line sweep
+# TODO kind.nova=ring blast
+# TODO kind.passive=passive sigil
+# TODO kind.projectile=projectile
+# TODO kind.radial=all-direction burst
+# TODO kind.rune=rune
+# TODO kind.zone=puddle
+
+# ---------------- map ----------------
+# TODO map.legend.choose=click a PULSING node   -   drag / scroll to pan\nW wave    E elite    T shop    ? event    S slots    B boss
+# TODO map.legend.view=W wave    E elite    T shop    ? event    S slots    B boss\ndrag / scroll to pan        M = close
+# TODO map.title.choose=ACT {0}  -  CHOOSE YOUR PATH
+# TODO map.title.view=RUN MAP  -  ACT {0}
 
 # ---------------- piece ----------------
 # TODO piece.absolutezero.blurb=EVOLVED. Reaches further than anything else in the book. Applies CHILL.
@@ -286,6 +372,122 @@
 # TODO piece.wintersend.blurb=EVOLVED. An eight-metre crater of ice, dropped where it hurts most.\nHARVEST: +0.35 HP per kill.
 # TODO piece.wintersend.name=Winter's End
 
+# ---------------- settings ----------------
+# TODO settings.framecap.unlimited=UNLIMITED
+# TODO settings.framecap.value={0} FPS
+# TODO settings.fullscreen.off=WINDOWED
+# TODO settings.fullscreen.on=FULLSCREEN
+# TODO settings.note.editor=Resolution and fullscreen only apply in a build, not in the Editor.
+# TODO settings.note.performance=   PERFORMANCE rows take effect from the next run.
+# TODO settings.note.vsync=The FPS cap is ignored while VSync is on.
+# TODO settings.off=OFF
+# TODO settings.on=ON
+# TODO settings.reset.armed=CLICK AGAIN TO CONFIRM
+# TODO settings.reset.done=Codex cleared.
+# TODO settings.reset.idle=CLEAR CODEX
+# TODO settings.resolution.value={0} x {1}
+# TODO settings.row.damagetext=Damage numbers
+# TODO settings.row.enemyshadows=Enemy shadows
+# TODO settings.row.framecap=FPS cap
+# TODO settings.row.language=Language
+# TODO settings.row.master=Master
+# TODO settings.row.music=Music
+# TODO settings.row.resolution=Resolution
+# TODO settings.row.screenmode=Screen mode
+# TODO settings.row.sfx=Sound effects
+# TODO settings.row.vsync=VSync
+# TODO settings.row.weathervfx=Weather VFX
+# TODO settings.tab.audio=AUDIO
+# TODO settings.tab.data=DATA
+# TODO settings.tab.display=DISPLAY
+# TODO settings.tab.language=LANGUAGE
+# TODO settings.tab.performance=PERFORMANCE
+
+# ---------------- shape ----------------
+# TODO shape.aitch=AITCH
+# TODO shape.arrow=ARROW
+# TODO shape.big3=BLOCK 3x3
+# TODO shape.bolt=BOLT
+# TODO shape.chunk=CHUNK
+# TODO shape.comb=COMB
+# TODO shape.corner=CORNER
+# TODO shape.cross=CROSS
+# TODO shape.cup=CUP
+# TODO shape.diag2=DIAGONAL 2
+# TODO shape.diag3=DIAGONAL 3
+# TODO shape.dot=DOT
+# TODO shape.ell=ELL
+# TODO shape.ess=ESS
+# TODO shape.ex=CROSS X
+# TODO shape.fork=TRIDENT
+# TODO shape.hook=HOOK C
+# TODO shape.jay=JAY
+# TODO shape.line2=LINE 2
+# TODO shape.line3=LINE 3
+# TODO shape.maw=MAW
+# TODO shape.nub=NUB
+# TODO shape.ring=RING
+# TODO shape.sbend=S-BEND
+# TODO shape.slab=SLAB 3x2
+# TODO shape.spiral=SPIRAL
+# TODO shape.square=SQUARE 2x2
+# TODO shape.stair=STAIRS
+# TODO shape.tee=TEE
+# TODO shape.twin=TWIN PILLARS
+# TODO shape.wedge=WEDGE
+# TODO shape.zed=ZED
+# TODO shape.zee=Z-BEND
+
+# ---------------- shop ----------------
+# TODO shop.button=SHOP OPEN
+# TODO shop.price={0} coins
+# TODO shop.reroll=REROLL   {0} coins
+# TODO shop.sold=(sold)
+# TODO shop.title=SHOP   —   {0} coins
+
+# ---------------- slot ----------------
+# TODO slot.info={0}\ncoins: {1}
+# TODO slot.jackpot=JACKPOT: {0}!
+# TODO slot.nogold=not enough coins
+# TODO slot.spin=SPIN!
+# TODO slot.spinning=. . .
+# TODO slot.title=SLOT MACHINE — {0} COINS PER SPIN
+# TODO slot.win.big=+{0} COINS!
+# TODO slot.win.small=+{0} coins
+
+# ---------------- spell ----------------
+# TODO spell.dmg= dmg
+# TODO spell.dps= dps
+# TODO spell.mana= mana
+
+# ---------------- starter ----------------
+# TODO starter.empty.hint=ContentDatabase has not loaded a single HeroLoadout.
+# TODO starter.empty.title=NO STARTERS YET
+# TODO starter.stats=HP {0}  (+{1}/s)      MANA {2}  (+{3}/s)      SPEED {4}
+
+# ---------------- stat ----------------
+# TODO stat.ailmentpoints=+{0} ailment points per application
+# TODO stat.area=+{0}% area
+# TODO stat.bounces=bullets & beams BOUNCE {0}x more
+# TODO stat.cooldown={0}{1}% cooldown
+# TODO stat.critchance=+{0}% crit chance
+# TODO stat.critdamage=+{0}% crit damage
+# TODO stat.damage=+{0}% damage
+# TODO stat.debuffresist={0}{1}% curse resistance
+# TODO stat.defense=+{0} defence
+# TODO stat.firedamage=+{0}% FIRE skill damage
+# TODO stat.forks=lightning chains fork {0} more
+# TODO stat.hits=+{0} bursts / blades / missiles / strikes
+# TODO stat.hpregen=+{0} HP / second
+# TODO stat.icedamage=+{0}% ICE skill damage
+# TODO stat.lightningdamage=+{0}% LIGHTNING skill damage
+# TODO stat.manacost={0}{1}% mana cost
+# TODO stat.manaregen=+{0} mana / second
+# TODO stat.maxhp=+{0} maximum HP
+# TODO stat.maxmana=+{0} maximum mana
+# TODO stat.movespeed={0}{1} evasion speed
+# TODO stat.range=+{0}% range
+
 # ---------------- status ----------------
 # TODO status.bleed.name=BLEED
 # TODO status.burn.name=BURN
@@ -294,3 +496,39 @@
 # TODO status.seret.name=DRAG
 # TODO status.shock.name=SHOCK
 # TODO status.stun.name=STUN
+
+# ---------------- tip ----------------
+# TODO tip.aura={0}{1}% {2} TOTAL  ({3}% per cell)
+# TODO tip.aura.area=area
+# TODO tip.aura.cooldown=cooldown
+# TODO tip.aura.damage=damage
+# TODO tip.kind.rune=base rune
+# TODO tip.kind.sigil=passive sigil
+# TODO tip.rune.element={0} skills standing on it: +{1}% damage TOTAL
+# TODO tip.rune.plain=a plain rune, grants no aura
+# TODO tip.sell=sell {0} coins
+# TODO tip.sigil.active=active
+# TODO tip.sigil.inactive=must stand on a rune to be active
+# TODO tip.skill.applies=applies {0}
+# TODO tip.skill.applies.dur= {0}s
+# TODO tip.skill.applies.points= {0} points
+# TODO tip.skill.areabonus=  +{0}% AREA
+# TODO tip.skill.base=base numbers - not placed on a rune yet
+# TODO tip.skill.bounces=  ·  BOUNCES {0}x
+# TODO tip.skill.cd=  ·  cd {0}s
+# TODO tip.skill.cdbonus=  -{0}% CD
+# TODO tip.skill.damage=damage {0}
+# TODO tip.skill.detonate=\ndetonates every enemy carrying {0}, damage x POINTS stacked
+# TODO tip.skill.dirs=  ·  directions {0}
+# TODO tip.skill.dmgbonus=  +{0}% DMG
+# TODO tip.skill.drift=  ·  WANDERS
+# TODO tip.skill.forks=  ·  forks {0}
+# TODO tip.skill.frombelow=from the rune below:
+# TODO tip.skill.heal=heal {0}
+# TODO tip.skill.jumps=  ·  jumps {0}
+# TODO tip.skill.mana=  ·  mana {0}
+# TODO tip.skill.nobuff=the rune below grants no buff
+# TODO tip.skill.radius=  ·  blast radius {0}
+# TODO tip.skill.range=range {0}
+# TODO tip.typeline={0}  ·  {1}  ·  {2} cells
+# TODO tip.typeline.element=  ·  {0}

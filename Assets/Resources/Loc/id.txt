@@ -4,6 +4,29 @@
 # HAPUS tanda TODO-nya, supaya laporan berikutnya menghitungnya.
 # \n = ganti baris. Pemisahnya tanda sama dengan PERTAMA.
 
+# ---------------- codex ----------------
+codex.counter={0} / {1} KETEMU
+codex.filter.all=SEMUA
+codex.filter.rune=RUNE
+codex.filter.sigil=SEGEL
+codex.filter.skill=SKILL
+codex.section.rune=RUNE DASAR
+codex.section.sigil=SEGEL
+codex.section.skill=SKILL
+
+# ---------------- demo ----------------
+demo.face.day=SIANG
+demo.face.dusk=SENJA
+demo.face.midnight=TENGAH MALAM
+demo.face.night=MALAM
+
+# ---------------- event ----------------
+event.body="Aku tidak menjual berkah, penyihir.\nAku menukarnya. Satu untuk satu, dan keduanya seumur hidupmu."
+event.gift=+{0} KOIN
+event.nothing=TIDAK ADA LAGI YANG\nBISA DITAWARKAN\n\n+{0} koin
+event.refuse=PERGI SAJA   (+{0} koin)
+event.title=PERTAPA HUTAN
+
 # ---------------- hero ----------------
 hero.emberwright.blurb=Dua alas, dua skill, dua segel. Fireball dan Frost Shard berdiri menyilang di alas api — dempetkan kalau mau Steam Burst bintang 2 yang mengisi alas itu utuh, atau biarkan keduanya tetap menembak.
 hero.emberwright.name=Emberwright
@@ -11,6 +34,69 @@ hero.frostwarden.blurb=Tahan pukul, lambat mengisi. Frost Shard dan Minor Heal b
 hero.frostwarden.name=Frostwarden
 hero.stormcaller.blurb=Rapuh dan cepat. Sabetan Petir mengisi penuh alas garisnya, Fireball berdiri sendirian di seberang papan — dua skill yang tidak akan pernah bertemu kecuali kamu yang memindahkannya.
 hero.stormcaller.name=Stormcaller
+
+# ---------------- hud ----------------
+hud.ailment.tip={0}  -  {1} musuh terkena\n{2}
+hud.banner.build=SUSUN GRIMOIRE-MU
+hud.banner.needskill=\n\npasang minimal 1 SKILL di atas rune dulu
+hud.banner.rest=PULAU REHAT — {0}
+hud.banner.wavedone=WAVE {0} BERES
+hud.banner.wavedone.shop=WAVE {0} BERES   -   TOKO BUKA
+hud.bounced={0} kepental keluar
+hud.buff.charge={0}/{1} charge
+hud.drops={0} drop
+hud.drops.sold=kelebihan kejual +{0} koin
+hud.evolve=EVOLVE!
+hud.exit=KELUAR KE MENU
+hud.full.sold=penuh, {0} kejual +{1}
+hud.gameover.info=run berakhir di wave {0}   -   {1} koin
+hud.gameover.menu=KE MENU UTAMA
+hud.gameover.title=GAME OVER
+hud.grid.locked=GRIMOIRE   (TERKUNCI - wave lagi jalan)
+hud.grid.open=GRIMOIRE   (bisa diubah)
+hud.hp.label=HP  {0} / {1}
+hud.hp.regen=   (+{0}/dtk)
+hud.line.enemies=   ·   musuh {0}
+hud.line.finish=   ·   HABISKAN SISANYA
+hud.line.gold=   ·   <color=#E3C079>{0} koin</color>
+hud.line.kills=   ·   kills {0}
+hud.line.left=   ·   sisa {0}/{1}
+hud.line.wave=<color=#E3C079>WAVE {0}</color>
+hud.loose.sold={0} tercecer kejual  +{1} koin
+hud.mana.label=MANA  {0} / {1}
+hud.mana.regen=   (+{0}/dtk)
+hud.meter.total=total {0}
+hud.newpiece=BARU: {0}
+hud.origin.bag=DI TAS (nggak nembak)
+hud.origin.locked=KEPASANG - TERKUNCI, nggak ikut evolusi
+hud.origin.placed=KEPASANG
+hud.pact.tip={0}   (PAKTA - permanen)
+hud.regen=\npulih {0} per detik
+hud.speed.hint=kecepatan  (tombol 1/2/3/4)
+hud.spells.title=SPELL AKTIF
+hud.start.depart=LANJUT   (SPACE)
+hud.start.wave=MULAI WAVE   (SPACE)
+hud.time.suffix={0}   (T)
+
+# ---------------- kind ----------------
+kind.areaattarget=ledakan di gerombolan
+kind.chain=sambaran beruntun
+kind.cleanse=pembersih kutukan
+kind.detonate=peledak ailment
+kind.heal=penyembuh
+kind.line=sapuan garis
+kind.nova=ledakan melingkar
+kind.passive=segel pasif
+kind.projectile=proyektil
+kind.radial=semburan segala arah
+kind.rune=alas
+kind.zone=kubangan
+
+# ---------------- map ----------------
+map.legend.choose=klik node yang BERDENYUT   -   tarik / scroll buat geser peta\nW wave    E elite    T toko    ? kejadian    S slot    B boss
+map.legend.view=W wave    E elite    T toko    ? kejadian    S slot    B boss\ntarik / scroll buat geser peta        M = tutup
+map.title.choose=ACT {0}  -  PILIH TUJUANMU
+map.title.view=PETA RUN  -  ACT {0}
 
 # ---------------- piece ----------------
 piece.absolutezero.blurb=EVOLVED. Reaches further than anything else in the book. Applies CHILL.
@@ -286,28 +372,7 @@ piece.whirlwind.name=Whirlwind
 piece.wintersend.blurb=EVOLVED. An eight-metre crater of ice, dropped where it hurts most.\nPANEN: tiap kill +0.35 HP.
 piece.wintersend.name=Winter's End
 
-# ---------------- status ----------------
-status.bleed.name=BLEED
-status.burn.name=BURN
-status.chill.name=CHILL
-status.poison.name=POISON
-status.seret.name=DRAG
-status.shock.name=SHOCK
-status.stun.name=STUN
-
-# ---------------- ui (ditulis tangan) ----------------
-codex.counter={0} / {1} KETEMU
-codex.filter.all=SEMUA
-codex.filter.rune=RUNE
-codex.filter.sigil=SEGEL
-codex.filter.skill=SKILL
-codex.section.rune=RUNE DASAR
-codex.section.sigil=SEGEL
-codex.section.skill=SKILL
-demo.face.day=SIANG
-demo.face.dusk=SENJA
-demo.face.midnight=TENGAH MALAM
-demo.face.night=MALAM
+# ---------------- settings ----------------
 settings.framecap.unlimited=TANPA BATAS
 settings.framecap.value={0} FPS
 settings.fullscreen.off=JENDELA
@@ -337,91 +402,8 @@ settings.tab.data=DATA
 settings.tab.display=LAYAR
 settings.tab.language=BAHASA
 settings.tab.performance=PERFORMA
-starter.empty.hint=ContentDatabase belum memuat satu pun HeroLoadout.
-starter.empty.title=BELUM ADA STARTER
-starter.stats=NYAWA {0}  (+{1}/dtk)      MANA {2}  (+{3}/dtk)      LAJU {4}
 
-# ---------------- hud & panel in-run ----------------
-event.body="Aku tidak menjual berkah, penyihir.\nAku menukarnya. Satu untuk satu, dan keduanya seumur hidupmu."
-event.gift=+{0} KOIN
-event.nothing=TIDAK ADA LAGI YANG\nBISA DITAWARKAN\n\n+{0} koin
-event.refuse=PERGI SAJA   (+{0} koin)
-event.title=PERTAPA HUTAN
-hud.ailment.tip={0}  -  {1} musuh terkena\n{2}
-hud.banner.build=SUSUN GRIMOIRE-MU
-hud.banner.needskill=\n\npasang minimal 1 SKILL di atas rune dulu
-hud.banner.rest=PULAU REHAT — {0}
-hud.banner.wavedone=WAVE {0} BERES
-hud.banner.wavedone.shop=WAVE {0} BERES   -   TOKO BUKA
-hud.bounced={0} kepental keluar
-hud.buff.charge={0}/{1} charge
-hud.drops={0} drop
-hud.drops.sold=kelebihan kejual +{0} koin
-hud.evolve=EVOLVE!
-hud.exit=KELUAR KE MENU
-hud.full.sold=penuh, {0} kejual +{1}
-hud.gameover.info=run berakhir di wave {0}   -   {1} koin
-hud.gameover.menu=KE MENU UTAMA
-hud.gameover.title=GAME OVER
-hud.grid.locked=GRIMOIRE   (TERKUNCI - wave lagi jalan)
-hud.grid.open=GRIMOIRE   (bisa diubah)
-hud.hp.label=HP  {0} / {1}
-hud.hp.regen=   (+{0}/dtk)
-hud.line.enemies=   ·   musuh {0}
-hud.line.finish=   ·   HABISKAN SISANYA
-hud.line.gold=   ·   <color=#E3C079>{0} koin</color>
-hud.line.kills=   ·   kills {0}
-hud.line.left=   ·   sisa {0}/{1}
-hud.line.wave=<color=#E3C079>WAVE {0}</color>
-hud.loose.sold={0} tercecer kejual  +{1} koin
-hud.mana.label=MANA  {0} / {1}
-hud.mana.regen=   (+{0}/dtk)
-hud.meter.total=total {0}
-hud.newpiece=BARU: {0}
-hud.origin.bag=DI TAS (nggak nembak)
-hud.origin.locked=KEPASANG - TERKUNCI, nggak ikut evolusi
-hud.origin.placed=KEPASANG
-hud.pact.tip={0}   (PAKTA - permanen)
-hud.regen=\npulih {0} per detik
-hud.speed.hint=kecepatan  (tombol 1/2/3/4)
-hud.spells.title=SPELL AKTIF
-hud.start.depart=LANJUT   (SPACE)
-hud.start.wave=MULAI WAVE   (SPACE)
-hud.time.suffix={0}   (T)
-map.legend.choose=klik node yang BERDENYUT   -   tarik / scroll buat geser peta\nW wave    E elite    T toko    ? kejadian    S slot    B boss
-map.legend.view=W wave    E elite    T toko    ? kejadian    S slot    B boss\ntarik / scroll buat geser peta        M = tutup
-map.title.choose=ACT {0}  -  PILIH TUJUANMU
-map.title.view=PETA RUN  -  ACT {0}
-shop.button=TOKO BUKA
-shop.price={0} koin
-shop.reroll=REROLL   {0} koin
-shop.sold=(kebeli)
-shop.title=TOKO   —   {0} koin
-slot.info={0}\nkoin: {1}
-slot.jackpot=JACKPOT: {0}!
-slot.nogold=koin kurang
-slot.spin=PUTAR!
-slot.spinning=. . .
-slot.title=MESIN SLOT — {0} KOIN SEKALI PUTAR
-slot.win.big=+{0} KOIN!
-slot.win.small=+{0} koin
-spell.dmg= dmg
-spell.dps= dps
-spell.mana= mana
-
-# ---------------- tooltip, stat, jenis & bentuk ----------------
-kind.areaattarget=ledakan di gerombolan
-kind.chain=sambaran beruntun
-kind.cleanse=pembersih kutukan
-kind.detonate=peledak ailment
-kind.heal=penyembuh
-kind.line=sapuan garis
-kind.nova=ledakan melingkar
-kind.passive=segel pasif
-kind.projectile=proyektil
-kind.radial=semburan segala arah
-kind.rune=alas
-kind.zone=kubangan
+# ---------------- shape ----------------
 shape.aitch=HURUF H
 shape.arrow=PANAH
 shape.big3=BLOK 3x3
@@ -455,6 +437,35 @@ shape.twin=TIANG KEMBAR
 shape.wedge=SUDUT V
 shape.zed=HURUF Z
 shape.zee=BENGKOK Z
+
+# ---------------- shop ----------------
+shop.button=TOKO BUKA
+shop.price={0} koin
+shop.reroll=REROLL   {0} koin
+shop.sold=(kebeli)
+shop.title=TOKO   —   {0} koin
+
+# ---------------- slot ----------------
+slot.info={0}\nkoin: {1}
+slot.jackpot=JACKPOT: {0}!
+slot.nogold=koin kurang
+slot.spin=PUTAR!
+slot.spinning=. . .
+slot.title=MESIN SLOT — {0} KOIN SEKALI PUTAR
+slot.win.big=+{0} KOIN!
+slot.win.small=+{0} koin
+
+# ---------------- spell ----------------
+spell.dmg= dmg
+spell.dps= dps
+spell.mana= mana
+
+# ---------------- starter ----------------
+starter.empty.hint=ContentDatabase belum memuat satu pun HeroLoadout.
+starter.empty.title=BELUM ADA STARTER
+starter.stats=NYAWA {0}  (+{1}/dtk)      MANA {2}  (+{3}/dtk)      LAJU {4}
+
+# ---------------- stat ----------------
 stat.ailmentpoints=+{0} poin ailment per tempel
 stat.area=+{0}% area
 stat.bounces=peluru & sinar MEMANTUL {0}x lagi
@@ -476,6 +487,17 @@ stat.maxhp=+{0} HP maksimum
 stat.maxmana=+{0} mana maksimum
 stat.movespeed={0}{1} kecepatan menghindar
 stat.range=+{0}% jangkauan
+
+# ---------------- status ----------------
+status.bleed.name=BLEED
+status.burn.name=BURN
+status.chill.name=CHILL
+status.poison.name=POISON
+status.seret.name=DRAG
+status.shock.name=SHOCK
+status.stun.name=STUN
+
+# ---------------- tip ----------------
 tip.aura={0}{1}% {2} TOTAL  ({3}% per petak)
 tip.aura.area=area
 tip.aura.cooldown=cooldown
