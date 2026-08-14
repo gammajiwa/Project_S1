@@ -95,7 +95,7 @@ namespace Proto
 
                     var tile = _tiles.Take();
                     tile.Cover(_shapeCells[index].rectTransform);
-                    tile.Bind(RuneTiles.GlyphAt(piece, i), piece.Color, 1f);
+                    tile.Bind(RuneTiles.BakedTileAt(piece, i), RuneTiles.GlyphAt(piece, i), piece.Color, 1f);
                 }
             }
 

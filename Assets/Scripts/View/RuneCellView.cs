@@ -93,8 +93,30 @@ namespace Proto
         /// dituang ke ANCHOR, bukan ke posisi dalam piksel, supaya ikut benar di petak 15 piksel
         /// codex maupun petak papan yang berkali-kali lebih besar.
         /// </summary>
+        /// <summary>
+        /// Petak yang sudah jadi MENGISI PENUH selnya, tanpa jaga aspek dan tanpa koreksi
+        /// pemusatan.
+        ///
+        /// Dua-duanya sengaja. Gambar-gambar itu digambar sebagai petak, jadi tepinya memang
+        /// tepi petak - memberinya jarak akan menyisakan celah di antara petak yang seharusnya
+        /// bersambung. Dan aspek tiap potongan atlasnya sedikit berbeda (180x160, 186x150, ...),
+        /// jadi menjaga aspek justru membuat petak-petak di papan tampil beda-beda ukuran.
+        /// </summary>
+        void PlaceBaked()
+        {
+            _glyph.preserveAspect = false;
+
+            var rt = _glyph.rectTransform;
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
+
         void PlaceGlyph(Sprite glyph)
         {
+            _glyph.preserveAspect = true;
+
             float span = 1f - 2f * GlyphInset;
 
             // Sisi mana yang dipakai preserveAspect untuk memuat gambarnya. Gambar yang lebih
@@ -164,33 +186,41 @@ namespace Proto
         /// menempati petak itu, jadi ia dibiarkan tembus pandang; runenya digambar penuh, tanpa
         /// diwarnai ulang, supaya glow yang sudah ada di gambarnya tetap glow.
         /// </summary>
-        public void Bind(Sprite glyph, Color tint, float alpha)
+        public void Bind(Sprite baked, Sprite glyph, Color tint, float alpha)
         {
             Ensure();
 
+            // Petak yang sudah jadi membawa bingkai dan latarnya sendiri di dalam gambarnya.
+            // Menyalakan pelat warna di bawahnya cuma menaruh kotak berwarna di belakang gambar
+            // yang latarnya sudah pekat - tidak terlihat, dan satu draw call per petak percuma.
+            bool hasBaked = baked != null;
+
             if (_plate != null)
             {
-                _plate.enabled = true;
-                _plate.color = new Color(tint.r, tint.g, tint.b, PlateAlpha * alpha);
+                _plate.enabled = !hasBaked;
+                if (!hasBaked) _plate.color = new Color(tint.r, tint.g, tint.b, PlateAlpha * alpha);
             }
 
             if (_border != null)
             {
-                _border.enabled = ShowBorder;
-                if (ShowBorder) _border.color = new Color(tint.r, tint.g, tint.b, alpha);
+                _border.enabled = !hasBaked && ShowBorder;
+                if (_border.enabled) _border.color = new Color(tint.r, tint.g, tint.b, alpha);
             }
 
             if (_glyph != null)
             {
-                _glyph.enabled = glyph != null;
+                var wanted = hasBaked ? baked : glyph;
+                _glyph.enabled = wanted != null;
 
                 // Ditata ulang HANYA saat gambarnya berganti. Menyentuh anchor tiap frame
                 // menandai layout kotor untuk tiap petak di papan, tiap frame.
-                if (_placed != glyph)
+                if (_placed != wanted)
                 {
-                    _glyph.sprite = glyph;
-                    _placed = glyph;
-                    PlaceGlyph(glyph);
+                    _glyph.sprite = wanted;
+                    _placed = wanted;
+
+                    if (hasBaked) PlaceBaked();
+                    else PlaceGlyph(wanted);
                 }
 
                 // Putih penuh, SELALU. Mengalikannya dengan warna piece akan meredupkan gambar

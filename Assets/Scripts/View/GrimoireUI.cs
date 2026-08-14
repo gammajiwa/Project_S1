@@ -1021,7 +1021,7 @@ namespace Proto
 
                 var tile = _looseTiles.Take();
                 tile.Cover(img.rectTransform);
-                tile.Bind(RuneTiles.GlyphAt(def, i), def.Color, alpha);
+                tile.Bind(RuneTiles.BakedTileAt(def, i), RuneTiles.GlyphAt(def, i), def.Color, alpha);
             }
 
             return cursor;
@@ -4606,7 +4606,8 @@ namespace Proto
 
                         var tile = pool.Take();
                         tile.Cover(cells[c.y * width + c.x].rectTransform);
-                        tile.Bind(RuneTiles.GlyphAt(inst.Def, k), inst.Def.Color, alpha);
+                        tile.Bind(RuneTiles.BakedTileAt(inst.Def, k), RuneTiles.GlyphAt(inst.Def, k),
+                            inst.Def.Color, alpha);
                     }
                 }
             }

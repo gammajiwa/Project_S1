@@ -70,8 +70,44 @@ namespace Proto
         };
 
         static Sprite[] _sheet;
+        static RuneTileSet _tileSet;
+        static bool _tileSetTried;
         static GameObject _cellPrefab;
         static bool _cellPrefabTried;
+
+        /// <summary>Nama gambar ke-<paramref name="index"/> di sheet. Dipakai alat editor untuk melapor.</summary>
+        public static string SheetNameAt(int index)
+        {
+            if (index < 0 || index >= SheetNames.Length) return "?";
+            return SheetNames[index];
+        }
+
+        /// <summary>
+        /// Petak yang SUDAH JADI untuk petak ke-<paramref name="index"/> sebuah piece: bingkai,
+        /// latar, dan glyphnya menyatu dalam satu gambar.
+        ///
+        /// Null berarti jalur ini tidak dipakai — asetnya belum ada, atau slotnya sengaja
+        /// dikosongkan — dan pemanggilnya kembali menyusun petaknya sendiri dari pelat warna
+        /// plus glyph. Itu jalan pulang yang diminta waktu art ini masuk sebagai percobaan.
+        /// </summary>
+        public static Sprite BakedTileAt(PieceDefinition def, int index)
+        {
+            if (def == null || def.Icon == null) return null;
+            if (!IsRuneGlyph(def.Icon)) return null;
+
+            if (!_tileSetTried)
+            {
+                _tileSet = Resources.Load<RuneTileSet>("RuneTileSet");
+                _tileSetTried = true;
+            }
+
+            if (_tileSet == null) return null;
+
+            int at = IndexOfIcon(def.Icon);
+            if (at < 0) return null;
+
+            return _tileSet.At(at + index);
+        }
 
         /// <summary>Ikon yang berasal dari sheet rune, satu-satunya yang digambar sebagai tile.</summary>
         public static bool IsRuneGlyph(Sprite icon)
@@ -117,15 +153,10 @@ namespace Proto
 
             EnsureSheet();
 
-            int at = -1;
-            for (int i = 0; i < SheetNames.Length; i++)
-            {
-                if (SheetNames[i] == def.Icon.name) { at = i; break; }
-            }
-
             // Ikon rune yang namanya tidak ada di daftar: sheet-nya bertambah tanpa daftar ini
             // ikut diperbarui. Jatuh balik ke ikonnya sendiri di semua petak — salah, tapi
             // terbaca; melempar exception di tengah gambar papan tidak.
+            int at = IndexOfIcon(def.Icon);
             if (at < 0) return def.Icon;
 
             int n = SheetNames.Length;
@@ -148,6 +179,16 @@ namespace Proto
             }
 
             return Vector2.zero;
+        }
+
+        static int IndexOfIcon(Sprite icon)
+        {
+            for (int i = 0; i < SheetNames.Length; i++)
+            {
+                if (SheetNames[i] == icon.name) return i;
+            }
+
+            return -1;
         }
 
         static void EnsureSheet()

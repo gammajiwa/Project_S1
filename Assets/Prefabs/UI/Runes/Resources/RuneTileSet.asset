@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2848c03d52be7fa4fa4a96f24ae6fa5a, type: 3}
+  m_Name: RuneTileSet
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.RuneTileSet
+  Tiles:
+  - {fileID: -471791912, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: -1796903668, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 2097565455, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 943400202, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: -811150595, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 2057133362, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: -949501885, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 425748283, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: -885368761, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 625225361, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 918163317, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 1404452270, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: -288147787, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: -740237821, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: -1608720173, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
+  - {fileID: 34264028, guid: c54e40a1262b9d7469044922e02aea91, type: 3}
