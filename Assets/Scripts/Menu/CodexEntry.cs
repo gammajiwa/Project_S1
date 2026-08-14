@@ -93,6 +93,10 @@ namespace Proto
                     int index = IndexOf(cells[i]);
                     if (index < 0) continue;
 
+                    // Siluetnya dimatikan di petak yang ditutup tile: tile membawa latarnya
+                    // sendiri, dan yang tersisa di belakang cuma bocor lewat tepi transparannya.
+                    _shapeCells[index].enabled = false;
+
                     var tile = _tiles.Take();
                     tile.Cover(_shapeCells[index].rectTransform);
                     tile.Bind(RuneTiles.BakedTileAt(piece, i), RuneTiles.GlyphAt(piece, i), piece.Color, 1f);

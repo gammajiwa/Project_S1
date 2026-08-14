@@ -282,6 +282,12 @@ namespace Proto
                         // melewatkan satu petak tidak boleh menggeser gambar petak sesudahnya.
                         if (RuneTiles.IsRuneGlyph(seat.Piece.Icon))
                         {
+                            // Kotak warnanya DIMATIKAN, walau letak dan ukurannya tetap dipakai
+                            // tile di bawah ini. Sprite petak dari atlas punya tepi transparan,
+                            // jadi kotak yang dibiarkan menyala menyembul sebagai pita berwarna
+                            // mengelilingi runenya.
+                            img.enabled = false;
+
                             var tile = _tiles.Take();
                             tile.Cover(img.rectTransform);
                             tile.Bind(RuneTiles.BakedTileAt(seat.Piece, c), RuneTiles.GlyphAt(seat.Piece, c),
