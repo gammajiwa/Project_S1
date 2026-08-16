@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: sumur
   DisplayName: WELLSPRING
   Color: {r: 0.4, g: 0.6, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: a62008992e180344da28a7fed61cd4c7, type: 3}
+  Icon: {fileID: 21300000, guid: 3c345efdf11a4ba081039a9671740f91, type: 3}
   Duration: 8
   Mods:
   - Type: 5

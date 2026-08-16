@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: power
   DisplayName: POWER
   Color: {r: 0.75, g: 0.6, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: f5435c9468890f340a2a990192257872, type: 3}
+  Icon: {fileID: 21300000, guid: c68f95b2b3e748618eaa874ceb5e6821, type: 3}
   Duration: 9
   MaxStacks: 5
   Mods:

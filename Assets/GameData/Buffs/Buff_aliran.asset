@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: aliran
   DisplayName: FLOW
   Color: {r: 0.6, g: 0.85, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: 63bfe1e0d55fcfe489cd3c201d42a7d6, type: 3}
+  Icon: {fileID: 21300000, guid: 79e9e9d51dca41aba9db9a7bf16cda01, type: 3}
   Duration: 6
   Mods:
   - Type: 8

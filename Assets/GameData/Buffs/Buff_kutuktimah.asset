@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: kutuktimah
   DisplayName: LEADEN
   Color: {r: 0.5, g: 0.5, b: 0.55, a: 1}
-  Icon: {fileID: 21300000, guid: 9c8d656ed7d3ce9418846dc2f8e71e33, type: 3}
+  Icon: {fileID: 21300000, guid: 3095b05b0047457694c7d69cbfb089a5, type: 3}
   Duration: 4
   Mods:
   - Type: 17

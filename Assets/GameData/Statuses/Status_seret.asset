@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: seret
   DisplayName: DRAG
   Color: {r: 0.75, g: 0.55, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: 92a257b09aa8b9b4c864e18f316a9c38, type: 3}
+  Icon: {fileID: 21300000, guid: 1572ddd4911e44f6b9b8c685fa799bb7, type: 3}
   MaxPoints: 1
   RefreshOnReapply: 1
   TickInterval: 0.5

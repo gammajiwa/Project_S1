@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: burn
   DisplayName: BURN
   Color: {r: 1, g: 0.45, b: 0.15, a: 1}
-  Icon: {fileID: 21300000, guid: 06e06fa24324aba4a82dcd2cae590e6e, type: 3}
+  Icon: {fileID: 21300000, guid: b11006ecb3dc4d9cb8b3e1e7fb1de446, type: 3}
   MaxPoints: 3
   RefreshOnReapply: 1
   TickInterval: 0.5

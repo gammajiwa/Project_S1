@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: frenzy
   DisplayName: FRENZY
   Color: {r: 1, g: 0.55, b: 0.25, a: 1}
-  Icon: {fileID: 21300000, guid: 2d9a6afb30cab6b429b9a1fb56018238, type: 3}
+  Icon: {fileID: 21300000, guid: f7efbe981f11407d84a1b5f1e992965b, type: 3}
   Duration: 8
   MaxStacks: 6
   Mods:
