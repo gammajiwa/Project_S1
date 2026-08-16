@@ -52,8 +52,8 @@ MonoBehaviour:
   MapPathInk: {r: 0.42, g: 0.3, b: 0.18, a: 0.85}
   MapYouInk: {r: 0.8, g: 0.1, b: 0.06, a: 1}
   MapRingInk: {r: 0.28, g: 0.17, b: 0.07, a: 1}
-  MapIconFight: {fileID: 21300000, guid: a4c91da0f5a812549a44570b4eaf4427, type: 3}
-  MapIconElite: {fileID: 21300000, guid: 4858855bb3ebaa342ae4232d71b47000, type: 3}
+  MapIconFight: {fileID: 21300000, guid: 98ab11df5166d9f4ab9c350c681bc7a9, type: 3}
+  MapIconElite: {fileID: 21300000, guid: de80fb86c8520064caf8f8fda593fcc3, type: 3}
   MapIconShop: {fileID: 21300000, guid: badbcc80793eab54dac34506786ea571, type: 3}
   MapIconEvent: {fileID: 21300000, guid: 0e833415ee8c8a24f9cbfd85766fd78d, type: 3}
   MapIconGamble: {fileID: 21300000, guid: 3bb9324018b608946852d2cc4d10fce7, type: 3}
