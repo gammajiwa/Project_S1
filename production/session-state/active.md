@@ -2752,3 +2752,61 @@ awan tanah masih ganggu/nggak.
 node dihapus saat icon ada - icon full-size diwarnai KindColor digelapkan 30% ke tinta
 (palet asli terlalu terang buat perkamen); ukuran node naik 46/38/32 - 66/56/46 (boss
 tetap 4x). Fallback tanpa icon tetap kotak+huruf. Compile 0 error. Menunggu mata.
+
+**Ronde 4c (feedback mata + ref STS):** ukuran node naik LAGI 66/56/46 - 104/88/76;
+KindScale dilebarkan: Elite 1.7, Shop 1.5, Gamble 1.45, Event 1.35, Boss tetap 4x
+("ukurannya jangan sama"); MapFloorGap 170-210 + MapScrollMax 580 (kaki boss jangan
+nindih lantai bawah). Icon: Fight=iconEnemy2, Elite=iconElit2 (varian 2 dipakai).
+Warna tinta baru KindInk() ala STS: musuh merah bata (0.58,0.14,0.1), elite merah bara,
+boss merah pekat, shop emas tua, event ungu, slot magenta; PLAYER HITAM (0.07,0.05,0.04)
+ukuran 72 - satu2nya tinta hitam di peta. Judul "CHOOSE YOUR PATH" di kepala peta
+DIBUANG (field _mapTitle dihapus). Compile 0 error.
+CATATAN "kurang icon": semua 6 jenis node game ini sudah ada icon-nya; yang di ref STS
+tapi belum ada di GAME: rest/api unggun, chest/harta, "?" unknown - itu jenis node baru
+(mekanik), bukan sekadar gambar. User perlu putuskan mau nambah jenis node atau nggak.
+
+**Ronde 5 (2026-08-17, 3 keluhan mata user):**
+1. SFX REAKSI (kegedean + jelek): 9 klip Reactions[] di AudioTheme.asset di-rewire dari
+   sintesis sfx_cat_* ke pool kurasi Assets/Audio/SFX/Element (keluarga yang sama dengan
+   suara cast yang user bilang OK): badaiapi=HIGH_Punch_Fire_03, pecah=HIGH_EM_ICE_HARD,
+   arusdarah=HIGH_EM_WATER_IMPACT, bakarluka=MEDIUM_EM_FIRE_IMPACT, bekuretak=LOW_EM_ICE,
+   bekustatis=EM_LIGHT_IMPACT, ledakracun=LOW_Block_Magic(poison), nanah=Water_Splash,
+   pusaranbeku=HIGH_Push_Wind_02. AudioDirector: volume reaksi 0.9-0.55, MinGap 0.12-0.3
+   (maks ~3 dentum/dtk), chime fallback 780/1170Hz 0.5s - 523/784Hz (C5+G5) 0.35s.
+   File sfx_cat_* TIDAK dihapus, cuma tidak direferensikan reaksi lagi.
+2. AWAN TANAH MENDUNG (kayak disemprot tinta + batu gak kena bayangan): akar = saat
+   overcast, alpha blob awan di-lerp ke OvercastCloud 0.8 (hampir pekat) sementara batu/prop
+   di atas quad tetap terang (sun cuma turun ke 0.72, ambient malah x1.3). Fix: kepekatan
+   dipindah dari quad (tanah saja) ke matahari (kena semua) - OvercastCloud 0.8-0.42,
+   OvercastSun 0.72-0.55 di 4 biome forest; softness shader 0.3-0.38 (Atmosphere.cs).
+   Sanctum tidak disentuh (cuacanya cuma Cerah, overcast tak pernah nyala).
+3. MALAM KAYAK GAME HOROR: biang terbesar = Gloom malam ceiling 0.92 ring 15-27 (siang
+   0.5 / 18-36) = tembok hitam 92% mulai 15 unit; plus fog start 25/18. Night: gloom
+   0.92-0.55 ring 22-40; sun 0.75-1.35 (0.66,0.76,1); ambient sky (0.21,0.29,0.52)-
+   (0.34,0.44,0.68) equator+ground senada; fog start/end 25/110-55/190, warna (0.1,0.15,0.3)-
+   (0.22,0.3,0.5). Midnight: gloom 0.92-0.62 ring 20-36; sun 0.45-1.0; ambient sky
+   (0.12,0.16,0.28)-(0.26,0.34,0.56); fog 18/85-48/170 warna (0.16,0.22,0.4). PlayerLight
+   range 17-20 warna lebih putih (0.72,0.85,1) di keduanya - radius visibility di sekitar
+   pemain. Midnight tetap lebih gelap dari night di semua kanal (urutan terjaga).
+CATATAN: BiomePass.cs (generator) TIDAK di-sync - sudah stale sejak Ronde 4; aset = sumber
+kebenaran. Jangan rerun BiomePass tanpa sadar nilainya bakal balik. Unity MCP mati saat
+sesi ini (editor tutup) - compile belum diverifikasi, tapi perubahan kode cuma literal
+angka + komentar di AudioDirector.cs & Atmosphere.cs. BELUM dinilai mata - punch list:
+suara reaksi baru (cocok/kegedean/masih ganggu?), mendung masih tinta/nggak + batu nyatu,
+malam & midnight: masih horor/nggak, warna masih kusam/nggak, radius terang pemain kerasa.
+
+**Ronde 5b (awan gak gerak):** dua akar. (a) Tiap ganti cuaca, Overcast() rebuild layer
+lewat Atmosphere.Apply() yang MENGACAK ULANG arah angin (TickCount) - offset shader =
+arah x waktu, waktu sudah ratusan detik, ganti arah = seluruh pola TELEPORT. Awan tak
+pernah terlihat jalan, cuma sesekali berubah. Fix: field _heading diundi sekali per sesi,
+rebuild memakai arah yang sama. (b) Gumpalan 42-44 unit hanyut 7 unit/dtk = 6 dtk per
+lebar sendiri, tak tertangkap mata. CloudSpeed 7-13 di 5 biome (termasuk sanctum).
+
+**Ronde 5c (god ray "gambar patah"):** ujung ATAS quad beam Sunlight/Moonlight masuk
+frame kamera - keliatan kayak panel sobek ngambang ("Ambient Sunlight 0", malam juga).
+Akar: startSizeY beam diundi 11.4-70 (scalar 20 x curve 0.5714 / minScalar 70) - beam
+pendek ujungnya nongol di tengah layar. Fix DI PREFAB (satu-satunya nilai yang diubah,
+seizin user "coba config ini"): startSizeY - 75-95 (curve max 0.5714-1, scalar 20-95,
+minScalar 70-75) di Assets/Prefabs/Light/Sunlight.prefab + Moonlight.prefab. Pivot beam
+y -0.5 (berdiri dari tanah), jadi base tetap nempel tanah, ujung atas selalu di luar
+layar (butuh ~72 di worst case ortho 18 pitch 60). Struktur/child prefab TIDAK disentuh.
