@@ -74,7 +74,7 @@ namespace Proto
             0.06f,  // Blast
             0.05f,  // Hit
             0.05f,  // Death
-            0.12f,  // Reaction
+            0.3f,   // Reaction — reward, bukan senapan: rentetan berantai cukup ~3 dentum/detik
             0.05f,  // Pickup
             0f,     // BossRoar
             0f      // WaveStart
@@ -274,7 +274,10 @@ namespace Proto
             if (Time.unscaledTime - _lastPlayed[gate] < MinGap[gate]) return;
             _lastPlayed[gate] = Time.unscaledTime;
 
-            PlayClip(clip, 0.9f, 1f, 2);
+            // 0,9 dulu — reaksi menimpa Blast/Hit yang sudah berbunyi di frame yang sama,
+            // jadi tiap combo terdengar dua kali lebih besar dari skill mana pun. Reaksi itu
+            // bumbu di atas ledakan, bukan ledakan kedua.
+            PlayClip(clip, 0.55f, 1f, 2);
         }
 
         // ---- antarmuka: prioritas 0, paling rela mengalah saat layar sedang ramai ----
@@ -413,7 +416,9 @@ namespace Proto
 
                 // Dua nada bersamaan = dentang. Ini satu-satunya suara "hadiah" di daftar, jadi
                 // ia harus terdengar beda jenis, bukan cuma beda tinggi.
-                case Sound.Reaction: return Chime("sfx_reaction", 0.5f, 780f, 1170f);
+                // 780+1170 Hz dulu — nyaring menusuk di rentetan. Diturunkan ke C5+G5
+                // (kwint murni) dan dipendekkan: tetap dentang hadiah, tidak lagi bel alarm.
+                case Sound.Reaction: return Chime("sfx_reaction", 0.35f, 523f, 784f);
 
                 case Sound.Pickup: return Tone("sfx_pickup", 0.22f, 620f, 1240f, 0.5f, 0f);
 
