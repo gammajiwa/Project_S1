@@ -45,6 +45,9 @@ namespace Proto
         Transform _clouds;
         float _span;
 
+        // Arah angin sesi ini. Negatif = belum diundi.
+        float _heading = -1f;
+
         public void Init(Transform follow, float span)
         {
             _follow = follow;
@@ -73,14 +76,22 @@ namespace Proto
                 return;
             }
 
-            // Arah angin diacak TIAP SESI, dan itu memang yang diminta: dua run berturut-turut
-            // tidak boleh punya cuaca yang persis sama. Dipakai System.Random, bukan
-            // UnityEngine.Random — yang terakhir itu urutan acak milik gameplay (jenis musuh,
-            // sebaran drop, arah semburan skill), dan mengambil satu angka dari sana menggeser
-            // seluruh sisanya.
-            var dice = new System.Random(System.Environment.TickCount);
-            float heading = (float)dice.NextDouble() * Mathf.PI * 2f;
-            var wind = new Vector2(Mathf.Sin(heading), Mathf.Cos(heading));
+            // Arah angin diacak SEKALI PER SESI, bukan per pemanggilan. Apply dipanggil ulang
+            // tiap cuaca berganti (Overcast menebalkan awan lewat rebuild), dan offset pola di
+            // shader = arah × waktu — waktu yang sudah ratusan detik membuat ganti arah sama
+            // dengan MELONCATKAN seluruh pola ke tempat lain. Itulah kenapa awan terlihat
+            // "tidak pernah bergerak, cuma sesekali berubah": tiap wave polanya teleport,
+            // lalu hanyut pelan sampai teleport berikutnya. Arah yang menetap membuat rebuild
+            // hanya mengganti warna/tebal, dan hanyutnya tersambung mulus.
+            // Dipakai System.Random, bukan UnityEngine.Random — yang terakhir itu urutan acak
+            // milik gameplay, dan mengambil satu angka dari sana menggeser seluruh sisanya.
+            if (_heading < 0f)
+            {
+                var dice = new System.Random(System.Environment.TickCount);
+                _heading = (float)dice.NextDouble() * Mathf.PI * 2f;
+            }
+
+            var wind = new Vector2(Mathf.Sin(_heading), Mathf.Cos(_heading));
 
             // CloudSpeed dipakai APA ADANYA, dalam unit dunia per detik.
             //
@@ -96,11 +107,12 @@ namespace Proto
                 // yang terlihat bukan awan yang melintas melainkan noda yang mendidih di tempat.
                 // Awan sungguhan memang berubah bentuk, tapi jauh lebih lambat daripada ia hanyut —
                 // dan mata membaca GERAK dari bentuk yang tetap sambil berpindah.
-                // Softness 0,3 (dulu 0,18): tepi yang terlalu tajam membuat gumpalan kecil
-                // terbaca sebagai NODA di tanah, bukan bayangan awan — dan noda itulah yang
-                // dikeluhkan merusak lingkungannya. Tepi lembut + gumpalan besar di aset
-                // biome yang mengembalikannya jadi awan.
-                biome.CloudSize, biome.CloudCoverage, 0.3f,
+                // Softness 0,38 (dulu 0,18 → 0,3): tepi yang terlalu tajam membuat gumpalan
+                // kecil terbaca sebagai NODA di tanah, bukan bayangan awan — dan setelah dua
+                // ronde mata masih menyebutnya "disemprot tinta", tepinya dilembutkan lagi.
+                // Kepekatan mendungnya sendiri dipindah ke OvercastSun di aset biome, supaya
+                // batu dan prop ikut menggelap bersama tanahnya.
+                biome.CloudSize, biome.CloudCoverage, 0.38f,
                 wind, biome.CloudSpeed, 0.015f, 0.45f, Vector2.one, false);
 
             // Berkas cahaya TIDAK dibangun di sini, dan tidak lagi dibangun kode mana pun.

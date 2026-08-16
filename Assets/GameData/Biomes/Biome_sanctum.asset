@@ -214,7 +214,7 @@ MonoBehaviour:
   CloudColor: {r: 0.02, g: 0.03, b: 0.08, a: 0.16}
   CloudSize: 44
   CloudCoverage: 0.42
-  CloudSpeed: 7
+  CloudSpeed: 13
   RayColor: {r: 0.55, g: 0.68, b: 1, a: 0}
   RaySize: 34
   RayCoverage: 0.4
