@@ -24,7 +24,7 @@ MonoBehaviour:
   ArtRotation: 0
   ArtBehindCells: 0
   Color: {r: 0.45, g: 0.95, b: 0.55, a: 1}
-  Icon: {fileID: 21300000, guid: 40460bb5fed71d541943e98c9c0b5fce, type: 3}
+  Icon: {fileID: 21300000, guid: 80c7e26f531844b29c2b67912a6269b5, type: 3}
   Kind: 3
   Element: 3
   BaseDamage: 18
