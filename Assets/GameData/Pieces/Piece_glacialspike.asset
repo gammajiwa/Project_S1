@@ -24,7 +24,7 @@ MonoBehaviour:
   ArtRotation: 0
   ArtBehindCells: 0
   Color: {r: 0.5215, g: 0.80859995, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: b5f169a750a558a4c82b52b3cff724c2, type: 3}
+  Icon: {fileID: 21300000, guid: 288075ecb57b479ab68ec0a0779adafc, type: 3}
   HitVfx: {fileID: 2929269476326280783, guid: df4fe695706243f4ab91be8c2852d41e, type: 3}
   HitVfxScale: 0.6
   Kind: 0
