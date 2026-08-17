@@ -178,12 +178,20 @@ namespace Proto
         [Range(0f, 1f)] public float MidnightChance = 0.3f;
 
         [Header("Kamera")]
-        [Tooltip("Besar zona mati kamera, sebagai porsi setengah layar. Pemain boleh bergerak " +
-                 "sebebasnya di dalam zona ini tanpa kamera ikut sama sekali.\n\n" +
-                 "Terlalu besar dan kamera nyaris tidak pernah bergerak; terlalu kecil dan kamera " +
-                 "menempel di pemain, yang menghapus rasa bahwa PEMAIN yang berpindah, bukan " +
-                 "dunianya yang bergeser.")]
-        [Range(0.05f, 0.8f)] public float CameraDeadZone = 0.22f;
+        [Tooltip("Zona mati kamera per SISI, sebagai porsi layar diukur dari tepi itu. Pemain " +
+                 "bebas bergerak di dalam kotak ini tanpa kamera ikut; begitu ia melewati salah " +
+                 "satu sisinya, kamera menggeser secukupnya saja.\n\n" +
+                 "Empat angka, bukan satu, karena HUD-nya tidak simetris: buku grimoire menutup " +
+                 "kiri-bawah layar, jadi sisi kiri harus menahan pemain lebih jauh dari tepi " +
+                 "daripada sisi kanan — pemain yang berjalan di belakang buku sama saja hilang.")]
+        [Range(0.05f, 0.45f)] public float CameraDeadLeft = 0.22f;
+
+        [Range(0.05f, 0.45f)] public float CameraDeadRight = 0.15f;
+
+        [Tooltip("Bawah sedikit lebih ketat dari atas: tas & baris keterangan hidup di bawah.")]
+        [Range(0.05f, 0.45f)] public float CameraDeadBottom = 0.14f;
+
+        [Range(0.05f, 0.45f)] public float CameraDeadTop = 0.13f;
 
         // Knob "musuh terkutuk" sudah dipindah ke aset EnemyArchetype — kapan muncul, seberapa
         // sering, sebesar apa, dan kutukan mana, semuanya milik arketipe sekarang. Dua mekanisme

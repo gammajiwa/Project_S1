@@ -75,7 +75,9 @@ namespace Proto
         public static float GridY => GridOverride?.yMin ?? Margin + 8;
 
         // ---------- right-hand column ----------
-        public const int BagCell = 34;
+        // 44, dulu 34: menemani papan yang membesar 1,6x — tas yang tetap kecil di sebelah
+        // papan besar terbaca seperti milik UI lain.
+        public const int BagCell = 44;
         public const int BagGap = 3;
         public const int BagY = 20;
 
@@ -86,25 +88,47 @@ namespace Proto
 
         // Wide enough for "1. Greater Fireball   34.0 dmg   32.4 dps   1.05s   17 mana".
         // Icon strips, stacked straight under the mana bar (which ends at -90).
-        public const float StripIcon = 26f;
+        // 36 piksel: di 26 ikonnya harus dipelototi dulu untuk dikenali, dan strip yang harus
+        // dipelototi kalah cepat dari wave. Jarak antar baris ikut melebar (ikon + 8).
+        public const float StripIcon = 36f;
         public const float StripBuffY = -96f;
-        public const float StripDebuffY = -128f;
-        public const float StripAilmentY = -160f;
+        public const float StripDebuffY = -140f;
+        public const float StripAilmentY = -184f;
 
         /// <summary>
         /// Kolom PAKTA di tepi kanan, dan sengaja jauh di bawah tepi atas.
         ///
-        /// Percobaan pertama menyejajarkannya dengan strip buff (−96) dan hasilnya terlihat di
-        /// screenshot: bilah demo (pengubah waktu & cuaca) duduk di pojok kanan-atas sampai kira-
-        /// kira −175, dan dua ikon pakta teratas tertimbun di belakangnya. Pakta permanen yang
-        /// tidak terlihat sama saja dengan pakta yang tidak pernah diambil.
+        /// −210 pernah dicoba dan masih tertimbun, karena diukur di layar yang salah: bilah demo
+        /// (pengubah waktu & cuaca) hidup di kanvas ber-CanvasScaler referensi 1080p, sedangkan
+        /// kanvas HUD ini memakai piksel layar mentah. Di 1080p bilahnya memang berakhir ~−212,
+        /// tapi di QHD ia membesar 1,33x dan mencapai ~−283 piksel layar — dan ikon pakta teratas
+        /// kembali tertimbun. Pakta permanen yang tidak terlihat sama saja dengan pakta yang
+        /// tidak pernah diambil. −300 aman sampai QHD.
         ///
         /// Boleh ditimpa lewat kotak PactArea di StatusStripRig.
         /// </summary>
-        public const float StripPactY = -210f;
+        public const float StripPactY = -300f;
+
+        /// <summary>
+        /// Ikon pakta lebih besar daripada ikon strip biasa. Buff dan kutukan itu cuaca — datang
+        /// dan pergi; pakta adalah keputusan permanen, dan bobot visualnya harus mengatakan itu.
+        /// </summary>
+        public const float StripPactIcon = 44f;
 
         public const int SpellPanelW = 380;
         public const int CooldownDiameter = 26;
+
+        // ---------- panel spell: kanan-ATAS, di bawah deret tombol kecepatan ----------
+        //
+        // Dulu panel ini duduk di kanan-bawah, dan tombol LANJUT antar-wave (kotaknya ditata
+        // prefab StarterRig di area yang sama) mendarat MENIMPA baris-baris skill. Pindah ke
+        // atas membebaskan seluruh pojok bawah untuk tombol itu.
+        public const int VisibleSpellRows = 5;
+        public const float SpellPanelTop = -130f;
+
+        // Digeser ke kiri melewati jalur ikon pakta (Margin + ikon 44 + napas 8): blok spell
+        // boleh tumbuh ke bawah tanpa pernah menyentuh kolom pakta di tepi kanan (mulai −300).
+        public const float SpellPanelRight = -(Margin + StripPactIcon + 8f);
 
         public const int SpeedButtonW = 58;
         public const int SpeedButtonH = 34;
@@ -184,7 +208,9 @@ namespace Proto
             new Rect(r.xMin - pad.x, r.yMin - pad.y,
                      r.width + pad.x + pad.z, r.height + pad.y + pad.w);
 
-        public static float RightX() => GridX + Grimoire.Width * (CellSize + CellGap) + 12;
+        // 40, dulu 12: sampul buku membingkai petak dengan tepi tebal, dan tas yang menempel
+        // 12 piksel darinya terbaca seperti tertindih sampul, bukan berdiri di sebelahnya.
+        public static float RightX() => GridX + Grimoire.Width * (CellSize + CellGap) + 40;
 
         public static Vector2 BagAnchor(int x, int y) =>
             new Vector2(RightX() + x * (BagCell + BagGap), BagY + y * (BagCell + BagGap));
@@ -247,7 +273,10 @@ namespace Proto
         {
             float width = speedCount * SpeedButtonW + (speedCount - 1) * 6;
             float right = Screen.width - Margin;
-            float top = Screen.height - Margin - SpeedButtonH - 22;
+
+            // 30, bukan 22: teks petunjuk kecepatan duduk di celah ini (tingginya 20 mulai −58),
+            // dan di 22 tepi bawahnya menindih tombol ini dua piksel.
+            float top = Screen.height - Margin - SpeedButtonH - 30;
 
             return new Rect(right - width, top - SpeedButtonH, width, SpeedButtonH);
         }

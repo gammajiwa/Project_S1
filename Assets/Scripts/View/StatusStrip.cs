@@ -17,7 +17,6 @@ namespace Proto
     public class StatusStrip
     {
         readonly Image[] _icons;
-        readonly Image[] _frames;
         readonly Text[] _numbers;
         readonly string[] _tooltips;
         readonly Rect[] _rects;
@@ -50,17 +49,17 @@ namespace Proto
             _slot = iconSize + (vertical ? 8f : 26f);
 
             _icons = new Image[capacity];
-            _frames = new Image[capacity];
             _numbers = new Text[capacity];
             _tooltips = new string[capacity];
             _rects = new Rect[capacity];
 
             for (int i = 0; i < capacity; i++)
             {
-                // Frame first: creation order is draw order, so it has to exist before the icon.
-                _frames[i] = MakeImage(canvas, $"StripFrame_{i}", iconSize + 4f);
+                // Ikon berdiri sendiri, tanpa kotak latar. Kotak gelap yang dulu digambar di
+                // belakangnya adalah Image tanpa sprite — kotak putih polos di-tint — dan di
+                // atas arena ia terbaca sebagai panel primitif, bukan bingkai. Ikon gaya Hades
+                // membawa siluet dan outline-nya sendiri; latar justru mengaburkannya.
                 _icons[i] = MakeImage(canvas, $"StripIcon_{i}", iconSize);
-
                 _numbers[i] = MakeText(canvas, font, $"StripNum_{i}", numberColor);
             }
 
@@ -89,7 +88,7 @@ namespace Proto
 
             var text = go.AddComponent<Text>();
             text.font = font;
-            text.fontSize = 13;
+            text.fontSize = 14;
             text.fontStyle = FontStyle.Bold;
             text.color = color;
             text.alignment = TextAnchor.MiddleLeft;
@@ -118,11 +117,6 @@ namespace Proto
             float x = _vertical ? _origin.x : _origin.x + _used * _slot;
             float y = _vertical ? _origin.y - _used * _slot : _origin.y;
 
-            _frames[_used].enabled = true;
-            _frames[_used].sprite = null;
-            _frames[_used].color = new Color(tint.r * 0.35f, tint.g * 0.35f, tint.b * 0.35f, 0.85f);
-            _frames[_used].rectTransform.anchoredPosition = new Vector2(x - 2f, y + 2f);
-
             _icons[_used].enabled = true;
             _icons[_used].sprite = icon;
 
@@ -149,7 +143,6 @@ namespace Proto
         {
             for (int i = _used; i < _icons.Length; i++)
             {
-                _frames[i].enabled = false;
                 _icons[i].enabled = false;
                 _numbers[i].enabled = false;
             }

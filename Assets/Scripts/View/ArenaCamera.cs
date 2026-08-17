@@ -15,21 +15,27 @@ namespace Proto
     /// transform yang sama, guncangan akan menarik kamera balik ke titik asal tiap frame dan
     /// membatalkan seluruh pengikutan ini tanpa error apa pun.
     ///
-    /// Rig dikunci di dalam kotak arena supaya tepi lapangan tidak pernah bocor ke layar. Hutan
-    /// di luar arena tetap dibangkitkan dan terlihat — itu yang membuat dindingnya terbaca sebagai
-    /// "tanah lapang berbatas pohon", bukan sebagai kekosongan yang tiba-tiba berhenti.
+    /// Rig dijepit terhadap kotak arena, tapi jepitannya diukur ke TEPI ZONA MATI, bukan ke tepi
+    /// layar: pemain yang menempel dinding arena pun tetap tertahan di tepi kotak, tidak pernah
+    /// hanyut ke pojok layar (atau ke belakang buku). Hutan di luar arena memang dibangkitkan dan
+    /// didandani, jadi tanah luar yang ikut tertangkap tetap terbaca sebagai tepi hutan, bukan
+    /// kekosongan yang tiba-tiba berhenti.
     /// </summary>
     public class ArenaCamera : MonoBehaviour
     {
         Transform _target;
 
-        /// <summary>Setengah lebar zona mati dalam unit dunia.</summary>
-        float _deadX;
-        float _deadZ;
+        /// <summary>
+        /// Tepi kotak zona mati sebagai offset dunia dari titik fokus — min negatif, max positif,
+        /// dan SENGAJA tidak simetris: HUD-nya berat sebelah (buku menutup kiri-bawah), jadi sisi
+        /// kiri menahan pemain lebih jauh dari tepi layar daripada sisi kanan.
+        /// </summary>
+        float _deadMinX, _deadMaxX;
+        float _deadMinZ, _deadMaxZ;
 
-        /// <summary>Sejauh mana rig boleh menggeser sebelum tanah di luar arena terlihat.</summary>
-        float _limitX;
-        float _limitZ;
+        /// <summary>Jepitan rig per arah — asimetris mengikuti zona matinya.</summary>
+        float _limitMinX, _limitMaxX;
+        float _limitMinZ, _limitMaxZ;
 
         Vector3 _velocity;
 
@@ -53,12 +59,24 @@ namespace Proto
             float pitch = Mathf.Max(15f, cam.transform.eulerAngles.x);
             float halfDepth = halfHeight / Mathf.Sin(pitch * Mathf.Deg2Rad);
 
-            float fraction = Mathf.Clamp(balance.CameraDeadZone, 0.05f, 0.8f);
-            _deadX = halfWidth * fraction;
-            _deadZ = halfDepth * fraction;
+            // Margin per sisi dalam porsi layar → offset dunia dari pusat pandang. Margin 0,22
+            // di kiri berarti batas kotaknya 22% dari tepi kiri layar = 56% setengah-lebar di
+            // kiri pusat. Layar kiri = dunia −X, layar bawah = dunia −Z (kamera tak ber-yaw).
+            _deadMinX = -halfWidth * (1f - 2f * Mathf.Clamp(balance.CameraDeadLeft, 0.05f, 0.45f));
+            _deadMaxX = halfWidth * (1f - 2f * Mathf.Clamp(balance.CameraDeadRight, 0.05f, 0.45f));
+            _deadMinZ = -halfDepth * (1f - 2f * Mathf.Clamp(balance.CameraDeadBottom, 0.05f, 0.45f));
+            _deadMaxZ = halfDepth * (1f - 2f * Mathf.Clamp(balance.CameraDeadTop, 0.05f, 0.45f));
 
-            _limitX = Mathf.Max(0f, balance.ArenaHalfX - halfWidth);
-            _limitZ = Mathf.Max(0f, balance.ArenaHalfZ - halfDepth);
+            // Jepitan dilonggarkan dari "tepi layar = tepi arena" menjadi "tepi ZONA = tepi
+            // arena". Dengan jepitan lama, di dinding arena kamera berhenti total dan pemain
+            // bebas berjalan sampai pojok layar — lalu lenyap di belakang buku. Sekarang pemain
+            // yang menempel dinding pun masih tertahan di tepi kotak zona. Tanah di luar arena
+            // yang ikut tertangkap bukan masalah: hutan di luar memang dibangkitkan dan
+            // didandani, itulah yang membuat dindingnya terbaca sebagai tepi hutan.
+            _limitMaxX = Mathf.Max(0f, balance.ArenaHalfX - _deadMaxX);
+            _limitMinX = Mathf.Min(0f, -balance.ArenaHalfX - _deadMinX);
+            _limitMaxZ = Mathf.Max(0f, balance.ArenaHalfZ - _deadMaxZ);
+            _limitMinZ = Mathf.Min(0f, -balance.ArenaHalfZ - _deadMinZ);
         }
 
         /// <summary>
@@ -66,9 +84,11 @@ namespace Proto
         /// harus di dalam kotak ini — di luarnya jepitan arena menahan rig, dan pemain muncul
         /// menepi di layar sejak detik pertama.
         /// </summary>
-        public float LimitX => _limitX;
+        // Diambil sisi yang paling sempit: pemakainya menjepit simetris (titik lahir & teleport),
+        // dan kotak konservatif menjamin kamera selalu bisa menahan pemain di dalam zona.
+        public float LimitX => Mathf.Min(-_limitMinX, _limitMaxX);
 
-        public float LimitZ => _limitZ;
+        public float LimitZ => Mathf.Min(-_limitMinZ, _limitMaxZ);
 
         /// <summary>
         /// Titik yang dituju kamera, disimpan TERPISAH dari posisi kamera itu sendiri.
@@ -105,15 +125,15 @@ namespace Proto
 
             // Hanya selisih DI LUAR zona mati yang dikejar. Menggeser sebanyak selisih penuh akan
             // memusatkan pemain lagi, dan zona matinya jadi tidak ada artinya.
-            _focus.x += Overshoot(p.x - _focus.x, _deadX);
-            _focus.z += Overshoot(p.z - _focus.z, _deadZ);
+            _focus.x += Overshoot(p.x - _focus.x, _deadMinX, _deadMaxX);
+            _focus.z += Overshoot(p.z - _focus.z, _deadMinZ, _deadMaxZ);
 
             // Dijepit SETELAH digeser, dan pada _focus bukan pada posisi kamera — menjepit posisi
             // sementara sasarannya bebas berarti kamera terus mendorong ke dinding tanpa henti.
             if (!Roam)
             {
-                _focus.x = Mathf.Clamp(_focus.x, -_limitX, _limitX);
-                _focus.z = Mathf.Clamp(_focus.z, -_limitZ, _limitZ);
+                _focus.x = Mathf.Clamp(_focus.x, _limitMinX, _limitMaxX);
+                _focus.z = Mathf.Clamp(_focus.z, _limitMinZ, _limitMaxZ);
             }
 
             _focus.y = transform.position.y;
@@ -121,10 +141,10 @@ namespace Proto
             transform.position = Vector3.SmoothDamp(transform.position, _focus, ref _velocity, _smooth);
         }
 
-        static float Overshoot(float delta, float dead)
+        static float Overshoot(float delta, float min, float max)
         {
-            if (delta > dead) return delta - dead;
-            if (delta < -dead) return delta + dead;
+            if (delta > max) return delta - max;
+            if (delta < min) return delta - min;
             return 0f;
         }
     }

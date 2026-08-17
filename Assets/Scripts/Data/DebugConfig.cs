@@ -58,6 +58,12 @@ namespace Proto
                  "Bikin beberapa aset HeroLoadout (misal build bintang 5) lalu tukar di sini.")]
         public HeroLoadout ForceLoadout;
 
+        [Header("Panel demo")]
+        [Tooltip("Bilah ganti wajah & cuaca di pojok kanan-atas. Ikut gerbang induk, jadi build " +
+                 "yang dikirim (Enabled mati) tidak akan pernah membawanya — dulu saklarnya " +
+                 "field terpisah di ProtoBootstrap yang harus diingat untuk dimatikan.")]
+        public bool ShowDemoBar = true;
+
         [Header("Rekaman")]
         [Tooltip("Menyembunyikan seluruh UI. Buat menangkap gameplay bersih tanpa panel menutupi.")]
         public bool HideUI;
@@ -73,6 +79,7 @@ namespace Proto
         public bool CheatNoCooldowns => Enabled && NoCooldowns;
         public bool CheatFreezeSpawns => Enabled && FreezeSpawns;
         public bool CheatHideUI => Enabled && HideUI;
+        public bool DemoBarVisible => Enabled && ShowDemoBar;
 
         public float DamageScale => Enabled ? Mathf.Max(0f, DamageMultiplier) : 1f;
         public float EnemyHpScale => Enabled ? Mathf.Max(0.01f, EnemyHpMultiplier) : 1f;

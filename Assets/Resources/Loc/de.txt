@@ -74,6 +74,7 @@ hud.pact.tip={0}   (PAKT - dauerhaft)
 hud.regen=\nheilt {0} pro Sekunde
 hud.speed.hint=Tempo  (Tasten 1/2/3/4)
 hud.spells.title=AKTIVE ZAUBER
+hud.spells.more=+{0} weitere
 hud.start.depart=WEITER   (LEERTASTE)
 hud.start.wave=WELLE STARTEN   (LEERTASTE)
 hud.time.suffix={0}   (T)

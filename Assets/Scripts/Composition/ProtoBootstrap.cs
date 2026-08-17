@@ -50,10 +50,6 @@ namespace Proto
         [Tooltip("Prefab pengganti benda FX yang dulu primitif. Slot kosong = primitif lama.")]
         [SerializeField] FxLibrary _fx;
 
-        [Tooltip("Bilah tombol demo di bawah layar: ganti siang/malam & cuaca seketika. " +
-                 "Untuk memperlihatkan game ke orang lain — matikan sebelum build dikirim.")]
-        [SerializeField] bool _demoBar = true;
-
         [Header("Debug")]
         [Tooltip("Saklar curang buat rekaman & tes. Boleh dikosongkan — dan aset ini pun tidak " +
                  "berefek apa pun sampai gerbang 'Enabled' di dalamnya dinyalakan.")]
@@ -200,9 +196,13 @@ namespace Proto
 
                 dresser.Attach(lamps, glow, sky, gloom, weather, playerGo.transform);
 
-                // Bilah demo: tombol ganti wajah & cuaca di bawah layar. Dibangun DI SINI karena
-                // hanya di sini dresser dan weather dua-duanya sudah ada dan sudah tersambung.
-                if (_demoBar)
+                // Bilah demo: tombol ganti wajah & cuaca. Dibangun DI SINI karena hanya di sini
+                // dresser dan weather dua-duanya sudah ada dan sudah tersambung.
+                //
+                // Saklarnya pindah ke DebugConfig (dulu bool terpisah di komponen ini): ikut
+                // gerbang induk 'Enabled', jadi build yang dikirim tidak mungkin membawanya
+                // cuma karena satu centang scene lupa dimatikan.
+                if (_cheats != null && _cheats.DemoBarVisible)
                 {
                     var bar = new GameObject("DemoBar").AddComponent<DemoBar>();
                     bar.transform.SetParent(transform, false);

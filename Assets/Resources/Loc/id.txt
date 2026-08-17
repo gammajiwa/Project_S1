@@ -74,6 +74,7 @@ hud.pact.tip={0}   (PAKTA - permanen)
 hud.regen=\npulih {0} per detik
 hud.speed.hint=kecepatan  (tombol 1/2/3/4)
 hud.spells.title=SPELL AKTIF
+hud.spells.more=+{0} lainnya
 hud.start.depart=LANJUT   (SPACE)
 hud.start.wave=MULAI WAVE   (SPACE)
 hud.time.suffix={0}   (T)

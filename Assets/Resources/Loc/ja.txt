@@ -74,6 +74,7 @@
 # TODO hud.regen=\nheals {0} per second
 # TODO hud.speed.hint=speed  (keys 1/2/3/4)
 # TODO hud.spells.title=ACTIVE SPELLS
+# TODO hud.spells.more=+{0} more
 # TODO hud.start.depart=CONTINUE   (SPACE)
 # TODO hud.start.wave=START WAVE   (SPACE)
 # TODO hud.time.suffix={0}   (T)

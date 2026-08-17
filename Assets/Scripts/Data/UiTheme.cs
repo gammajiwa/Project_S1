@@ -93,6 +93,11 @@ namespace Proto
                  "Slotnya dibiarkan ada kalau nanti mau dicoba lagi.")]
         public Sprite GridFrame;
 
+        [Tooltip("Alas panel TAS 4x4 di kanan papan. Sekarang diisi placeholder generatan — " +
+                 "tukar sprite-nya di sini begitu art aslinya jadi, tanpa menyentuh kode. " +
+                 "Kosong = tas telanjang tanpa alas, seperti sebelum ada slot ini.")]
+        public Sprite BagPanel;
+
         [Header("Cairan di bola HP & mana")]
         [Tooltip("Seberapa tinggi permukaan cairan bergoyang, sebagai bagian dari tinggi bola.\n\n" +
                  "Nol = permukaan datar seperti sebelumnya. Goyangannya hanya MENGURANGI isian, " +

@@ -360,6 +360,9 @@ namespace Proto
         Text[] _spellText;
         Text _spellTitle;
 
+        /// <summary>Baris kolaps "+N" di bawah baris terakhir — yang tak kebagian tempat.</summary>
+        Text _spellMore;
+
         /// <summary>Jumlah baris spell yang terakhir ditata; -1 memaksa penataan pertama.</summary>
         int _spellRowsShown = -1;
 
@@ -816,11 +819,11 @@ namespace Proto
             if (_gridRig != null && !_gridRig.ShowTitle) _gridTitle.enabled = false;
 
             // Below the three icon strips, which now own the band straight under the mana bar.
-            _heldText = MakeText("HeldInfo", new Vector2(Margin, StripAilmentY - 34f),
+            _heldText = MakeText("HeldInfo", new Vector2(Margin, StripAilmentY - 44f),
                 new Vector2(880, 22), 13, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
                 TextAnchor.UpperLeft);
 
-            _evolveText = MakeText("EvolveInfo", new Vector2(Margin, StripAilmentY - 56f),
+            _evolveText = MakeText("EvolveInfo", new Vector2(Margin, StripAilmentY - 66f),
                 new Vector2(880, 22), 14, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
                 TextAnchor.UpperLeft);
             _evolveText.text = "";
@@ -1039,6 +1042,19 @@ namespace Proto
 
         void BuildBackpack()
         {
+            // Alas lebih dulu — urutan pembuatan adalah urutan gambar, dan alas yang lahir
+            // setelah selnya akan menutupi seluruh isi tas.
+            if (_theme != null && _theme.BagPanel != null)
+            {
+                float w = Backpack.Width * (BagCell + BagGap) - BagGap;
+                float h = Backpack.Height * (BagCell + BagGap) - BagGap;
+
+                // Pelukannya 14 per sisi: cukup untuk terbaca sebagai panel, tidak cukup untuk
+                // menyentuh sampul buku di kirinya (celahnya 40).
+                MakeFrame("BagPanel", _theme.BagPanel,
+                    new Rect(RightX() - 14f, BagY - 14f, w + 28f, h + 28f));
+            }
+
             _bagCells = new Image[Backpack.Width * Backpack.Height];
 
             for (int y = 0; y < Backpack.Height; y++)
@@ -1438,31 +1454,40 @@ namespace Proto
             {
                 // Row 0 is the TOP row. The list is sorted by damage, so the heaviest skill has to
                 // sit where the eye lands first — the old bottom-up order buried it.
-                // Posisi y di sini cuma tebakan awal: DrawSpells menata ulang begitu tahu
-                // berapa baris yang benar-benar terpakai.
-                float y = Margin + (MaxSpellRows - 1 - i) * 44;
-                _spellBg[i] = MakeImage($"SpellBg_{i}", new Vector2(-Margin, y), new Vector2(SpellPanelW, 40),
-                    PanelInk, new Vector2(1f, 0f));
+                // Dari judul ke bawah posisinya PAKU MATI: baris terpakai selalu 0..shown-1,
+                // jadi tidak ada yang perlu ditata ulang saat jumlahnya berubah — cuma ekor
+                // ("+N" dan meter) yang mengikuti, di DrawSpells.
+                float y = SpellPanelTop - 26f - i * 44f;
+                _spellBg[i] = MakeImage($"SpellBg_{i}", new Vector2(SpellPanelRight, y),
+                    new Vector2(SpellPanelW, 40), PanelInk, new Vector2(1f, 1f));
 
-                _spellFill[i] = MakeImage($"SpellFill_{i}", new Vector2(-Margin, y), new Vector2(SpellPanelW, 40),
-                    new Color(0.3f, 0.3f, 0.45f, 0.55f), new Vector2(1f, 0f));
+                _spellFill[i] = MakeImage($"SpellFill_{i}", new Vector2(SpellPanelRight, y),
+                    new Vector2(SpellPanelW, 40), new Color(0.3f, 0.3f, 0.45f, 0.55f), new Vector2(1f, 1f));
                 _spellFill[i].type = Image.Type.Filled;
                 _spellFill[i].fillMethod = Image.FillMethod.Horizontal;
                 _spellFill[i].fillOrigin = 0;
 
-                _spellText[i] = MakeText($"SpellText_{i}", new Vector2(-Margin - 8, y + 4),
-                    new Vector2(SpellPanelW - 10, 36), 13, TextBone, new Vector2(1f, 0f), TextAnchor.LowerRight);
+                _spellText[i] = MakeText($"SpellText_{i}", new Vector2(SpellPanelRight - 8, y - 2),
+                    new Vector2(SpellPanelW - 10, 36), 13, TextBone, new Vector2(1f, 1f), TextAnchor.MiddleRight);
 
                 // Takik warna piece di bibir kiri baris — dibuat SETELAH teks supaya tergambar
                 // paling atas. Warnanya diisi DrawSpells dari warna piece yang menempati baris.
-                _spellNotch[i] = MakeImage($"SpellNotch_{i}", new Vector2(-Margin - (SpellPanelW - 3), y),
-                    new Vector2(3, 40), Color.clear, new Vector2(1f, 0f));
+                _spellNotch[i] = MakeImage($"SpellNotch_{i}",
+                    new Vector2(SpellPanelRight - (SpellPanelW - 3), y),
+                    new Vector2(3, 40), Color.clear, new Vector2(1f, 1f));
             }
 
-            _spellTitle = MakeText("SpellTitle", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 6),
+            _spellTitle = MakeText("SpellTitle", new Vector2(SpellPanelRight, SpellPanelTop),
                 new Vector2(400, 22), 14, TextGold,
-                new Vector2(1f, 0f), TextAnchor.LowerRight);
+                new Vector2(1f, 1f), TextAnchor.UpperRight);
             _spellTitle.text = Loc.T("hud.spells.title");
+
+            // Baris kolaps: lima teratas (urut damage) sudah menceritakan build-nya; sisanya
+            // cukup diakui jumlahnya. Menampilkan SEMUA baris adalah alasan panel lama memanjang
+            // sampai apa pun yang duduk di dekatnya tertimpa.
+            _spellMore = MakeText("SpellMore", new Vector2(SpellPanelRight - 8, SpellPanelTop - 26f),
+                new Vector2(SpellPanelW, 18), 12, TextDim, new Vector2(1f, 1f), TextAnchor.MiddleRight);
+            _spellMore.text = "";
         }
 
         void BuildSpeedControl()
@@ -1503,7 +1528,8 @@ namespace Proto
         {
             if (_biome == null || _biome.Faces < 2) return;
 
-            float y = -(Margin + SpeedButtonH + 22);
+            // 30 menyamai TimeButtonRect — teks petunjuk kecepatan hidup di celah ini.
+            float y = -(Margin + SpeedButtonH + 30);
             float width = Speeds.Length * SpeedButtonW + (Speeds.Length - 1) * 6;
             var pos = new Vector2(-Margin, y);
 
@@ -1769,11 +1795,13 @@ namespace Proto
 
         void BuildMeter()
         {
-            // A single line now, tucked under the panel title — the whole meter block it replaced
-            // was a second copy of information the rows already carry.
-            _meterText = MakeText("Meter", new Vector2(-Margin, Margin + MaxSpellRows * 44 + 26),
+            // A single line now, the tail of the spell block — the whole meter block it replaced
+            // was a second copy of information the rows already carry. Posisi di sini cuma
+            // tebakan awal: DrawSpells menaruhnya di bawah baris terakhir (dan di bawah "+N")
+            // begitu tahu berapa baris yang benar-benar tampil.
+            _meterText = MakeText("Meter", new Vector2(SpellPanelRight - 8, SpellPanelTop - 46f),
                 new Vector2(SpellPanelW + 120, 20), 12, TextDim,
-                new Vector2(1f, 0f), TextAnchor.LowerRight);
+                new Vector2(1f, 1f), TextAnchor.MiddleRight);
 
             BuildStripAnchors();
 
@@ -1788,7 +1816,7 @@ namespace Proto
 
             // Kapasitas 12: katalognya 22, tapi node kejadian datang beberapa kali per act dan
             // pakta tidak pernah bisa diambil dua kali. Dua belas adalah run yang sangat panjang.
-            _pactStrip = new StatusStrip(_canvas.transform, _font, 12, StripIcon,
+            _pactStrip = new StatusStrip(_canvas.transform, _font, 12, StripPactIcon,
                 new Color(1f, 0.82f, 0.4f), vertical: true);
         }
 
@@ -1814,7 +1842,7 @@ namespace Proto
             // menaruh yang keempat di ujung barisan itu akan membuatnya terbaca sebagai jenis
             // keempat dari hal yang sama. Pakta bukan hal yang sama — ia dipilih, bukan menimpa,
             // dan tidak akan pernah hilang. Sisi layar yang berbeda mengatakan itu tanpa satu kata.
-            _pactOrigin = new Vector2(Screen.width - StripIcon - 18f, StripPactY);
+            _pactOrigin = new Vector2(Screen.width - StripPactIcon - Margin, StripPactY);
 
             if (_theme == null || _theme.StatusStripsPrefab == null) return;
 
@@ -1849,10 +1877,10 @@ namespace Proto
                 // tetap berarti mereka tertinggal menggantung di tempat strip yang sudah pindah,
                 // dan yang memindahkan stripnya tidak akan menduga keduanya ikut terlibat.
                 if (_heldText != null)
-                    _heldText.rectTransform.anchoredPosition = origin + new Vector2(0f, -34f);
+                    _heldText.rectTransform.anchoredPosition = origin + new Vector2(0f, -44f);
 
                 if (_evolveText != null)
-                    _evolveText.rectTransform.anchoredPosition = origin + new Vector2(0f, -56f);
+                    _evolveText.rectTransform.anchoredPosition = origin + new Vector2(0f, -66f);
             }
         }
 
@@ -5466,36 +5494,33 @@ namespace Proto
         {
             var spells = Book.Spells;
             int count = SortSpellsByDamage();
+            int shown = Mathf.Min(count, VisibleSpellRows);
 
-            // Baris yang terpakai MERAPAT ke pojok kanan-bawah. Slotnya dulu dipaku untuk 8
-            // baris, jadi dua spell pertama melayang di tengah tepi kanan dengan ruang kosong
-            // di bawahnya — panel terbaca patah justru di awal run, saat bukunya belum penuh.
-            if (count != _spellRowsShown)
+            // Yang disembunyikan dihitung dari daftar PENUH, bukan dari kapasitas slot panel —
+            // "+N" harus jujur soal berapa yang tidak kebagian baris.
+            int hidden = Mathf.Max(0, spells.Count - shown);
+
+            // Baris-baris dipaku dari judul ke bawah; yang mengikuti jumlah baris hanya
+            // EKORNYA — baris "+N" dan angka total meter.
+            if (shown != _spellRowsShown)
             {
-                _spellRowsShown = count;
+                _spellRowsShown = shown;
 
-                for (int i = 0; i < MaxSpellRows; i++)
-                {
-                    float y = Margin + (count - 1 - i) * 44;
-                    _spellBg[i].rectTransform.anchoredPosition = new Vector2(-Margin, y);
-                    _spellFill[i].rectTransform.anchoredPosition = new Vector2(-Margin, y);
-                    _spellNotch[i].rectTransform.anchoredPosition =
-                        new Vector2(-Margin - (SpellPanelW - 3), y);
-                    _spellText[i].rectTransform.anchoredPosition = new Vector2(-Margin - 8, y + 4);
-                }
-
-                _spellTitle.rectTransform.anchoredPosition =
-                    new Vector2(-Margin, Margin + count * 44 + 6);
+                float tail = SpellPanelTop - 26f - shown * 44f;
+                _spellMore.rectTransform.anchoredPosition = new Vector2(SpellPanelRight - 8, tail);
                 _meterText.rectTransform.anchoredPosition =
-                    new Vector2(-Margin, Margin + count * 44 + 26);
+                    new Vector2(SpellPanelRight - 8, tail - 20f);
 
                 // Judul tanpa satu pun baris di bawahnya cuma label yatim di pojok layar.
-                _spellTitle.enabled = count > 0;
+                _spellTitle.enabled = shown > 0;
             }
+
+            _spellMore.enabled = hidden > 0;
+            if (hidden > 0) _spellMore.text = Loc.F("hud.spells.more", hidden);
 
             for (int i = 0; i < MaxSpellRows; i++)
             {
-                bool used = i < count;
+                bool used = i < shown;
                 _spellBg[i].enabled = used;
                 _spellFill[i].enabled = used;
                 _spellNotch[i].enabled = used;

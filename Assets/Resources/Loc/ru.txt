@@ -74,6 +74,7 @@ hud.pact.tip={0}   (ПАКТ - навсегда)
 hud.regen=\nлечит {0} в секунду
 hud.speed.hint=скорость  (клавиши 1/2/3/4)
 hud.spells.title=АКТИВНЫЕ ЗАКЛИНАНИЯ
+hud.spells.more=ещё +{0}
 hud.start.depart=ДАЛЬШЕ   (ПРОБЕЛ)
 hud.start.wave=НАЧАТЬ ВОЛНУ   (ПРОБЕЛ)
 hud.time.suffix={0}   (T)
