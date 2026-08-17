@@ -91,7 +91,7 @@ MonoBehaviour:
   MapEliteChance: 0.15
   MapShopChance: 0.1
   MapEventChance: 0.07
-  MapGambleChance: 0.05
+  MapGambleChance: 0
   MapEliteMinFloor: 5
   MapOpensRun: 1
   MapFadeClose: 1.1

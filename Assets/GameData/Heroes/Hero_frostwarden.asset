@@ -26,21 +26,21 @@ MonoBehaviour:
   MoveSpeed: 4.8
   Placed:
   - Piece: {fileID: 11400000, guid: 64d11f54be6d37a4c8c13f0ae1f5aaf1, type: 2}
-    Origin: {x: 1, y: 3}
+    Origin: {x: 1, y: 2}
     Rot: 0
   - Piece: {fileID: 11400000, guid: 0cf509668f1f43a4cb43c520d19bc1a4, type: 2}
-    Origin: {x: 4, y: 3}
+    Origin: {x: 3, y: 2}
     Rot: 0
   - Piece: {fileID: 11400000, guid: 894749c860508ac4f9c227a85fdd138f, type: 2}
-    Origin: {x: 1, y: 3}
+    Origin: {x: 2, y: 3}
     Rot: 0
   - Piece: {fileID: 11400000, guid: 09cfc3e71ff8a2e4f8433d2440fcbf0d, type: 2}
-    Origin: {x: 2, y: 4}
+    Origin: {x: 2, y: 2}
     Rot: 0
-  - Piece: {fileID: 11400000, guid: d34cb0dd3db2482469d2fff4e83f10e2, type: 2}
-    Origin: {x: 4, y: 3}
+  - Piece: {fileID: 11400000, guid: 586e1c4157309184b9bc9dd8d1ab801d, type: 2}
+    Origin: {x: 1, y: 3}
     Rot: 0
-  - Piece: {fileID: 11400000, guid: c60ce9b054ec496479cfe2724e83dc81, type: 2}
-    Origin: {x: 5, y: 4}
+  - Piece: {fileID: 11400000, guid: b51d002aa79b2854c8d9f683fc1535c5, type: 2}
+    Origin: {x: 3, y: 2}
     Rot: 0
   Loose: []

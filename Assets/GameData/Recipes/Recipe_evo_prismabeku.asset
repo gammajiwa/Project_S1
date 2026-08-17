@@ -10,10 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 82976f149c28c5b488e14268b4584f06, type: 3}
-  m_Name: Recipe_moonglaive_a
+  m_Name: Recipe_evo_prismabeku
   m_EditorClassIdentifier: Assembly-CSharp::Proto.RecipeDefinition
   Ingredients:
-  - {fileID: 11400000, guid: 00d2551a0a7eae040813f8f77e9f6096, type: 2}
-  - {fileID: 11400000, guid: 00d2551a0a7eae040813f8f77e9f6096, type: 2}
   - {fileID: 11400000, guid: 894749c860508ac4f9c227a85fdd138f, type: 2}
-  Result: {fileID: 11400000, guid: 8c0dafeacdabf0b45b73cd0816a99b48, type: 2}
+  - {fileID: 11400000, guid: 6fb5c83de2ab1fa42a07345079e6cf4a, type: 2}
+  Result: {fileID: 11400000, guid: 3417ddb66ec7904409afbe962056f1a1, type: 2}

@@ -10,10 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 82976f149c28c5b488e14268b4584f06, type: 3}
-  m_Name: Recipe_moonglaive_a
+  m_Name: Recipe_sigil_segelrantai
   m_EditorClassIdentifier: Assembly-CSharp::Proto.RecipeDefinition
   Ingredients:
-  - {fileID: 11400000, guid: 00d2551a0a7eae040813f8f77e9f6096, type: 2}
-  - {fileID: 11400000, guid: 00d2551a0a7eae040813f8f77e9f6096, type: 2}
-  - {fileID: 11400000, guid: 894749c860508ac4f9c227a85fdd138f, type: 2}
-  Result: {fileID: 11400000, guid: 8c0dafeacdabf0b45b73cd0816a99b48, type: 2}
+  - {fileID: 11400000, guid: 70aa357810001c0469957f0c6e87162c, type: 2}
+  - {fileID: 11400000, guid: 91bd956357b192342a9e84cc541197d0, type: 2}
+  Result: {fileID: 11400000, guid: d11fedcd3fb9e92468609e96f894307a, type: 2}

@@ -14,5 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.RecipeDefinition
   Ingredients:
   - {fileID: 11400000, guid: ee919a1a5da5d8f4b97aa075d211bb5b, type: 2}
+  - {fileID: 11400000, guid: ee919a1a5da5d8f4b97aa075d211bb5b, type: 2}
   - {fileID: 11400000, guid: f04fae30f3e779c46b8883db7a0436b9, type: 2}
   Result: {fileID: 11400000, guid: 1e98542dbd7779441b85852f0c94e724, type: 2}

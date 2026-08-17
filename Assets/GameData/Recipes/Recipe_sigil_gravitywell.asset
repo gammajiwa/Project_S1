@@ -10,10 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 82976f149c28c5b488e14268b4584f06, type: 3}
-  m_Name: Recipe_moonglaive_a
+  m_Name: Recipe_sigil_gravitywell
   m_EditorClassIdentifier: Assembly-CSharp::Proto.RecipeDefinition
   Ingredients:
-  - {fileID: 11400000, guid: 00d2551a0a7eae040813f8f77e9f6096, type: 2}
-  - {fileID: 11400000, guid: 00d2551a0a7eae040813f8f77e9f6096, type: 2}
-  - {fileID: 11400000, guid: 894749c860508ac4f9c227a85fdd138f, type: 2}
-  Result: {fileID: 11400000, guid: 8c0dafeacdabf0b45b73cd0816a99b48, type: 2}
+  - {fileID: 11400000, guid: 586e1c4157309184b9bc9dd8d1ab801d, type: 2}
+  - {fileID: 11400000, guid: d0e39c1766674b34dbc23db62aff94d0, type: 2}
+  Result: {fileID: 11400000, guid: 57dfd9b40c3ef9946bc9a7ef74833097, type: 2}

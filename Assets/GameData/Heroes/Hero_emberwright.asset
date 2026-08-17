@@ -29,18 +29,18 @@ MonoBehaviour:
     Origin: {x: 2, y: 2}
     Rot: 0
   - Piece: {fileID: 11400000, guid: dc88b791424c8de42b32d91845f91727, type: 2}
-    Origin: {x: 4, y: 4}
+    Origin: {x: 2, y: 4}
     Rot: 0
   - Piece: {fileID: 11400000, guid: ee919a1a5da5d8f4b97aa075d211bb5b, type: 2}
-    Origin: {x: 2, y: 2}
+    Origin: {x: 2, y: 4}
     Rot: 0
   - Piece: {fileID: 11400000, guid: 894749c860508ac4f9c227a85fdd138f, type: 2}
+    Origin: {x: 3, y: 4}
+    Rot: 0
+  - Piece: {fileID: 11400000, guid: 70aa357810001c0469957f0c6e87162c, type: 2}
+    Origin: {x: 2, y: 3}
+    Rot: 0
+  - Piece: {fileID: 11400000, guid: 7baaee45d723aa14e8202aac2734c1aa, type: 2}
     Origin: {x: 3, y: 3}
-    Rot: 0
-  - Piece: {fileID: 11400000, guid: c60ce9b054ec496479cfe2724e83dc81, type: 2}
-    Origin: {x: 4, y: 4}
-    Rot: 0
-  - Piece: {fileID: 11400000, guid: d34cb0dd3db2482469d2fff4e83f10e2, type: 2}
-    Origin: {x: 5, y: 4}
     Rot: 0
   Loose: []
