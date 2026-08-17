@@ -14,10 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: thunderclap
   DisplayName: Thunderclap Sigil
-  Stars: 2
+  Stars: 3
   Layer: 1
   Shape: 20
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -69,7 +72,7 @@ MonoBehaviour:
   - Type: 21
     Value: 1
   - Type: 15
-    Value: 0.15
+    Value: 0.25
   Stat: 0
   StatValue: 0
-  Blurb: Satu arah semburan lagi, satu bilah lagi, satu rudal lagi.
+  Blurb: Satu hantaman tambahan, dan petirnya menggelegar.

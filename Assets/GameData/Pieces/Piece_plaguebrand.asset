@@ -18,7 +18,7 @@ MonoBehaviour:
   Layer: 1
   Shape: 0
   CustomCells: []
-  Art: {fileID: 0}
+  Art: {fileID: 21300000, guid: de659bc32d594cd3b06ad1b465cd0d4c, type: 3}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
   ArtRotation: 0

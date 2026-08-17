@@ -14,10 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: icelance
   DisplayName: Ice Lance Sigil
-  Stars: 1
+  Stars: 3
   Layer: 1
   Shape: 0
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 2, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -69,7 +72,7 @@ MonoBehaviour:
   - Type: 19
     Value: 1
   - Type: 14
-    Value: 0.18
+    Value: 0.25
   Stat: 0
   StatValue: 0
-  Blurb: Satu pantulan lagi.
+  Blurb: Es menggigit lebih dalam, dan pelurunya memantul.

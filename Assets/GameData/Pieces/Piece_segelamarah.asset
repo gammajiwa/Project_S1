@@ -17,7 +17,9 @@ MonoBehaviour:
   Stars: 2
   Layer: 1
   Shape: 20
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -67,7 +69,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 7
-    Value: 0.3
+    Value: 0.25
   Stat: 0
   StatValue: 0
-  Blurb: Every skill hits 30% harder.
+  Blurb: Semua skill memukul 25% lebih keras.

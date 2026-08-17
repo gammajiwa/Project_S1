@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: nullsphere
   DisplayName: Null Sigil
-  Stars: 3
+  Stars: 4
   Layer: 1
   Shape: 3
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 1, y: 1}
+  - {x: 2, y: 1}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -60,16 +64,14 @@ MonoBehaviour:
   GrantOnKill: {fileID: 0}
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
-  RestoreManaOnKill: 0.3
+  RestoreManaOnKill: 0.4
   RestoreHpOnKill: 0
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
   Stats:
   - Type: 19
-    Value: 2
-  - Type: 6
-    Value: -0.12
+    Value: 3
   Stat: 0
   StatValue: 0
-  Blurb: 'Two more bounces. Not free: every skill costs a little more.'
+  Blurb: Tiga pantulan; tiap kill mengembalikan mana.

@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: firestormcore
   DisplayName: Storm Core Sigil
-  Stars: 3
+  Stars: 4
   Layer: 1
   Shape: 5
-  CustomCells: []
+  CustomCells:
+  - {x: 1, y: 0}
+  - {x: 2, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -69,8 +73,7 @@ MonoBehaviour:
   - Type: 21
     Value: 2
   - Type: 8
-    Value: -0.1
+    Value: 0.12
   Stat: 0
   StatValue: 0
-  Blurb: Two more of whatever gets counted. Holding it stretches every cooldown a
-    little.
+  Blurb: Dua hantaman tambahan, cooldown lebih singkat.

@@ -17,7 +17,9 @@ MonoBehaviour:
   Stars: 2
   Layer: 1
   Shape: 1
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -66,10 +68,10 @@ MonoBehaviour:
   AuraValue: 0
   ElementMatchBonus: 0
   Stats:
-  - Type: 2
-    Value: 3.5
   - Type: 1
-    Value: 20
+    Value: 50
+  - Type: 2
+    Value: 3
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. +3.5 HP per second and +20 maximum HP.
+  Blurb: Nyawa tebal yang pulih sendiri.

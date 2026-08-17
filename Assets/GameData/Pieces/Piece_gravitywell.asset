@@ -14,10 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: gravitywell
   DisplayName: Gravity Sigil
-  Stars: 2
+  Stars: 3
   Layer: 1
   Shape: 20
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 1}
+  - {x: 2, y: 2}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -66,10 +69,10 @@ MonoBehaviour:
   AuraValue: 0
   ElementMatchBonus: 0
   Stats:
-  - Type: 19
-    Value: 1
   - Type: 10
-    Value: 0.2
+    Value: 0.35
+  - Type: 9
+    Value: 0.15
   Stat: 0
   StatValue: 0
-  Blurb: Bounces find their next target from further away.
+  Blurb: 'Medan gravitasi: jangkauan dan ledakan melebar.'

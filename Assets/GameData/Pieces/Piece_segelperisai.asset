@@ -17,7 +17,9 @@ MonoBehaviour:
   Stars: 2
   Layer: 1
   Shape: 1
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 1}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -67,9 +69,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 3
-    Value: 6
-  - Type: 17
-    Value: -0.15
+    Value: 5
   Stat: 0
   StatValue: 0
-  Blurb: Real damage reduction, for a small toll on speed.
+  Blurb: Pengurangan damage yang nyata.

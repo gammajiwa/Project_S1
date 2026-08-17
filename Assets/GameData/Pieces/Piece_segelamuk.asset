@@ -14,10 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelamuk
   DisplayName: Frenzy Sigil
-  Stars: 1
+  Stars: 3
   Layer: 1
   Shape: 0
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 2, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -65,7 +68,9 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 17
+    Value: 0.2
   Stat: 0
   StatValue: 0
-  Blurb: Every enemy death grants you one FRENZY stack (max 6).
+  Blurb: Tiap kill menyulut amukan yang menumpuk.

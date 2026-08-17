@@ -14,10 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: cinderpatch
   DisplayName: Cinder Sigil
-  Stars: 1
+  Stars: 3
   Layer: 1
   Shape: 0
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -67,9 +70,9 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 16
-    Value: 1
+    Value: 2
   - Type: 13
-    Value: 0.15
+    Value: 0.2
   Stat: 0
   StatValue: 0
-  Blurb: "Every ailment application carries one more point \u2014 triggers fill faster."
+  Blurb: Ailment menumpuk dua kali lebih cepat; api lebih panas.

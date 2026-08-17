@@ -17,7 +17,9 @@ MonoBehaviour:
   Stars: 2
   Layer: 1
   Shape: 1
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -66,10 +68,10 @@ MonoBehaviour:
   AuraValue: 0
   ElementMatchBonus: 0
   Stats:
+  - Type: 2
+    Value: 2
   - Type: 5
-    Value: 4.5
-  - Type: 4
-    Value: 15
+    Value: 2
   Stat: 0
   StatValue: 0
-  Blurb: EVOLVED. +4.5 mana per second and +15 maximum mana.
+  Blurb: Embun kecil untuk nyawa dan mana sekaligus.

@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelmurka
   DisplayName: Sigil of Fury
-  Stars: 3
+  Stars: 4
   Layer: 1
   Shape: 21
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -67,9 +71,9 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 7
-    Value: 0.55
-  - Type: 12
     Value: 0.5
+  - Type: 12
+    Value: 0.6
   Stat: 0
   StatValue: 0
-  Blurb: +55% damage, and crits land far deeper.
+  Blurb: +50% damage, dan crit yang menghantam jauh lebih dalam.

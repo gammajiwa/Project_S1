@@ -18,13 +18,15 @@ MonoBehaviour:
   Layer: 1
   Shape: 0
   CustomCells: []
-  Art: {fileID: 0}
+  Art: {fileID: 21300000, guid: 80c7e26f531844b29c2b67912a6269b5, type: 3}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
   ArtRotation: 0
   ArtBehindCells: 0
   Color: {r: 0.45, g: 0.95, b: 0.55, a: 1}
   Icon: {fileID: 21300000, guid: 80c7e26f531844b29c2b67912a6269b5, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 3
   Element: 3
   BaseDamage: 18

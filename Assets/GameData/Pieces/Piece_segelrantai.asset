@@ -14,10 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelrantai
   DisplayName: Chain Sigil
-  Stars: 1
+  Stars: 3
   Layer: 1
   Shape: 0
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 2, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -25,6 +28,8 @@ MonoBehaviour:
   ArtBehindCells: 0
   Color: {r: 0.82, g: 0.78, b: 0.62, a: 1}
   Icon: {fileID: 21300000, guid: 48978e520915ed7478d01627f57e72c4, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
   Kind: 7
   Element: 3
   BaseDamage: 0
@@ -65,7 +70,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 16
-    Value: 1
+    Value: 2
   Stat: 0
   StatValue: 0
-  Blurb: +1 ailment point per application. Fills trigger thresholds faster.
+  Blurb: Ailment apa pun menumpuk dua kali lebih cepat.

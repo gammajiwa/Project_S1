@@ -17,7 +17,8 @@ MonoBehaviour:
   Stars: 1
   Layer: 1
   Shape: 0
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -67,7 +68,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 1
-    Value: 35
+    Value: 30
   Stat: 0
   StatValue: 0
-  Blurb: A 3-cell corner. +35 maximum HP. Coral grows slowly and never retreats.
+  Blurb: +30 HP maksimum.

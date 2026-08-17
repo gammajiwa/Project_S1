@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: segelbenteng
   DisplayName: Bulwark Sigil
-  Stars: 3
+  Stars: 4
   Layer: 1
   Shape: 2
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: 0, y: 2}
+  - {x: 1, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -70,6 +74,8 @@ MonoBehaviour:
     Value: 120
   - Type: 3
     Value: 8
+  - Type: 2
+    Value: 3
   Stat: 0
   StatValue: 0
-  Blurb: +120 maximum HP and thick damage reduction.
+  Blurb: 'Benteng hidup: HP raksasa, kulit tebal, pulih sendiri.'

@@ -14,10 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: plaguebloom
   DisplayName: Plague Sigil
-  Stars: 3
+  Stars: 5
   Layer: 1
   Shape: 5
-  CustomCells: []
+  CustomCells:
+  - {x: 1, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
+  - {x: 2, y: 1}
+  - {x: 1, y: 2}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -61,15 +66,15 @@ MonoBehaviour:
   ConsumesCharge: {fileID: 0}
   DamagePerCharge: 0.35
   RestoreManaOnKill: 0
-  RestoreHpOnKill: 0.2
+  RestoreHpOnKill: 0.35
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
   Stats:
   - Type: 16
-    Value: 2
+    Value: 3
   - Type: 7
-    Value: -0.08
+    Value: 0.15
   Stat: 0
   StatValue: 0
-  Blurb: Two more ailment points per application. Paid for in direct damage.
+  Blurb: 'Wabah mekar: ailment meletus cepat, tiap kill menyembuhkan.'

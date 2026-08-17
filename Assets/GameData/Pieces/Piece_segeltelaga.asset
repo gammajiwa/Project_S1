@@ -17,7 +17,9 @@ MonoBehaviour:
   Stars: 2
   Layer: 1
   Shape: 20
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -67,7 +69,9 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 4
-    Value: 55
+    Value: 50
+  - Type: 5
+    Value: 2
   Stat: 0
   StatValue: 0
-  Blurb: +55 maximum mana. A full board needs a deep pool, not just regen.
+  Blurb: Kolam mana yang dalam, dengan mata air kecil.

@@ -14,10 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: tempest
   DisplayName: Tempest Sigil
-  Stars: 3
+  Stars: 5
   Layer: 1
   Shape: 3
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 1, y: 1}
+  - {x: 2, y: 1}
+  - {x: 2, y: 2}
   Art: {fileID: 0}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
@@ -67,9 +72,11 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 20
-    Value: 1
+    Value: 2
+  - Type: 21
+    Value: 2
   - Type: 15
-    Value: 0.18
+    Value: 0.3
   Stat: 0
   StatValue: 0
-  Blurb: One more lightning branch leaves, and branches never strike the same enemy.
+  Blurb: 'Badai sempurna: cabang, hantaman, dan petir sekaligus.'
