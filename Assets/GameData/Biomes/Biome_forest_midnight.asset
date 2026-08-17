@@ -181,7 +181,8 @@ MonoBehaviour:
     Scale: 1
     Grain: 1
     CoverageOnly: 0
-    Height: 0
+    Height: 94.5
+    Tilt: -16.88
     Offset: {x: 0, y: 0}
     HideInRain: 1
     OnlyClear: 0

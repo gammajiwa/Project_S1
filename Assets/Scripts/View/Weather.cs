@@ -468,6 +468,12 @@ namespace Proto
 
                 if (group == null) continue;
 
+                // Kemiringan dipasang di NODE KANTONG, bukan di prefab: Spawn me-reset rotasi
+                // instance ke identity, jadi rotasi yang dibake di root prefab tidak pernah
+                // selamat sampai layar. Place() hanya menulis posisi, jadi kemiringan ini awet.
+                if (!Mathf.Approximately(entry.Tilt, 0f))
+                    group.localRotation = Quaternion.Euler(0f, 0f, entry.Tilt);
+
                 var pocket = new Pocket
                 {
                     Node = group,

@@ -62,6 +62,13 @@ namespace Proto
                  "ia sudah melayang turun sebelum masuk pandangan, dan mengecil sepanjang jalan.")]
         public float Height;
 
+        [Tooltip("Kemiringan kantong pada sumbu Z, dalam derajat.\n\n" +
+                 "Untuk berkas cahaya resepnya: gantung tinggi (Height ~95) lalu miringkan " +
+                 "sedikit (~-17). Dengan begitu hanya BADAN berkas yang melintasi layar — " +
+                 "pangkal dan ujungnya dua-duanya di luar pandangan, jadi tidak pernah ada " +
+                 "ujung 'patah' yang terlihat. Angka contohnya hasil setelan tangan di play mode.")]
+        public float Tilt;
+
         [Tooltip("Geseran mendatar titik lahirnya, relatif terhadap kamera. X negatif = ke kiri.\n\n" +
                  "Untuk yang tertiup angin ini WAJIB tidak nol. Kalau ia lahir tepat di atas " +
                  "pemain, angin membawanya menjauh ke satu arah saja — dan sisi yang berlawanan " +
