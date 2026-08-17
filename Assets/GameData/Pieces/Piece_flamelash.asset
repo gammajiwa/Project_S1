@@ -14,10 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
   Id: flamelash
   DisplayName: Bara Pantul
-  Stars: 1
+  Stars: 2
   Layer: 1
   Shape: 0
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   Art: {fileID: 21300000, guid: 173f6309d83d43bcb310921d03d33942, type: 3}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}

@@ -17,7 +17,12 @@ MonoBehaviour:
   Stars: 4
   Layer: 1
   Shape: 25
-  CustomCells: []
+  CustomCells:
+  - {x: 0, y: 1}
+  - {x: 2, y: 2}
+  - {x: 1, y: 1}
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
   Art: {fileID: 21300000, guid: 1b5fb602351a41e890d87c0ea7dc2a1f, type: 3}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}

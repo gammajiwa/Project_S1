@@ -228,6 +228,24 @@ namespace Proto.EditorTools
                 EditorUtility.SetDirty(_piece);
             }
 
+            // Skala tunggal di atas Ukuran: satu geseran membesar-kecilkan proporsional.
+            // Nilainya DIBAKAR ke ArtSize (bbox bentuk x skala) — tidak ada field baru di
+            // data, dan renderer tidak perlu tahu slider ini pernah ada.
+            EditorGUI.BeginChangeCheck();
+
+            var bbox = BoundsInCells();
+            float current = _piece.ArtSize.x <= 0f || bbox.x <= 0f
+                ? 1f
+                : _piece.ArtSize.x / bbox.x;
+            float scale = EditorGUILayout.Slider("Skala", current, 0.25f, 3f);
+
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(_piece, "Skala art piece");
+                _piece.ArtSize = bbox * scale;
+                EditorUtility.SetDirty(_piece);
+            }
+
             if (GUILayout.Button("Paskan ukuran ke bentuk"))
             {
                 Undo.RecordObject(_piece, "Paskan art");

@@ -776,6 +776,10 @@ namespace Proto
             // urutan gambar di kanvas ini, dan tile rune harus disisipkan di ANTARA keduanya:
             // di atas kotak warna dasar, tapi di bawah kotak skill — skill berdiri DI ATAS rune,
             // dan tile yang latarnya pekat akan menelannya kalau urutannya terbalik.
+            // Lapisan art DI BAWAH petak — untuk piece ber-ArtBehindCells. Dibuat sebelum
+            // petak karena di kanvas ini urutan bikin adalah urutan gambar.
+            _artBehindLayer = MakeArtLayer("PieceArtBehind");
+
             for (int y = 0; y < Grimoire.Height; y++)
             {
                 for (int x = 0; x < Grimoire.Width; x++)
@@ -800,6 +804,10 @@ namespace Proto
                     _skillCells[i].enabled = false;
                 }
             }
+
+            // Lapisan art DI ATAS petak (bawaan) — sebelum widget skill, supaya cincin
+            // cooldown tetap terbaca di atas art.
+            _artFrontLayer = MakeArtLayer("PieceArtFront");
 
             // Tempat bawaannya pojok kiri tepat di atas petak — benar selama papan masih polos,
             // dan langsung salah begitu prefabnya menaruh hiasan di sana.
@@ -1129,6 +1137,9 @@ namespace Proto
                 tile.Bind(RuneTiles.BakedTileAt(def, i), RuneTiles.GlyphAt(def, i),
                     RuneTiles.AreaTint(def, i, def.Color), alpha);
             }
+
+            // Art dari SO ikut menempel di piece yang menggeletak/dipajang, skala mengikuti.
+            DrawPieceArt(def, origin, rot, LooseCellSize * scale, LooseCellGap * scale, alpha);
 
             return cursor;
         }
@@ -4751,7 +4762,10 @@ namespace Proto
 
         void Redraw()
         {
+            BeginArtFrame();
+
             DrawGrid();
+            DrawPlacedArt();
             DrawEvoLines();
             DrawSkillWidgets(Time.deltaTime);
             DrawBackpack();
@@ -4770,6 +4784,9 @@ namespace Proto
             // Paling akhir: kerudungnya harus menutupi SEMUA yang digambar di atas, termasuk
             // kartu hover dan panel yang kebetulan masih terbuka saat pemain mati.
             DrawGameOver();
+
+            // Sesudah SEMUA penggambar (papan, lantai, toko) mengambil jatah art-nya.
+            EndArtFrame();
         }
 
         void DrawGrid()
@@ -4854,6 +4871,168 @@ namespace Proto
         static Color Tint(RuneInstance inst)
         {
             return inst.Locked ? Color.Lerp(inst.Def.Color, Color.white, 0.55f) : inst.Def.Color;
+        }
+
+        // ------------------------------------------------------------------ art piece (dari SO)
+        //
+        // Pembaca setelan "Art di papan" milik PieceDefinition: Art + Offset/Ukuran/Putar/
+        // DiBelakangPetak. HANYA membaca — menatanya tetap kerja tangan di jendela Bentuk
+        // Grid / Inspector, dan matematikanya disalin SATU BANDING SATU dari editor itu
+        // supaya pratinjau tidak pernah bohong.
+
+        RectTransform _artBehindLayer;
+        RectTransform _artFrontLayer;
+        readonly List<Image> _artBehindPool = new List<Image>();
+        readonly List<Image> _artFrontPool = new List<Image>();
+        int _artBehindUsed;
+        int _artFrontUsed;
+
+        RectTransform MakeArtLayer(string name)
+        {
+            var go = new GameObject(name);
+            var rt = go.AddComponent<RectTransform>();
+            rt.SetParent(_canvas.transform, false);
+            rt.anchorMin = Vector2.zero;
+            rt.anchorMax = Vector2.one;
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+            return rt;
+        }
+
+        void BeginArtFrame()
+        {
+            _artBehindUsed = 0;
+            _artFrontUsed = 0;
+        }
+
+        void EndArtFrame()
+        {
+            for (int i = _artBehindUsed; i < _artBehindPool.Count; i++)
+                _artBehindPool[i].enabled = false;
+            for (int i = _artFrontUsed; i < _artFrontPool.Count; i++)
+                _artFrontPool[i].enabled = false;
+        }
+
+        Image TakeArt(bool behind)
+        {
+            var layer = behind ? _artBehindLayer : _artFrontLayer;
+            var pool = behind ? _artBehindPool : _artFrontPool;
+            int used = behind ? _artBehindUsed++ : _artFrontUsed++;
+
+            while (pool.Count <= used)
+            {
+                var go = new GameObject("PieceArt_" + pool.Count);
+                go.transform.SetParent(layer, false);
+
+                var img = go.AddComponent<Image>();
+                img.raycastTarget = false;
+
+                var rt = img.rectTransform;
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.zero;
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                pool.Add(img);
+            }
+
+            var image = pool[used];
+            image.enabled = true;
+            return image;
+        }
+
+        /// <summary>
+        /// Menggambar Art sebuah piece mengikuti setelan SO-nya — matematika yang SAMA
+        /// dengan jendela Bentuk Grid: ukuran nol = kotak pembatas bentuk, offset dalam
+        /// satuan petak dari pojok kiri-bawah, putaran positif searah jarum jam. Rotasi
+        /// piece di papan ikut memutar art beserta offsetnya.
+        /// </summary>
+        void DrawPieceArt(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
+            float cellPx, float gapPx, float alpha)
+        {
+            // RUNE TIDAK DISENTUH — perintah pemilik project: rune sudah benar lewat
+            // lapisan tile per-petak (RuneTiles). Art dari SO hanya untuk skill & segel.
+            if (def == null || def.IsRune) return;
+
+            if (def.Art == null || _artFrontLayer == null) return;
+
+            float step = cellPx + gapPx;
+
+            // bbox bentuk TANPA rotasi — ruang tempat Offset/Ukuran disetel di editor.
+            int maxX0 = 0, maxY0 = 0;
+            foreach (var c in def.Cells)
+            {
+                if (c.x > maxX0) maxX0 = c.x;
+                if (c.y > maxY0) maxY0 = c.y;
+            }
+
+            Vector2 sizeCells = def.ArtSize;
+            if (sizeCells.x <= 0f || sizeCells.y <= 0f)
+                sizeCells = new Vector2(maxX0 + 1, maxY0 + 1);
+
+            float w = sizeCells.x * cellPx + Mathf.Max(0f, sizeCells.x - 1f) * gapPx;
+            float h = sizeCells.y * cellPx + Mathf.Max(0f, sizeCells.y - 1f) * gapPx;
+
+            float bw0 = (maxX0 + 1) * cellPx + maxX0 * gapPx;
+            float bh0 = (maxY0 + 1) * cellPx + maxY0 * gapPx;
+
+            // Pusat art relatif pusat bbox — vektor inilah yang ikut berputar bersama piece.
+            var local = new Vector2(
+                def.ArtOffset.x * step + w * 0.5f - bw0 * 0.5f,
+                def.ArtOffset.y * step + h * 0.5f - bh0 * 0.5f);
+
+            var shape = Shapes.Rotate(def.Cells, rot);
+            int maxXr = 0, maxYr = 0;
+            foreach (var c in shape)
+            {
+                if (c.x > maxXr) maxXr = c.x;
+                if (c.y > maxYr) maxYr = c.y;
+            }
+
+            float bwR = (maxXr + 1) * cellPx + maxXr * gapPx;
+            float bhR = (maxYr + 1) * cellPx + maxYr * gapPx;
+
+            float rad = rot * 90f * Mathf.Deg2Rad;
+            float cos = Mathf.Cos(rad), sin = Mathf.Sin(rad);
+            var turned = new Vector2(local.x * cos - local.y * sin,
+                                     local.x * sin + local.y * cos);
+
+            var img = TakeArt(def.ArtBehindCells);
+            img.sprite = def.Art;
+            img.color = new Color(1f, 1f, 1f, alpha);
+
+            var rt = img.rectTransform;
+            rt.sizeDelta = new Vector2(w, h);
+            rt.anchoredPosition = shapeBottomLeft + new Vector2(bwR * 0.5f, bhR * 0.5f) + turned;
+
+            // Editor memutar SEARAH jarum jam untuk nilai positif; UGUI kebalikannya.
+            rt.localEulerAngles = new Vector3(0f, 0f, -def.ArtRotation + rot * 90f);
+        }
+
+        void DrawPlacedArt()
+        {
+            for (int i = 0; i < Book.Placed.Count; i++)
+            {
+                var inst = Book.Placed[i];
+                var def = inst.Def;
+                if (def.IsRune || def.Art == null) continue;
+
+                DrawPieceArt(def, CellAnchor(inst.Origin.x, inst.Origin.y), inst.Rot,
+                    CellSize, CellGap, 1f);
+
+                // Art di belakang petak cuma kelihatan kalau petak di atasnya tembus —
+                // alasan yang sama editor menggambar petaknya 85% pekat, bukan 100%.
+                if (!def.ArtBehindCells) continue;
+
+                foreach (var at in inst.Cells())
+                {
+                    if (!Grimoire.InBounds(at)) continue;
+
+                    int idx = at.y * Grimoire.Width + at.x;
+                    var target = _skillCells[idx];
+                    var col = target.color;
+                    col.a *= 0.45f;
+                    target.color = col;
+                }
+            }
         }
 
         /// <summary>
