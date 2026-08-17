@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: mataketiga
   DisplayName: MATA KETIGA
   Color: {r: 0.7, g: 0.5, b: 0.9, a: 1}
-  Icon: {fileID: 21300000, guid: 597547f11ce433b4b994c48eac8459b4, type: 3}
+  Icon: {fileID: 21300000, guid: 71032659a8b6460daeef5b8573af0469, type: 3}
   BoonText: Jangkauan +50%, crit +15%
   BaneText: "Area semua skill \u221230%"
   Boon:

@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: arusderas
   DisplayName: ARUS DERAS
   Color: {r: 0.35, g: 0.7, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: e81de82af8c8a4041856f7208a67f685, type: 3}
+  Icon: {fileID: 21300000, guid: 6d4106938632416f8e0229641d6c619e, type: 3}
   BoonText: Mana pulih 2,5 KALI lebih cepat
   BaneText: "Nyawa maksimum \u221230"
   Boon: []

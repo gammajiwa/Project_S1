@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: kilat
   DisplayName: KILAT
   Color: {r: 0.95, g: 0.95, b: 0.5, a: 1}
-  Icon: {fileID: 21300000, guid: 9207c6582a980ca41b9321a8b39fe637, type: 3}
+  Icon: {fileID: 21300000, guid: 6fd66f59f9e1412c9ee562cf5d4ab405, type: 3}
   BoonText: "Lari hampir dua kali lipat, cooldown \u221220%"
   BaneText: "Nyawa maksimum \u221245"
   Boon:

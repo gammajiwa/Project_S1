@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: kaca
   DisplayName: KACA
   Color: {r: 0.6, g: 0.85, b: 0.95, a: 1}
-  Icon: {fileID: 21300000, guid: e61833ac251206e4e885f3c770e5eaa9, type: 3}
+  Icon: {fileID: 21300000, guid: f011cce4b0104594ae0d82437b2cf5b6, type: 3}
   BoonText: "Semua cooldown \u221225%"
   BaneText: Musuh memukul 60% lebih keras
   Boon:

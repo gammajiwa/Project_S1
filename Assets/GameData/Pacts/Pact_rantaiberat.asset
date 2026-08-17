@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: rantaiberat
   DisplayName: RANTAI BERAT
   Color: {r: 0.45, g: 0.42, b: 0.5, a: 1}
-  Icon: {fileID: 21300000, guid: d2a937e3b9f9b3b46842e8aafd74bc1e, type: 3}
+  Icon: {fileID: 21300000, guid: 49c0f07cd1b5465aa62c835c3609ef74, type: 3}
   BoonText: Damage +90%, area +25%
   BaneText: Semua cooldown 30% LEBIH LAMBAT
   Boon:

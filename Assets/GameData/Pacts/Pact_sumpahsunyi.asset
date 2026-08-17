@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: sumpahsunyi
   DisplayName: SUMPAH SUNYI
   Color: {r: 0.55, g: 0.6, b: 0.75, a: 1}
-  Icon: {fileID: 21300000, guid: 8a51757c69dc0ae4c8be59bc4b975eba, type: 3}
+  Icon: {fileID: 21300000, guid: 6361e3c95d594d0192e4035d0dc66543, type: 3}
   BoonText: Semua skill 45% lebih murah
   BaneText: "Mana maksimum \u221240"
   Boon:

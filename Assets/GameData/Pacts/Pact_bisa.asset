@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: bisa
   DisplayName: BISA
   Color: {r: 0.45, g: 0.8, b: 0.35, a: 1}
-  Icon: {fileID: 21300000, guid: 4b4e66dc05859904786b13133b61c6cd, type: 3}
+  Icon: {fileID: 21300000, guid: 7f2c3630691f46178f64961d9ab19414, type: 3}
   BoonText: Tiap tempelan ailment membawa 2 POIN tambahan
   BaneText: "Damage langsung \u221230%"
   Boon:

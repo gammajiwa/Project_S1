@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: tumbal
   DisplayName: TUMBAL
   Color: {r: 0.55, g: 0.1, b: 0.15, a: 1}
-  Icon: {fileID: 21300000, guid: 91252661a1b598f47b8fc2c38b30fa3e, type: 3}
+  Icon: {fileID: 21300000, guid: fe96ea27e5114f11961c3d79e58aed53, type: 3}
   BoonText: Damage +80%
   BaneText: "Nyawa maksimum \u221260, dan nyawa tidak pulih sendiri"
   Boon:

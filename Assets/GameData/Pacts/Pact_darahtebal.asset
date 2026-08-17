@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: darahtebal
   DisplayName: DARAH TEBAL
   Color: {r: 0.75, g: 0.2, b: 0.22, a: 1}
-  Icon: {fileID: 21300000, guid: 0496ed01fdad570439bf5116387dcfb0, type: 3}
+  Icon: {fileID: 21300000, guid: 6e958042875c471092b5dc8098f9cd5d, type: 3}
   BoonText: Damage seluruh bukumu +35%
   BaneText: Semua musuh bernyawa +40%
   Boon:

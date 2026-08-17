@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: badai
   DisplayName: BADAI
   Color: {r: 0.55, g: 0.75, b: 1, a: 1}
-  Icon: {fileID: 21300000, guid: b9972195f9444eb40a59f06728ff4e44, type: 3}
+  Icon: {fileID: 21300000, guid: de14ca418db048eb98e958e2b5ee2d28, type: 3}
   BoonText: Area SEMUA skill +45%
   BaneText: Musuh bergerak 35% lebih cepat
   Boon:

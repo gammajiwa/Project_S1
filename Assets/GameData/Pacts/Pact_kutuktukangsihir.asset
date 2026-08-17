@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: kutuktukangsihir
   DisplayName: KUTUK TUKANG SIHIR
   Color: {r: 0.6, g: 0.3, b: 0.8, a: 1}
-  Icon: {fileID: 21300000, guid: eba9604852648a74ba0c48d7463cd758, type: 3}
+  Icon: {fileID: 21300000, guid: 0bef2f3b3b894fd9b5d3b747f8496381, type: 3}
   BoonText: Damage +70%, damage crit +80%
   BaneText: Semua skill 60% lebih mahal
   Boon:

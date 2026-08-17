@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: musimkering
   DisplayName: MUSIM KERING
   Color: {r: 0.85, g: 0.75, b: 0.45, a: 1}
-  Icon: {fileID: 21300000, guid: 3cf88272bb746be4d978f626842444c1, type: 3}
+  Icon: {fileID: 21300000, guid: 1950e2b36d874e8e8a20b9b4b59fdb04, type: 3}
   BoonText: Semua musuh bernyawa 35% LEBIH TIPIS
   BaneText: "Damage kamu \u221225%, dan musuh yang datang 80% lebih banyak"
   Boon: []

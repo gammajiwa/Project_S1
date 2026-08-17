@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: puasa
   DisplayName: PUASA
   Color: {r: 0.9, g: 0.85, b: 0.6, a: 1}
-  Icon: {fileID: 21300000, guid: 98151975813742643ac2ea440dc041c9, type: 3}
+  Icon: {fileID: 21300000, guid: 32542e91de5749cf834a5d43cee3df5a, type: 3}
   BoonText: Crit +25%, damage crit +50%
   BaneText: "Nyawa maksimum \u221240"
   Boon:

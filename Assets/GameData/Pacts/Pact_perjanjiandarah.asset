@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: perjanjiandarah
   DisplayName: PERJANJIAN DARAH
   Color: {r: 0.7, g: 0.15, b: 0.3, a: 1}
-  Icon: {fileID: 21300000, guid: 3f54e6a92ea2543419b29ba6d57f7984, type: 3}
+  Icon: {fileID: 21300000, guid: def311cfef424799a0d326b50cc60ab8, type: 3}
   BoonText: Tiap musuh mati memulihkan 0,8 nyawa
   BaneText: Nyawa tidak pulih sendiri, dan musuh memukul 30% lebih keras
   Boon: []

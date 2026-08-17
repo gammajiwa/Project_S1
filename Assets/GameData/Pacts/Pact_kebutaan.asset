@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: kebutaan
   DisplayName: KEBUTAAN
   Color: {r: 0.2, g: 0.2, b: 0.26, a: 1}
-  Icon: {fileID: 21300000, guid: 9ff0dc69bdc1e5648829da1e25c69cbf, type: 3}
+  Icon: {fileID: 21300000, guid: 7189c77647144698bfe5d1f00768f9a4, type: 3}
   BoonText: "Damage BERLIPAT \u2014 +100%"
   BaneText: Musuh 50% lebih cepat dan memukul 25% lebih keras
   Boon:

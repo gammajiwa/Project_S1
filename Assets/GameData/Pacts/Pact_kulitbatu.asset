@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: kulitbatu
   DisplayName: KULIT BATU
   Color: {r: 0.5, g: 0.5, b: 0.45, a: 1}
-  Icon: {fileID: 21300000, guid: 45179904efe81bd44903bc87554a0fcb, type: 3}
+  Icon: {fileID: 21300000, guid: 0fffa065ff494ef6bea2df3e807424a0, type: 3}
   BoonText: Pertahanan +40, nyawa maksimum +80
   BaneText: "Kecepatan menghindar TURUN DRASTIS \u2014 lebih lambat dari musuh"
   Boon:
