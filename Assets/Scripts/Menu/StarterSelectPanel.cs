@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,7 +17,7 @@ namespace Proto
     /// ini adalah keputusan desain yang sedang dipamerkan, bukan tata letak.
     ///
     /// Petaknya digambar sendiri di sini, bukan lewat cetakan di scene. Alasannya sepele tapi
-    /// menentukan: petak 7x7 dengan piece yang menempati bentuk sembarang butuh satu Image per
+    /// menentukan: petak papan dengan piece yang menempati bentuk sembarang butuh satu Image per
     /// sel plus satu per piece, dan merangkai 60-an objek di scene lewat builder membuat tiap
     /// perubahan ukuran jadi pekerjaan tangan. Di sini ia satu rumus.
     /// </summary>
@@ -41,7 +41,7 @@ namespace Proto
         [SerializeField] TextMeshProUGUI _pageLabel;
         [SerializeField] Image _portrait;
 
-        [Tooltip("Kotak tempat petak 7x7 digambar. Petaknya mengisi kotak ini dan dijaga persegi.")]
+        [Tooltip("Kotak tempat petak papan digambar. Petaknya mengisi kotak ini dan dijaga persegi.")]
         [SerializeField] RectTransform _board;
 
         [Header("Tombol")]
@@ -226,6 +226,12 @@ namespace Proto
 
             int used = 0;
 
+            // Visual piece (art & ikon) dicatat supaya bisa DINAIKKAN di atas semua tile rune
+            // di akhir. Urutan sibling pool tidak bisa dipercaya: tile dibuat sesuai kebutuhan,
+            // dan kartu hero yang butuh tile lebih banyak menetaskan tile BARU di atas segalanya
+            // — jimat Ward tenggelam di bawah rune persis karena itu.
+            var risen = new List<Image>();
+
             if (_tiles == null) _tiles = new RuneTilePool(_board);
             _tiles.Begin();
 
@@ -258,6 +264,7 @@ namespace Proto
                     int minX = int.MaxValue, minY = int.MaxValue;
                     int maxX = int.MinValue, maxY = int.MinValue;
                     int seated = 0;
+                    int anchorX = -1, anchorY = -1;
 
                     for (int c = 0; c < shape.Length; c++)
                     {
@@ -273,7 +280,12 @@ namespace Proto
                         var img = CellAt(used++);
                         img.sprite = null;
                         img.preserveAspect = false;
-                        img.color = seat.Piece.Color;
+
+                        // BUKAN warna piece: kotak isi warna-warni di belakang ikon terbaca
+                        // sebagai placeholder primitif, bukan tapak. Hitam nyaris transparan —
+                        // cukup untuk membayangkan footprint di atas perkamen, ikonnya yang
+                        // bicara. (Pilihan pemilik project: hide, atau hitam setransparan ini.)
+                        img.color = new Color(0f, 0f, 0f, 0.14f);
 
                         Put(img, padX + gx * step, padY + gy * step, cell, cell);
 
@@ -299,13 +311,39 @@ namespace Proto
                         if (gy < minY) minY = gy;
                         if (gx > maxX) maxX = gx;
                         if (gy > maxY) maxY = gy;
+                        if (anchorX < 0) { anchorX = gx; anchorY = gy; }
                         seated++;
                     }
 
-                    // Rune sudah selesai digambar sebagai tile per petak di atas; ikon tunggal
-                    // di tengah cuma untuk piece yang BUKAN rune.
-                    if (seated == 0 || seat.Piece.Icon == null) continue;
+                    // Rune sudah selesai digambar sebagai tile per petak di atas.
+                    if (seated == 0) continue;
                     if (RuneTiles.IsRuneGlyph(seat.Piece.Icon)) continue;
+
+                    // ART papan menang atas ikon — rumusnya SATU dengan papan in-run
+                    // (PieceArt.Layout), jadi jimat 3 petak membentang 3 petak di sini juga,
+                    // bukan menciut jadi ikon satu sel.
+                    Vector2 artCenter, artSize;
+                    float artAngle;
+                    if (PieceArt.Layout(seat.Piece,
+                        new Vector2(padX + seat.Origin.x * step, padY + seat.Origin.y * step),
+                        seat.Rot, cell, Gap, out artCenter, out artSize, out artAngle))
+                    {
+                        var art = CellAt(used++);
+                        art.enabled = true;
+                        art.sprite = seat.Piece.Art;
+                        art.color = Color.white;
+                        art.preserveAspect = false;
+
+                        var artRt = art.rectTransform;
+                        artRt.pivot = new Vector2(0.5f, 0.5f);
+                        artRt.anchoredPosition = artCenter;
+                        artRt.sizeDelta = artSize;
+                        artRt.localEulerAngles = new Vector3(0f, 0f, artAngle);
+                        risen.Add(art);
+                        continue;
+                    }
+
+                    if (seat.Piece.Icon == null) continue;
 
                     // SATU ikon per piece, di pusat petaknya. Dulu ikonnya digambar ulang di
                     // tiap sel: rune 2x2 tampil sebagai empat salinan glyph yang sama — wallpaper,
@@ -313,21 +351,43 @@ namespace Proto
                     // layar inilah yang ketinggalan.
                     int cols = maxX - minX + 1;
                     int rows = maxY - minY + 1;
-                    float side = Mathf.Min(cols, rows) * cell * 0.92f;
+
+                    // Aturan yang sama dengan papan in-run: ikon besar di tengah hanya untuk
+                    // bentuk yang MENGISI PENUH kotak pembatasnya. Bentuk bolong (diagonal, L)
+                    // menaruh ikonnya di sel jangkar — ikon yang dibentangkan di tengah kotak
+                    // 2x2 milik bentuk diagonal ngambang di antara petak dan menumpangi
+                    // petak piece tetangga.
+                    bool solid = seated == cols * rows;
+                    float side = (solid ? Mathf.Min(cols, rows) * cell : cell) * 0.92f;
 
                     var glyph = CellAt(used++);
                     glyph.sprite = seat.Piece.Icon;
                     glyph.color = Color.white;
                     glyph.preserveAspect = true;
 
-                    Put(glyph,
-                        padX + minX * step + (cols * step - Gap - side) * 0.5f,
-                        padY + minY * step + (rows * step - Gap - side) * 0.5f,
-                        side, side);
+                    if (solid)
+                    {
+                        Put(glyph,
+                            padX + minX * step + (cols * step - Gap - side) * 0.5f,
+                            padY + minY * step + (rows * step - Gap - side) * 0.5f,
+                            side, side);
+                    }
+                    else
+                    {
+                        Put(glyph,
+                            padX + anchorX * step + (cell - side) * 0.5f,
+                            padY + anchorY * step + (cell - side) * 0.5f,
+                            side, side);
+                    }
+
+                    risen.Add(glyph);
                 }
             }
 
             _tiles.End();
+
+            // SETELAH seluruh tile lahir: visual piece dinaikkan paling atas, urut gambar tetap.
+            for (int i = 0; i < risen.Count; i++) risen[i].transform.SetAsLastSibling();
 
             for (int i = used; i < _cells.Count; i++) _cells[i].enabled = false;
 
@@ -362,7 +422,11 @@ namespace Proto
         {
             img.enabled = true;
 
+            // Pool yang sama dipakai jalur ART (pivot tengah + rotasi) — dikembalikan ke
+            // bawaan di sini supaya sel yang kebagian Image bekas art tidak ikut miring.
             var rt = img.rectTransform;
+            rt.pivot = Vector2.zero;
+            rt.localEulerAngles = Vector3.zero;
             rt.anchoredPosition = new Vector2(x, y);
             rt.sizeDelta = new Vector2(w, h);
         }

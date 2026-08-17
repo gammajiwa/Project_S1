@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace Proto
 {
@@ -14,7 +14,7 @@ namespace Proto
         // ---------- grimoire grid ----------
 
         /// <summary>
-        /// Kotak layar tempat petak 7x7 harus duduk, DIPAKSAKAN dari luar — diisi oleh anak
+        /// Kotak layar tempat petak papan harus duduk, DIPAKSAKAN dari luar — diisi oleh anak
         /// bernama <c>GridArea</c> di dalam prefab papan grimoire.
         ///
         /// Null = hitung sendiri dari tepi layar, persis seperti sebelum ada prefab. Itu bukan
@@ -38,9 +38,10 @@ namespace Proto
         /// Jarak antar pangkal petak: sisi sel PLUS celahnya.
         ///
         /// Celah DITAMBAHKAN ke lebar kotak sebelum dibagi, dan itu bukan kelebihan satu piksel.
-        /// Petak 7x7 memakai tujuh sel tapi hanya enam celah — yang ketujuh menggantung di ujung
-        /// dan tidak pernah digambar. Membagi lebar mentah dengan tujuh membayar celah yang tidak
-        /// ada, dan petaknya berhenti satu celah sebelum tepi kanan kotak yang digambar di prefab.
+        /// Petak papan memakai sel sebanyak lebarnya tapi celahnya satu lebih sedikit — celah
+        /// terakhir menggantung di ujung dan tidak pernah digambar. Membagi lebar mentah dengan
+        /// jumlah sel membayar celah yang tidak ada, dan petaknya berhenti satu celah sebelum
+        /// tepi kanan kotak yang digambar di prefab.
         /// </summary>
         static float Step => GridOverride.HasValue
             ? Mathf.Min((GridOverride.Value.width + CellGap) / Grimoire.Width,
@@ -75,9 +76,10 @@ namespace Proto
         public static float GridY => GridOverride?.yMin ?? Margin + 8;
 
         // ---------- right-hand column ----------
-        // 44, dulu 34: menemani papan yang membesar 1,6x — tas yang tetap kecil di sebelah
-        // papan besar terbaca seperti milik UI lain.
-        public const int BagCell = 44;
+        // Sel tas MENGIKUTI sel papan, bukan angka sendiri — permintaan pemilik project:
+        // ukuran selnya sama, cuma jumlah petaknya yang tetap 4x4. Papan yang berganti
+        // ukuran (prefab di-scale, grid 7x7 jadi 6x6) otomatis membawa tasnya.
+        public static float BagCell => CellSize;
         public const int BagGap = 3;
         public const int BagY = 20;
 
@@ -88,32 +90,29 @@ namespace Proto
 
         // Wide enough for "1. Greater Fireball   34.0 dmg   32.4 dps   1.05s   17 mana".
         // Icon strips, stacked straight under the mana bar (which ends at -90).
-        // 36 piksel: di 26 ikonnya harus dipelototi dulu untuk dikenali, dan strip yang harus
-        // dipelototi kalah cepat dari wave. Jarak antar baris ikut melebar (ikon + 8).
-        public const float StripIcon = 36f;
+        // 54 piksel: 36 kekecilan, 108 (3x) kegedean — setengahnya yang pas menurut mata
+        // pemilik project. Barisnya juga MENEMPEL (pitch ikon + 8), bukan berjauhan.
+        public const float StripIcon = 54f;
         public const float StripBuffY = -96f;
-        public const float StripDebuffY = -140f;
-        public const float StripAilmentY = -184f;
+        public const float StripDebuffY = -158f;
+        public const float StripAilmentY = -220f;
 
         /// <summary>
-        /// Kolom PAKTA di tepi kanan, dan sengaja jauh di bawah tepi atas.
+        /// Kolom PAKTA — sekarang di KIRI, di bawah tiga strip status, satu keluarga dengan
+        /// bacaan di samping bar mana. Tepi kanan pernah dicoba (alasannya: pakta bukan cuaca)
+        /// dan pemilik project menolaknya: bacaan status yang terpencar dua sisi layar memaksa
+        /// mata bolak-balik. Yang membedakan pakta cukup ukurannya dan arah tumbuhnya (menurun).
         ///
-        /// −210 pernah dicoba dan masih tertimbun, karena diukur di layar yang salah: bilah demo
-        /// (pengubah waktu & cuaca) hidup di kanvas ber-CanvasScaler referensi 1080p, sedangkan
-        /// kanvas HUD ini memakai piksel layar mentah. Di 1080p bilahnya memang berakhir ~−212,
-        /// tapi di QHD ia membesar 1,33x dan mencapai ~−283 piksel layar — dan ikon pakta teratas
-        /// kembali tertimbun. Pakta permanen yang tidak terlihat sama saja dengan pakta yang
-        /// tidak pernah diambil. −300 aman sampai QHD.
-        ///
-        /// Boleh ditimpa lewat kotak PactArea di StatusStripRig.
+        /// Angka ini cuma CADANGAN — kotak PactArea di prefab StatusStrips yang berkuasa,
+        /// dan memang di sana pemilik project menatanya sendiri.
         /// </summary>
-        public const float StripPactY = -300f;
+        public const float StripPactY = -290f;
 
         /// <summary>
         /// Ikon pakta lebih besar daripada ikon strip biasa. Buff dan kutukan itu cuaca — datang
         /// dan pergi; pakta adalah keputusan permanen, dan bobot visualnya harus mengatakan itu.
         /// </summary>
-        public const float StripPactIcon = 44f;
+        public const float StripPactIcon = 66f;
 
         public const int SpellPanelW = 380;
         public const int CooldownDiameter = 26;
@@ -126,9 +125,8 @@ namespace Proto
         public const int VisibleSpellRows = 5;
         public const float SpellPanelTop = -130f;
 
-        // Digeser ke kiri melewati jalur ikon pakta (Margin + ikon 44 + napas 8): blok spell
-        // boleh tumbuh ke bawah tanpa pernah menyentuh kolom pakta di tepi kanan (mulai −300).
-        public const float SpellPanelRight = -(Margin + StripPactIcon + 8f);
+        // Kolom pakta sudah pindah ke kiri, jadi blok spell kembali memeluk tepi kanan.
+        public const float SpellPanelRight = -Margin;
 
         public const int SpeedButtonW = 58;
         public const int SpeedButtonH = 34;
@@ -191,7 +189,7 @@ namespace Proto
         public static float GridTop() => GridY + Grimoire.Height * (CellSize + CellGap);
 
         /// <summary>
-        /// Kotak yang PERSIS memeluk petak 7x7 — dari tepi kiri petak (0,0) sampai tepi kanan-atas
+        /// Kotak yang PERSIS memeluk petak papan — dari tepi kiri petak (0,0) sampai tepi kanan-atas
         /// petak terakhir, tanpa celah yang menggantung di ujung. Dipakai untuk mendudukkan alas
         /// dan bingkai; menghitungnya sendiri di pemakainya adalah cara termudah membuat bingkai
         /// meleset satu <c>CellGap</c> tanpa ada yang menyadarinya.

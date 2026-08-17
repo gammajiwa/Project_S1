@@ -637,6 +637,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: menu.codex
   Fallback: CODEX
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &2545311929226695600
 GameObject:
   m_ObjectHideFlags: 0
@@ -926,6 +928,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: menu.quit
   Fallback: QUIT
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &2836320857541788705
 GameObject:
   m_ObjectHideFlags: 0
@@ -1648,6 +1652,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: menu.settings
   Fallback: SETTINGS
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &6460883611107801251
 GameObject:
   m_ObjectHideFlags: 0
@@ -1923,6 +1929,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: menu.play
   Fallback: PLAY
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &8297810568078156723
 GameObject:
   m_ObjectHideFlags: 0

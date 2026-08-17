@@ -33,7 +33,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 312, y: 36}
+  m_SizeDelta: {x: 312, y: 54}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &8380833403937783449
 GameObject:
@@ -67,12 +67,13 @@ RectTransform:
   - {fileID: 6086092997912611797}
   - {fileID: 772862715858873450}
   - {fileID: 6657349400747312600}
+  - {fileID: 6677889900112233445}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 20, y: -190}
-  m_SizeDelta: {x: 460, y: 130}
+  m_SizeDelta: {x: 460, y: 270}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &5784027596031837779
 MonoBehaviour:
@@ -84,11 +85,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e98f9007f2155b644934e86fd74ab1e4, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.StatusStripRig
   BuffArea: {fileID: 6086092997912611797}
   DebuffArea: {fileID: 772862715858873450}
   AilmentArea: {fileID: 6657349400747312600}
+  PactArea: {fileID: 6677889900112233445}
   ShowGuide: 1
   GuideInk: {r: 0.55, g: 0.85, b: 1, a: 1}
 --- !u!1 &8597478367451323410
@@ -123,8 +125,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -88}
-  m_SizeDelta: {x: 416, y: 36}
+  m_AnchoredPosition: {x: 0, y: -124}
+  m_SizeDelta: {x: 416, y: 54}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &8819023848021169832
 GameObject:
@@ -158,6 +160,41 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -44}
-  m_SizeDelta: {x: 208, y: 36}
+  m_AnchoredPosition: {x: 0, y: -62}
+  m_SizeDelta: {x: 208, y: 54}
+  m_Pivot: {x: 0, y: 1}
+--- !u!1 &5566778899001122334
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6677889900112233445}
+  m_Layer: 0
+  m_Name: PactArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &6677889900112233445
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5566778899001122334}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 97518863756238318}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 1}
+  m_AnchoredPosition: {x: 0, y: -196}
+  m_SizeDelta: {x: 280, y: 66}
   m_Pivot: {x: 0, y: 1}

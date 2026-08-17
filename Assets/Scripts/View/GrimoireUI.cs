@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
@@ -55,8 +55,10 @@ namespace Proto
         Image[] _bagCells;
 
         Sprite _circle;
-        Image[] _cdBg;
-        Image[] _cdFill;
+
+        /// <summary>Kotak garis tepi untuk petak piece yang belum dipasang — line art, bukan isi.</summary>
+        Sprite _cellFrame;
+
         float[] _pulse;
 
 
@@ -339,6 +341,13 @@ namespace Proto
 
         PieceDefinition _held;
         int _heldRot;
+
+        /// <summary>
+        /// Slot toko asal barang yang sedang dibawa, atau −1. Selama ini terisi, barangnya
+        /// BELUM DIBAYAR: uang berpindah saat ia terpasang di papan/tas, dan batal menaruh
+        /// memulangkannya ke slot ini tanpa transaksi.
+        /// </summary>
+        int _heldShopSlot = -1;
 
         /// <summary>
         /// Skills lifted along with the rune currently in hand.
@@ -827,11 +836,11 @@ namespace Proto
             if (_gridRig != null && !_gridRig.ShowTitle) _gridTitle.enabled = false;
 
             // Below the three icon strips, which now own the band straight under the mana bar.
-            _heldText = MakeText("HeldInfo", new Vector2(Margin, StripAilmentY - 44f),
+            _heldText = MakeText("HeldInfo", new Vector2(Margin, StripAilmentY - 62f),
                 new Vector2(880, 22), 13, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
                 TextAnchor.UpperLeft);
 
-            _evolveText = MakeText("EvolveInfo", new Vector2(Margin, StripAilmentY - 66f),
+            _evolveText = MakeText("EvolveInfo", new Vector2(Margin, StripAilmentY - 84f),
                 new Vector2(880, 22), 14, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
                 TextAnchor.UpperLeft);
             _evolveText.text = "";
@@ -869,7 +878,7 @@ namespace Proto
             // --- jalur utama: PREFAB, dan kode tidak boleh ikut campur isinya ---
             //
             // Yang ditentukan kode cuma satu: di mana pojok kiri-bawah papan berada, karena itu
-            // yang harus sejajar dengan petak 7x7. Selebihnya — ukuran, anchor, hiasan, urutan
+            // yang harus sejajar dengan petak papan. Selebihnya — ukuran, anchor, hiasan, urutan
             // anak — milik prefab. Begitu kode ikut menyetel sizeDelta, tiap perubahan di
             // prefab akan tertimpa diam-diam saat run, dan yang mengubahnya tidak akan pernah
             // tahu kenapa.
@@ -895,7 +904,7 @@ namespace Proto
                 {
                     // Prefab yang membawa GridArea memegang kendali PENUH: letak papan, ukuran
                     // papan, dan sekarang juga letak & ukuran petaknya. Kode berhenti menghitung
-                    // pojok papan — menggeser papan di prefab menggeser petak 7x7 bersamanya,
+                    // pojok papan — menggeser papan di prefab menggeser petak papan bersamanya,
                     // yang memang seluruh alasan papan ini dijadikan prefab.
                     GridOverride = CanvasRectOf(area);
                 }
@@ -992,33 +1001,15 @@ namespace Proto
             return img;
         }
 
-        /// <summary>One radial cooldown dial per active skill, drawn on top of its cells.</summary>
+        /// <summary>
+        /// Jam cooldown tidak lagi punya widget sendiri: art piece yang terpasang dirangkap
+        /// jadi jamnya — lapis redup + lapis isi ber-fillAmount, digambar DrawPlacedArt.
+        /// Sprite bulatan tetap dibuat: penanda pemain di peta memakainya sebagai cadangan.
+        /// </summary>
         void BuildSkillWidgets()
         {
             _circle = MakeCircleSprite(64);
-            _cdBg = new Image[MaxSpellRows];
-            _cdFill = new Image[MaxSpellRows];
             _pulse = new float[MaxSpellRows];
-
-            var size = new Vector2(CooldownDiameter, CooldownDiameter);
-
-            for (int i = 0; i < MaxSpellRows; i++)
-            {
-                _cdBg[i] = MakeImage($"CdBg_{i}", Vector2.zero, size,
-                    new Color(0.04f, 0.04f, 0.07f, 0.8f), Vector2.zero);
-                _cdBg[i].sprite = _circle;
-                _cdBg[i].rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                _cdBg[i].enabled = false;
-
-                _cdFill[i] = MakeImage($"CdFill_{i}", Vector2.zero, size, Color.white, Vector2.zero);
-                _cdFill[i].sprite = _circle;
-                _cdFill[i].rectTransform.pivot = new Vector2(0.5f, 0.5f);
-                _cdFill[i].type = Image.Type.Filled;
-                _cdFill[i].fillMethod = Image.FillMethod.Radial360;
-                _cdFill[i].fillOrigin = (int)Image.Origin360.Top;
-                _cdFill[i].fillClockwise = true;
-                _cdFill[i].enabled = false;
-            }
         }
 
         static Sprite MakeCircleSprite(int size)
@@ -1040,6 +1031,30 @@ namespace Proto
                     float d = Mathf.Sqrt(dx * dx + dy * dy);
                     byte a = (byte)(Mathf.Clamp01(r - d) * 255f);
                     pixels[y * size + x] = new Color32(255, 255, 255, a);
+                }
+            }
+
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f));
+        }
+
+        /// <summary>Kotak garis tepi: border pekat, tengah kosong. Untuk petak line-art.</summary>
+        static Sprite MakeOutlineSprite(int size, int border)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                wrapMode = TextureWrapMode.Clamp
+            };
+
+            var pixels = new Color32[size * size];
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    bool edge = x < border || y < border || x >= size - border || y >= size - border;
+                    pixels[y * size + x] = new Color32(255, 255, 255, edge ? (byte)255 : (byte)0);
                 }
             }
 
@@ -1093,6 +1108,9 @@ namespace Proto
                 _looseCells[i].rectTransform.pivot = new Vector2(0.5f, 0.5f);
                 _looseCells[i].enabled = false;
             }
+
+            _cellFrame = MakeOutlineSprite(32, 2);
+            _artLooseLayer = MakeArtLayer("PieceArtLoose");
         }
 
         /// <summary>Draws one piece centred on <paramref name="center"/>. Returns cells consumed.
@@ -1124,7 +1142,14 @@ namespace Proto
                 // Kotak warnanya tetap DITATA walau tidak digambar: letak dan ukurannya yang
                 // dipakai tile di bawah ini, jadi satu rumus posisi melayani dua rupa.
                 img.enabled = !tiled;
-                img.color = color;
+
+                // Piece ber-visual (art ATAU ikon) tidak lagi tampil sebagai kotak ISI:
+                // gambarnya yang di depan, petaknya tinggal GARIS TEPI tipis — cukup untuk
+                // membaca bentuk grid tanpa bersaing. Kotak isi hanya untuk piece yang
+                // benar-benar tidak punya gambar apa pun.
+                bool outline = def.Art != null || def.Icon != null;
+                img.sprite = outline ? _cellFrame : null;
+                img.color = outline ? new Color(color.r, color.g, color.b, alpha * 0.55f) : color;
                 img.rectTransform.sizeDelta = new Vector2(inner, inner);
                 img.rectTransform.anchoredPosition = origin + new Vector2(
                     shape[i].x * step + LooseCellSize * scale * 0.5f,
@@ -1138,8 +1163,12 @@ namespace Proto
                     RuneTiles.AreaTint(def, i, def.Color), alpha);
             }
 
-            // Art dari SO ikut menempel di piece yang menggeletak/dipajang, skala mengikuti.
-            DrawPieceArt(def, origin, rot, LooseCellSize * scale, LooseCellGap * scale, alpha);
+            // Visual piece (art atau ikon terpusat) ikut menempel di piece yang menggeletak/
+            // dipajang, skala mengikuti. Lapisan LOOSE, bukan lapisan depan biasa: petak
+            // tercecer dinaikkan ke atas panel, dan art di lapisan biasa tenggelam di baliknya.
+            if (!tiled)
+                DrawPieceVisual(def, origin, rot, LooseCellSize * scale, LooseCellGap * scale,
+                    alpha, loose: true);
 
             return cursor;
         }
@@ -1427,6 +1456,10 @@ namespace Proto
             // Peta dan layar game over tidak terpengaruh: keduanya menaikkan dirinya sendiri
             // tiap frame, jadi mereka tetap menang di atas ini.
             for (int i = 0; i < _looseCells.Length; i++) _looseCells[i].transform.SetAsLastSibling();
+
+            // Lapisan art loose ikut naik, SETELAH petaknya — supaya gambar item duduk DI DEPAN
+            // kotak petak, bukan tenggelam di baliknya.
+            if (_artLooseLayer != null) _artLooseLayer.SetAsLastSibling();
 
             _evoLines = new Image[EvoLinePool];
             for (int i = 0; i < EvoLinePool; i++)
@@ -1771,6 +1804,16 @@ namespace Proto
             _tipBg.rectTransform.pivot = new Vector2(0f, 1f);
             _tipBg.enabled = false;
 
+            // Bingkai kit UI kalau temanya membawa — kartu info memakai bahasa panel yang sama
+            // dengan halaman menu, bukan kotak gelap telanjang. Sliced: tingginya berubah
+            // mengikuti isi, ornamen sudutnya tidak boleh ikut molor.
+            if (_theme != null && _theme.InfoPanel != null)
+            {
+                _tipBg.sprite = _theme.InfoPanel;
+                _tipBg.type = Image.Type.Sliced;
+                _tipBg.color = Color.white;
+            }
+
             _tipText = MakeText("TipText", Vector2.zero, new Vector2(TipWidth - TipPadX * 2f, 140), 13,
                 new Color(0.92f, 0.92f, 0.96f), Vector2.zero, TextAnchor.UpperLeft);
             _tipText.rectTransform.pivot = new Vector2(0f, 1f);
@@ -1849,11 +1892,11 @@ namespace Proto
             _debuffOrigin = new Vector2(Margin, StripDebuffY);
             _ailmentOrigin = new Vector2(Margin, StripAilmentY);
 
-            // Tepi KANAN, dan tegak. Tiga strip lain berbaris mendatar di kiri bawah bar mana;
-            // menaruh yang keempat di ujung barisan itu akan membuatnya terbaca sebagai jenis
-            // keempat dari hal yang sama. Pakta bukan hal yang sama — ia dipilih, bukan menimpa,
-            // dan tidak akan pernah hilang. Sisi layar yang berbeda mengatakan itu tanpa satu kata.
-            _pactOrigin = new Vector2(Screen.width - StripPactIcon - Margin, StripPactY);
+            // KIRI, di bawah ketiga strip — dikumpulkan jadi satu keluarga bacaan di samping
+            // bar mana, permintaan pemilik project. Yang membedakan pakta cukup ukuran ikonnya
+            // dan arah tumbuhnya yang menurun. Kotak PactArea di prefab yang berkuasa; angka
+            // ini cuma cadangan saat prefabnya absen.
+            _pactOrigin = new Vector2(Margin, StripPactY);
 
             if (_theme == null || _theme.StatusStripsPrefab == null) return;
 
@@ -1888,10 +1931,10 @@ namespace Proto
                 // tetap berarti mereka tertinggal menggantung di tempat strip yang sudah pindah,
                 // dan yang memindahkan stripnya tidak akan menduga keduanya ikut terlibat.
                 if (_heldText != null)
-                    _heldText.rectTransform.anchoredPosition = origin + new Vector2(0f, -44f);
+                    _heldText.rectTransform.anchoredPosition = origin + new Vector2(0f, -62f);
 
                 if (_evolveText != null)
-                    _evolveText.rectTransform.anchoredPosition = origin + new Vector2(0f, -66f);
+                    _evolveText.rectTransform.anchoredPosition = origin + new Vector2(0f, -84f);
             }
         }
 
@@ -2701,6 +2744,7 @@ namespace Proto
                     // to ride to. They come off here rather than vanishing with the base.
                     if (_bag.Place(_held, bagOrigin, _heldRot) != null)
                     {
+                        FinalizeShopPurchase();
                         DropRiders();
                         _held = null;
                         if (Sfx != null) Sfx.UiPlace();
@@ -2711,6 +2755,7 @@ namespace Proto
 
                         if (_bag.Place(_held, bagOrigin, _heldRot) != null)
                         {
+                            FinalizeShopPurchase();
                             DropRiders();
                             _held = null;
                             if (Sfx != null) Sfx.UiPlace();
@@ -2723,10 +2768,12 @@ namespace Proto
                 var target = ScreenToCell(mouse);
                 if (target.x >= 0)
                 {
-                    var gridOrigin = target - AnchorOffset(_held, _heldRot);
+                    // Magnet yang sama dengan hover & ghost — klik mendarat persis di sorotan.
+                    var gridOrigin = SnapAssist(_held, _heldRot, target - AnchorOffset(_held, _heldRot));
 
                     if (Book.Place(_held, gridOrigin, _heldRot) != null)
                     {
+                        FinalizeShopPurchase();
                         LandRiders(gridOrigin, mouse);
                         _held = null;
                         if (Sfx != null) Sfx.UiPlace();
@@ -2738,6 +2785,7 @@ namespace Proto
 
                         if (Book.Place(_held, gridOrigin, _heldRot) != null)
                         {
+                            FinalizeShopPurchase();
                             LandRiders(gridOrigin, mouse);
                             _held = null;
                             if (Sfx != null) Sfx.UiPlace();
@@ -2747,7 +2795,15 @@ namespace Proto
                     return;
                 }
 
-                // Clicked empty space â€” drop it right there.
+                // Clicked empty space. Barang TOKO pulang ke slotnya — belum dibayar, jadi
+                // "naruh sembarangan" bukan transaksi, cuma berubah pikiran. Barang milik
+                // sendiri tetap jatuh di tempat seperti biasa.
+                if (_heldShopSlot >= 0)
+                {
+                    CancelShopCarry();
+                    return;
+                }
+
                 DropRiders();
                 AddLoose(_held, mouse);
                 _held = null;
@@ -2946,6 +3002,10 @@ namespace Proto
             {
                 if (_gold >= _rerollCost)
                 {
+                    // Barang toko yang sedang dibawa dipulangkan dulu — reroll menukar SELURUH
+                    // stok, dan barang yang belum dibayar ikut tertukar bersama slotnya.
+                    if (_heldShopSlot >= 0) CancelShopCarry();
+
                     _gold -= _rerollCost;
                     _rerollCost += _balance.RerollCostIncrement;
                     RollShop();
@@ -2963,10 +3023,18 @@ namespace Proto
                 int price = _balance.PriceOf(_shop[i]);
                 if (_gold < price) return true;
 
-                _gold -= price;
-                AddLoose(_shop[i], NearScatterPos(ShopSlotRect(i).center, i));
+                // Barang DIBAWA dulu, bukan dibeli: uang baru berpindah saat ia benar-benar
+                // terpasang di papan atau tas (FinalizeShopPurchase). Batal menaruh = pulang
+                // ke slot tanpa transaksi. Dulu klik = bayar = dilempar ke lantai — salah
+                // klik saja sudah jadi pembelian.
+                if (_heldShopSlot >= 0) CancelShopCarry();
+                if (_held != null) StashHeld();
+
+                _held = _shop[i];
+                _heldRot = 0;
+                _heldShopSlot = i;
                 _shop[i] = null;
-                if (Sfx != null) Sfx.UiBuy();
+                if (Sfx != null) Sfx.UiPick();
                 return true;
             }
 
@@ -2996,9 +3064,40 @@ namespace Proto
         {
             if (_held == null) return;
 
+            // Barang toko tidak pernah menggeletak di lantai: ia belum dibayar, jadi ke mana
+            // pun alur ini dipanggil (panel tutup, wave mulai), ia pulang ke slotnya.
+            if (_heldShopSlot >= 0)
+            {
+                CancelShopCarry();
+                return;
+            }
+
             DropRiders();
             AddLoose(_held);
             _held = null;
+        }
+
+        /// <summary>Barang toko yang batal ditaruh pulang ke slotnya — tanpa transaksi.</summary>
+        void CancelShopCarry()
+        {
+            if (_heldShopSlot < 0 || _held == null) return;
+
+            _shop[_heldShopSlot] = _held;
+            _held = null;
+            _heldShopSlot = -1;
+        }
+
+        /// <summary>
+        /// Uang berpindah DI SINI — saat barang toko benar-benar terpasang di papan atau tas.
+        /// Dipanggil tepat SEBELUM genggaman dilepas, karena harganya dibaca dari _held.
+        /// </summary>
+        void FinalizeShopPurchase()
+        {
+            if (_heldShopSlot < 0 || _held == null) return;
+
+            _gold -= _balance.PriceOf(_held);
+            _heldShopSlot = -1;
+            if (Sfx != null) Sfx.UiBuy();
         }
 
         void OnEnemyKilled(Vector3 at)
@@ -3249,8 +3348,49 @@ namespace Proto
             var cell = ScreenToCell(ProtoInput.MousePosition);
             if (cell.x < 0) return null;
 
-            origin = cell - AnchorOffset(_held, _heldRot);
+            origin = SnapAssist(_held, _heldRot, cell - AnchorOffset(_held, _heldRot));
             return _held;
+        }
+
+        /// <summary>
+        /// Magnet papan: titik persis kursor dulu, lalu 8 tetangganya — yang terdekat yang bisa
+        /// DITARUH; kalau tidak ada, yang bisa MENIMPA. Tanpa ini piksel-piksel perbatasan
+        /// terasa mati: maksud pemain sudah jelas, papannya yang pura-pura tidak mengerti —
+        /// itulah kenapa tas (satu lapis, selalu sah) terasa jauh lebih enak daripada buku.
+        /// Hover, ghost, dan klik memakai magnet yang SAMA, jadi yang disorot selalu persis
+        /// yang akan terjadi.
+        /// </summary>
+        Vector2Int SnapAssist(PieceDefinition def, int rot, Vector2Int origin)
+        {
+            if (Book.CanPlace(def, origin, rot)) return origin;
+
+            var best = origin;
+            float bestD = float.MaxValue;
+            bool found = false;
+
+            for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                if (dx == 0 && dy == 0) continue;
+                var o = origin + new Vector2Int(dx, dy);
+                if (!Book.CanPlace(def, o, rot)) continue;
+                float d = dx * dx + dy * dy;
+                if (d < bestD) { bestD = d; best = o; found = true; }
+            }
+            if (found) return best;
+
+            if (Book.CanReplaceAt(def, origin, rot)) return origin;
+
+            for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                if (dx == 0 && dy == 0) continue;
+                var o = origin + new Vector2Int(dx, dy);
+                if (!Book.CanReplaceAt(def, o, rot)) continue;
+                float d = dx * dx + dy * dy;
+                if (d < bestD) { bestD = d; best = o; found = true; }
+            }
+            return found ? best : origin;
         }
 
         // ==================================================================
@@ -4827,8 +4967,12 @@ namespace Proto
             var hover = ScreenToCell(ProtoInput.MousePosition);
             if (hover.x < 0) return;
 
-            var origin = hover - AnchorOffset(_held, _heldRot);
-            bool valid = Book.CanPlace(_held, origin, _heldRot);
+            // Magnet yang sama dengan klik — dan MENIMPA dihitung sah: dulu preview-nya merah
+            // padahal kliknya menimpa dengan sukses, jadi papan terasa melarang hal yang
+            // sebenarnya ia izinkan.
+            var origin = SnapAssist(_held, _heldRot, hover - AnchorOffset(_held, _heldRot));
+            bool valid = Book.CanPlace(_held, origin, _heldRot) ||
+                         Book.CanReplaceAt(_held, origin, _heldRot);
             var shape = Shapes.Rotate(_held.Cells, _heldRot);
 
             // Yang boleh ditaruh memakai warnanya SENDIRI, bukan hijau. Hijau adalah warna
@@ -4882,8 +5026,18 @@ namespace Proto
 
         RectTransform _artBehindLayer;
         RectTransform _artFrontLayer;
+
+        /// <summary>
+        /// Lapisan art KETIGA, khusus piece yang menggeletak/dipajang/dibawa kursor. Terpisah
+        /// karena petak tercecer dinaikkan ke atas panel saat dibangun — art di lapisan depan
+        /// biasa tetap kalah tinggi dan gambarnya tenggelam di balik kotak petaknya sendiri.
+        /// </summary>
+        RectTransform _artLooseLayer;
+
         readonly List<Image> _artBehindPool = new List<Image>();
         readonly List<Image> _artFrontPool = new List<Image>();
+        readonly List<Image> _artLoosePool = new List<Image>();
+        int _artLooseUsed;
         int _artBehindUsed;
         int _artFrontUsed;
 
@@ -4903,6 +5057,7 @@ namespace Proto
         {
             _artBehindUsed = 0;
             _artFrontUsed = 0;
+            _artLooseUsed = 0;
         }
 
         void EndArtFrame()
@@ -4911,13 +5066,15 @@ namespace Proto
                 _artBehindPool[i].enabled = false;
             for (int i = _artFrontUsed; i < _artFrontPool.Count; i++)
                 _artFrontPool[i].enabled = false;
+            for (int i = _artLooseUsed; i < _artLoosePool.Count; i++)
+                _artLoosePool[i].enabled = false;
         }
 
-        Image TakeArt(bool behind)
+        Image TakeArt(bool behind, bool loose = false)
         {
-            var layer = behind ? _artBehindLayer : _artFrontLayer;
-            var pool = behind ? _artBehindPool : _artFrontPool;
-            int used = behind ? _artBehindUsed++ : _artFrontUsed++;
+            var layer = loose ? _artLooseLayer : behind ? _artBehindLayer : _artFrontLayer;
+            var pool = loose ? _artLoosePool : behind ? _artBehindPool : _artFrontPool;
+            int used = loose ? _artLooseUsed++ : behind ? _artBehindUsed++ : _artFrontUsed++;
 
             while (pool.Count <= used)
             {
@@ -4945,82 +5102,182 @@ namespace Proto
         /// satuan petak dari pojok kiri-bawah, putaran positif searah jarum jam. Rotasi
         /// piece di papan ikut memutar art beserta offsetnya.
         /// </summary>
-        void DrawPieceArt(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
-            float cellPx, float gapPx, float alpha)
+        Image DrawPieceArt(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
+            float cellPx, float gapPx, float alpha, bool loose = false)
         {
             // RUNE TIDAK DISENTUH — perintah pemilik project: rune sudah benar lewat
             // lapisan tile per-petak (RuneTiles). Art dari SO hanya untuk skill & segel.
-            if (def == null || def.IsRune) return;
+            if (def == null || def.IsRune) return null;
 
-            if (def.Art == null || _artFrontLayer == null) return;
+            if (_artFrontLayer == null) return null;
 
-            float step = cellPx + gapPx;
+            // Rumusnya pindah ke PieceArt.Layout — satu sumber yang juga dipakai preview
+            // starter di menu, supaya art yang sama tidak pernah ditata dua cara berbeda.
+            Vector2 center, size;
+            float angle;
+            if (!PieceArt.Layout(def, shapeBottomLeft, rot, cellPx, gapPx,
+                out center, out size, out angle)) return null;
 
-            // bbox bentuk TANPA rotasi — ruang tempat Offset/Ukuran disetel di editor.
-            int maxX0 = 0, maxY0 = 0;
-            foreach (var c in def.Cells)
-            {
-                if (c.x > maxX0) maxX0 = c.x;
-                if (c.y > maxY0) maxY0 = c.y;
-            }
-
-            Vector2 sizeCells = def.ArtSize;
-            if (sizeCells.x <= 0f || sizeCells.y <= 0f)
-                sizeCells = new Vector2(maxX0 + 1, maxY0 + 1);
-
-            float w = sizeCells.x * cellPx + Mathf.Max(0f, sizeCells.x - 1f) * gapPx;
-            float h = sizeCells.y * cellPx + Mathf.Max(0f, sizeCells.y - 1f) * gapPx;
-
-            float bw0 = (maxX0 + 1) * cellPx + maxX0 * gapPx;
-            float bh0 = (maxY0 + 1) * cellPx + maxY0 * gapPx;
-
-            // Pusat art relatif pusat bbox — vektor inilah yang ikut berputar bersama piece.
-            var local = new Vector2(
-                def.ArtOffset.x * step + w * 0.5f - bw0 * 0.5f,
-                def.ArtOffset.y * step + h * 0.5f - bh0 * 0.5f);
-
-            var shape = Shapes.Rotate(def.Cells, rot);
-            int maxXr = 0, maxYr = 0;
-            foreach (var c in shape)
-            {
-                if (c.x > maxXr) maxXr = c.x;
-                if (c.y > maxYr) maxYr = c.y;
-            }
-
-            float bwR = (maxXr + 1) * cellPx + maxXr * gapPx;
-            float bhR = (maxYr + 1) * cellPx + maxYr * gapPx;
-
-            float rad = rot * 90f * Mathf.Deg2Rad;
-            float cos = Mathf.Cos(rad), sin = Mathf.Sin(rad);
-            var turned = new Vector2(local.x * cos - local.y * sin,
-                                     local.x * sin + local.y * cos);
-
-            var img = TakeArt(def.ArtBehindCells);
+            var img = TakeArt(def.ArtBehindCells, loose);
             img.sprite = def.Art;
             img.color = new Color(1f, 1f, 1f, alpha);
 
-            var rt = img.rectTransform;
-            rt.sizeDelta = new Vector2(w, h);
-            rt.anchoredPosition = shapeBottomLeft + new Vector2(bwR * 0.5f, bhR * 0.5f) + turned;
+            // Pool-nya dipakai bergantian oleh gambar biasa, lapisan ISI jam cooldown, dan
+            // ikon terpusat — status render di-reset di sini supaya bekas fillAmount/letupan/
+            // preserveAspect frame lalu tidak menempel di piece lain yang kebagian Image sama.
+            img.type = Image.Type.Simple;
+            img.fillAmount = 1f;
+            img.preserveAspect = false;
 
-            // Editor memutar SEARAH jarum jam untuk nilai positif; UGUI kebalikannya.
-            rt.localEulerAngles = new Vector3(0f, 0f, -def.ArtRotation + rot * 90f);
+            var rt = img.rectTransform;
+            rt.localScale = Vector3.one;
+            rt.sizeDelta = size;
+            rt.anchoredPosition = center;
+            rt.localEulerAngles = new Vector3(0f, 0f, angle);
+            return img;
+        }
+
+        /// <summary>
+        /// Ikon piece dibentangkan di pusat footprint-nya — jalan visual untuk piece yang tidak
+        /// punya Art papan (mis. segel). Aturan satu-glyph-per-piece yang sama dengan codex dan
+        /// layar starter, supaya benda yang sama tampil serupa di mana pun.
+        /// </summary>
+        Image DrawPieceIcon(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
+            float cellPx, float gapPx, float alpha, bool loose = false)
+        {
+            // Rune dan ikon glyph rune tidak lewat sini — mereka sudah digambar sebagai tile
+            // per petak, dan ikon terpusat di atasnya jadi gambar dobel.
+            if (def == null || def.IsRune || def.Icon == null) return null;
+            if (RuneTiles.IsRuneGlyph(def.Icon)) return null;
+
+            var shape = Shapes.Rotate(def.Cells, rot);
+            int maxX = 0, maxY = 0;
+            foreach (var c in shape)
+            {
+                if (c.x > maxX) maxX = c.x;
+                if (c.y > maxY) maxY = c.y;
+            }
+
+            float w = (maxX + 1) * cellPx + maxX * gapPx;
+            float h = (maxY + 1) * cellPx + maxY * gapPx;
+
+            // Ikon besar di tengah HANYA untuk bentuk yang mengisi penuh kotak pembatasnya
+            // (Dot, Line, Square). Bentuk bolong — diagonal, L — membuat ikon di tengah kotak
+            // ngambang di antara sel dan menumpangi petak piece TETANGGA. Untuk mereka ikonnya
+            // duduk di SEL JANGKAR (sel pertama bentuknya), dan sisa footprint dibaca dari
+            // chip petaknya.
+            bool solid = shape.Length == (maxX + 1) * (maxY + 1);
+
+            float side;
+            Vector2 at;
+
+            if (solid)
+            {
+                side = Mathf.Min(w, h) * 0.92f;
+                at = shapeBottomLeft + new Vector2(w * 0.5f, h * 0.5f);
+            }
+            else
+            {
+                float step = cellPx + gapPx;
+                side = cellPx * 0.92f;
+                at = shapeBottomLeft + new Vector2(
+                    shape[0].x * step + cellPx * 0.5f,
+                    shape[0].y * step + cellPx * 0.5f);
+            }
+
+            var img = TakeArt(false, loose);
+            img.sprite = def.Icon;
+            img.color = new Color(1f, 1f, 1f, alpha);
+            img.type = Image.Type.Simple;
+            img.fillAmount = 1f;
+            img.preserveAspect = true;
+
+            var rt = img.rectTransform;
+            rt.localScale = Vector3.one;
+            rt.sizeDelta = new Vector2(side, side);
+            rt.anchoredPosition = at;
+            rt.localEulerAngles = Vector3.zero;
+            return img;
+        }
+
+        /// <summary>
+        /// SATU pintu visual piece: Art papan kalau ada, ikon terpusat kalau tidak. Kotak warna
+        /// primitif bukan lagi rupa piece di mana pun — perintah pemilik project.
+        /// </summary>
+        Image DrawPieceVisual(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
+            float cellPx, float gapPx, float alpha, bool loose = false)
+        {
+            return def != null && def.Art != null
+                ? DrawPieceArt(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose)
+                : DrawPieceIcon(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose);
         }
 
         void DrawPlacedArt()
         {
+            var spells = Book.Spells;
+
             for (int i = 0; i < Book.Placed.Count; i++)
             {
                 var inst = Book.Placed[i];
                 var def = inst.Def;
-                if (def.IsRune || def.Art == null) continue;
+                if (def.IsRune) continue;
+                if (def.Art == null && def.Icon == null) continue;
 
-                DrawPieceArt(def, CellAnchor(inst.Origin.x, inst.Origin.y), inst.Rot,
-                    CellSize, CellGap, 1f);
+                var anchor = CellAnchor(inst.Origin.x, inst.Origin.y);
 
-                // Art di belakang petak cuma kelihatan kalau petak di atasnya tembus —
-                // alasan yang sama editor menggambar petaknya 85% pekat, bukan 100%.
-                if (!def.ArtBehindCells) continue;
+                // Skill ber-cooldown digambar DUA LAPIS dari art-nya sendiri — redup di bawah,
+                // isi ber-fillAmount di atas — menggantikan cincin primitif yang dulu menumpang
+                // di centroid. Isinya merangkak naik mengikuti cooldown, penuh berarti siap,
+                // dan meletup membesar saat cast (nilai _pulse diisi OnSpellCast).
+                int spellIdx = -1;
+                for (int s = 0; s < spells.Count; s++)
+                {
+                    if (spells[s].Source == inst) { spellIdx = s; break; }
+                }
+
+                if (spellIdx >= 0)
+                {
+                    var sp = spells[spellIdx];
+                    float progress = sp.Cooldown <= 0f
+                        ? 1f
+                        : 1f - Mathf.Clamp01(sp.Source.CdTimer / sp.Cooldown);
+
+                    var dim = DrawPieceVisual(def, anchor, inst.Rot, CellSize, CellGap, 1f);
+                    if (dim != null) dim.color = new Color(0.30f, 0.29f, 0.36f, 0.95f);
+
+                    var fill = DrawPieceVisual(def, anchor, inst.Rot, CellSize, CellGap, 1f);
+                    if (fill != null)
+                    {
+                        // MUTER, bukan naik dari bawah — permintaan pemilik project: isi yang
+                        // menyapu melingkar searah jarum jam, seperti jam cooldown ARPG.
+                        fill.type = Image.Type.Filled;
+                        fill.fillMethod = Image.FillMethod.Radial360;
+                        fill.fillOrigin = (int)Image.Origin360.Top;
+                        fill.fillClockwise = true;
+                        fill.fillAmount = progress;
+
+                        // Bahasa warna cincin lama dipertahankan: BIRU berarti mananya yang
+                        // kurang, bukan cooldown-nya yang belum pulih.
+                        bool manaStarved = progress >= 1f && Player.Mana < def.ManaCost;
+                        fill.color = manaStarved ? new Color(0.55f, 0.7f, 1f, 0.9f) : Color.white;
+
+                        // 0,6, dulu 0,35 — letupannya harus KERASA, bukan sekadar kedip.
+                        float pulse = spellIdx < _pulse.Length ? _pulse[spellIdx] : 0f;
+                        fill.rectTransform.localScale = Vector3.one * (1f + pulse * 0.6f);
+                    }
+                }
+                else
+                {
+                    DrawPieceVisual(def, anchor, inst.Rot, CellSize, CellGap, 1f);
+                }
+
+                // Petak primitif di bawah art: yang punya ART (menutup bentuk aslinya)
+                // disembunyikan penuh; yang cuma punya IKON diredupkan, bukan dimatikan —
+                // ikon jangkarnya cuma duduk di satu sel, dan footprint sisanya harus tetap
+                // terbaca untuk penempatan & resep.
+                float cellAlpha = def.ArtBehindCells ? 0.45f
+                    : def.Art != null ? 0f
+                    : 0.35f;
 
                 foreach (var at in inst.Cells())
                 {
@@ -5029,7 +5286,7 @@ namespace Proto
                     int idx = at.y * Grimoire.Width + at.x;
                     var target = _skillCells[idx];
                     var col = target.color;
-                    col.a *= 0.45f;
+                    col.a *= cellAlpha;
                     target.color = col;
                 }
             }
@@ -5170,17 +5427,33 @@ namespace Proto
         {
             var emptyColor = _held != null ? ShownBagCell : HiddenBagCell;
 
+            // Sel terisi bukan lagi kotak warna piece: hitam nyaris transparan sebagai alas,
+            // ikon piece-nya yang bicara (digambar di bawah). Sel kosong tetap kisi tas.
+            var filledChip = new Color(0f, 0f, 0f, 0.18f);
+
             for (int y = 0; y < Backpack.Height; y++)
             {
                 for (int x = 0; x < Backpack.Width; x++)
                 {
                     int i = y * Backpack.Width + x;
                     var stored = _bag.At(new Vector2Int(x, y));
-                    _bagCells[i].color = stored != null ? stored.Def.Color : emptyColor;
+                    _bagCells[i].color = stored != null ? filledChip : emptyColor;
                 }
             }
 
             DrawBagTiles();
+
+            // Ikon per piece di tas — satu glyph di pusat footprint, aturan yang sama dengan
+            // papan dan layar starter. Dulu tas cuma kotak warna, dan pemain tidak pernah bisa
+            // tahu APA yang disimpannya tanpa hover satu-satu.
+            for (int i = 0; i < _bag.Placed.Count; i++)
+            {
+                var inst = _bag.Placed[i];
+                if (inst == null || inst.Def == null) continue;
+
+                DrawPieceVisual(inst.Def, BagAnchor(inst.Origin.x, inst.Origin.y), inst.Rot,
+                    BagCell, BagGap, 1f, loose: true);
+            }
 
             if (_held == null) return;
 
@@ -5222,15 +5495,13 @@ namespace Proto
 
             cursor = DrawPanels(cursor);
 
-            // The carried piece rides the cursor, but not over the grid or bag â€” those already
-            // show the footprint, and drawing both looks like a double image.
+            // Piece yang dibawa SELALU menunggangi kursor — dulu ia disembunyikan di atas papan
+            // dan tas karena footprint-nya sudah digambar di sana, tapi footprint itu petak
+            // polos: ikonnya lenyap justru di detik pemain sedang menimbang penempatan.
+            // Petak papan/tas tetap memberi umpan sah/tidaknya; gambarnya ikut kursor.
             if (_held != null)
             {
-                var mouse = ProtoInput.MousePosition;
-                bool overGrid = ScreenToCell(mouse).x >= 0;
-                bool overBag = ScreenToBagCell(mouse).x >= 0;
-
-                if (!overGrid && !overBag) cursor = DrawPiece(_held, _heldRot, mouse, cursor, 0.9f);
+                cursor = DrawPiece(_held, _heldRot, ProtoInput.MousePosition, cursor, 0.9f);
             }
 
             for (int i = cursor; i < _looseCells.Length; i++) _looseCells[i].enabled = false;
@@ -5457,43 +5728,15 @@ namespace Proto
             return n == 0 ? sum : sum / n;
         }
 
+        /// <summary>
+        /// Cincin cooldown primitif sudah pensiun: art piece-nya sendiri yang jadi jamnya,
+        /// digambar DrawPlacedArt. Yang tersisa di sini cuma peluruhan letupan cast — nilainya
+        /// dibaca DrawPlacedArt lewat indeks spell yang sama dengan yang diisi OnSpellCast.
+        /// </summary>
         void DrawSkillWidgets(float dt)
         {
-            var spells = Book.Spells;
-
-            for (int i = 0; i < MaxSpellRows; i++)
-            {
-                bool used = i < spells.Count;
-                _cdBg[i].enabled = used;
-                _cdFill[i].enabled = used;
-
-                if (!used)
-                {
-                    _pulse[i] = 0f;
-                    continue;
-                }
-
-                var s = spells[i];
-                float progress = s.Cooldown <= 0f ? 1f : 1f - Mathf.Clamp01(s.Source.CdTimer / s.Cooldown);
-
+            for (int i = 0; i < _pulse.Length; i++)
                 _pulse[i] = Mathf.MoveTowards(_pulse[i], 0f, dt * 3.5f);
-                float scale = 1f + _pulse[i] * 0.6f;
-
-                var center = SkillCentroid(s.Source);
-                var col = s.Source.Def.Color;
-
-                _cdBg[i].rectTransform.anchoredPosition = center;
-                _cdBg[i].rectTransform.localScale = Vector3.one * scale;
-
-                _cdFill[i].rectTransform.anchoredPosition = center;
-                _cdFill[i].rectTransform.localScale = Vector3.one * scale;
-                _cdFill[i].fillAmount = progress;
-
-                bool manaStarved = progress >= 1f && Player.Mana < s.Source.Def.ManaCost;
-                if (manaStarved) _cdFill[i].color = new Color(0.35f, 0.55f, 1f, 0.7f);
-                else if (progress >= 1f) _cdFill[i].color = new Color(col.r, col.g, col.b, 0.95f);
-                else _cdFill[i].color = new Color(col.r * 0.85f, col.g * 0.85f, col.b * 0.85f, 0.55f);
-            }
         }
 
         int DrawPanels(int cursor)
@@ -5618,7 +5861,7 @@ namespace Proto
         /// Orders the panel by damage, heaviest first, into <see cref="_spellOrder"/>.
         ///
         /// Insertion sort on purpose: the list is never longer than the number of skills that fit on
-        /// a 7x7 board, and this runs every frame — <c>List.Sort</c> would allocate a comparer on a
+        /// the board, and this runs every frame — <c>List.Sort</c> would allocate a comparer on a
         /// hot path to save nothing.
         /// </summary>
         int SortSpellsByDamage()

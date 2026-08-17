@@ -50,7 +50,7 @@ namespace Proto
                  "hiasan, apa pun.\n\n" +
                  "Aturan mainnya satu, dan penting: kode HANYA menempelkannya ke kanvas di " +
                  "posisi papan. Ukuran, anchor, dan susunan anaknya TIDAK pernah disentuh — " +
-                 "apa yang kamu atur di prefab itulah yang tampil. Petak 7x7 digambar di " +
+                 "apa yang kamu atur di prefab itulah yang tampil. Petak papan digambar di " +
                  "atasnya oleh kode, jadi biarkan bagian tengahnya kosong.")]
         public GameObject GrimoirePanelPrefab;
 
@@ -87,9 +87,9 @@ namespace Proto
                  "Kosong = tata letak hitungan lama.")]
         public GameObject ShopPrefab;
 
-        [Tooltip("Alas di belakang petak 7x7. DIKOSONGKAN atas permintaan pemilik project: " +
+        [Tooltip("Alas di belakang petak papan. DIKOSONGKAN atas permintaan pemilik project: " +
                  "bingkai berhias di belakang petak membuat dua bingkai bersarang, dan yang " +
-                 "dimaksud 'grid' sejak awal adalah petak 7x7-nya sendiri — bukan gambar alas. " +
+                 "dimaksud 'grid' sejak awal adalah petak papannya sendiri — bukan gambar alas. " +
                  "Slotnya dibiarkan ada kalau nanti mau dicoba lagi.")]
         public Sprite GridFrame;
 
@@ -97,6 +97,11 @@ namespace Proto
                  "tukar sprite-nya di sini begitu art aslinya jadi, tanpa menyentuh kode. " +
                  "Kosong = tas telanjang tanpa alas, seperti sebelum ada slot ini.")]
         public Sprite BagPanel;
+
+        [Tooltip("Bingkai kartu INFO in-run: kartu hover piece, popup keterangan. Diisi salah " +
+                 "satu panel kit UIPanel supaya kartu info bicara bahasa yang sama dengan " +
+                 "halaman menu. Kosong = kotak gelap polos seperti sebelumnya.")]
+        public Sprite InfoPanel;
 
         [Header("Cairan di bola HP & mana")]
         [Tooltip("Seberapa tinggi permukaan cairan bergoyang, sebagai bagian dari tinggi bola.\n\n" +

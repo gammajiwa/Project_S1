@@ -46,7 +46,7 @@ namespace Proto
 
             // Yang mendatar butuh ruang untuk angka di sebelah ikonnya; yang menurun tidak — ia
             // memang tidak membawa angka, karena pakta tidak punya hitungan mundur untuk dibaca.
-            _slot = iconSize + (vertical ? 8f : 26f);
+            _slot = iconSize + (vertical ? 8f : 36f);
 
             _icons = new Image[capacity];
             _numbers = new Text[capacity];
@@ -88,7 +88,7 @@ namespace Proto
 
             var text = go.AddComponent<Text>();
             text.font = font;
-            text.fontSize = 14;
+            text.fontSize = 18;
             text.fontStyle = FontStyle.Bold;
             text.color = color;
             text.alignment = TextAnchor.MiddleLeft;
@@ -99,7 +99,7 @@ namespace Proto
             var rt = text.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
             rt.pivot = new Vector2(0f, 1f);
-            rt.sizeDelta = new Vector2(40f, 18f);
+            rt.sizeDelta = new Vector2(50f, 24f);
             return text;
         }
 
@@ -133,7 +133,7 @@ namespace Proto
 
             // Screen-space rect for hover testing. Canvas y counts down from the top; the mouse
             // counts up from the bottom, which is why this is not simply the anchored position.
-            _rects[_used] = new Rect(x, Screen.height + y - _icon, _icon + 22f, _icon);
+            _rects[_used] = new Rect(x, Screen.height + y - _icon, _icon + 36f, _icon);
 
             _used++;
         }

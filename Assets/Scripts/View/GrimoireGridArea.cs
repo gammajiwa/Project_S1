@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Proto
 {
     /// <summary>
-    /// Penanda letak petak 7x7 di dalam prefab papan grimoire — <b>ditaruh di prefab, disetel
+    /// Penanda letak petak papan di dalam prefab papan grimoire — <b>ditaruh di prefab, disetel
     /// tangan, dan kelihatan bentuknya selagi disetel</b>.
     ///
     /// Kenapa ada komponennya, bukan cukup RectTransform kosong bernama <c>GridArea</c>: kotak
@@ -44,7 +44,7 @@ namespace Proto
         public RectTransform TitleArea;
 
         [Header("Bantuan menata (editor saja)")]
-        [Tooltip("Gambar kotak dan petak 7x7 di Scene view. Tidak berpengaruh apa pun saat main.")]
+        [Tooltip("Gambar kotak dan petak papan di Scene view. Tidak berpengaruh apa pun saat main.")]
         public bool ShowGuide = true;
 
         [Tooltip("Warna garis bantunya.")]
@@ -58,8 +58,8 @@ namespace Proto
         {
             var r = ((RectTransform)transform).rect;
 
-            // Celah ditambahkan sebelum dibagi: petak 7x7 memakai tujuh sel tapi hanya enam
-            // celah — yang ketujuh menggantung di ujung dan tidak pernah digambar.
+            // Celah ditambahkan sebelum dibagi: petak papan memakai sel sebanyak lebarnya tapi
+            // celahnya satu lebih sedikit — celah terakhir menggantung dan tak pernah digambar.
             step = Mathf.Min((r.width + Gap) / Grimoire.Width,
                              (r.height + Gap) / Grimoire.Height);
 

@@ -238,8 +238,10 @@ namespace Proto
     /// </summary>
     public class Grimoire
     {
-        public const int Width = 7;
-        public const int Height = 7;
+        // 6x6, dulu 7x7 — keputusan pemilik project: papan lebih sempit membuat tiap petak
+        // lebih besar di kotak GridArea yang sama, dan pilihan penempatan yang lebih ketat.
+        public const int Width = 6;
+        public const int Height = 6;
 
         public readonly List<RuneInstance> Placed = new List<RuneInstance>();
         public readonly List<CompiledSpell> Spells = new List<CompiledSpell>();

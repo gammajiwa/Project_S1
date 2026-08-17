@@ -22,7 +22,7 @@ namespace Proto
     [AddComponentMenu("Grimoire/Starter Rig")]
     public class StarterRig : MonoBehaviour
     {
-        [Tooltip("Kotak tempat petak 7x7 digambar. Biasanya anak 'GridArea' di dalam prefab " +
+        [Tooltip("Kotak tempat petak papan digambar. Biasanya anak 'GridArea' di dalam prefab " +
                  "papan grimoire — petaknya akan mendarat persis di atas sampul bukunya.")]
         public RectTransform Board;
 

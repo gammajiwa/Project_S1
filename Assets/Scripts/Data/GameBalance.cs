@@ -327,6 +327,8 @@ namespace Proto
         [Range(0f, 1f)] public float MapEliteChance = 0.15f;
         [Range(0f, 1f)] public float MapShopChance = 0.12f;
         [Range(0f, 1f)] public float MapEventChance = 0.1f;
+        [Tooltip("NOL di aset untuk rilis ini — node SLOT diparkir buat update berikutnya, " +
+                 "kode & panelnya utuh. Menaikkan angka ini yang menghidupkannya kembali.")]
         [Range(0f, 1f)] public float MapGambleChance = 0.08f;
 
         [Tooltip("Elite baru boleh muncul dari lantai ini. Elite di lantai awal bukan " +

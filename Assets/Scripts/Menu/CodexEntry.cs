@@ -29,6 +29,37 @@ namespace Proto
 
         RuneTilePool _tiles;
 
+        /// <summary>
+        /// Ikon ASET piece di atas siluet — dibuat sekali saat runtime, sejajar kotak siluet.
+        /// Sengaja BUKAN anak kotak siluet: GridLayoutGroup di sana menata semua anaknya
+        /// sebagai sel 3x3, dan ikon yang dititipkan ke situ ikut dijejalkan ke grid.
+        /// </summary>
+        Image _icon;
+
+        Image IconImage()
+        {
+            if (_icon != null) return _icon;
+            if (_shapeCells == null || _shapeCells.Length == 0 || _shapeCells[0] == null) return null;
+
+            var box = _shapeCells[0].transform.parent as RectTransform;
+            if (box == null) return null;
+
+            var go = new GameObject("Icon", typeof(RectTransform));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(box.parent, false);
+            rt.SetSiblingIndex(box.GetSiblingIndex() + 1);
+            rt.anchorMin = box.anchorMin;
+            rt.anchorMax = box.anchorMax;
+            rt.pivot = box.pivot;
+            rt.anchoredPosition = box.anchoredPosition;
+            rt.sizeDelta = box.sizeDelta;
+
+            _icon = go.AddComponent<Image>();
+            _icon.raycastTarget = false;
+            _icon.preserveAspect = true;
+            return _icon;
+        }
+
         public void Bind(PieceDefinition piece, bool known)
         {
             if (piece == null)
@@ -54,7 +85,34 @@ namespace Proto
                 _meta.color = _unknownText;
             }
 
-            DrawShape(piece, known ? piece.Color : _unknownCell);
+            // Ikon ASETNYA yang bicara di kartu; siluet turun jadi bayangan tapak redup di
+            // belakangnya. Rune tetap bahasa tile (DrawTiles), dan yang belum ditemukan tetap
+            // siluet buta — kontrak codex tidak berubah, cuma kotak warna-warni yang pensiun.
+            bool tiledRune = RuneTiles.IsRuneGlyph(piece.Icon);
+            var icon = IconImage();
+            bool iconShown = icon != null && known && !tiledRune && piece.Icon != null;
+
+            if (icon != null)
+            {
+                icon.enabled = iconShown;
+                if (iconShown) icon.sprite = piece.Icon;
+            }
+
+            // Kartu ber-ikon dibersihkan TOTAL dari siluet — permintaan pemilik project: di
+            // codex, ikonnya saja yang bicara. Siluet tinggal untuk yang belum ditemukan
+            // (kontrak "ada yang belum kamu punya") dan piece yang belum punya ikon.
+            if (iconShown && _shapeCells != null)
+            {
+                for (int i = 0; i < _shapeCells.Length; i++)
+                {
+                    if (_shapeCells[i] != null) _shapeCells[i].enabled = false;
+                }
+            }
+            else
+            {
+                DrawShape(piece, known ? piece.Color : _unknownCell);
+            }
+
             DrawTiles(piece, known);
         }
 

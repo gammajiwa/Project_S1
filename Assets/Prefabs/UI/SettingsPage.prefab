@@ -707,8 +707,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -913,6 +913,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.tab.data
   Fallback: DATA
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &883872382781561060
 GameObject:
   m_ObjectHideFlags: 0
@@ -1277,6 +1279,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.reset.hint
   Fallback: takes two clicks
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &1041227508621496539
 GameObject:
   m_ObjectHideFlags: 0
@@ -1383,8 +1387,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1589,6 +1593,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: menu.back
   Fallback: BACK
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &1119103329886429584
 GameObject:
   m_ObjectHideFlags: 0
@@ -1656,8 +1662,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1777,8 +1783,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -1898,8 +1904,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -2104,6 +2110,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.tab.performance
   Fallback: PERFORMANCE
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &1335762616389617508
 GameObject:
   m_ObjectHideFlags: 0
@@ -2256,6 +2264,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.screenmode
   Fallback: Screen mode
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &1359600870378859525
 GameObject:
   m_ObjectHideFlags: 0
@@ -2545,6 +2555,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.sfx
   Fallback: Sound effects
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &1408116011150637694
 GameObject:
   m_ObjectHideFlags: 0
@@ -2862,8 +2874,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -3257,6 +3269,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.master
   Fallback: Master
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &2178563501943549410
 GameObject:
   m_ObjectHideFlags: 0
@@ -3409,6 +3423,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.framecap
   Fallback: FPS cap
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &2285467692119603310
 GameObject:
   m_ObjectHideFlags: 0
@@ -3674,6 +3690,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.music
   Fallback: Music
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &2615819238734641795
 GameObject:
   m_ObjectHideFlags: 0
@@ -4576,8 +4594,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -4697,8 +4715,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -4818,8 +4836,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -5506,6 +5524,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.damagetext
   Fallback: Damage numbers
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &4253997810857770348
 GameObject:
   m_ObjectHideFlags: 0
@@ -6006,6 +6026,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.weathervfx
   Fallback: Weather VFX
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &4863865284402568882
 GameObject:
   m_ObjectHideFlags: 0
@@ -6336,8 +6358,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -6542,6 +6564,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.resolution
   Fallback: Resolution
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &5370158155056946144
 GameObject:
   m_ObjectHideFlags: 0
@@ -6831,6 +6855,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.enemyshadows
   Fallback: Enemy shadows
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &5426279009660661329
 GameObject:
   m_ObjectHideFlags: 0
@@ -7094,6 +7120,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: menu.heading.settings
   Fallback: SETTINGS
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &5711215837909263794
 GameObject:
   m_ObjectHideFlags: 0
@@ -7161,8 +7189,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -7579,6 +7607,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.vsync
   Fallback: VSync
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &5844811063313468243
 GameObject:
   m_ObjectHideFlags: 0
@@ -7721,8 +7751,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -7842,8 +7872,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -10273,15 +10303,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.07}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 779674074, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -10532,6 +10562,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.resetcodex
   Fallback: Codex
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &8110491039958194977
 GameObject:
   m_ObjectHideFlags: 0
@@ -10736,8 +10768,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -11154,6 +11186,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.row.language
   Fallback: Language
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &8339875894847785941
 GameObject:
   m_ObjectHideFlags: 0
@@ -11333,8 +11367,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -11629,8 +11663,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -11750,8 +11784,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -12079,6 +12113,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.tab.display
   Fallback: DISPLAY
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &9098208170054531846
 GameObject:
   m_ObjectHideFlags: 0
@@ -12231,6 +12267,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.LocText
   Key: settings.tab.audio
   Fallback: AUDIO
+  ShrinkToFit: 1
+  MinScale: 0.62
 --- !u!1 &9123720113471305621
 GameObject:
   m_ObjectHideFlags: 0
