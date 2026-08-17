@@ -103,6 +103,20 @@ namespace Proto
                  "halaman menu. Kosong = kotak gelap polos seperti sebelumnya.")]
         public Sprite InfoPanel;
 
+        [Tooltip("Bingkai TOMBOL kit — speed, tombol waktu, TOKO, REROLL, tombol game over. " +
+                 "Kosong = kotak warna lama dengan garis Frame.")]
+        public Sprite ButtonFrame;
+
+        [Tooltip("Bingkai tombol MENYALA — keadaan terpilih & ajakan utama (speed aktif, " +
+                 "banner MULAI/LANJUT). Kosong = jatuh ke ButtonFrame.")]
+        public Sprite ButtonGlow;
+
+        [Tooltip("Plakat kecil — papan wave kiri-atas. Kosong = kotak warna lama.")]
+        public Sprite Plaque;
+
+        [Tooltip("Bingkai BAR — baris spell aktif & bar HP boss. Kosong = kotak warna lama.")]
+        public Sprite BarFrame;
+
         [Header("Cairan di bola HP & mana")]
         [Tooltip("Seberapa tinggi permukaan cairan bergoyang, sebagai bagian dari tinggi bola.\n\n" +
                  "Nol = permukaan datar seperti sebelumnya. Goyangannya hanya MENGURANGI isian, " +

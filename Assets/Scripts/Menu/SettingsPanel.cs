@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -345,6 +345,9 @@ namespace Proto
 
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(action);
+
+            // Bunyi klik yang sama dengan menu utama — halaman setelan tadinya membisu.
+            button.onClick.AddListener(MenuMusic.Click);
         }
 
         static void BindSlider(Slider slider, float value, UnityEngine.Events.UnityAction<float> action)

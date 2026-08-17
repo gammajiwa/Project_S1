@@ -168,7 +168,9 @@ namespace Proto
             if (_rows.Count == 0) height = TitleHeight + FooterHeight + 20f;
 
             // Pivot is the top-left corner, so `top` is where the panel starts and it grows down.
-            float left = Mathf.Min(mouse.x + 18f, Mathf.Max(8f, Screen.width - PanelWidth - 8f));
+            // Satuan kanvas, bukan piksel mentah — mouse yang diterima panel ini juga sudah
+            // dibagi skala kanvas oleh pemanggilnya.
+            float left = Mathf.Min(mouse.x + 18f, Mathf.Max(8f, GrimoireLayout.ScreenW - PanelWidth - 8f));
             float top = Mathf.Max(mouse.y + 8f, height + 12f);
             var origin = new Vector2(left, top);
 

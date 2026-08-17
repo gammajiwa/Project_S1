@@ -629,8 +629,13 @@ namespace Proto
             _canvas = go.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
+            // Sama dengan kanvas HUD run: rujukan QHD, match tinggi — playground tidak boleh
+            // berbohong soal proporsi UI yang sedang dites.
             var scaler = go.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(2560f, 1440f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 1f;
             go.AddComponent<GraphicRaycaster>();
 
             if (UnityEngine.EventSystems.EventSystem.current == null)

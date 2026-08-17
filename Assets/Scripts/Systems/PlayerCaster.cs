@@ -765,20 +765,20 @@ namespace Proto
 
         void OnReactionFired(Vector3 pos, ReactionDefinition rx)
         {
-            // Bola primitifnya ditipiskan kalau reaksi ini punya efeknya sendiri: tugasnya
-            // berubah dari MENJADI ledakan menjadi sekadar kilatan warna yang menamai reaksinya.
-            // Dibiarkan pekat, ia menelan efek yang barusan disembur di titik yang sama.
-            var tint = rx.FlashColor;
-            if (rx.Vfx != null) tint.a *= 0.35f;
+            // Reaksi ber-VFX tidak menggambar bola primitif SAMA SEKALI — perintah pemilik
+            // project, berkali-kali: primitif itu jaring pengaman untuk reaksi yang efeknya
+            // belum dipasang, bukan pendamping. "Ditipiskan" pun masih terbaca sebagai bola
+            // primitif menimpa efek partikelnya.
+            if (rx.Vfx == null)
+            {
+                // Dua kilatan, bukan satu: yang pertama sempit dan cepat (jedarnya), yang
+                // kedua lebih lebar dan lebih lama (gemanya).
+                SpawnFlash(pos, rx.BurstRadius * 2.4f, 0.3f, rx.FlashColor);
 
-            // Dua kilatan, bukan satu: yang pertama sempit dan cepat (jedarnya), yang kedua
-            // lebih lebar dan lebih lama (gemanya). Reaksi adalah kejadian paling keren di
-            // lapangan — satu bola pudar 0,35 detik tidak pernah sepadan dengan namanya.
-            SpawnFlash(pos, rx.BurstRadius * (rx.Vfx != null ? 1.5f : 2.4f), 0.3f, tint);
-
-            var echo = tint;
-            echo.a *= 0.5f;
-            SpawnFlash(pos, rx.BurstRadius * (rx.Vfx != null ? 2.2f : 3.2f), 0.55f, echo);
+                var echo = rx.FlashColor;
+                echo.a *= 0.5f;
+                SpawnFlash(pos, rx.BurstRadius * 3.2f, 0.55f, echo);
+            }
 
             // Radius 3 unit = skala 1, aturan yang sama dengan skill — reaksi berdiameter 8
             // tidak boleh terlihat sama besar dengan yang berdiameter 5. Pengali 1,35 di atas

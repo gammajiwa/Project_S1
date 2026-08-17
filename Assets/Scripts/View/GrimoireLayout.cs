@@ -11,6 +11,25 @@ namespace Proto
     /// </summary>
     public static class GrimoireLayout
     {
+        // ---------- skala kanvas ----------
+
+        /// <summary>Tinggi layar rujukan. SELURUH angka di berkas ini ditata mata di QHD.</summary>
+        public const float UiRefHeight = 1440f;
+
+        /// <summary>
+        /// Faktor skala kanvas HUD. Kanvasnya ScaleWithScreenSize (rujukan 2560x1440, match
+        /// tinggi), jadi skala = tinggiLayar / 1440 — di QHD tepat 1 dan semua angka tampil
+        /// persis seperti yang disetel; resolusi lain tinggal ikut proporsi.
+        ///
+        /// GrimoireUI menyetelnya tiap frame. Semua geometri di berkas ini berpikir dalam
+        /// SATUAN KANVAS; yang datang dari dunia piksel (Screen.*, posisi mouse, sudut dunia
+        /// RectTransform) wajib dibagi angka ini dulu.
+        /// </summary>
+        public static float UiScale = 1f;
+
+        public static float ScreenW => Screen.width / Mathf.Max(0.0001f, UiScale);
+        public static float ScreenH => Screen.height / Mathf.Max(0.0001f, UiScale);
+
         // ---------- grimoire grid ----------
 
         /// <summary>
@@ -256,8 +275,8 @@ namespace Proto
 
         public static Rect SpeedRect(int index, int count)
         {
-            float right = Screen.width - (Margin + (count - 1 - index) * (SpeedButtonW + 6));
-            float top = Screen.height - Margin;
+            float right = ScreenW - (Margin + (count - 1 - index) * (SpeedButtonW + 6));
+            float top = ScreenH - Margin;
             return new Rect(right - SpeedButtonW, top - SpeedButtonH, SpeedButtonW, SpeedButtonH);
         }
 
@@ -270,11 +289,11 @@ namespace Proto
         public static Rect TimeButtonRect(int speedCount)
         {
             float width = speedCount * SpeedButtonW + (speedCount - 1) * 6;
-            float right = Screen.width - Margin;
+            float right = ScreenW - Margin;
 
             // 30, bukan 22: teks petunjuk kecepatan duduk di celah ini (tingginya 20 mulai −58),
             // dan di 22 tepi bawahnya menindih tombol ini dua piksel.
-            float top = Screen.height - Margin - SpeedButtonH - 30;
+            float top = ScreenH - Margin - SpeedButtonH - 30;
 
             return new Rect(right - width, top - SpeedButtonH, width, SpeedButtonH);
         }
@@ -294,14 +313,14 @@ namespace Proto
         {
             if (StartButtonOverride.HasValue) return StartButtonOverride.Value;
 
-            float cx = Screen.width * 0.5f;
-            float cy = Screen.height * 0.5f + 120f;
+            float cx = ScreenW * 0.5f;
+            float cy = ScreenH * 0.5f + 120f;
             return new Rect(cx - StartButtonW * 0.5f, cy - StartButtonH * 0.5f, StartButtonW, StartButtonH);
         }
 
         public static Rect PanelRect() =>
             ShopPanelOverride
-            ?? new Rect((Screen.width - PanelW) * 0.5f, (Screen.height - PanelH) * 0.5f, PanelW, PanelH);
+            ?? new Rect((ScreenW - PanelW) * 0.5f, (ScreenH - PanelH) * 0.5f, PanelW, PanelH);
 
         public static Rect ShopSlotRect(int i)
         {
@@ -341,15 +360,15 @@ namespace Proto
 
         public static Rect GameOverMenuRect()
         {
-            float cx = Screen.width * 0.5f;
-            float cy = Screen.height * 0.5f - 60f;
+            float cx = ScreenW * 0.5f;
+            float cy = ScreenH * 0.5f - 60f;
             return new Rect(cx - OverButtonW * 0.5f, cy - OverButtonH * 0.5f, OverButtonW, OverButtonH);
         }
 
         /// <summary>Panel peta run saat MEMILIH: satu layar penuh, tegak ala Slay the Spire —
         /// lantai menumpuk dari bawah ke atas dengan jarak tetap, sisanya diintip lewat scroll.
         /// Saat memilih, peta bukan jendela di atas HUD; dialah layarnya.</summary>
-        public static Rect MapPanelRect() => new Rect(0f, 0f, Screen.width, Screen.height);
+        public static Rect MapPanelRect() => new Rect(0f, 0f, ScreenW, ScreenH);
 
         /// <summary>
         /// Panel peta saat MENGINTIP (M): kotak melayang di tengah, bukan satu layar penuh.
@@ -361,16 +380,16 @@ namespace Proto
         /// </summary>
         public static Rect MapPeekRect(Vector2 fraction)
         {
-            float w = Screen.width * Mathf.Clamp(fraction.x, 0.3f, 0.95f);
-            float h = Screen.height * Mathf.Clamp(fraction.y, 0.3f, 0.95f);
+            float w = ScreenW * Mathf.Clamp(fraction.x, 0.3f, 0.95f);
+            float h = ScreenH * Mathf.Clamp(fraction.y, 0.3f, 0.95f);
 
             // Dibulatkan ke piksel bulat: panel yang mendarat di setengah piksel membuat perkamen
             // dan bingkainya tersaring buram di tepi.
             w = Mathf.Round(w);
             h = Mathf.Round(h);
 
-            return new Rect(Mathf.Round((Screen.width - w) * 0.5f),
-                            Mathf.Round((Screen.height - h) * 0.5f), w, h);
+            return new Rect(Mathf.Round((ScreenW - w) * 0.5f),
+                            Mathf.Round((ScreenH - h) * 0.5f), w, h);
         }
 
         // ---------- loose drops ----------
@@ -379,9 +398,9 @@ namespace Proto
         public static Vector2 RandomScatterPos()
         {
             float left = RightX() + 60f;
-            float right = Mathf.Max(left + 160f, Screen.width - 80f);
+            float right = Mathf.Max(left + 160f, ScreenW - 80f);
             float bottom = 70f;
-            float top = Mathf.Max(bottom + 120f, Screen.height - 200f);
+            float top = Mathf.Max(bottom + 120f, ScreenH - 200f);
 
             return new Vector2(Random.Range(left, right), Random.Range(bottom, top));
         }
@@ -392,8 +411,8 @@ namespace Proto
             float dist = Random.Range(70f, 120f);
 
             var pos = near + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * dist;
-            pos.x = Mathf.Clamp(pos.x, 70f, Mathf.Max(90f, Screen.width - 70f));
-            pos.y = Mathf.Clamp(pos.y, 70f, Mathf.Max(90f, Screen.height - 190f));
+            pos.x = Mathf.Clamp(pos.x, 70f, Mathf.Max(90f, ScreenW - 70f));
+            pos.y = Mathf.Clamp(pos.y, 70f, Mathf.Max(90f, ScreenH - 190f));
             return pos;
         }
     }

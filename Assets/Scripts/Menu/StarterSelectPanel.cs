@@ -55,6 +55,10 @@ namespace Proto
         // gelap — angka yang sama dengan `UiTheme.GridCellIdle` di papan in-run.
         [SerializeField] Color _cellInk = new Color(0.24f, 0.15f, 0.06f, 0.42f);
 
+        [Tooltip("Pip halaman dari kit UI — berlian mati & menyala. Kosong = kotak kecil lama.")]
+        [SerializeField] Sprite _pipOff;
+        [SerializeField] Sprite _pipOn;
+
         readonly List<HeroLoadout> _heroes = new List<HeroLoadout>();
         readonly List<Image> _cells = new List<Image>();
         RuneTilePool _tiles;
@@ -400,21 +404,35 @@ namespace Proto
             for (int i = 0; i < _pips.Count; i++) _pips[i].enabled = false;
             if (_board == null || _heroes.Count < 2) return;
 
-            const float Size = 9f;
+            // Ber-kit: berlian kecil dari sheet UIPanel, yang aktif memakai versi menyala.
+            // Tanpa kit: kotak 9 piksel lama — art yang belum dipasang tidak memblok apa pun.
+            bool skinned = _pipOff != null;
+            float size = skinned ? 20f : 9f;
             const float Gap = 8f;
 
-            float total = _heroes.Count * Size + (_heroes.Count - 1) * Gap;
+            float total = _heroes.Count * size + (_heroes.Count - 1) * Gap;
             float left = (_board.rect.width - total) * 0.5f;
 
             for (int i = 0; i < _heroes.Count; i++)
             {
                 var pip = PipAt(i);
                 pip.enabled = true;
-                pip.color = i == _index
-                    ? _heroes[i].Accent
-                    : new Color(1f, 1f, 1f, 0.22f);
 
-                Put(pip, left + i * (Size + Gap), -Size - 14f, Size, Size);
+                bool on = i == _index;
+                if (skinned)
+                {
+                    pip.sprite = on && _pipOn != null ? _pipOn : _pipOff;
+                    pip.preserveAspect = true;
+                    pip.color = on ? Color.white : new Color(1f, 1f, 1f, 0.55f);
+                }
+                else
+                {
+                    pip.sprite = null;
+                    pip.preserveAspect = false;
+                    pip.color = on ? _heroes[i].Accent : new Color(1f, 1f, 1f, 0.22f);
+                }
+
+                Put(pip, left + i * (size + Gap), -size - 14f, size, size);
             }
         }
 
@@ -463,6 +481,10 @@ namespace Proto
 
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(action);
+
+            // Bunyi klik yang sama dengan tombol menu utama — dulu cuma Wire milik
+            // MainMenuController yang memasangnya, jadi panah ganti grimoire membisu.
+            button.onClick.AddListener(MenuMusic.Click);
         }
     }
 }

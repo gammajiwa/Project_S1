@@ -706,9 +706,17 @@ namespace Proto
             _canvas = go.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
+            // ScaleWithScreenSize, rujukan QHD — resolusi tempat seluruh UI ini ditata mata.
+            // Di 2560x1440 skalanya tepat 1 (tidak ada yang bergeser sepiksel pun); resolusi
+            // lain ikut proporsi, bukan membesar-mengecil sesukanya seperti saat masih
+            // ConstantPixelSize. Match penuh ke TINGGI: lebar boleh lapang di layar lebar.
             var scaler = go.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
-            scaler.scaleFactor = 1f;
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(2560f, UiRefHeight);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 1f;
+
+            UiScale = Screen.height / UiRefHeight;
 
             // Seluruh UI permainan memakai hit-test sendiri (posisi mouse -> petak), jadi kanvas
             // ini hidup lama tanpa raycaster dan tidak ada yang sadar. Yang menagihnya adalah
@@ -716,6 +724,22 @@ namespace Proto
             // stepper, slider. Tanpa GraphicRaycaster, EventSystem tidak menemukan satu pun
             // grafik di kanvas ini dan tombolnya tidak mati dengan error — dia cuma DIAM.
             go.AddComponent<GraphicRaycaster>();
+        }
+
+        /// <summary>
+        /// Pasang bingkai kit UI pada kotak yang lahir polos. Sprite null = false, dan kotak
+        /// warnanya bertahan apa adanya — art yang belum dipasang tidak boleh memblok tes.
+        /// Pemanggil memakai nilai baliknya untuk melewati garis Frame lama: bingkai art plus
+        /// outline tebal terbaca sebagai dua bingkai bertumpuk.
+        /// </summary>
+        bool Skin(Image img, Sprite sprite, float alpha = 1f)
+        {
+            if (img == null || sprite == null) return false;
+
+            img.sprite = sprite;
+            img.type = Image.Type.Sliced;
+            img.color = new Color(1f, 1f, 1f, alpha);
+            return true;
         }
 
         Image MakeImage(string name, Vector2 pos, Vector2 size, Color color, Vector2 anchor)
@@ -976,7 +1000,7 @@ namespace Proto
             // Kanvas yang baru dibuat di frame ini bisa belum punya rect terhitung; layar adalah
             // jawaban yang benar untuk Overlay dengan scaleFactor 1, yaitu persis kanvas ini.
             Vector2 origin = canvasRt.rect.size.x < 1f || canvasRt.rect.size.y < 1f
-                ? new Vector2(-Screen.width * 0.5f, -Screen.height * 0.5f)
+                ? new Vector2(-ScreenW * 0.5f, -ScreenH * 0.5f)
                 : canvasRt.rect.min;
 
             return new Rect(min - origin, max - min);
@@ -1198,6 +1222,7 @@ namespace Proto
 
             _overMenuBg = MakeImage("OverMenuBg", Vector2.zero, Vector2.zero,
                 new Color(0.14f, 0.04f, 0.05f, 0.96f), Vector2.zero);
+            Skin(_overMenuBg, _theme != null ? _theme.ButtonFrame : null);
             _overMenuLabel = MakeText("OverMenuLabel", Vector2.zero, new Vector2(OverButtonW, 30f), 24,
                 new Color(1f, 0.9f, 0.86f), Vector2.zero, TextAnchor.MiddleCenter);
             _overMenuLabel.text = Loc.T("hud.gameover.menu");
@@ -1272,7 +1297,7 @@ namespace Proto
             Seat(_overMenuLabel.rectTransform, menu);
 
             // Menyorot tombolnya: satu-satunya umpan balik yang tersisa di layar ini.
-            var mouse = ProtoInput.MousePosition;
+            var mouse = UiMouse;
             _overMenuBg.color = menu.Contains(mouse)
                 ? new Color(0.32f, 0.09f, 0.08f, 0.98f * _overFade)
                 : new Color(0.14f, 0.04f, 0.05f, 0.96f * _overFade);
@@ -1371,7 +1396,8 @@ namespace Proto
             var shopRect = ShopButtonRect();
             _shopBtnBg = MakeImage("ShopBtn", new Vector2(shopRect.xMin, shopRect.yMin),
                 shopRect.size, PanelInk, Vector2.zero);
-            Frame(_shopBtnBg);
+            if (!Skin(_shopBtnBg, _theme != null ? _theme.ButtonFrame : null))
+                Frame(_shopBtnBg);
             _shopBtnLabel = MakeText("ShopBtnLabel", new Vector2(shopRect.xMin, shopRect.yMin + 8f),
                 new Vector2(shopRect.width, 20), 14, TextGold, Vector2.zero, TextAnchor.LowerCenter);
             _shopBtnLabel.text = "TOKO";
@@ -1394,11 +1420,15 @@ namespace Proto
                 ? (_theme.PanelPaper != null ? _theme.PanelPaper : _theme.MapPaper)
                 : null;
 
+            // PanelPaper keluarga UIPanel itu GELAP bernada teal — set warna "tinta cokelat
+            // di atas perkamen" hanya berlaku saat jatuh ke MapPaper (perkamen terang).
+            bool darkPanel = _theme != null && _theme.PanelPaper != null;
+
             if (paper != null)
             {
                 _panelBg.sprite = paper;
                 _panelBg.type = Image.Type.Sliced;
-                _panelBg.color = new Color(0.82f, 0.79f, 0.72f, 1f);
+                _panelBg.color = darkPanel ? Color.white : new Color(0.82f, 0.79f, 0.72f, 1f);
             }
 
             _panelBg.enabled = false;
@@ -1406,7 +1436,7 @@ namespace Proto
             // Tinta gelap di atas perkamen, tinta terang di atas kotak. Warna judul lama dipilih
             // untuk latar gelap, dan di atas kertas ia praktis tidak terbaca.
             _panelTitle = MakeText("PanelTitle", Vector2.zero, new Vector2(PanelW - 24, 26), 17,
-                paper != null ? new Color(0.22f, 0.15f, 0.1f) : new Color(0.9f, 0.88f, 0.98f),
+                paper != null && !darkPanel ? new Color(0.22f, 0.15f, 0.1f) : new Color(0.9f, 0.88f, 0.98f),
                 new Vector2(0.5f, 0.5f), TextAnchor.UpperLeft);
             _panelTitle.enabled = false;
 
@@ -1420,7 +1450,7 @@ namespace Proto
                 // game lain yang ditempel di atas kertas. Kontrasnya sama tingginya — yang
                 // berubah cuma nadanya, jadi teks putih di atasnya tetap terbaca.
                 _shopSlotBg[i] = MakeImage($"ShopSlot_{i}", Vector2.zero, new Vector2(ShopSlotW, ShopSlotH),
-                    paper != null
+                    paper != null && !darkPanel
                         ? new Color(0.16f, 0.115f, 0.085f, 0.94f)
                         : new Color(0.13f, 0.13f, 0.18f, 0.95f), Vector2.zero);
                 Frame(_shopSlotBg[i]);
@@ -1432,10 +1462,11 @@ namespace Proto
             }
 
             _rerollBg = MakeImage("RerollBg", Vector2.zero, new Vector2(240, 34),
-                paper != null
+                paper != null && !darkPanel
                     ? new Color(0.26f, 0.33f, 0.18f, 0.95f)
                     : new Color(0.32f, 0.45f, 0.28f, 0.95f), Vector2.zero);
-            Frame(_rerollBg);
+            if (!Skin(_rerollBg, _theme != null ? _theme.ButtonFrame : null))
+                Frame(_rerollBg);
             _rerollBg.enabled = false;
 
             _rerollLabel = MakeText("RerollLabel", Vector2.zero, new Vector2(240, 22), 15,
@@ -1504,6 +1535,7 @@ namespace Proto
                 float y = SpellPanelTop - 26f - i * 44f;
                 _spellBg[i] = MakeImage($"SpellBg_{i}", new Vector2(SpellPanelRight, y),
                     new Vector2(SpellPanelW, 40), PanelInk, new Vector2(1f, 1f));
+                Skin(_spellBg[i], _theme != null ? _theme.BarFrame : null, 0.92f);
 
                 _spellFill[i] = MakeImage($"SpellFill_{i}", new Vector2(SpellPanelRight, y),
                     new Vector2(SpellPanelW, 40), new Color(0.3f, 0.3f, 0.45f, 0.55f), new Vector2(1f, 1f));
@@ -1546,7 +1578,8 @@ namespace Proto
 
                 _speedButtons[i] = MakeImage($"Speed_{i}", pos, new Vector2(SpeedButtonW, SpeedButtonH),
                     PanelInk, new Vector2(1f, 1f));
-                Frame(_speedButtons[i]);
+                if (!Skin(_speedButtons[i], _theme != null ? _theme.ButtonFrame : null))
+                    Frame(_speedButtons[i]);
 
                 _speedLabels[i] = MakeText($"SpeedLabel_{i}", pos + new Vector2(0, -7),
                     new Vector2(SpeedButtonW, SpeedButtonH), 15, TextBone,
@@ -1579,7 +1612,8 @@ namespace Proto
 
             _timeButton = MakeImage("TimeToggle", pos, new Vector2(width, SpeedButtonH),
                 PanelInk, new Vector2(1f, 1f));
-            Frame(_timeButton);
+            if (!Skin(_timeButton, _theme != null ? _theme.ButtonFrame : null))
+                Frame(_timeButton);
 
             _timeLabel = MakeText("TimeToggleLabel", pos + new Vector2(0, -7),
                 new Vector2(width, SpeedButtonH), 15, TextGold,
@@ -1619,7 +1653,8 @@ namespace Proto
         {
             _bossBg = MakeImage("BossBg", new Vector2(-320f, -14f), new Vector2(640f, 22f),
                 new Color(0.1f, 0.03f, 0.05f, 0.92f), new Vector2(0.5f, 1f));
-            Frame(_bossBg);
+            if (!Skin(_bossBg, _theme != null ? _theme.BarFrame : null))
+                Frame(_bossBg);
 
             _bossFill = MakeImage("BossFill", new Vector2(-320f, -14f), new Vector2(640f, 22f),
                 new Color(0.85f, 0.2f, 0.24f, 0.95f), new Vector2(0.5f, 1f));
@@ -1757,7 +1792,8 @@ namespace Proto
             // karena kalimatnya berubah-ubah ("HABISKAN SISANYA" jauh lebih panjang).
             _hudPlaque = MakeImage("HudPlaque", new Vector2(Margin - 12, -(Margin - 8)),
                 new Vector2(430, 36), PanelInk, new Vector2(0f, 1f));
-            Frame(_hudPlaque);
+            if (!Skin(_hudPlaque, _theme != null ? _theme.Plaque : null))
+                Frame(_hudPlaque);
 
             _hudText = MakeText("Hud", new Vector2(Margin, -Margin), new Vector2(600, 26), 17,
                 TextBone, new Vector2(0f, 1f), TextAnchor.UpperLeft);
@@ -1840,7 +1876,12 @@ namespace Proto
             // Yang mengundang bukan warnanya melainkan satu-satunya bingkai terang di tengah layar.
             _startBg = MakeImage("StartBg", new Vector2(0, 120), new Vector2(StartButtonW, StartButtonH),
                 new Color(0.09f, 0.07f, 0.055f, 0.94f), new Vector2(0.5f, 0.5f));
-            Frame(_startBg, 1.5f);
+
+            // Banner ajakan utama memakai bingkai MENYALA — dialah satu-satunya tombol yang
+            // memang harus memanggil mata dari tengah layar.
+            var startSkin = _theme != null
+                ? (_theme.ButtonGlow != null ? _theme.ButtonGlow : _theme.ButtonFrame) : null;
+            if (!Skin(_startBg, startSkin)) Frame(_startBg, 1.5f);
 
             _startLabel = MakeText("StartLabel", new Vector2(0, 120), new Vector2(StartButtonW, StartButtonH),
                 20, TextGold, new Vector2(0.5f, 0.5f), TextAnchor.MiddleCenter);
@@ -2379,7 +2420,7 @@ namespace Proto
 
         /// <param name="panel">
         /// Badan panel setelan. Tombolnya menempel DI SITU, bukan di layar: versi lama menghitung
-        /// tepi panel sendiri dari <c>Screen.width</c> dengan mengasumsikan lebar panel 1180 dan
+        /// tepi panel sendiri dari <c>ScreenW</c> dengan mengasumsikan lebar panel 1180 dan
         /// skala kanvas 1 — dua asumsi yang meleset begitu jendelanya bukan 1920, dan tombolnya
         /// melayang entah di mana. Menumpang di panel membuat posisinya benar tanpa dihitung.
         /// </param>
@@ -2437,8 +2478,20 @@ namespace Proto
 
         // ---------- runtime ----------
 
+        /// <summary>
+        /// Posisi mouse dalam SATUAN KANVAS — satu-satunya bentuk yang boleh dibandingkan
+        /// dengan rect-rect di berkas ini. Piksel mentah dibagi skala kanvas; di QHD keduanya
+        /// identik, di resolusi lain hit-test tetap menempel ke gambarnya.
+        /// </summary>
+        static Vector2 UiMouse => (Vector2)ProtoInput.MousePosition / Mathf.Max(0.0001f, UiScale);
+
         void Update()
         {
+            // Dihitung dari rumus scaler (match tinggi penuh), bukan dibaca dari kanvas —
+            // scaleFactor kanvas baru sah setelah layout pass, dan frame pembangunan UI
+            // butuh angka ini SEBELUM itu.
+            UiScale = Screen.height / UiRefHeight;
+
             if (_inputLock > 0f) _inputLock -= Time.unscaledDeltaTime;
 
             if (ProtoInput.BackDown && _inputLock <= 0f)
@@ -2498,7 +2551,7 @@ namespace Proto
 
             if (!ProtoInput.LeftClickDown) return false;
 
-            Vector2 mouse = ProtoInput.MousePosition;
+            Vector2 mouse = UiMouse;
             for (int i = 0; i < Speeds.Length; i++)
             {
                 if (SpeedRect(i, Speeds.Length).Contains(mouse))
@@ -2525,10 +2578,24 @@ namespace Proto
             for (int i = 0; i < Speeds.Length; i++)
             {
                 bool on = i == _speedSlot;
-                _speedButtons[i].color = on
-                    ? new Color(0.89f, 0.75f, 0.46f, 0.95f)
-                    : PanelInk;
-                _speedLabels[i].color = on ? new Color(0.12f, 0.09f, 0.05f) : TextBone;
+
+                // Ber-kit: yang aktif menukar bingkainya ke versi MENYALA, bukan diwarnai —
+                // menint art gelap dengan emas cuma membuatnya keruh. Tanpa kit: warna lama.
+                var frame = _theme != null ? _theme.ButtonFrame : null;
+                if (frame != null)
+                {
+                    var glow = _theme.ButtonGlow != null ? _theme.ButtonGlow : frame;
+                    _speedButtons[i].sprite = on ? glow : frame;
+                    _speedButtons[i].color = on ? Color.white : new Color(0.65f, 0.65f, 0.65f, 0.9f);
+                    _speedLabels[i].color = on ? new Color(0.12f, 0.09f, 0.05f) : TextBone;
+                }
+                else
+                {
+                    _speedButtons[i].color = on
+                        ? new Color(0.89f, 0.75f, 0.46f, 0.95f)
+                        : PanelInk;
+                    _speedLabels[i].color = on ? new Color(0.12f, 0.09f, 0.05f) : TextBone;
+                }
             }
         }
 
@@ -2669,7 +2736,7 @@ namespace Proto
             {
                 if (!ProtoInput.LeftClickDown) return;
 
-                var dead = ProtoInput.MousePosition;
+                var dead = UiMouse;
                 if (GameOverMenuRect().Contains(dead)) LoadScene(MainMenuSceneName);
 
                 return;
@@ -2684,7 +2751,7 @@ namespace Proto
                 return;
             }
 
-            Vector2 mouse = ProtoInput.MousePosition;
+            Vector2 mouse = UiMouse;
 
             // R rotates, right-click locks. They used to share right-click, which meant the same
             // button did two unrelated things depending on whether your hand was full.
@@ -3184,8 +3251,8 @@ namespace Proto
             // baru saja kosong — masih dalam satu pandangan, tapi jelas "di luar papan".
             var pos = at + new Vector2(0f, CellSize + 26f);
 
-            pos.x = Mathf.Clamp(pos.x, 60f, Mathf.Max(80f, Screen.width - 60f));
-            pos.y = Mathf.Clamp(pos.y, 60f, Mathf.Max(80f, Screen.height - 90f));
+            pos.x = Mathf.Clamp(pos.x, 60f, Mathf.Max(80f, ScreenW - 60f));
+            pos.y = Mathf.Clamp(pos.y, 60f, Mathf.Max(80f, ScreenH - 90f));
 
             AddLoose(def, pos);
             PushFloater(Player.transform.position + Vector3.up * 2.8f,
@@ -3246,7 +3313,7 @@ namespace Proto
                 _partners = Book.FindPartners(_held);
             }
 
-            var from = ProtoInput.MousePosition;
+            var from = UiMouse;
 
             for (int i = 0; i < _partners.Count && cursor < EvoLinePool; i++)
             {
@@ -3345,7 +3412,7 @@ namespace Proto
             origin = default;
             if (_held == null || !Player.Alive || Enemies.WaveActive) return null;
 
-            var cell = ScreenToCell(ProtoInput.MousePosition);
+            var cell = ScreenToCell(UiMouse);
             if (cell.x < 0) return null;
 
             origin = SnapAssist(_held, _heldRot, cell - AnchorOffset(_held, _heldRot));
@@ -3500,8 +3567,8 @@ namespace Proto
             if (StartButtonOverride.HasValue && _startBg != null && _startLabel != null)
             {
                 var r = StartButtonOverride.Value;
-                var centre = new Vector2(r.center.x - Screen.width * 0.5f,
-                                         r.center.y - Screen.height * 0.5f);
+                var centre = new Vector2(r.center.x - ScreenW * 0.5f,
+                                         r.center.y - ScreenH * 0.5f);
 
                 _startBg.rectTransform.anchoredPosition = centre;
                 _startBg.rectTransform.sizeDelta = r.size;
@@ -4108,7 +4175,7 @@ namespace Proto
                 }
                 else
                 {
-                    Vector2 now = ProtoInput.MousePosition;
+                    Vector2 now = UiMouse;
                     _mapScroll = Mathf.Clamp(_mapScroll - (now.y - _mapDragLast.y),
                         0f, MapScrollMax(map, view));
                     _mapDragLast = now;
@@ -4964,7 +5031,7 @@ namespace Proto
 
             if (_held == null) return;
 
-            var hover = ScreenToCell(ProtoInput.MousePosition);
+            var hover = ScreenToCell(UiMouse);
             if (hover.x < 0) return;
 
             // Magnet yang sama dengan klik — dan MENIMPA dihitung sah: dulu preview-nya merah
@@ -5403,7 +5470,7 @@ namespace Proto
         {
             if (_held == null || !RuneTiles.IsRuneGlyph(_held.Icon)) return;
 
-            var hover = ScreenToCell(ProtoInput.MousePosition);
+            var hover = ScreenToCell(UiMouse);
             if (hover.x < 0) return;
 
             var origin = hover - AnchorOffset(_held, _heldRot);
@@ -5457,7 +5524,7 @@ namespace Proto
 
             if (_held == null) return;
 
-            var hover = ScreenToBagCell(ProtoInput.MousePosition);
+            var hover = ScreenToBagCell(UiMouse);
             if (hover.x < 0) return;
 
             var origin = hover - AnchorOffset(_held, _heldRot);
@@ -5501,7 +5568,7 @@ namespace Proto
             // Petak papan/tas tetap memberi umpan sah/tidaknya; gambarnya ikut kursor.
             if (_held != null)
             {
-                cursor = DrawPiece(_held, _heldRot, ProtoInput.MousePosition, cursor, 0.9f);
+                cursor = DrawPiece(_held, _heldRot, UiMouse, cursor, 0.9f);
             }
 
             for (int i = cursor; i < _looseCells.Length; i++) _looseCells[i].enabled = false;
@@ -5540,8 +5607,8 @@ namespace Proto
 
             // Strip icons win: they sit in the HUD corner, well away from the board, so a hit there
             // is unambiguous — and their whole reason to exist is answering "what is this".
-            string strip = StripTooltip(ProtoInput.MousePosition)
-                        ?? VitalsTooltip(ProtoInput.MousePosition);
+            string strip = StripTooltip(UiMouse)
+                        ?? VitalsTooltip(UiMouse);
 
             if (strip != null)
             {
@@ -5562,7 +5629,7 @@ namespace Proto
             }
 
             {
-                var mouse = ProtoInput.MousePosition;
+                var mouse = UiMouse;
 
                 int looseIndex = ScreenToLoose(mouse);
                 if (looseIndex >= 0)
@@ -5629,7 +5696,7 @@ namespace Proto
             {
                 _tipBg.enabled = false;
                 _tipText.enabled = false;
-                _recipes.Show(hovered, ProtoInput.MousePosition);
+                _recipes.Show(hovered, UiMouse);
                 ShowHoverRange(hovered, spell);
                 return;
             }
@@ -5667,12 +5734,12 @@ namespace Proto
             float boxHeight = height + TipPadY * 2f;
             _tipBg.rectTransform.sizeDelta = new Vector2(TipWidth, boxHeight);
 
-            var m = ProtoInput.MousePosition;
-            float x = Mathf.Min(m.x + 18f, Screen.width - TipWidth - 8f);
+            var m = UiMouse;
+            float x = Mathf.Min(m.x + 18f, ScreenW - TipWidth - 8f);
 
             // Pivotnya kiri-ATAS, jadi y adalah tepi atas kartu: yang harus dijaga tetap di
             // dalam layar adalah DASARNYA, dan dasar itu bergantung tinggi kartunya.
-            float y = Mathf.Clamp(m.y - 12f, boxHeight + 8f, Screen.height - 8f);
+            float y = Mathf.Clamp(m.y - 12f, boxHeight + 8f, ScreenH - 8f);
 
             _tipBg.rectTransform.anchoredPosition = new Vector2(x, y);
             textRect.anchoredPosition = new Vector2(x + TipPadX, y - TipPadY);
@@ -6116,7 +6183,7 @@ namespace Proto
                 _floatLife[i] -= dt;
                 _floatWorld[i] += Vector3.up * (1.4f * dt);
 
-                var screen = _camera.WorldToScreenPoint(_floatWorld[i]);
+                var screen = _camera.WorldToScreenPoint(_floatWorld[i]) / Mathf.Max(0.0001f, UiScale);
                 _floaters[i].rectTransform.anchoredPosition = new Vector2(screen.x, screen.y);
 
                 // Sentakan lahir untuk pengumuman besar — lewat localScale yang gratis, bukan

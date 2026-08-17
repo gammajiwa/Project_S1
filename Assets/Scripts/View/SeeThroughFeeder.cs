@@ -21,9 +21,9 @@ namespace Proto
         [Tooltip("Jari-jari lubang, sebagai porsi TINGGI layar. 0,14 kira-kira dua badan pemain.")]
         [Range(0.02f, 0.5f)] public float Radius = 0.14f;
 
-        [Tooltip("Seberapa tembus pusat lubangnya. 1 = hilang penuh; 0,85 menyisakan bayangan " +
-                 "dither tipis supaya pohonnya masih terasa ADA, cuma minggir dari mata.")]
-        [Range(0f, 1f)] public float Strength = 0.85f;
+        [Tooltip("Seberapa tembus pusat lubangnya. 1 = bolong penuh dan bersih — di bawah itu " +
+                 "pusatnya jadi taburan bintik dither yang bercampur warna tanah, bukan lubang.")]
+        [Range(0f, 1f)] public float Strength = 1f;
 
         Transform _player;
         Camera _camera;

@@ -133,7 +133,9 @@ namespace Proto
 
             // Screen-space rect for hover testing. Canvas y counts down from the top; the mouse
             // counts up from the bottom, which is why this is not simply the anchored position.
-            _rects[_used] = new Rect(x, Screen.height + y - _icon, _icon + 36f, _icon);
+            // ScreenH (satuan kanvas), bukan Screen.height mentah — mouse pembandingnya juga
+            // sudah dalam satuan kanvas (UiMouse), jadi hover tetap menempel di semua resolusi.
+            _rects[_used] = new Rect(x, GrimoireLayout.ScreenH + y - _icon, _icon + 36f, _icon);
 
             _used++;
         }

@@ -331,21 +331,17 @@ namespace Proto
             _treesPerChunk = Mathf.Max(0, Mathf.RoundToInt(biome.TreeCount * chunkArea / referenceArea));
             _grassPerChunk = Mathf.Max(0, Mathf.RoundToInt(biome.ScatterCount * chunkArea / referenceArea));
 
-            // seeThrough: pohon adalah satu-satunya prop yang cukup tinggi untuk MENELAN pemain
-            // — batang & tajuknya melubangi diri di sekitar pemain lewat Grimoire/PropSeeThrough.
             _trunks = new PropBatch(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Cylinder),
-                Safe(biome.TrunkColors, new Color(0.2f, 0.15f, 0.11f)), biome.TreeShadows,
-                seeThrough: true);
+                Safe(biome.TrunkColors, new Color(0.2f, 0.15f, 0.11f)), biome.TreeShadows);
 
             _canopies = new PropBatch(EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Sphere),
-                Safe(biome.CanopyColors, new Color(0.18f, 0.34f, 0.18f)), biome.TreeShadows,
-                seeThrough: true);
+                Safe(biome.CanopyColors, new Color(0.18f, 0.34f, 0.18f)), biome.TreeShadows);
 
             _grass = new PropBatch(EnemyRenderer.BorrowPrimitiveMesh(biome.ScatterShape),
                 Safe(biome.ScatterColors, new Color(0.17f, 0.26f, 0.15f)));
 
             Collect(biome.MeshTrees, biome.TreeShadows,
-                out _meshTrees, out _meshTreeBatches, out _meshTreeWeights, seeThrough: true);
+                out _meshTrees, out _meshTreeBatches, out _meshTreeWeights);
 
             Collect(biome.MeshScatter, false,
                 out _meshScatter, out _meshScatterBatches, out _meshScatterWeights);
@@ -403,8 +399,7 @@ namespace Proto
         /// muncul, yang terbaca sebagai hutan lebih jarang alih-alih sebagai kesalahan.
         /// </summary>
         static void Collect(MeshProp[] source, bool castShadows,
-            out MeshProp[] props, out PropBatch[] batches, out float[] cumulative,
-            bool seeThrough = false)
+            out MeshProp[] props, out PropBatch[] batches, out float[] cumulative)
         {
             var kept = new List<MeshProp>();
 
@@ -425,8 +420,7 @@ namespace Proto
 
             for (int i = 0; i < props.Length; i++)
             {
-                batches[i] = new PropBatch(props[i].Mesh, props[i].Materials, castShadows,
-                    seeThrough);
+                batches[i] = new PropBatch(props[i].Mesh, props[i].Materials, castShadows);
                 running += props[i].Weight;
                 cumulative[i] = running;
             }

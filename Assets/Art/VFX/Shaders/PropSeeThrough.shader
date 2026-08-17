@@ -36,7 +36,14 @@ Shader "Grimoire/PropSeeThrough"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
-            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+
+            // Set keyword MENGIKUTI SimpleLit paket URP terpasang. _CLUSTER_LIGHT_LOOP wajib:
+            // proyek ini jalan di Forward+, dan tanpa keyword itu pembacaan data cahaya kacau —
+            // pohonnya tampil hitam pekat, persis bug pertama shader ini.
+            #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
+            #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
 
@@ -126,23 +133,41 @@ Shader "Grimoire/PropSeeThrough"
                 toPlayer.x *= aspect;
                 float dist = length(toPlayer);
 
-                half hole = 1.0 - smoothstep(_SeeThroughData.w * 0.55, _SeeThroughData.w, dist);
+                // Tepi lembutnya CINCIN TIPIS (80%..100% jari-jari), bukan setengah lubang:
+                // zona dither yang lebar membuat pohon di dekat pemain jadi taburan bintik
+                // bercampur warna tanah — persis "berantakan" yang ditunjuk pemilik project.
+                // Pusatnya bolong PENUH, tepinya baru menyisir dither.
+                half hole = 1.0 - smoothstep(_SeeThroughData.w * 0.8, _SeeThroughData.w, dist);
                 bool inFront = i.viewZ < _SeeThroughData.z - 0.4;
                 half keep = 1.0 - (inFront ? hole * _SeeThroughStrength : 0.0);
                 clip(keep - Dither4x4(i.positionCS.xy));
 
                 half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv) * _BaseColor;
 
-                float4 shadowCoord = TransformWorldToShadowCoord(i.positionWS);
-                Light mainLight = GetMainLight(shadowCoord);
+                // Pencahayaan lewat jalur resmi URP, bukan Lambert rakitan — cara termudah
+                // agar hasilnya identik dengan URP/Lit di Forward+ maupun Forward biasa
+                // (bayangan utama, lampu arena, lampu pemain, occlusion layar).
+                InputData inputData = (InputData)0;
+                inputData.positionWS = i.positionWS;
+                inputData.normalWS = normalize(i.normalWS);
+                inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(i.positionWS);
+                inputData.shadowCoord = TransformWorldToShadowCoord(i.positionWS);
+                inputData.fogCoord = i.fogFactor;
+                inputData.bakedGI = SampleSH(inputData.normalWS);
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i.positionCS);
+                inputData.shadowMask = half4(1, 1, 1, 1);
 
-                half3 n = normalize(i.normalWS);
-                half ndl = saturate(dot(n, mainLight.direction));
-                half3 lighting = mainLight.color * mainLight.shadowAttenuation * ndl + SampleSH(n);
+                SurfaceData surfaceData = (SurfaceData)0;
+                surfaceData.albedo = albedo.rgb;
+                surfaceData.alpha = 1;
+                surfaceData.metallic = _Metallic;
+                surfaceData.smoothness = _Smoothness;
+                surfaceData.occlusion = 1;
 
-                half3 color = albedo.rgb * lighting;
-                color = MixFog(color, i.fogFactor);
-                return half4(color, 1.0);
+                half4 color = UniversalFragmentPBR(inputData, surfaceData);
+                color.rgb = MixFog(color.rgb, i.fogFactor);
+                color.a = 1;
+                return color;
             }
             ENDHLSL
         }

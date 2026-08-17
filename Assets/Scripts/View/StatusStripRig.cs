@@ -70,10 +70,11 @@ namespace Proto
             var corners = new Vector3[4];
             area.GetWorldCorners(corners);
 
-            // corners[1] = kiri-atas. Kanvas Overlay menaruh sudut dunia langsung di piksel layar,
-            // dan strip menghitung y turun dari atas — makanya dikurangi tinggi layar, bukan
-            // dipakai apa adanya.
-            origin = new Vector2(corners[1].x, corners[1].y - Screen.height);
+            // corners[1] = kiri-atas, dalam PIKSEL LAYAR — kanvasnya ber-CanvasScaler, jadi
+            // dibagi skala dulu supaya jadi satuan kanvas yang dipakai strip. Y dihitung
+            // turun dari tepi atas, makanya dikurangi tinggi kanvas.
+            float scale = Mathf.Max(0.0001f, GrimoireLayout.UiScale);
+            origin = new Vector2(corners[1].x / scale, corners[1].y / scale - GrimoireLayout.ScreenH);
             return true;
         }
 
