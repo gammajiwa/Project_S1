@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.UiTheme
   MapPaper: {fileID: 21300000, guid: b997f644670c7b040a65f899ad7baa66, type: 3}
   LoadingSigil: {fileID: 21300000, guid: 60ad9ecc59aaf4b4f9b5f53582ec4c31, type: 3}
-  PanelPaper: {fileID: 0}
+  PanelPaper: {fileID: 21300000, guid: f101820f095d43d9b67c8cca4a3b5d87, type: 3}
   UiFont: {fileID: 12800000, guid: ed53511e9e19952459410f4520c7318b, type: 3}
   NumberFont: {fileID: 12800000, guid: a40fde09f47fe214ca9c245fb51abf40, type: 3}
   GrimoirePanelPrefab: {fileID: 4725670757830398596, guid: 9e613509076f1824bb2986daeac17b35, type: 3}
@@ -24,8 +24,12 @@ MonoBehaviour:
   SettingsPrefab: {fileID: 8437507822836442132, guid: a50a681ab2ee19e41b0cf1f82f1d855a, type: 3}
   ShopPrefab: {fileID: 1582209453909252090, guid: 00bedc846ae31d543a9302ac94975008, type: 3}
   GridFrame: {fileID: 0}
-  BagPanel: {fileID: 21300000, guid: 59c2420371006f048adc37daae722f02, type: 3}
+  BagPanel: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
   InfoPanel: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  ButtonFrame: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  ButtonGlow: {fileID: -1902906017, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  Plaque: {fileID: 1860286864, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
+  BarFrame: {fileID: -438283618, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
   LiquidAmp: 0.045
   LiquidSpeed: 2.4
   LiquidWaves: 2.3
