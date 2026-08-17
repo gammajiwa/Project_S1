@@ -206,6 +206,9 @@ def main():
     ap.add_argument("--names", default="",
                     help="file teks: satu nama per baris, urutan kiri->kanan atas->bawah")
     ap.add_argument("--pad", type=int, default=4, help="margin transparan tiap potongan")
+    ap.add_argument("--canvas", type=int, default=0,
+                    help="kanvas seragam NxN, badan icon di tengah. 0 = ikut badan " +
+                         "(JANGAN untuk icon UI: ukuran beda-beda bikin grid berantakan)")
     args = ap.parse_args()
 
     img = Image.open(args.sheet)
@@ -230,10 +233,15 @@ def main():
         if tight:
             crop = crop.crop(tight)
 
-        padded = Image.new("RGBA",
-                           (crop.width + args.pad * 2, crop.height + args.pad * 2),
-                           (0, 0, 0, 0))
-        padded.paste(crop, (args.pad, args.pad))
+        if args.canvas > 0:
+            side = max(args.canvas, crop.width, crop.height)
+            padded = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+            padded.paste(crop, ((side - crop.width) // 2, (side - crop.height) // 2))
+        else:
+            padded = Image.new("RGBA",
+                               (crop.width + args.pad * 2, crop.height + args.pad * 2),
+                               (0, 0, 0, 0))
+            padded.paste(crop, (args.pad, args.pad))
 
         name = names[i] if i < len(names) else f"icon_{i + 1:02d}"
         path = os.path.join(args.outdir, name + ".png")
