@@ -21,13 +21,15 @@ MonoBehaviour:
   - {x: 0, y: 0}
   - {x: 1, y: 1}
   - {x: 2, y: 2}
-  Art: {fileID: 21300000, guid: 1ba92f92cdd36c243a9f8b3f42eb80ec, type: 3}
+  - {x: 0, y: 2}
+  - {x: 2, y: 0}
+  Art: {fileID: 21300000, guid: 64d5b9c4a4ea449e89854dcd2ff9469a, type: 3}
   ArtOffset: {x: 0, y: 0}
   ArtSize: {x: 0, y: 0}
   ArtRotation: 0
   ArtBehindCells: 0
   Color: {r: 0.66, g: 0.42, b: 0.95, a: 1}
-  Icon: {fileID: 21300000, guid: 1ba92f92cdd36c243a9f8b3f42eb80ec, type: 3}
+  Icon: {fileID: 21300000, guid: 64d5b9c4a4ea449e89854dcd2ff9469a, type: 3}
   HitVfx: {fileID: 0}
   HitVfxScale: 0.6
   Kind: 7

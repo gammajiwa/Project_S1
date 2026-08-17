@@ -18,18 +18,17 @@ MonoBehaviour:
   Layer: 1
   Shape: 3
   CustomCells:
-  - {x: 0, y: 0}
   - {x: 1, y: 0}
   - {x: 1, y: 1}
   - {x: 2, y: 1}
-  - {x: 2, y: 2}
-  Art: {fileID: 21300000, guid: 9e0f7f2b22b145744881c9d4ab1a7b88, type: 3}
-  ArtOffset: {x: 0, y: 0}
-  ArtSize: {x: 0, y: 0}
+  - {x: 0, y: 1}
+  Art: {fileID: 21300000, guid: 969289dcb87d4ad5ad1d7a3ea5ff0174, type: 3}
+  ArtOffset: {x: 0.13, y: -0.22}
+  ArtSize: {x: 2.6999998, y: 2.6999998}
   ArtRotation: 0
   ArtBehindCells: 0
   Color: {r: 0.9408, g: 0.89640003, b: 0.482, a: 1}
-  Icon: {fileID: 21300000, guid: 9e0f7f2b22b145744881c9d4ab1a7b88, type: 3}
+  Icon: {fileID: 21300000, guid: 969289dcb87d4ad5ad1d7a3ea5ff0174, type: 3}
   HitVfx: {fileID: 0}
   HitVfxScale: 0.6
   Kind: 7
