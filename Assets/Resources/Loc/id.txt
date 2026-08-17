@@ -28,11 +28,11 @@ event.refuse=PERGI SAJA   (+{0} koin)
 event.title=PERTAPA HUTAN
 
 # ---------------- hero ----------------
-hero.emberwright.blurb=Dua alas, dua skill, dua segel. Fireball dan Frost Shard berdiri menyilang di alas api — dempetkan kalau mau Steam Burst bintang 2 yang mengisi alas itu utuh, atau biarkan keduanya tetap menembak.
+hero.emberwright.blurb=• Mulai dengan 2 alas rune, 2 skill, dan 2 segel\n• Fireball dan Frost Shard berdiri menyilang di alas api, dua-duanya aktif menembak\n• Kalau didempetkan, keduanya melebur jadi Steam Burst ★★ yang mengisi alas itu utuh\n• Filosofinya: perajin papan, menang lewat rakitan dan evolusi yang tepat waktu\n• Cocok buat yang suka menimbang bentuk, posisi, dan resep, bukan sekadar menembak
 hero.emberwright.name=Emberwright
-hero.frostwarden.blurb=Tahan pukul, lambat mengisi. Frost Shard dan Minor Heal berdiri menyilang di alas es — yang satu membunuh, yang satu menambal, dan mendempetkannya berarti memilih salah satunya untuk hilang.
+hero.frostwarden.blurb=• Nyawa tebal dan tahan pukul, tapi pemulihannya pelan\n• Frost Shard bertugas membunuh, Minor Heal bertugas menambal nyawa\n• Kalau didempetkan jadi satu, salah satu perannya harus direlakan hilang\n• Filosofinya: perang gesekan, biarkan musuh habis duluan sebelum nyawamu habis\n• Cocok buat pemain sabar yang menang lewat bertahan, bukan ledakan damage
 hero.frostwarden.name=Frostwarden
-hero.stormcaller.blurb=Rapuh dan cepat. Sabetan Petir mengisi penuh alas garisnya, Fireball berdiri sendirian di seberang papan — dua skill yang tidak akan pernah bertemu kecuali kamu yang memindahkannya.
+hero.stormcaller.blurb=• Nyawa tipis, tapi tempo mainnya paling cepat dari bertiga\n• Sabetan Petir langsung mengisi penuh alas garisnya sejak awal\n• Fireball mulai sendirian di seberang papan, pindahkan sendiri kalau mau mereka bertemu\n• Filosofinya: tempo tinggi, bunuh cepat sebelum sempat terpukul balik\n• Cocok buat pengambil risiko yang menjawab papan rapuh dengan kecepatan
 hero.stormcaller.name=Stormcaller
 
 # ---------------- hud ----------------

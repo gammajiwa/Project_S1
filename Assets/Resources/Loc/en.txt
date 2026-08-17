@@ -28,11 +28,11 @@ event.refuse=WALK AWAY   (+{0} coins)
 event.title=FOREST HERMIT
 
 # ---------------- hero ----------------
-hero.emberwright.blurb=Two runes, two skills, two sigils. Fireball and Frost Shard stand crossed on the ember rune — push them together for a 2-star Steam Burst that fills that rune whole, or leave both firing.
+hero.emberwright.blurb=• Starts with 2 rune beds, 2 skills, and 2 sigils\n• Fireball and Frost Shard stand crossed on the ember rune, both firing\n• Push them together and they fuse into a 2-star Steam Burst that fills the rune whole\n• Philosophy: a board-crafter who wins through builds and well-timed evolutions\n• For players who weigh shapes, positions and recipes, not just raw shooting
 hero.emberwright.name=Emberwright
-hero.frostwarden.blurb=Takes a beating, refills slowly. Frost Shard and Minor Heal stand crossed on the frost rune — one kills, one patches, and pushing them together means choosing which one to lose.
+hero.frostwarden.blurb=• Thick health and takes a beating, but refills slowly\n• Frost Shard does the killing, Minor Heal does the patching\n• Merging them into one means giving up one of those roles\n• Philosophy: a war of attrition, let the enemy run out before your health does\n• For patient players who win by outlasting, not by burst damage
 hero.frostwarden.name=Frostwarden
-hero.stormcaller.blurb=Fragile and fast. Lightning Slash fills its line rune whole, Fireball stands alone across the board — two skills that will never meet unless you move them.
+hero.stormcaller.blurb=• Thin health, but the fastest tempo of the three\n• Lightning Slash fills its line rune whole from the start\n• Fireball begins alone across the board, move it yourself if you want them to meet\n• Philosophy: high tempo, kill fast before anything hits back\n• For risk-takers who answer a fragile board with pure speed
 hero.stormcaller.name=Stormcaller
 
 # ---------------- hud ----------------

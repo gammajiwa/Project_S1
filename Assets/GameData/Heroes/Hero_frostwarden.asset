@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.HeroLoadout
   Id: frostwarden
   DisplayName: Frostwarden
-  Blurb: "Takes a beating, refills slowly. Frost Shard and Minor Heal stand crossed
-    on the frost rune \u2014 one kills, one patches, and pushing them together means
-    choosing which one to lose."
+  Blurb: "\u2022 Nyawa tebal dan tahan pukul, tapi pemulihannya pelan\n\u2022 Frost
+    Shard bertugas membunuh, Minor Heal bertugas menambal nyawa\n\u2022 Kalau didempetkan
+    jadi satu, salah satu perannya harus direlakan hilang\n\u2022 Filosofinya: perang
+    gesekan, biarkan musuh habis duluan sebelum nyawamu habis\n\u2022 Cocok buat
+    pemain sabar yang menang lewat bertahan, bukan ledakan damage"
   Portrait: {fileID: 0}
   Accent: {r: 0.55, g: 0.82, b: 1, a: 1}
   MaxHp: 140

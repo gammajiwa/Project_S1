@@ -14,9 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.HeroLoadout
   Id: stormcaller
   DisplayName: Stormcaller
-  Blurb: "Fragile and fast. Lightning Slash fills its line rune whole, Fireball stands
-    alone across the board \u2014 two skills that will never meet unless you move
-    them."
+  Blurb: "\u2022 Nyawa tipis, tapi tempo mainnya paling cepat dari bertiga\n\u2022
+    Sabetan Petir langsung mengisi penuh alas garisnya sejak awal\n\u2022 Fireball
+    mulai sendirian di seberang papan, pindahkan sendiri kalau mau mereka bertemu\n\u2022
+    Filosofinya: tempo tinggi, bunuh cepat sebelum sempat terpukul balik\n\u2022
+    Cocok buat pengambil risiko yang menjawab papan rapuh dengan kecepatan"
   Portrait: {fileID: 0}
   Accent: {r: 0.86, g: 0.72, b: 1, a: 1}
   MaxHp: 78
