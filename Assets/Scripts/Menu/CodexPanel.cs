@@ -34,6 +34,46 @@ namespace Proto
         [Tooltip("Opsional — kalau kosong, cetakan badan seksi dibangun sendiri saat runtime.")]
         [SerializeField] RectTransform _sectionTemplate;
 
+        [Tooltip("Cetakan tombol saring (anak nonaktif / instance prefab CodexTab). " +
+                 "Kosong = kotak warna kode lama. Lebar tab ikut lebar cetakan ini. " +
+                 "Keadaan idle/terpilih = anak bernama 'Idle' dan 'Active' di dalam cetakan — " +
+                 "sprite, skala, glow, warnanya SEPENUHNYA diatur di prefab, bukan di kode.")]
+        [SerializeField] RectTransform _tabTemplate;
+
+        [Header("Tata letak — disetel di sini, TIDAK ada angka yang dikunci di kode")]
+        [Tooltip("Ukuran satu kartu. (0,0) = ikut ukuran prefab kartu apa adanya.")]
+        [SerializeField] Vector2 _cardSize = Vector2.zero;
+
+        [Tooltip("Jarak antar kartu, mendatar dan menurun.")]
+        [SerializeField] Vector2 _cardSpacing = new Vector2(16f, 16f);
+
+        [Tooltip("Berapa kartu per baris.")]
+        [SerializeField] int _columns = 4;
+
+        [Tooltip("Sisa ruang di bawah tiap seksi, sebelum judul seksi berikutnya.")]
+        [SerializeField] int _sectionPaddingBottom = 8;
+
+        [Tooltip("Jarak antar blok (judul seksi dan grid kartunya) di tumpukan vertikal.")]
+        [SerializeField] float _stackSpacing = 10f;
+
+        [Tooltip("Tepi dalam daftar — x=kiri, y=kanan, z=atas, w=bawah.")]
+        [SerializeField] Vector4 _stackPadding = new Vector4(8f, 8f, 4f, 16f);
+
+        [Tooltip("Tinggi baris judul seksi (dipakai kalau cetakan judul dibangun runtime).")]
+        [SerializeField] float _headerHeight = 48f;
+
+        [Tooltip("Jarak antar tombol saring.")]
+        [SerializeField] float _tabSpacing = 10f;
+
+        [Tooltip("Jarak baris tombol saring ke kotak daftar di bawahnya.")]
+        [SerializeField] float _tabRowGap = 14f;
+
+        [Tooltip("Tinggi baris tombol saring. 0 = ikut tinggi prefab tab.")]
+        [SerializeField] float _tabRowHeight = 0f;
+
+        readonly List<GameObject> _filterIdle = new List<GameObject>();
+        readonly List<GameObject> _filterActive = new List<GameObject>();
+
         // Dibaca lewat fungsi, bukan disimpan sebagai larik siap pakai: larik static dibekukan
         // sekali seumur permainan, dan bahasa boleh berganti di tengah jalan.
         static readonly string[] SectionKeys = { "codex.section.rune", "codex.section.sigil", "codex.section.skill" };
@@ -189,8 +229,10 @@ namespace Proto
                 if (_content.GetComponent<VerticalLayoutGroup>() == null)
                 {
                     var stack = _content.gameObject.AddComponent<VerticalLayoutGroup>();
-                    stack.spacing = 10f;
-                    stack.padding = new RectOffset(8, 8, 4, 16);
+                    stack.spacing = _stackSpacing;
+                    stack.padding = new RectOffset(
+                        Mathf.RoundToInt(_stackPadding.x), Mathf.RoundToInt(_stackPadding.y),
+                        Mathf.RoundToInt(_stackPadding.z), Mathf.RoundToInt(_stackPadding.w));
                     stack.childAlignment = TextAnchor.UpperLeft;
                     stack.childControlWidth = true;
                     stack.childControlHeight = true;
@@ -200,8 +242,6 @@ namespace Proto
 
                 if (_headerTemplate == null) _headerTemplate = BuildHeaderTemplate();
                 if (_sectionTemplate == null) _sectionTemplate = BuildSectionTemplate();
-
-                EnlargeEntryTemplate();
             }
 
             BuildFilterRow();
@@ -212,8 +252,8 @@ namespace Proto
             var header = NewRect("HeaderTemplate", _content);
 
             var height = header.gameObject.AddComponent<LayoutElement>();
-            height.minHeight = 48f;
-            height.preferredHeight = 48f;
+            height.minHeight = _headerHeight;
+            height.preferredHeight = _headerHeight;
 
             var title = NewLabel(header, "Title", 24, InkGold, TextAlignmentOptions.BottomLeft);
             title.rectTransform.anchorMin = new Vector2(0f, 0f);
@@ -239,53 +279,33 @@ namespace Proto
             return header;
         }
 
+        /// <summary>
+        /// Grid kartu tiap seksi. Ukuran selnya MENGIKUTI prefab kartu — perbesar kartunya di
+        /// prefab dan gridnya ikut, tanpa menyentuh kode. Jarak, jumlah kolom, dan tepi bawah
+        /// disetel lewat Inspector.
+        /// </summary>
         RectTransform BuildSectionTemplate()
         {
             var section = NewRect("SectionTemplate", _content);
 
             var grid = section.gameObject.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(305f, 132f);
-            grid.spacing = new Vector2(16f, 16f);
-            grid.padding = new RectOffset(0, 0, 0, 8);
+            grid.cellSize = CardSize();
+            grid.spacing = _cardSpacing;
+            grid.padding = new RectOffset(0, 0, 0, _sectionPaddingBottom);
             grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 4;
+            grid.constraintCount = Mathf.Max(1, _columns);
 
             section.gameObject.SetActive(false);
             return section;
         }
 
-        /// <summary>
-        /// Kartu cetakan milik scene lama dirancang untuk sel 250x118 — di sel 305x132 siluet
-        /// 52 piksel dan nama selebar 156 kelihatan tenggelam. Yang digeser cuma RectTransform
-        /// anak-anak cetakannya, saat runtime; scene di disk tidak berubah.
-        /// </summary>
-        void EnlargeEntryTemplate()
+        /// <summary>Ukuran kartu: setelan Inspector kalau diisi, kalau tidak ikut prefabnya.</summary>
+        Vector2 CardSize()
         {
-            var root = _entryTemplate.transform;
+            if (_cardSize.x > 0.5f && _cardSize.y > 0.5f) return _cardSize;
 
-            var shape = root.Find("Shape") as RectTransform;
-            if (shape != null)
-            {
-                shape.sizeDelta = new Vector2(64f, 64f);
-                shape.anchoredPosition = new Vector2(16f, -16f);
-
-                var grid = shape.GetComponent<GridLayoutGroup>();
-                if (grid != null) grid.cellSize = new Vector2(19f, 19f);
-            }
-
-            var label = root.Find("Name") as RectTransform;
-            if (label != null)
-            {
-                label.anchoredPosition = new Vector2(94f, -18f);
-                label.sizeDelta = new Vector2(196f, 60f);
-            }
-
-            var meta = root.Find("Meta") as RectTransform;
-            if (meta != null)
-            {
-                meta.anchoredPosition = new Vector2(16f, 12f);
-                meta.sizeDelta = new Vector2(273f, 22f);
-            }
+            var rt = _entryTemplate != null ? _entryTemplate.transform as RectTransform : null;
+            return rt != null ? rt.rect.size : new Vector2(305f, 132f);
         }
 
         /// <summary>
@@ -300,11 +320,15 @@ namespace Proto
             var scroll = _content.parent != null ? _content.parent.parent as RectTransform : null;
             if (scroll == null) return;
 
-            const float RowHeight = 40f;
-            const float Gap = 14f;
+            // Tinggi baris ikut prefab tab kalau tidak disetel — tab digedein di prefab,
+            // barisnya ikut sendiri.
+            float rowHeight = _tabRowHeight > 0.5f
+                ? _tabRowHeight
+                : (_tabTemplate != null ? _tabTemplate.rect.height : 40f);
+            float gap = _tabRowGap;
 
-            scroll.sizeDelta = new Vector2(scroll.sizeDelta.x, scroll.sizeDelta.y - RowHeight - Gap);
-            scroll.anchoredPosition += new Vector2(0f, -(RowHeight + Gap) * 0.5f);
+            scroll.sizeDelta = new Vector2(scroll.sizeDelta.x, scroll.sizeDelta.y - rowHeight - gap);
+            scroll.anchoredPosition += new Vector2(0f, -(rowHeight + gap) * 0.5f);
 
             var row = NewRect("FilterRow", scroll.parent as RectTransform);
             row.anchorMin = row.anchorMax = new Vector2(0.5f, 0.5f);
@@ -313,21 +337,55 @@ namespace Proto
             // Menempel ke tepi atas kotak scroll yang sudah dipendekkan, rata kiri dengannya.
             row.anchoredPosition = new Vector2(
                 scroll.anchoredPosition.x - scroll.sizeDelta.x * 0.5f,
-                scroll.anchoredPosition.y + scroll.sizeDelta.y * 0.5f + Gap + RowHeight);
-            row.sizeDelta = new Vector2(scroll.sizeDelta.x, RowHeight);
+                scroll.anchoredPosition.y + scroll.sizeDelta.y * 0.5f + gap + rowHeight);
+            row.sizeDelta = new Vector2(scroll.sizeDelta.x, rowHeight);
 
             float x = 0f;
 
             for (int i = 0; i < FilterKeys.Length; i++)
             {
+                int section = i - 1;
+
+                if (_tabTemplate != null)
+                {
+                    // Jalur prefab: visual 100% milik cetakan — termasuk rupa idle vs
+                    // terpilih (anak "Idle"/"Active"). Kode cuma meng-clone, menaruh
+                    // berjajar, mengisi teks, dan menyalakan state yang sesuai.
+                    var clone = Instantiate(_tabTemplate, row);
+                    clone.gameObject.SetActive(true);
+                    clone.name = "Filter_" + FilterLabel(i);
+                    clone.anchorMin = clone.anchorMax = new Vector2(0f, 0f);
+                    clone.pivot = new Vector2(0f, 0f);
+                    clone.anchoredPosition = new Vector2(x, 0f);
+                    x += clone.rect.width + _tabSpacing;
+
+                    var idle = clone.Find("Idle");
+                    var active = clone.Find("Active");
+                    _filterIdle.Add(idle != null ? idle.gameObject : null);
+                    _filterActive.Add(active != null ? active.gameObject : null);
+
+                    var cloneBg = idle != null ? idle.GetComponent<Image>() : clone.GetComponent<Image>();
+                    var cloneButton = clone.GetComponent<Button>();
+                    if (cloneButton == null) cloneButton = clone.gameObject.AddComponent<Button>();
+                    cloneButton.targetGraphic = cloneBg;
+                    cloneButton.onClick.AddListener(() => SetFilter(section));
+
+                    var cloneLabel = clone.GetComponentInChildren<TextMeshProUGUI>(true);
+                    if (cloneLabel != null) cloneLabel.text = FilterLabel(i);
+
+                    _filterBg.Add(cloneBg);
+                    _filterText.Add(cloneLabel);
+                    continue;
+                }
+
                 float width = FilterLabel(i).Length > 5 ? 130f : 116f;
 
                 var tile = NewRect("Filter_" + FilterLabel(i), row);
                 tile.anchorMin = tile.anchorMax = new Vector2(0f, 0f);
                 tile.pivot = new Vector2(0f, 0f);
                 tile.anchoredPosition = new Vector2(x, 0f);
-                tile.sizeDelta = new Vector2(width, RowHeight);
-                x += width + 10f;
+                tile.sizeDelta = new Vector2(width, rowHeight);
+                x += width + _tabSpacing;
 
                 var bg = tile.gameObject.AddComponent<Image>();
                 bg.color = TileInk;
@@ -338,7 +396,6 @@ namespace Proto
 
                 var button = tile.gameObject.AddComponent<Button>();
                 button.targetGraphic = bg;
-                int section = i - 1;
                 button.onClick.AddListener(() => SetFilter(section));
 
                 var label = NewLabel(tile, "Label", 15, InkBone, TextAlignmentOptions.Center);
@@ -350,6 +407,8 @@ namespace Proto
 
                 _filterBg.Add(bg);
                 _filterText.Add(label);
+                _filterIdle.Add(null);
+                _filterActive.Add(null);
             }
         }
 
@@ -358,6 +417,17 @@ namespace Proto
             for (int i = 0; i < _filterBg.Count; i++)
             {
                 bool on = _filter == i - 1;
+
+                // Jalur prefab: rupa kedua keadaan hidup di anak "Idle"/"Active" milik
+                // cetakan — kode TIDAK menyentuh sprite, skala, atau warna apa pun,
+                // cuma menyalakan objek yang sesuai.
+                if (i < _filterIdle.Count && _filterIdle[i] != null && _filterActive[i] != null)
+                {
+                    _filterIdle[i].SetActive(!on);
+                    _filterActive[i].SetActive(on);
+                    continue;
+                }
+
                 _filterBg[i].color = on ? InkGold : TileInk;
                 _filterText[i].color = on ? ActiveTextInk : InkBone;
             }
