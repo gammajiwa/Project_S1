@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_starfall
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: starfall
+  DisplayName: Starfall
+  Stars: 3
+  Layer: 1
+  Shape: 2
+  CustomCells:
+  - {x: 1, y: 0}
+  - {x: 2, y: 0}
+  - {x: 1, y: 1}
+  - {x: 0, y: 1}
+  Art: {fileID: 21300000, guid: 9757fe2e1c4e4ac1a9d3d01c674650b4, type: 3}
+  ArtOffset: {x: 0.21, y: 0.06}
+  ArtSize: {x: 2.73, y: 1.82}
+  ArtRotation: -115
+  ArtBehindCells: 0
+  Color: {r: 0.72, g: 0.85, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 9757fe2e1c4e4ac1a9d3d01c674650b4, type: 3}
+  HitVfx: {fileID: 7834632939965871776, guid: 41189de2dd96814469e552a720578981, type: 3}
+  HitVfxScale: 0.6
+  Kind: 28
+  Element: 1
+  BaseDamage: 135
+  BaseCooldown: 5
+  Radius: 2.6
+  Range: 14
+  Hits: 5
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 8
+  ZoneDuration: 4
+  ZoneTickInterval: 0.22
+  ZoneDrift: 0
+  CastVfx: {fileID: 7422718180323097591, guid: fafb6d306eae166498b54a6596bd3219, type: 3}
+  CastVfxScale: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
+  StatusDuration: 4
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.7
+  PushForce: 0
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: Lima hantaman beraba-aba jatuh BERURUTAN di titik berpencar. Menghindarinya
+    adalah gerakan, bukan satu langkah.

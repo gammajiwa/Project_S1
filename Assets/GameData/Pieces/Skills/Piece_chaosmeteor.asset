@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_chaosmeteor
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: chaosmeteor
+  DisplayName: Chaos Meteor
+  Stars: 4
+  Layer: 1
+  Shape: 25
+  CustomCells:
+  - {x: 0, y: 1}
+  - {x: 2, y: 2}
+  - {x: 1, y: 1}
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  Art: {fileID: 21300000, guid: 1b5fb602351a41e890d87c0ea7dc2a1f, type: 3}
+  ArtOffset: {x: -0.07, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 1, g: 0.4, b: 0.2, a: 1}
+  Icon: {fileID: 21300000, guid: 1b5fb602351a41e890d87c0ea7dc2a1f, type: 3}
+  HitVfx: {fileID: 2097386211037778967, guid: 18f8e1a9ce6f0b043b844b022170afe0, type: 3}
+  HitVfxScale: 0.6
+  Kind: 18
+  Element: 0
+  BaseDamage: 345
+  BaseCooldown: 5.5
+  Radius: 2.3
+  Range: 18
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 10
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 6752152979417845289, guid: 01ad142030af9bc45ae6563b7cce58b2, type: 3}
+  CastVfxScale: 1.2
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 96674785f38f538498c64874a39416e9, type: 2}
+  StatusDuration: 6
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 7.5
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: A meteor that lands and keeps rolling across the field, burning the whole
+    path behind it.

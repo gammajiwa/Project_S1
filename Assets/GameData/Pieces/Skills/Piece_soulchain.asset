@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_soulchain
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: soulchain
+  DisplayName: Soul Chain
+  Stars: 4
+  Layer: 1
+  Shape: 28
+  CustomCells:
+  - {x: 0, y: 2}
+  - {x: 2, y: 2}
+  - {x: 0, y: 1}
+  - {x: 2, y: 1}
+  - {x: 0, y: 0}
+  - {x: 2, y: 0}
+  - {x: 1, y: 1}
+  Art: {fileID: 21300000, guid: e537ba0f0b3b4c3ea82389c83376532a, type: 3}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.85, g: 0.4, b: 0.55, a: 1}
+  Icon: {fileID: 21300000, guid: e537ba0f0b3b4c3ea82389c83376532a, type: 3}
+  HitVfx: {fileID: 5903963928510030223, guid: 449007338792f8244a52053da11c280e, type: 3}
+  HitVfxScale: 0.35
+  Kind: 27
+  Element: 3
+  BaseDamage: 200
+  BaseCooldown: 6.5
+  Radius: 0.45
+  Range: 14
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 12
+  ZoneDuration: 5
+  ZoneTickInterval: 0.2
+  ZoneDrift: 0
+  CastVfx: {fileID: 1621383918296762409, guid: 45bc72c70ec6ed040ac7badd6286c50a, type: 3}
+  CastVfxScale: 0.5
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: b70a8e805fc46194686e600a8788b8b8, type: 2}
+  StatusDuration: 5
+  AppliedPoints: 2
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 5
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: "A soul chain that clings for a full 5 seconds and collects four times a
+    second. Built for the thick-blooded \u2014 and in this book that means bosses."

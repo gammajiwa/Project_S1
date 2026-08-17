@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_glacialspike
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: glacialspike
+  DisplayName: Glacial Spike
+  Stars: 3
+  Layer: 1
+  Shape: 5
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 1}
+  - {x: 1, y: 0}
+  - {x: 2, y: 2}
+  Art: {fileID: 21300000, guid: 288075ecb57b479ab68ec0a0779adafc, type: 3}
+  ArtOffset: {x: 0.3, y: 0.34}
+  ArtSize: {x: 2.22, y: 2.22}
+  ArtRotation: -3
+  ArtBehindCells: 0
+  Color: {r: 0.5215, g: 0.80859995, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 288075ecb57b479ab68ec0a0779adafc, type: 3}
+  HitVfx: {fileID: 2929269476326280783, guid: df4fe695706243f4ab91be8c2852d41e, type: 3}
+  HitVfxScale: 0.6
+  Kind: 0
+  Element: 1
+  BaseDamage: 55
+  BaseCooldown: 1.1
+  Radius: 0.9
+  Range: 9
+  Hits: 1
+  Forks: 1
+  Bounces: 3
+  BounceRange: 6.5
+  ManaCost: 1.4
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 7938028078796518847, guid: 22743978d20ebcf43a5b79f8f31c22cd, type: 3}
+  CastVfxScale: 1
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
+  StatusDuration: 4
+  AppliedPoints: 2
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. Single target, and it hits like nothing else its size.

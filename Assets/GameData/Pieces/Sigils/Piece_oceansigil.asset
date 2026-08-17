@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_oceansigil
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: segelsamudra
+  DisplayName: Ocean Sigil
+  Stars: 4
+  Layer: 1
+  Shape: 21
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 1, y: 0}
+  - {x: 1, y: 1}
+  - {x: 0, y: 1}
+  Art: {fileID: 21300000, guid: a8a7f683f2074e38a7720d1e8fd84a05, type: 3}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.35, g: 0.55, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: a8a7f683f2074e38a7720d1e8fd84a05, type: 3}
+  HitVfx: {fileID: 0}
+  HitVfxScale: 0.6
+  Kind: 7
+  Element: 3
+  BaseDamage: 0
+  BaseCooldown: 1
+  Radius: 0
+  Range: 0
+  Hits: 1
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 0
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 0}
+  CastVfxScale: 1
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 0}
+  StatusDuration: 0
+  AppliedPoints: 1
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats:
+  - Type: 4
+    Value: 80
+  - Type: 5
+    Value: 5
+  - Type: 6
+    Value: 0.15
+  Stat: 0
+  StatValue: 0
+  Blurb: 'Samudra mana: dalam, deras, dan semuanya lebih murah.'

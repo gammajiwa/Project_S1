@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_prismabeku
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: prismabeku
+  DisplayName: Frost Prism
+  Stars: 3
+  Layer: 1
+  Shape: 5
+  CustomCells:
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 0}
+  - {x: 1, y: 1}
+  Art: {fileID: 21300000, guid: 2634f6693a314be7b8110ae1b7fdc59f, type: 3}
+  ArtOffset: {x: 0, y: 0}
+  ArtSize: {x: 1.96, y: 1.96}
+  ArtRotation: 1
+  ArtBehindCells: 0
+  Color: {r: 0.6, g: 0.95, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: 2634f6693a314be7b8110ae1b7fdc59f, type: 3}
+  HitVfx: {fileID: 3715523296045306230, guid: 26702cb18822cc04788907257df470da, type: 3}
+  HitVfxScale: 0.6
+  Kind: 2
+  Element: 1
+  BaseDamage: 82
+  BaseCooldown: 2.4
+  Radius: 9
+  Range: 9
+  Hits: 5
+  Forks: 1
+  Bounces: 0
+  BounceRange: 6
+  ManaCost: 4
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 1856936663081749647, guid: 207104a1e01b75741a757e7ae72c0dc5, type: 3}
+  CastVfxScale: 1
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
+  StatusDuration: 6
+  AppliedPoints: 1
+  LegacyStatus: 2
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. Shattering ice, chaining through five enemies. Applies CHILL.

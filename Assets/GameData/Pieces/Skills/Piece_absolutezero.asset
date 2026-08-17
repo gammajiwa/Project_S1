@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e16a0b962426d04b8e9f82e459cedcd, type: 3}
+  m_Name: Piece_absolutezero
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.PieceDefinition
+  Id: absolutezero
+  DisplayName: Absolute Zero
+  Stars: 5
+  Layer: 1
+  Shape: 30
+  CustomCells:
+  - {x: 1, y: 2}
+  - {x: 0, y: 1}
+  - {x: 2, y: 1}
+  - {x: 0, y: 0}
+  - {x: 2, y: 0}
+  - {x: 1, y: 0}
+  - {x: 1, y: 1}
+  Art: {fileID: 21300000, guid: bc280d2d05084bdfa9ebe50ef9dff634, type: 3}
+  ArtOffset: {x: 0, y: -0.39}
+  ArtSize: {x: 0, y: 0}
+  ArtRotation: 0
+  ArtBehindCells: 0
+  Color: {r: 0.72, g: 0.95, b: 1, a: 1}
+  Icon: {fileID: 21300000, guid: bc280d2d05084bdfa9ebe50ef9dff634, type: 3}
+  HitVfx: {fileID: 2126396772746668306, guid: 8e3ad292208cf4543958a81696e6b960, type: 3}
+  HitVfxScale: 0.6
+  Kind: 10
+  Element: 1
+  BaseDamage: 98
+  BaseCooldown: 2.6
+  Radius: 0.9
+  Range: 13
+  Hits: 16
+  Forks: 1
+  Bounces: 4
+  BounceRange: 8
+  ManaCost: 6
+  ZoneDuration: 4
+  ZoneTickInterval: 0.5
+  ZoneDrift: 0
+  CastVfx: {fileID: 3077559641215395241, guid: 5649c1b35a9961f40a9a3f0356b1ba6b, type: 3}
+  CastVfxScale: 0.9
+  Trigger: 0
+  TriggerStatus: {fileID: 0}
+  TriggerPoints: 10
+  ConsumeTriggerPoints: 1
+  MaxDetonations: 8
+  AppliedStatus: {fileID: 11400000, guid: 26110f875d28f32449578dc76bd8264b, type: 2}
+  StatusDuration: 5
+  AppliedPoints: 3
+  LegacyStatus: 0
+  GrantOnCast: {fileID: 0}
+  TelegraphDelay: 0.9
+  PushForce: 12
+  LiftDuration: 1.6
+  TravelSpeed: 9
+  GrantOnKill: {fileID: 0}
+  ConsumesCharge: {fileID: 0}
+  DamagePerCharge: 0.35
+  RestoreManaOnKill: 0
+  RestoreHpOnKill: 0.5
+  Aura: 0
+  AuraValue: 0
+  ElementMatchBonus: 0
+  Stats: []
+  Stat: 0
+  StatValue: 0
+  Blurb: EVOLVED. Reaches further than anything else in the book. Applies CHILL.
