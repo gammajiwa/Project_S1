@@ -397,7 +397,7 @@ SkinnedMeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
+  m_ForceMeshLod: 4
   m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
@@ -429,7 +429,7 @@ SkinnedMeshRenderer:
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
   m_SkinnedMotionVectors: 1
-  m_Mesh: {fileID: -4322018926537374060, guid: 8b9039175d790dc4083ecca326425bb2, type: 3}
+  m_Mesh: {fileID: -2159404344870094557, guid: 0136eb24d155b754da5e5f29ef79c5c5, type: 3}
   m_Bones:
   - {fileID: 3888520293949838471}
   - {fileID: 3196467152129457104}
