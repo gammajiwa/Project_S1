@@ -5,18 +5,18 @@ using UnityEngine.SceneManagement;
 namespace Proto
 {
     /// <summary>
-    /// Ruangan singgah — toko, kejadian, dan slot — sebagai scene sendiri yang dimuat
+    /// Ruangan singgah — toko dan kejadian — sebagai scene sendiri yang dimuat
     /// <b>additive dan dipramuat</b>.
     ///
-    /// Panelnya tidak pindah ke mana-mana: UI toko/kejadian/slot tetap digambar
-    /// <see cref="GrimoireUI"/> di kanvas yang sama. Yang pindah LATARNYA. Sebelum ini ketiganya
+    /// Panelnya tidak pindah ke mana-mana: UI toko/kejadian tetap digambar
+    /// <see cref="GrimoireUI"/> di kanvas yang sama. Yang pindah LATARNYA. Sebelum ini keduanya
     /// digambar di atas arena, dan arena itu tempat pertarungan — panel dagang yang mengambang di
     /// atas rumput yang barusan berdarah tidak pernah terbaca sebagai singgah, cuma sebagai jeda.
     ///
-    /// Ketiganya dimuat SEKALI di awal run lalu root-nya dinyala-matikan, bukan dimuat saat
+    /// Keduanya dimuat SEKALI di awal run lalu root-nya dinyala-matikan, bukan dimuat saat
     /// dibutuhkan. Itu pilihan pemilik project dan alasannya benar: memuat scene saat pemain
     /// menekan node berarti membayar jeda tepat di detik yang paling tidak sabar. Harganya memori
-    /// — isi ketiga ruangan selalu ada — dan itu murah untuk tiga ruangan kecil tanpa gerombolan.
+    /// — isi kedua ruangan selalu ada — dan itu murah untuk dua ruangan kecil tanpa gerombolan.
     ///
     /// Kamera arena DIMATIKAN lewat <c>Camera.enabled</c>, bukan lewat GameObject-nya.
     /// <c>AudioListener</c> menumpang di objek yang sama; mematikan objeknya akan membawa telinga
@@ -25,10 +25,18 @@ namespace Proto
     /// </summary>
     public class RoomLoader : MonoBehaviour
     {
-        /// <summary>Nama scene per jenis node. Yang tidak terdaftar tidak punya ruangan.</summary>
+        /// <summary>
+        /// Nama scene per jenis node. Yang tidak terdaftar tidak punya ruangan.
+        ///
+        /// SLOT DICABUT atas perintah pemilik project. Bukan sekadar peluangnya dinolkan:
+        /// selama <c>Room_Slot</c> masih ikut dipramuat, ruangannya tetap bisa nongol tanpa
+        /// node slot sama sekali — kalau scene itu kebetulan sudah terbuka di Hierarchy saat
+        /// Play ditekan, <see cref="Preload"/> memuat kopi KEDUA sementara <see cref="Adopt"/>
+        /// hanya mematikan root scene yang pertama. Kopi kedua tinggal di layar bersama
+        /// kameranya. Satu-satunya cara yang benar-benar menutup jalur itu: tidak memuatnya.
+        /// </summary>
         public const string ShopScene = "Room_Shop";
         public const string EventScene = "Room_Event";
-        public const string SlotScene = "Room_Slot";
 
         readonly Dictionary<string, List<GameObject>> _roots = new Dictionary<string, List<GameObject>>();
         readonly List<Camera> _roomCameras = new List<Camera>();
@@ -45,7 +53,6 @@ namespace Proto
 
             Preload(ShopScene);
             Preload(EventScene);
-            Preload(SlotScene);
         }
 
         /// <summary>

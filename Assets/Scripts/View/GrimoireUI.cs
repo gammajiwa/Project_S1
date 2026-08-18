@@ -116,8 +116,6 @@ namespace Proto
         Image _flashVeil;
         float _flashAlpha;
         Color _flashInk = new Color(1f, 0.85f, 0.4f);
-        float _slotTickAt;
-        int _slotTickStep;
 
         /// <summary>
         /// Kilat sekejap menutup layar — emas untuk hadiah, hijau untuk evolve. VFX termurah
@@ -280,16 +278,6 @@ namespace Proto
         /// <summary>Titik pencuplikan bezier untuk mengukur panjang lengkungnya.</summary>
         const int MapArcSamples = 24;
 
-        bool _gambleOpen;
-        float _spinLeft;
-        int _slotOutcome = -1;
-        string _slotResultLine = "";
-        Image _slotBg;
-        TextMeshProUGUI _slotTitle;
-        readonly TextMeshProUGUI[] _slotReels = new TextMeshProUGUI[3];
-        Image _slotSpinBg;
-        TextMeshProUGUI _slotSpinLabel;
-        TextMeshProUGUI _slotInfo;
 
         bool _eventOpen;
         bool _eventDone;
@@ -1352,7 +1340,6 @@ namespace Proto
             _mapOpen = false;
             _shopOpen = false;
             _eventOpen = false;
-            _gambleOpen = false;
 
             // Fanfare kalah SEKALI, di frame pertama kerudung mulai memerah — _overFade
             // masih nol hanya di frame itu (di-nol-kan lagi tiap frame selama masih hidup).
@@ -3019,7 +3006,7 @@ namespace Proto
             // pindah ke mana saja termasuk ke atas deretan tombol kecepatan. Yang terbaca
             // pemain kalau itu terjadi bukan "kecepatan berubah", melainkan barang dagangan
             // yang tidak bisa ditarik.
-            if ((_shopOpen || _eventOpen || _gambleOpen) && PanelRect().Contains(mouse)) return false;
+            if ((_shopOpen || _eventOpen) && PanelRect().Contains(mouse)) return false;
 
             // Deret dari prefab mengurus kliknya sendiri lewat Button UGUI — kotak layar hasil
             // hitungan di bawah ini akan meleset begitu tombolnya dipindah tangan di prefab.
@@ -3132,7 +3119,7 @@ namespace Proto
             //
             // Disembunyikan lewat `enabled`, BUKAN dengan keluar lebih awal: sisa fungsi ini juga
             // yang mendengar SPACE untuk LANJUT, dan toko yang terbuka tidak boleh mematikannya.
-            _bannerText.enabled = !(_shopOpen || _eventOpen || _gambleOpen);
+            _bannerText.enabled = !(_shopOpen || _eventOpen);
 
             if (!Player.Alive)
             {
@@ -3455,49 +3442,6 @@ namespace Proto
                 if (EventOptionRect(0).Contains(mouse)) TakePact(0);
                 else if (EventOptionRect(1).Contains(mouse)) TakePact(1);
                 else if (EventRefuseRect().Contains(mouse)) RefusePact();
-
-                return true;
-            }
-
-            if (_gambleOpen)
-            {
-                if (!PanelRect().Contains(mouse))
-                {
-                    // Klik yang MENUTUP panel tidak ikut ditelan — kecuali tangan sedang
-                    // memegang piece.
-                    //
-                    // Laporan pemilik project: "ui shop masih bloking, kadang gak bisa ditarik".
-                    // Sebabnya di sini: klik pertama di luar panel habis dipakai untuk menutup,
-                    // jadi mengambil piece butuh DUA klik — dan yang pertama tidak memberi tanda
-                    // apa pun bahwa ia sudah terpakai. Yang terbaca pemain bukan "panelnya
-                    // tertutup", melainkan "tarikan saya tidak jalan".
-                    //
-                    // Yang memegang piece tetap ditelan: menjatuhkan barang ke tempat yang baru
-                    // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
-                    // lebih mahal daripada satu klik yang terbuang.
-                    _gambleOpen = false;
-                    _panelCloseFrame = Time.frameCount;
-                    if (Sfx != null) Sfx.UiClose();
-                    return _held != null;
-                }
-
-                if (RerollRect().Contains(mouse) && _spinLeft <= 0f)
-                {
-                    if (_gold < _balance.GambleCost)
-                    {
-                        _slotResultLine = Loc.T("slot.nogold");
-                        return true;
-                    }
-
-                    // Hasil diundi SEKARANG, animasi cuma menunda pengumumannya — gulungan yang
-                    // menentukan hasil di frame berhentinya sendiri tidak bisa dites.
-                    _gold -= _balance.GambleCost;
-                    _slotOutcome = RollGambleOutcome();
-                    _spinLeft = 1.15f;
-
-                    _slotTickStep = 0;
-                    if (Sfx != null) Sfx.SlotSpinStart();
-                }
 
                 return true;
             }
@@ -4007,7 +3951,6 @@ namespace Proto
             run.OnMapChoose = () =>
             {
                 _shopOpen = false;
-                _gambleOpen = false;
                 _eventOpen = false;
 
                 _mapOpen = true;
@@ -4113,7 +4056,6 @@ namespace Proto
         void OnRestEntered(RunNodeKind kind)
         {
             _shopOpen = false;
-            _gambleOpen = false;
             _eventOpen = false;
 
             if (kind == RunNodeKind.Shop)
@@ -4122,13 +4064,6 @@ namespace Proto
                 // hadiah, cuma etalase.
                 RollShop();
                 _shopOpen = true;
-            }
-            else if (kind == RunNodeKind.Gamble)
-            {
-                _gambleOpen = true;
-                _spinLeft = 0f;
-                _slotOutcome = -1;
-                _slotResultLine = "";
             }
             else if (kind == RunNodeKind.Event)
             {
@@ -4163,7 +4098,6 @@ namespace Proto
             {
                 case RunNodeKind.Shop: _rooms.Show(RoomLoader.ShopScene); break;
                 case RunNodeKind.Event: _rooms.Show(RoomLoader.EventScene); break;
-                case RunNodeKind.Gamble: _rooms.Show(RoomLoader.SlotScene); break;
                 default: _rooms.Hide(); break;
             }
         }
@@ -4292,43 +4226,6 @@ namespace Proto
 
             _mapBg.enabled = false;
 
-            // ---- slot ----
-            // Pink neon -> keluarga emas-indigo yang sama dengan HUD dan menu. Mesin judi boleh
-            // genit, tapi genitnya lewat gulungan yang berputar — bukan lewat panel yang
-            // warnanya bukan bagian dari game ini.
-            _slotBg = MakeImage("SlotBg", Vector2.zero, new Vector2(PanelW, PanelH),
-                new Color(0.055f, 0.05f, 0.09f, 0.97f), Vector2.zero);
-            Frame(_slotBg, 1.5f);
-            _slotTitle = MakeTmp("SlotTitle", Vector2.zero, new Vector2(500f, 30f), 22,
-                TextGold, Vector2.zero, TextAlignmentOptions.Center);
-            _slotInfo = MakeTmp("SlotInfo", Vector2.zero, new Vector2(500f, 44f), 15,
-                TextBone, Vector2.zero, TextAlignmentOptions.Center);
-            _slotSpinBg = MakeImage("SlotSpin", Vector2.zero, Vector2.zero,
-                new Color(0.09f, 0.07f, 0.055f, 0.94f), Vector2.zero);
-            Frame(_slotSpinBg, 1.5f);
-            _slotSpinLabel = MakeTmp("SlotSpinLabel", Vector2.zero, new Vector2(240f, 34f), 18,
-                TextGold, Vector2.zero, TextAlignmentOptions.Center);
-
-            Centre(_slotBg.rectTransform);
-            Centre(_slotTitle.rectTransform);
-            Centre(_slotInfo.rectTransform);
-            Centre(_slotSpinBg.rectTransform);
-            Centre(_slotSpinLabel.rectTransform);
-
-            for (int i = 0; i < 3; i++)
-            {
-                _slotReels[i] = MakeTmp("SlotReel" + i, Vector2.zero, new Vector2(120f, 80f), 52,
-                    Color.white, Vector2.zero, TextAlignmentOptions.Center);
-                Centre(_slotReels[i].rectTransform);
-                _slotReels[i].enabled = false;
-            }
-
-            _slotBg.enabled = false;
-            _slotTitle.enabled = false;
-            _slotInfo.enabled = false;
-            _slotSpinBg.enabled = false;
-            _slotSpinLabel.enabled = false;
-
             // ---- kejadian ----
             _eventBg = MakeImage("EventBg", Vector2.zero, new Vector2(PanelW, PanelH),
                 new Color(0.055f, 0.05f, 0.09f, 0.97f), Vector2.zero);
@@ -4410,7 +4307,6 @@ namespace Proto
 
             UpdateMapTransition(dt);
             DrawMapOverlay();
-            DrawGamble(dt);
             DrawEvent();
         }
 
@@ -5090,7 +4986,6 @@ namespace Proto
                 case RunNodeKind.Boss: return 4f;
                 case RunNodeKind.Elite: return 1.7f;
                 case RunNodeKind.Shop: return 1.5f;
-                case RunNodeKind.Gamble: return 1.45f;
                 case RunNodeKind.Event: return 1.35f;
                 default: return 1f;
             }
@@ -5110,7 +5005,6 @@ namespace Proto
                 case RunNodeKind.Elite: return new Color(0.78f, 0.2f, 0.06f);
                 case RunNodeKind.Shop: return new Color(0.52f, 0.36f, 0.05f);
                 case RunNodeKind.Event: return new Color(0.38f, 0.24f, 0.5f);
-                case RunNodeKind.Gamble: return new Color(0.58f, 0.16f, 0.4f);
                 case RunNodeKind.Boss: return new Color(0.5f, 0.05f, 0.05f);
                 default: return new Color(0.58f, 0.14f, 0.1f);
             }
@@ -5131,7 +5025,6 @@ namespace Proto
                 case RunNodeKind.Elite: return _theme.MapIconElite;
                 case RunNodeKind.Shop: return _theme.MapIconShop;
                 case RunNodeKind.Event: return _theme.MapIconEvent;
-                case RunNodeKind.Gamble: return _theme.MapIconGamble;
                 default: return _theme.MapIconFight;
             }
         }
@@ -5246,152 +5139,6 @@ namespace Proto
 
             direction = _arcPoints[MapArcSamples] - _arcPoints[MapArcSamples - 1];
             return _arcPoints[MapArcSamples];
-        }
-
-        static readonly string[] SlotFaces = { "X", "o", "O", "*2", "*3", "*4" };
-
-        void DrawGamble(float dt)
-        {
-            bool open = _gambleOpen && _run != null;
-            if (_slotBg == null) return;
-
-            _slotBg.enabled = open;
-            _slotTitle.enabled = open;
-            _slotInfo.enabled = open;
-            _slotSpinBg.enabled = open;
-            _slotSpinLabel.enabled = open;
-            for (int i = 0; i < 3; i++) _slotReels[i].enabled = open;
-
-            if (!open) return;
-
-            var panel = PanelRect();
-            _slotBg.rectTransform.anchoredPosition = panel.center;
-
-            // Ukuran ikut kotak panel yang berlaku — kotak itu boleh milik prefab ShopRig, dan
-            // latar seukuran konstanta di bawah kotak tataan tangan meninggalkan isi yang
-            // menggantung di luar panelnya.
-            _slotBg.rectTransform.sizeDelta = panel.size;
-            _slotTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
-            _slotTitle.text = Loc.F("slot.title", _balance.GambleCost);
-
-            for (int i = 0; i < 3; i++)
-            {
-                _slotReels[i].rectTransform.anchoredPosition =
-                    new Vector2(panel.center.x + (i - 1) * 130f, panel.center.y + 24f);
-            }
-
-            var spin = RerollRect();
-            _slotSpinBg.rectTransform.anchoredPosition = spin.center;
-            _slotSpinBg.rectTransform.sizeDelta = spin.size;
-            _slotSpinLabel.rectTransform.anchoredPosition = spin.center;
-            _slotSpinLabel.text = Loc.T(_spinLeft > 0f ? "slot.spinning" : "slot.spin");
-
-            // Digantung dari ATAS tombol putar, bukan dari dasar panel: kotak reroll milik
-            // prefab boleh duduk lebih tinggi, dan y tetap dari dasar membuat baris "koin:"
-            // mendarat persis di atas tombolnya.
-            _slotInfo.rectTransform.anchoredPosition = new Vector2(panel.center.x, spin.yMax + 36f);
-            _slotInfo.text = Loc.F("slot.info", _slotResultLine, _gold);
-
-            if (_spinLeft > 0f)
-            {
-                _spinLeft -= dt;
-
-                // Gulungan mengocok wajah dari WAKTU, bukan dari Random gameplay — kocokan visual
-                // enam puluh kali sedetik menggeser seluruh sebaran drop tanpa satu pun error.
-                for (int i = 0; i < 3; i++)
-                {
-                    int face = (int)(Time.unscaledTime * 21f + i * 7.3f) % SlotFaces.Length;
-                    _slotReels[i].text = SlotFaces[face];
-                }
-
-                // Ckring kecil tiap ~90 ms selama berputar, nadanya merangkak naik — "serrr
-                // ckring ckring" ala mesin sungguhan, bukan gulungan bisu.
-                if (Time.unscaledTime >= _slotTickAt)
-                {
-                    _slotTickAt = Time.unscaledTime + 0.09f;
-                    if (Sfx != null) Sfx.SlotTick(_slotTickStep++);
-                }
-
-                if (_spinLeft <= 0f) SettleGamble();
-            }
-        }
-
-        int RollGambleOutcome()
-        {
-            var weights = _balance.GambleWeights;
-            if (weights == null || weights.Length == 0) return 0;
-
-            float total = 0f;
-            for (int i = 0; i < weights.Length; i++) total += Mathf.Max(0f, weights[i]);
-            if (total <= 0f) return 0;
-
-            float roll = Random.value * total;
-
-            for (int i = 0; i < weights.Length; i++)
-            {
-                roll -= Mathf.Max(0f, weights[i]);
-                if (roll <= 0f) return i;
-            }
-
-            return 0;
-        }
-
-        void SettleGamble()
-        {
-            _spinLeft = 0f;
-
-            int outcome = _slotOutcome;
-            _slotOutcome = -1;
-            if (outcome < 0) return;
-
-            bool win = outcome != 0;
-
-            for (int i = 0; i < 3; i++)
-            {
-                _slotReels[i].text = win ? SlotFaces[outcome] : SlotFaces[(i * 2 + 1) % 3];
-            }
-
-            switch (outcome)
-            {
-                case 1:
-                    _gold += _balance.GambleSmallGold;
-                    _slotResultLine = Loc.F("slot.win.small", _balance.GambleSmallGold);
-                    if (Sfx != null) Sfx.CoinCascade(4);
-                    break;
-
-                case 2:
-                    _gold += _balance.GambleBigGold;
-                    _slotResultLine = Loc.F("slot.win.big", _balance.GambleBigGold);
-                    if (Sfx != null) Sfx.CoinCascade(8);
-                    Flash(0.3f);
-                    break;
-
-                case 3:
-                case 4:
-                case 5:
-                    var prize = _db.RandomOfStar(outcome - 1, 0.25f);
-
-                    if (prize != null)
-                    {
-                        AddLoose(prize, NearScatterPos(PanelRect().center, 1));
-                        Discover(prize);
-                        _slotResultLine = Loc.F("slot.jackpot", PieceName(prize));
-
-                        // JACKPOT: lonceng + tumpahan koin + kilat emas. Ini satu-satunya
-                        // tempat di game yang boleh norak — mesin judi memang harus norak.
-                        if (Sfx != null) Sfx.JackpotBlast();
-                        Flash(0.55f);
-                    }
-
-                    break;
-
-                default:
-                    _slotResultLine = "zonk.";
-                    break;
-            }
-
-            Announce(_slotResultLine,
-                win ? new Color(1f, 0.84f, 0.32f) : new Color(0.7f, 0.7f, 0.75f));
         }
 
         /// <summary>

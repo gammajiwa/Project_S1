@@ -328,7 +328,7 @@ namespace Proto
         [Range(0f, 1f)] public float MapShopChance = 0.12f;
 
         [Tooltip("KEJADIAN — node tanda tanya, tempat pemain memilih pakta (modifier dunia).\n\n" +
-                 "Angkanya MEWARISI jatah node SLOT yang diparkir. Waktu slot diturunkan ke nol, " +
+                 "Angkanya MEWARISI jatah node SLOT yang sudah DICABUT. Waktu slot diturunkan ke nol, " +
                  "delapan persen itu tidak diberikan ke siapa pun: seluruhnya jatuh ke " +
                  "pertarungan biasa, yang naik dari 68% ke 75% seluruh peta. Kejadian sendiri " +
                  "tinggal 5% — kira-kira SATU node di seluruh layar peta — dan yang terbaca " +
@@ -336,12 +336,6 @@ namespace Proto
                  "dibuang'. Membuang satu jenis node tanpa memindahkan jatahnya membuat peta " +
                  "lebih monoton, bukan lebih ringkas.")]
         [Range(0f, 1f)] public float MapEventChance = 0.15f;
-
-        [Tooltip("NOL di aset untuk rilis ini — node SLOT diparkir buat update berikutnya, " +
-                 "kode & panelnya utuh. Menaikkan angka ini yang menghidupkannya kembali — " +
-                 "dan kalau itu terjadi, turunkan MapEventChance kembali ke 0,07 supaya " +
-                 "kepadatan node istimewa tidak berubah dua kali.")]
-        [Range(0f, 1f)] public float MapGambleChance = 0f;
 
         [Tooltip("Elite baru boleh muncul dari lantai ini. Elite di lantai awal bukan " +
                  "pilihan melainkan tembok.\n\n" +
@@ -394,17 +388,6 @@ namespace Proto
 
         [Tooltip("Pengali agresi boss puncak: jeda serangannya dibagi angka ini.")]
         public float BossNodeAggroMul = 1.6f;
-
-        [Header("Judi (slot)")]
-        public int GambleCost = 40;
-
-        [Tooltip("Bobot hasil slot, urutannya: kosong / koin kecil / koin besar / " +
-                 "piece ★2 / piece ★3 / piece ★4. Dinormalkan sendiri.")]
-        public float[] GambleWeights = { 30f, 25f, 15f, 18f, 9f, 3f };
-
-        public int GambleSmallGold = 25;
-
-        public int GambleBigGold = 90;
 
         [Header("Kejadian")]
         [Tooltip("Koin dari pilihan aman kejadian.")]

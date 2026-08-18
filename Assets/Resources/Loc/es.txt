@@ -460,14 +460,7 @@ shop.sold=(vendido)
 shop.title=TIENDA   —   {0} monedas
 
 # ---------------- slot ----------------
-slot.info={0}\nmonedas: {1}
-slot.jackpot=¡PREMIO: {0}!
 slot.nogold=monedas insuficientes
-slot.spin=¡GIRAR!
-slot.spinning=. . .
-slot.title=TRAGAPERRAS — {0} MONEDAS POR GIRO
-slot.win.big=¡+{0} MONEDAS!
-slot.win.small=+{0} monedas
 
 # ---------------- spell ----------------
 spell.dmg= daño

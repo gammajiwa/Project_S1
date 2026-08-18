@@ -460,14 +460,7 @@ shop.sold=(куплено)
 shop.title=ЛАВКА   —   {0} монет
 
 # ---------------- slot ----------------
-slot.info={0}\nмонет: {1}
-slot.jackpot=ДЖЕКПОТ: {0}!
 slot.nogold=не хватает монет
-slot.spin=КРУТИТЬ!
-slot.spinning=. . .
-slot.title=ИГРОВОЙ АВТОМАТ — {0} МОНЕТ ЗА СПИН
-slot.win.big=+{0} МОНЕТ!
-slot.win.small=+{0} монет
 
 # ---------------- spell ----------------
 spell.dmg= урон

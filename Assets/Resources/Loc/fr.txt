@@ -460,14 +460,7 @@ shop.sold=(vendu)
 shop.title=BOUTIQUE   —   {0} pièces
 
 # ---------------- slot ----------------
-slot.info={0}\npièces : {1}
-slot.jackpot=JACKPOT : {0} !
 slot.nogold=pièces insuffisantes
-slot.spin=LANCER !
-slot.spinning=. . .
-slot.title=MACHINE À SOUS — {0} PIÈCES PAR TOUR
-slot.win.big=+{0} PIÈCES !
-slot.win.small=+{0} pièces
 
 # ---------------- spell ----------------
 spell.dmg= dgt

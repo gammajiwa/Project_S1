@@ -461,14 +461,7 @@ shop.sold=(kebeli)
 shop.title=TOKO   —   {0} koin
 
 # ---------------- slot ----------------
-slot.info={0}\nkoin: {1}
-slot.jackpot=JACKPOT: {0}!
 slot.nogold=koin kurang
-slot.spin=PUTAR!
-slot.spinning=. . .
-slot.title=MESIN SLOT — {0} KOIN SEKALI PUTAR
-slot.win.big=+{0} KOIN!
-slot.win.small=+{0} koin
 
 # ---------------- spell ----------------
 spell.dmg= dmg

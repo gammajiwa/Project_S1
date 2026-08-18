@@ -314,19 +314,6 @@ namespace Proto
 
         // ---- hadiah: bunyi yang membuat orang menekan tombolnya sekali lagi ----
 
-        public void SlotSpinStart() =>
-            PlayClip(Theme != null ? Theme.SlotSpin : null, 0.7f, 1f, 1);
-
-        /// <summary>Ckring kecil per langkah gulungan; nadanya merangkak naik.</summary>
-        public void SlotTick(int step)
-        {
-            var pool = Theme != null ? Theme.CoinTick : null;
-            if (pool == null || pool.Length == 0) return;
-
-            PlayClip(pool[Random.Range(0, pool.Length)], 0.4f,
-                1f + Mathf.Min(step, 12) * 0.02f, 0);
-        }
-
         /// <summary>
         /// Hujan ckring beruntun dengan nada MENANJAK. Menanjaknya yang bikin candu:
         /// telinga membaca deretan naik sebagai hadiah yang masih bertambah.

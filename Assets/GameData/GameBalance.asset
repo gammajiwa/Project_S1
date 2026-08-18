@@ -94,7 +94,6 @@ MonoBehaviour:
   MapEliteChance: 0.15
   MapShopChance: 0.1
   MapEventChance: 0.15
-  MapGambleChance: 0
   MapEliteMinFloor: 5
   MapOpensRun: 1
   MapFadeClose: 1.1
@@ -107,16 +106,6 @@ MonoBehaviour:
   BossNodeCount: 2
   BossNodeHpMul: 2.5
   BossNodeAggroMul: 1.6
-  GambleCost: 40
-  GambleWeights:
-  - 30
-  - 25
-  - 15
-  - 18
-  - 9
-  - 3
-  GambleSmallGold: 25
-  GambleBigGold: 90
   EventGoldGift: 80
   EventTradeCost: 45
   PriceRune: 20

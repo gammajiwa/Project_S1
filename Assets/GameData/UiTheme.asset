@@ -71,7 +71,6 @@ MonoBehaviour:
   MapIconElite: {fileID: 1049054341, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
   MapIconShop: {fileID: 1735424675, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
   MapIconEvent: {fileID: -259064076, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
-  MapIconGamble: {fileID: 1088061637, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
   MapIconBoss: {fileID: -1445156730, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
   MapIconYou: {fileID: -773895012, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
   EvoBoltMaterial: {fileID: 2100000, guid: e16998999fca6394a80799ef723566a0, type: 2}

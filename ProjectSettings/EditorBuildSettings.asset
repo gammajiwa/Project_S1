@@ -17,9 +17,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Room_Event.unity
     guid: 714b061a363c5d64d801cc141683d541
-  - enabled: 1
-    path: Assets/Scenes/Room_Slot.unity
-    guid: f28e8a70159792d4087b97308c9fa1aa
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

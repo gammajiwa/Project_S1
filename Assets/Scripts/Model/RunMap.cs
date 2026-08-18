@@ -8,7 +8,6 @@ namespace Proto
         Elite,
         Shop,
         Event,
-        Gamble,
         Boss
     }
 
@@ -27,7 +26,7 @@ namespace Proto
     /// <summary>
     /// Peta run ala Slay the Spire: lantai-lantai bercabang dari bawah ke atas, boss di puncak.
     /// Pemain tidak lagi disodori "wave berikutnya" — ia MEMILIH portal, dan pilihan itulah
-    /// yang menentukan isi wave: pertarungan biasa, elite, toko, kejadian, judi, atau boss.
+    /// yang menentukan isi wave: pertarungan biasa, elite, toko, kejadian, atau boss.
     ///
     /// Murni model — tidak tahu apa-apa soal UI maupun EnemyManager. Yang menghubungkannya ke
     /// keduanya adalah pemanggilnya, supaya peta bisa diuji tanpa satu pun scene.
@@ -51,7 +50,7 @@ namespace Proto
         /// <paramref name="eliteMinFloor"/> — elite di lantai satu adalah tembok, bukan pilihan.
         /// </summary>
         public static RunMap Generate(int act, int floors, int lanes, int seed,
-            float eliteChance, float shopChance, float eventChance, float gambleChance,
+            float eliteChance, float shopChance, float eventChance,
             int eliteMinFloor)
         {
             var map = new RunMap { Floors = floors, Lanes = lanes, Act = act };
@@ -152,8 +151,6 @@ namespace Proto
                 if (node.Floor >= eliteMinFloor && roll < eliteChance) kind = RunNodeKind.Elite;
                 else if (roll < eliteChance + shopChance) kind = RunNodeKind.Shop;
                 else if (roll < eliteChance + shopChance + eventChance) kind = RunNodeKind.Event;
-                else if (roll < eliteChance + shopChance + eventChance + gambleChance)
-                    kind = RunNodeKind.Gamble;
                 else kind = RunNodeKind.Fight;
 
                 node.Kind = kind;

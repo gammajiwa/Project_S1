@@ -330,7 +330,6 @@ namespace Proto
         public Sprite MapIconElite;
         public Sprite MapIconShop;
         public Sprite MapIconEvent;
-        public Sprite MapIconGamble;
         public Sprite MapIconBoss;
 
         [Tooltip("Token pemain di peta. Kosong = bulatan polos seperti sebelumnya.")]

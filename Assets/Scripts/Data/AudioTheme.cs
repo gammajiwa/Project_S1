@@ -52,7 +52,7 @@ namespace Proto
         public AudioClip MenuLoop;
         public AudioClip CombatLoop;
 
-        [Tooltip("Selama singgah di pulau rehat: toko, kejadian, slot.")]
+        [Tooltip("Selama singgah di pulau rehat: toko dan kejadian.")]
         public AudioClip ShopLoop;
 
         [Header("Musik (stinger — sekali bunyi di atas loop)")]
@@ -138,15 +138,12 @@ namespace Proto
 
         // ------------------------------------------------------------------ hadiah
 
-        [Header("Hadiah & mesin slot")]
+        [Header("Hadiah")]
         [Tooltip("Lapisan gemerincing TIPIS di atas PiecePlace — kepuasan kecil tiap menaruh, " +
                  "itu yang membuat menata papan terasa seperti memasukkan koin ke celengan.")]
         public AudioClip PlaceSweetener;
 
-        [Tooltip("Serrr mekanis saat gulungan slot mulai berputar.")]
-        public AudioClip SlotSpin;
-
-        [Tooltip("Ckring pendek — dirotasi acak untuk detak gulungan dan hujan koin kemenangan.")]
+        [Tooltip("Ckring pendek — dirotasi acak untuk hujan koin kemenangan.")]
         public AudioClip[] CoinTick;
 
         [Tooltip("Tumpahan koin sekaligus, menang besar.")]

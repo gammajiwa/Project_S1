@@ -100,7 +100,6 @@ MonoBehaviour:
   Click: {fileID: 8300000, guid: 0ff4c2c11b17b490dae85965a94f6238, type: 3}
   PanelClose: {fileID: 8300000, guid: e396893fb086372419348fbc5029853e, type: 3}
   PlaceSweetener: {fileID: 8300000, guid: 5ccab251d7b10e140ba4c32752783225, type: 3}
-  SlotSpin: {fileID: 8300000, guid: a4f5a6a7f4a80464f9f43a140c56031b, type: 3}
   CoinTick:
   - {fileID: 8300000, guid: 7d2e42f2c483fc4488a9f22329b86907, type: 3}
   - {fileID: 8300000, guid: 1307037645c6aac4b9203930912ef741, type: 3}

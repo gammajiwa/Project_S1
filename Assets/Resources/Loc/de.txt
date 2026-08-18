@@ -460,14 +460,7 @@ shop.sold=(verkauft)
 shop.title=LADEN   —   {0} Münzen
 
 # ---------------- slot ----------------
-slot.info={0}\nMünzen: {1}
-slot.jackpot=JACKPOT: {0}!
 slot.nogold=nicht genug Münzen
-slot.spin=DREHEN!
-slot.spinning=. . .
-slot.title=SPIELAUTOMAT — {0} MÜNZEN PRO DREHUNG
-slot.win.big=+{0} MÜNZEN!
-slot.win.small=+{0} Münzen
 
 # ---------------- spell ----------------
 spell.dmg= Sch

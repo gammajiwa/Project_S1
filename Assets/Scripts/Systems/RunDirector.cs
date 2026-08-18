@@ -153,7 +153,7 @@ namespace Proto
         {
             return RunMap.Generate(Act, _balance.MapFloorsPerAct, _balance.MapLanes, _dice.Next(),
                 _balance.MapEliteChance, _balance.MapShopChance, _balance.MapEventChance,
-                _balance.MapGambleChance, _balance.MapEliteMinFloor);
+                _balance.MapEliteMinFloor);
         }
 
         void OnWaveCleared()
@@ -321,7 +321,6 @@ namespace Proto
                 case RunNodeKind.Elite: return new Color(1f, 0.42f, 0.25f);
                 case RunNodeKind.Shop: return new Color(1f, 0.84f, 0.32f);
                 case RunNodeKind.Event: return new Color(0.75f, 0.5f, 1f);
-                case RunNodeKind.Gamble: return new Color(1f, 0.45f, 0.85f);
                 case RunNodeKind.Boss: return new Color(1f, 0.2f, 0.2f);
                 default: return new Color(0.45f, 0.9f, 1f);
             }
@@ -334,7 +333,6 @@ namespace Proto
                 case RunNodeKind.Elite: return "ELITE";
                 case RunNodeKind.Shop: return "TOKO";
                 case RunNodeKind.Event: return "???";
-                case RunNodeKind.Gamble: return "SLOT";
                 case RunNodeKind.Boss: return "BOSS";
                 default: return "WAVE";
             }
@@ -434,8 +432,7 @@ namespace Proto
             hostLabelGo.transform.rotation = Quaternion.Euler(68f, 0f, 0f);
 
             var hostLabel = hostLabelGo.AddComponent<TextMesh>();
-            hostLabel.text = kind == RunNodeKind.Shop ? "PEDAGANG"
-                : kind == RunNodeKind.Gamble ? "BANDAR" : "PERTAPA";
+            hostLabel.text = kind == RunNodeKind.Shop ? "PEDAGANG" : "PERTAPA";
             hostLabel.font = _font;
             hostLabel.fontSize = 40;
             hostLabel.characterSize = 0.05f;

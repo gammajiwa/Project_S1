@@ -461,14 +461,7 @@ shop.sold=(sold)
 shop.title=SHOP   —   {0} coins
 
 # ---------------- slot ----------------
-slot.info={0}\ncoins: {1}
-slot.jackpot=JACKPOT: {0}!
 slot.nogold=not enough coins
-slot.spin=SPIN!
-slot.spinning=. . .
-slot.title=SLOT MACHINE — {0} COINS PER SPIN
-slot.win.big=+{0} COINS!
-slot.win.small=+{0} coins
 
 # ---------------- spell ----------------
 spell.dmg= dmg
