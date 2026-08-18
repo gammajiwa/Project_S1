@@ -386,6 +386,10 @@ piece.wintersend.blurb=EVOLVED. An eight-metre crater of ice, dropped where it h
 piece.wintersend.name=Winter's End
 
 # ---------------- settings ----------------
+settings.detail.high=HIGH
+settings.detail.low=LOW
+settings.detail.medium=MEDIUM
+settings.detail.ultra=ULTRA
 settings.framecap.unlimited=UNLIMITED
 settings.framecap.value={0} FPS
 settings.fullscreen.off=WINDOWED
@@ -401,6 +405,7 @@ settings.reset.hint=takes two clicks
 settings.reset.idle=CLEAR CODEX
 settings.resolution.value={0} x {1}
 settings.row.damagetext=Damage numbers
+settings.row.detail=Graphics detail
 settings.row.enemyshadows=Enemy shadows
 settings.row.framecap=FPS cap
 settings.row.language=Language

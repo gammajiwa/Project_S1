@@ -44,8 +44,16 @@ namespace Proto
         [SerializeField] Slider _musicSlider;
         [SerializeField] TextMeshProUGUI _musicValue;
 
-        // Tiga baris performa. Stepper dua tombol seperti baris lain — bukan checkbox — supaya
+        // Baris performa. Stepper dua tombol seperti baris lain — bukan checkbox — supaya
         // seluruh panel terbaca dengan satu kebiasaan.
+
+        // Baris PERTAMA di halaman performa, dan itu disengaja: ia satu-satunya yang benar-benar
+        // memindahkan frame rate. Tiga baris di bawahnya mematikan hal-hal yang mahalnya kecil.
+        [Header("Detail grafis")]
+        [SerializeField] Button _detailPrev;
+        [SerializeField] Button _detailNext;
+        [SerializeField] TextMeshProUGUI _detailValue;
+
         [Header("Teks damage")]
         [SerializeField] Button _damageTextPrev;
         [SerializeField] Button _damageTextNext;
@@ -101,6 +109,8 @@ namespace Proto
             Wire(_vsyncNext, () => ToggleVSync());
             Wire(_frameCapPrev, () => StepFrameCap(-1));
             Wire(_frameCapNext, () => StepFrameCap(1));
+            Wire(_detailPrev, () => StepDetail(-1));
+            Wire(_detailNext, () => StepDetail(1));
             Wire(_damageTextPrev, () => ToggleDamageText());
             Wire(_damageTextNext, () => ToggleDamageText());
             Wire(_enemyShadowsPrev, () => ToggleEnemyShadows());
@@ -138,6 +148,7 @@ namespace Proto
             // lebih panjang daripada "UNLIMITED", dan kotaknya lebarnya tetap.
             Fit(_languageValue); Fit(_fullscreenValue); Fit(_resolutionValue);
             Fit(_vsyncValue); Fit(_frameCapValue);
+            Fit(_detailValue);
             Fit(_damageTextValue); Fit(_enemyShadowsValue); Fit(_weatherVfxValue);
             Fit(_resetLabel); Fit(_resetHint); Fit(_note);
 
@@ -199,8 +210,28 @@ namespace Proto
             ApplyAndRedraw();
         }
 
+        /// <summary>
+        /// Naik-turun satu tingkat detail. <b>DIJEPIT, bukan melingkar</b> — beda dari baris
+        /// stepper lain di panel ini, dan bedanya disengaja.
+        ///
+        /// Resolusi dan batas FPS itu daftar melingkar: tidak ada "paling atas" di sana. Detail
+        /// grafis adalah tangga berurutan, dan ujungnya berarti sesuatu. Kalau ia melingkar, satu
+        /// klik "&lt;" dari RENDAH mendarat di ULTRA — lompatan terbesar yang mungkin, ke arah yang
+        /// berlawanan dari yang dimaui, dilakukan oleh orang yang menekan tombol itu justru karena
+        /// mesinnya tidak kuat.
+        /// </summary>
+        void StepDetail(int direction)
+        {
+            int next = GraphicsDetail.Clamp(_settings.GraphicsDetailLevel + direction);
+            if (next == _settings.GraphicsDetailLevel) return;
+
+            _settings.GraphicsDetailLevel = next;
+            ApplyAndRedraw();
+        }
+
         // Ketiganya dibaca scene game saat lahir, bukan dipantau — jadi mengubahnya di sini
         // baru terasa di run BERIKUTNYA. Catatan di bawah panel yang memberi tahu itu.
+        // (Detail grafis di atas TIDAK termasuk: ia berlaku seketika.)
 
         void ToggleDamageText()
         {
@@ -325,6 +356,14 @@ namespace Proto
             SetPercent(_masterValue, _settings.MasterVolume);
             SetPercent(_sfxValue, _settings.SfxVolume);
             SetPercent(_musicValue, _settings.MusicVolume);
+
+            SetText(_detailValue, GraphicsDetail.Label(_settings.GraphicsDetailLevel));
+
+            // Ujung tangga diredupkan, sama seperti baris batas FPS meredup saat VSync memegang
+            // kendali: tombol yang tidak melakukan apa-apa harus terlihat begitu, bukan menunggu
+            // ditekan dulu baru ketahuan.
+            if (_detailPrev != null) _detailPrev.interactable = _settings.GraphicsDetailLevel > 0;
+            if (_detailNext != null) _detailNext.interactable = _settings.GraphicsDetailLevel < GraphicsDetail.Count - 1;
 
             SetText(_damageTextValue, _settings.DamageText ? "HIDUP" : "MATI");
             SetText(_enemyShadowsValue, _settings.EnemyShadows ? "HIDUP" : "MATI");

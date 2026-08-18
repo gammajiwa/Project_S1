@@ -1050,6 +1050,9 @@ namespace Proto
                     }
                 }
 
+                // Pangkal sapuan dicatat SEBELUM dipindah. Rudal belok tiap frame, jadi menghitung
+                // mundur dari arah yang baru akan menyapu ruas yang tidak pernah dilaluinya.
+                Vector3 from = m.T.position;
                 m.T.position += m.Dir * (m.Speed * dt);
 
                 if (m.Vfx != null)
@@ -1058,7 +1061,9 @@ namespace Proto
                     if (m.Dir.sqrMagnitude > 0.0001f) m.Vfx.rotation = Quaternion.LookRotation(m.Dir);
                 }
 
-                var hit = _enemies.NearestExcluding(m.T.position, 0.8f, null);
+                // Disapu sepanjang ruas dengan ukuran badan musuh yang sebenarnya, bukan diintip
+                // di titik akhir dengan satu angka datar. Lihat EnemyManager.FirstAlongSegment.
+                var hit = _enemies.FirstAlongSegment(from, m.T.position, HomingRadius, null);
                 if (hit == null) continue;
 
                 _enemies.Damage(hit, m.Damage, m.Status, m.StatusDuration, m.Points, true,

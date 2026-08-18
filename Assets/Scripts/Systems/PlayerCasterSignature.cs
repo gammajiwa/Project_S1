@@ -616,10 +616,12 @@ namespace Proto
                     continue;
                 }
 
+                // Pangkal sapuan dicatat sebelum dipindah — sama seperti peluru dan rudal.
+                Vector3 from = o.T.position;
                 o.T.position += o.Dir * (o.Speed * dt);
                 if (o.Vfx != null) o.Vfx.position = o.T.position;
 
-                var hit = _enemies.NearestExcluding(o.T.position, 0.8f, null);
+                var hit = _enemies.FirstAlongSegment(from, o.T.position, HomingRadius, null);
                 if (hit == null) continue;
 
                 _enemies.Damage(hit, o.Damage, o.Status, o.StatusDuration, o.Points, true,

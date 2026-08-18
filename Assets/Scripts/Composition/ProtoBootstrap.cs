@@ -311,11 +311,16 @@ namespace Proto
             var run = new GameObject("RunDirector").AddComponent<RunDirector>();
             run.transform.SetParent(transform, false);
             run.Theme = _uiTheme;
+
             run.Init(enemies, motor, arenaCam, cam, _balance, _database, playerGo.transform, _rig,
                 gloom, dresser, _restBiome);
             // Ruangan singgah dipramuat SEKARANG, di awal run - bukan saat nodenya diinjak.
             // Memuat scene tepat saat pemain menekan node berarti membayar jeda di detik yang
-            // paling tidak sabar; ketiganya kecil, dan memori yang dibayar untuk itu murah.
+            // paling tidak sabar; keduanya kecil, dan memori yang dibayar untuk itu murah.
+            //
+            // Sempat dicabut karena disangka membebani pertarungan, lalu dipasang lagi setelah
+            // diukur: root yang dimatikan tidak digambar sama sekali. Yang membuat game berat ada
+            // di tempat lain sepenuhnya - resolusi render, bukan isi scene. Lihat RoomLoader.
             var rooms = new GameObject("Rooms").AddComponent<RoomLoader>();
             rooms.transform.SetParent(transform, false);
             rooms.Init(cam);

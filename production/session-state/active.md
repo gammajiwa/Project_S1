@@ -3357,3 +3357,446 @@ storage LFS. Commit blend 620 MB aman secara history.
   mati kliknya; icon besar menutupi titik tengah tetangganya; dan loopnya ambil node
   **pertama di urutan `reachable`, bukan yang terdekat**. Keluarga yang sama dengan bug
   rect StartButton (Ronde 10e) dan hover bola vitals (Ronde 10d).
+
+**Ronde 12 (2026-08-18, "game gw jadi berat banget" + "nembak gak kena musuh dekat"):**
+
+*Diukur dari Stats play mode user:* 24,1 fps (41,5 ms), Tris **6,3 juta**, Verts 14,8 juta,
+Batches 132, SetPass 100, shadow casters 17, layar 4K UHD, "Visible skinned meshes: 1" —
+padahal yang di layar cuma peta kertas. GPU skinning ON (`gpuSkinning: 1`), jadi bukan
+skinning CPU; yang berat murni jumlah tris + shadow pass di 4K.
+
+- **AKAR BERAT = SCULPT MENTAH DIEKSPOR KE GAME, dan LOW-POLY-NYA SUDAH ADA TAPI TIDAK
+  DIPAKAI.** Empat mesh (diukur dari AssetDatabase + pembacaan .blend headless):
+
+  | Mesh | Tris | FBX | Low-poly? |
+  |---|---|---|---|
+  | `Penjual_HP` (skinned) | 3.093.418 | 146 MB | **ADA** — objek `Penjual` 45.000 tris, ber-rig, UV lengkap, di `altar_event.blend` |
+  | `GrimoireBook_HP` | 3.105.628 | 113 MB | **ADA** — `GrimoireBook_LP` 12.448 tris di `GrimoireBook.fbx` (806 KB) |
+  | `Altar` | 1.401.434 | 87 MB | tidak ada, perlu decimate |
+  | `Book` | 578.403 | ↑ | tidak ada, perlu decimate |
+
+  Tiap HP sudah punya UV0 + basecolor 2048 + **normal map 2048 yang sudah di-bake**
+  (`altar_normal`/`book_normal`/`penjual_normal`). Jadi bake-nya memang sudah pernah
+  dikerjakan; yang salah cuma mesh yang diekspor ikut versi high-poly.
+
+- **SELESAI & TERUKUR: GrimoireBook di MainMenu.** `MenuBackdrop.prefab` → objek
+  `L1c_Book/GrimoireBookNew` ditukar mesh-nya `GrimoireBook_HP` → `GrimoireBook_LP` lewat
+  `PrefabUtility.LoadPrefabContents`/`SaveAsPrefabAsset`. **HANYA properti mesh** — material
+  `M_GrimoireBook`, localScale (0,09), posisi (0,0,0) tidak disentuh; bounds LP (1,44 ×
+  1,84 × 0,42) vs HP (1,44 × 1,83 × 0,42) jadi ukurannya identik. TERUKUR di scene hidup:
+  MainMenu **3.106.804 → 13.624 tris (turun 249×)**.
+  Catatan: di `L1c_Book` ada mesh KEDUA, `CHAR_Grimoire` 9.502 tris dari
+  `SM_Grimoire.fbx` (skala 44,2) — buku lama, dibiarkan, bukan wewenangku mencabut.
+
+- **BELUM SELESAI: Penjual + Altar/Book.** Ekspor headless dari `altar_event.blend` lewat
+  `D:\App\blender.exe -b --factory-startup --python` (Blender TIDAK sedang jalan, jadi sesi
+  interaktif user tidak terganggu; blend **tidak pernah disimpan**, decimate cuma hidup di
+  memori proses). Percobaan pertama GAGAL DIAM-DIAM: `Penjual_LP.fbx` 114 KB isinya cuma
+  klip animasi, `AltarEvent_LP.fbx` 4,1 KB — `export_fbx(use_selection=True)` menemukan nol
+  mesh karena `select_set` tidak berefek. Percobaan kedua memaksa objek masuk view layer +
+  unhide + verifikasi `select_get()` sebelum ekspor, dan **script menulis lognya sendiri**
+  (stdout Blender ditelan pembungkus PowerShell, jadi kegagalan pertama tidak kelihatan).
+
+- **PATOKAN SKALA yang WAJIB dicek sebelum menukar Penjual**: prefab
+  `Penjual.prefab` punya `localScale = (100, 100, 100)` dengan bounds mesh HP
+  `(0.01536, 0.00835, 0.01904)` — FBX lama diekspor pada skala ~1/100 dan dikompensasi di
+  prefab. Kalau FBX baru beda konvensi skala, Penjual jadi raksasa. Bandingkan bounds dulu,
+  koreksi lewat `ModelImporter.globalScale`, JANGAN ubah localScale prefab.
+  Urutan 16 tulang prefab: Root, Jubah, Pinggul, Tulang1, Dada, Leher, Kepala, Ransel,
+  Bahu.L, Lengan.L, Siku.L, Tangan.L, Bahu.R, Lengan.R, Siku.R, Tangan.R (rootBone=Root).
+  **Menukar `sharedMesh` saja TIDAK cukup kalau urutan tulang FBX baru berbeda** — bindpose
+  ikut mesh, array `bones` ikut renderer; harus dicocokkan per nama.
+
+- **BUG KLIK PETA (Ronde 11) SUDAH DIPERBAIKI** — `MapNodeSize()` jadi satu sumber untuk
+  yang menggambar dan yang menguji klik, dan pemenangnya node dengan `jarak / radiusnya
+  sendiri` terkecil (bukan yang pertama di urutan `reachable`). Belum di-commit.
+
+- **BUG TEMBAKAN — DUA AKAR, KEDUANYA DIPERBAIKI & TERVERIFIKASI DI ASSEMBLY BARU:**
+  1. *Peluru melompati musuh.* `TickProjectiles` memindahkan peluru satu langkah lalu uji
+     TITIK di posisi akhir. Kecepatan 16 u/s: di 60 fps langkah 0,27 (radius 0,75 menutupi),
+     tapi **di 24 fps langkah 0,66** — satu frame tersendat dan peluru menyeberangi musuh
+     tanpa pernah diuji. Jadi beratnya game IKUT MENYEBABKAN tembakan meleset.
+     Fix: `EnemyManager.FirstAlongSegment(from, to, probeRadius, skip)` — sapuan kapsul
+     sepanjang ruas, `along` dijepit ke `[0, panjang]` jadi TUTUP PANGKAL ikut menguji
+     (musuh yang menempel di badan pemain kena di frame pertama). `Projectile.Prev` menyimpan
+     pangkal sapuan; disimpan terpisah karena pantulan mengubah `Dir` di tengah frame.
+  2. *Ukuran musuh tidak pernah dipakai menguji kena.* `e.Scale` cuma dipakai MENGGAMBAR
+     (`_renderers[].Add`) dan menaruh HP bar. Semua uji kena memakai angka datar yang
+     dikarang di pemanggil — peluru 0,75 untuk SEMUA musuh. **Keluarga bug ketiga** setelah
+     rect StartButton (10e) dan hover bola vitals (10d).
+     Fix: `EnemyManager.BodyRadius = 0.45` + `HitRadius(e) = BodyRadius × e.Scale` sebagai
+     SATU sumber; radius uji = `probeRadius + HitRadius(e)`. `PlayerCaster.ProjectileRadius`
+     = 0,3 → grunt 0,3+0,45 = **0,75 persis seperti dulu** (rasa tidak berubah), stalker
+     0,64 · spitter 0,80 · cursed 0,95 · kepala boss ikut `HeadScale`.
+  3. `PlayerCaster.MuzzleOffset` = 0,85 — peluru DIGAMBAR lahir di luar badan (PlayerScale
+     0,9 → radius ±0,45). **Uji kenanya tetap disapu dari pusat**, jadi menggeser moncong
+     tidak bikin musuh yang menempel jadi kebal. Saat kena, peluru dipindah ke posisi musuh
+     supaya kilatan/busur pantulan/pangkal sapuan berikutnya tidak tertinggal di seberang.
+
+- **BUG DOUBLE-LOAD SCENE DIPERBAIKI** (pertanyaan langsung user: "ada saran gak jangan
+  ngeload double scene"). `RoomLoader.Adopt` dulu memanggil `GetSceneByName` lagi di dalam
+  `op.completed` — dan itu mengembalikan scene PERTAMA yang namanya cocok. Kalau Room_Shop
+  sudah terbuka di Hierarchy saat Play (persis kebiasaan waktu menggarap ruangan), `Preload`
+  memuat kopi KEDUA sementara yang dimatikan justru yang pertama; kopi kedua hidup terus
+  bersama seisi mesh-nya walau pemain sedang melihat peta. Fix tiga lapis:
+  (1) `Preload` memakai scene yang SUDAH terbuka kalau ada, tidak memuat ulang;
+  (2) `Adopt(Scene)` menerima handle asli lewat `SceneManager.sceneLoaded` + `_pending`,
+      bukan mencari lagi by name;
+  (3) root DITAMBAHKAN ke daftar, bukan menimpanya — kopi kedua yang entah dari mana tetap
+      ikut dimatikan. `OnDestroy` melepas langganan event.
+  **INVARIAN Ronde 11 jadi tidak perlu lagi** — meninggalkan Room_Shop/Room_Event terbuka
+  di Hierarchy saat Play sekarang aman.
+
+Kompilasi BERSIH (0 error / 0 warning), dibuktikan lewat refleksi assembly baru:
+`BodyRadius`=0,45 · `HitRadius` · `FirstAlongSegment` · `MuzzleOffset`=0,85 ·
+`ProjectileRadius`=0,3 · `Projectile.Prev` · `RoomLoader.OnSceneLoaded` ·
+`Adopt(Scene)` — semua ada.
+
+BELUM DINILAI MATA USER: rasa tembakan baru, peluru keluar dari badan, fps sesudah
+pencabutan tris.
+
+*Ronde 12 — lanjutan, SEMUA PENUKARAN MESH SELESAI & TERUKUR:*
+
+Ekspor headless berhasil di percobaan kedua. Yang bikin percobaan pertama gagal DIAM-DIAM:
+`ob.select_set(True)` tidak berefek sehingga `export_fbx(use_selection=True)` menemukan nol
+mesh, DAN stdout Blender ditelan pembungkus PowerShell sehingga kegagalannya tak terlihat.
+**Pelajaran: script Blender headless harus menulis lognya sendiri ke file, jangan
+mengandalkan redirect PowerShell.** Perbaikan: paksa objek masuk view layer + unhide +
+verifikasi `select_get()` sebelum ekspor.
+
+| Prefab | Sebelum | Sesudah | Cara |
+|---|---|---|---|
+| `MenuBackdrop.prefab` (GrimoireBookNew) | 3.105.628 | **12.448** | pakai `GrimoireBook_LP` yang SUDAH ADA di `GrimoireBook.fbx` |
+| `AltarEvent.prefab` (Altar + Book) | 1.979.837 | **44.640** | decimate COLLAPSE headless → `AltarEvent_LP.fbx` |
+| `Penjual.prefab` | 3.093.418 | **45.000** | pakai objek `Penjual` retopo yang SUDAH ADA di blend → `Penjual_LP.fbx` |
+| **total tiga prefab** | **8.179.202** | **112.766** | **turun 72×** |
+
+Yang disentuh HANYA properti `sharedMesh`. Terbukti tidak berubah: material
+(`M_GrimoireBook` / `M_AltarEvent` / `M_Penjual`), localScale, localPosition, dan untuk
+Penjual juga 16 tulang + rootBone `Root` (urutan tulang FBX baru dibuktikan IDENTIK dengan
+prefab sebelum menukar — kalau berbeda, menukar mesh saja akan merusak skinning).
+
+**JEBAKAN SKALA yang hampir kena, dan cara ketahuannya:** ekspor pertama Altar/Book pakai
+`apply_scale_options='FBX_SCALE_NONE'` tanpa `bake_space_transform` → mesh 100× lebih kecil
+dengan sumbu Y/Z tertukar, karena konversi sumbu & satuan ditaruh di NODE objek sementara
+prefab menunjuk MESH-nya langsung. Ketahuan karena bounds dibandingkan dulu dengan yang
+lama SEBELUM menukar apa pun. Ekspor ulang dengan `bake_space_transform=True` +
+`apply_scale_options='FBX_SCALE_ALL'` → bounds cocok (Altar 1,836→1,863 · Book 1,619→1,610).
+Penjual TIDAK kena karena FBX lamanya memang konvensi yang sama (bounds cocok 4 desimal).
+**Aturan: SELALU banding bounds mesh baru vs lama sebelum menukar referensi.**
+
+**RUDAL & ORB kena penyakit yang sama, ikut diperbaiki**: `PlayerCasterBehaviour` (Missile,
+homing) dan `PlayerCasterSignature` (Orb) sama-sama `posisi += arah × kecepatan` lalu uji
+TITIK radius datar 0,8. Rudal lebih parah karena `m.Speed` diatur per skill dan bisa jauh
+di atas 16 u/s. Keduanya kini memakai `FirstAlongSegment` + `HomingRadius`=0,35 → grunt
+0,35+0,45 = **0,8 persis seperti dulu**. Pangkal sapuan dicatat sebelum objek dipindah
+(rudal belok tiap frame, jadi tidak boleh dihitung mundur dari arah yang baru).
+
+**SISA UTANG TERUKUR (belum dikerjakan, menunggu keputusan user):**
+- `AltarEvent.fbx` 84 MB — **0 yang mereferensi**, aman dihapus kapan saja (sumbernya tetap
+  ada di `Assets/Art/altar_event.blend`).
+- `GrimoireBook_HP.fbx` 108 MB — masih dirujuk `MenuBackdrop.prefab` sebagai `m_SourcePrefab`
+  nested instance (hierarki objeknya dari sana; yang ditukar cuma mesh-nya). Biaya RUNTIME
+  sudah nol, tapi mesh HP kemungkinan masih ikut ke build. Membebaskannya perlu unpack atau
+  memindahkan sumber instance ke `GrimoireBook.fbx` — bedah prefab yang ditata tangan user,
+  JANGAN dikerjakan tanpa perintah.
+- `Penjual.fbx` 140 MB — cuma dirujuk `AC_Penjual.controller` (klip Idle). **User menyatakan
+  akan MENCABUT Penjual dan mengganti karakternya**, jadi jangan diutak-atik lagi; klip di
+  `Penjual_LP.fbx` bernama `Scene` (bukan `Idle`) dan sengaja tidak dipakai.
+- Retopo Altar hasil decimate otomatis, bukan retopo tangan — topologinya berantakan tapi
+  itu prop diam, dan `altar_normal.png` yang sudah ada tetap mendarat benar karena
+  Decimate COLLAPSE membawa UV ikut.
+
+Kompilasi BERSIH, console 0 error / 0 warning sesudah semuanya.
+
+**Ronde 12b (2026-08-18, "gass ukur analisa beratnya di mana") — PROFILING PLAY MODE:**
+
+**ALTAR/PENJUAL/BUKU BUKAN PENYEBAB BERAT. Sama sekali.** Diukur di arena hidup (Proto),
+dengan RoomLoader baru sehingga Room_Shop & Room_Event TIDAK ikut termuat:
+
+    total tris dari SELURUH Renderer GameObject =      13.773
+    yang dilaporkan Stats                       =   6.261.985
+
+Selisihnya bukan dari objek biasa melainkan dari jalur `Graphics.RenderMeshInstanced`
+(`PropBatch` milik `BiomeDresser`). Rinciannya, dibaca lewat refleksi dari batch yang hidup:
+
+| batch | mesh | tris/buah | jumlah | total |
+|---|---|---|---|---|
+| _meshTreeBatches[0] | `Spruce 1_LOD2` | 3.956 | 169 | 668.564 |
+| _meshTreeBatches[1] | `Spruce 2_LOD2` | 2.078 | 214 | 444.692 |
+| sisanya (bush/rock/stump/log/jamur) | — | — | 813 | 256.717 |
+| **geometri arena** | | | | **1.369.973** |
+
+Dua cemara = **81% seluruh geometri arena**. `PropBatch` tidak punya pemilihan LOD — tiap
+pohon digambar di mesh yang sama berapa pun jauhnya.
+
+**FRAME TIME SEBENARNYA (FrameTimingManager, bukan taksiran):**
+
+| kondisi | GPU | CPU main | CPU render | fps |
+|---|---|---|---|---|
+| 4K UHD + bayangan (kondisi user) | **39,9 ms** | 39,2 ms | 0,65 ms | **25** |
+| 4K UHD, bayangan mati | 34,3 ms | 31,5 ms | 1,95 ms | 29 |
+| **1920x1080 + bayangan** | **14,5 ms** | 14,1 ms | 2,18 ms | **69** |
+| 1920x1080, bayangan mati | 14,2 ms | 13,8 ms | 1,81 ms | 70 |
+| 1920x1080, MSAA mati | 14,0 ms | 15,2 ms | 2,12 ms | 71 |
+
+**CPU render thread 0,65 ms** = CPU sama sekali tidak sibuk, dia menunggu GPU.
+**GPU-bound murni, dan bound-nya PIKSEL bukan geometri.**
+
+Bukti geometri tidak relevan: mematikan bayangan membuang **4,59 juta** dari 6,29 juta
+submission tris (73%!) tapi cuma menghemat 5,6 ms — dan di 1080p penghematannya cuma
+**0,25 ms**. Artinya 5,6 ms itu bukan biaya MENGGAMBAR bayangan, melainkan biaya
+MENYAMPLING soft shadow di 8,3 juta piksel.
+
+**AKAR: seluruh biaya ada di pass layar-penuh, dan semuanya berskala lurus dengan piksel.**
+Kamera arena: `renderPostProcessing=True`, `requiresDepthTexture=True`,
+`requiresColorTexture=True` (salinan layar penuh!), `allowHDR=True`. Global Volume aktif
+dengan **Bloom + Vignette + Tonemapping + WhiteBalance + ColorAdjustments + LiftGammaGain
++ HazeGlobalFogVolumeComponent**. Di 3840x2160 tiap pass itu 8,3 juta piksel; Bloom sendiri
+beberapa pass turun-naik mip.
+
+- **Menurunkan Game view 4K -> Full HD = -25,4 ms (63% frame), 25 -> 69 fps.** Setelan
+  EDITOR, tidak mengubah game yang di-build sama sekali. Slider `Scale 0.31x` TIDAK
+  membantu — dia cuma mengecilkan tampilannya, Unity tetap merender 8,3 juta piksel.
+- MSAA 4x cuma 0,44 ms — **jangan dimatikan**, tidak ada gunanya.
+- Bayangan cuma layak disentuh kalau tetap dipakai di 4K.
+
+**DITINGGAL DALAM KEADAAN:** Game view di **index 3 (Full HD 1920x1080)** — sengaja, ini
+fix-nya. Balik ke 4K = dropdown Game view -> "4K UHD" (index 6). Bayangan Sun dikembalikan
+ke `Soft`, MSAA dikembalikan ke 4, `PC_RPAsset` TIDAK dirty, `Assets/Settings/` dan
+`ProjectSettings/` bersih di git. Scene `Room_Event` dikembalikan lewat
+`RestoreSceneManagerSetup` dari `scene_setup.txt`.
+
+**ALTAR LP DIBATALKAN — DIKEMBALIKAN KE MESH ASLI.** Laporan user: "ini hancur si altar".
+Aku salah: yang diminta **bake**, yang kukerjakan **decimate**. Decimate COLLAPSE 1,4 juta
+-> 33 ribu (membuang 97,6%) pada sculpt mentah menghasilkan pecahan, DAN merusak pulau UV
+sehingga `altar_normal.png` — yang dipanggang untuk permukaan mesh ASLI — mendarat di
+tempat yang salah (permukaan berkeping warna pelangi). GrimoireBook selamat justru karena
+BUKAN kasus ini: itu retopo tangan user sendiri, UV-nya sepasang dengan normal map-nya.
+`AltarEvent.prefab` sudah identik lagi dengan aslinya (hilang dari `git status`).
+`AltarEvent_LP.fbx` ditinggal di disk tapi TIDAK dirujuk siapa pun.
+**JANGAN decimate sculpt lalu memakai normal map lama — itu bukan bake.** Bake yang benar
+butuh retopo + UV baru + memanggang ULANG normal dari HP ke LP.
+
+**ROOMLOADER: PRAMUAT DICABUT atas perintah user** ("event pindah scene aja gak usah
+diload, biarin dia sendiri terpisah, karna gw mau combat fps-nya gede"). Sekarang
+`Show(scene)` memuat saat dibutuhkan dan `Hide()` **meng-unload**-nya. Field `_want`
+dipisah dari `_shown` karena antara permintaan dan kedatangan ada jeda — tanpa itu ruangan
+yang sudah ditinggalkan akan menyala sendiri beberapa frame kemudian; kalau saat mendarat
+ternyata `_want` sudah berubah, scene-nya langsung dibuang. `Preload()` DIHAPUS (terverifikasi
+lewat refleksi: `False`). Pemanggil tidak berubah sama sekali — permukaannya tetap
+`Show`/`Hide`. CATATAN JUJUR ke user: objek yang dimatikan tidak digambar, jadi perubahan
+ini membebaskan MEMORI dan waktu muat, **bukan** fps combat.
+
+**Ronde 12c (2026-08-18, "tambah setingan di setting buat detail grafik"):**
+
+Baris **DETAIL GRAFIS** ditambahkan ke halaman setelan — RENDAH / SEDANG / TINGGI / ULTRA.
+Isinya TIDAK dikarang: tiap tuas dipilih dari angka Ronde 12b, dan tuas yang terukur tidak
+berpengaruh sengaja TIDAK dipasang.
+
+| tingkat | renderScale | shadowDistance | cascade | shadowmap | post-processing |
+|---|---|---|---|---|---|
+| RENDAH | 0,60 | 0 (mati) | 1 | 512 | mati |
+| SEDANG | 0,80 | 25 | 2 | 1024 | hidup |
+| TINGGI *(bawaan)* | 1,00 | 40 | 4 | 2048 | hidup |
+| ULTRA | 1,00 | 60 | 4 | 4096 | hidup |
+
+**`renderScale` jadi tuas utamanya** karena itu yang terukur menyumbang 63% frame (4K -> 1080p
+= 39,9 -> 14,5 ms). shadowDistance ikut turun bersamanya, bukan berdiri sendiri, karena
+penghematan bayangan runtuh dari 5,6 ms jadi 0,25 ms begitu resolusinya turun — bayangan mahal
+karena DISAMPLING per piksel, bukan karena digambar. **MSAA TIDAK disentuh preset mana pun**
+(cuma 0,44 ms — mematikannya memperjelek gambar tanpa imbalan).
+
+Bawaan **TINGGI**, bukan sedang: itu tampilan yang selama ini dirancang, dan preset baru tidak
+boleh diam-diam menurunkan rupa game buat orang yang tidak pernah membuka menu setelan.
+
+File:
+- **BARU** `Assets/Scripts/Menu/GraphicsDetail.cs` — tabel preset + penerapan + pemulihan.
+- `GameSettings.cs` — field `GraphicsDetailLevel`, key `opt.gfx.detail`, ikut Load/Save,
+  dipanggil paling awal di `Apply()`.
+- `SettingsPanel.cs` — `_detailPrev/_detailNext/_detailValue` + `StepDetail`.
+  **DIJEPIT, bukan melingkar** (beda dari baris stepper lain, disengaja): kalau melingkar, satu
+  klik "<" dari RENDAH mendarat di ULTRA — lompatan terbesar ke arah terbalik, dilakukan justru
+  oleh orang yang mesinnya tidak kuat. Ujung tangga tombolnya diredupkan (`interactable=false`).
+- `SettingsPage.prefab` — `Row_Detail grafis` DIDUPLIKAT dari `Row_VFX cuaca` (bukan dibangun
+  dari nol, supaya font/warna/ukuran/jarak persis sama), ditaruh PALING ATAS di `Tab_Performa`,
+  tiga baris lama digeser: Teks damage 0->-58, Bayangan musuh -58->-116, VFX cuaca -116->-174.
+- 10 file `Assets/Resources/Loc/*.txt`, tepat 5 kunci per file (`settings.row.detail` +
+  `settings.detail.low/medium/high/ultra`). id/en/de/es/fr/pt-BR/ru diterjemahkan;
+  **ja/ko/zh-Hans memakai pola `# TODO <inggris>` yang sudah dipakai SELURUH seksi settings di
+  file itu** — menyuntik terjemahan mesin ke satu baris di file yang semua barisnya menunggu
+  penerjemah cuma menyamarkan pekerjaan yang belum dilakukan.
+
+**JEBAKAN YANG DITANGANI — aset pipeline BUKAN objek scene.** Menulis `renderScale` dkk ke
+`UniversalRenderPipelineAsset` TIDAK dibatalkan saat keluar play mode, dan bisa ikut tersimpan
+ke file aset kalau ada yang menyentuhnya di Inspector setelahnya. Di build tidak masalah (aset
+dimuat bersih tiap run), tapi di Editor mencoba RENDAH sekali bisa meninggalkan `PC_RPAsset`
+di renderScale 0,6 SELAMANYA tanpa petunjuk apa pun. Ditangani: nilai asli direkam sekali
+sebelum sentuhan pertama (`Capture`), dan `RestorePristine()` dipanggil lewat
+`EditorApplication.playModeStateChanged` saat masuk Edit Mode.
+
+`supportsMainLightShadows` / `supportsSoftShadows` **read-only saat runtime** (sudah dicek lewat
+refleksi) — jadi mematikan bayangan dilakukan dengan menolkan `shadowDistance`, bukan dengan
+mengedit aset lewat SerializedObject.
+
+`GraphicsDetail` juga melanggan `SceneManager.sceneLoaded` untuk menerapkan ulang toggle
+post-processing ke kamera baru: kamera arena lahir tiap run dimulai dan belum pernah mendengar
+presetnya — tanpa itu, mengubah detail di menu utama tidak berpengaruh apa-apa begitu run
+dimulai.
+
+TERVERIFIKASI (edit mode, tanpa mengganggu prefab stage CombatHud yang sedang user buka):
+baris ada di sibling index 0 dengan y=0 dan tiga baris lain bergeser benar; ketiga field
+ter-wire ke `Row_Detail grafis/Btn_Prev|Btn_Next|Value`; `LocText.Key="settings.row.detail"`;
+label terbaca di 10 bahasa; keempat preset benar-benar memutar nilai pipeline (tabel di atas
+dibaca balik dari aset yang hidup); `RestorePristine()` mengembalikan tepat ke 1 / 50 / 4 /
+2048; `EditorUtility.IsDirty(PC_RPAsset)=False`; `git status Assets/Settings/` **KOSONG**;
+console 0 error / 0 warning.
+
+BELUM DINILAI MATA USER: rupa tiap tingkat detail, dan fps nyatanya di tiap tingkat.
+
+*Ronde 12c — verifikasi tata letak (menjawab "prefab setting udah lu rapihin?"):*
+
+Diukur dari kotak DUNIA sungguhan (prefab diinstansiasi ke preview scene lalu
+`LayoutRebuilder.ForceRebuildLayoutImmediate`), bukan dari `anchoredPosition` mentah —
+membandingkan anchoredPosition antar barang yang anchor-nya berbeda tidak berarti apa-apa:
+
+    Row_Detail grafis    y[  92 .. 140]
+    Row_Teks damage      y[  34 ..  82]
+    Row_Bayangan musuh   y[ -24 ..  24]
+    Row_VFX cuaca        y[ -82 .. -34]
+    Note                 y[-274 ..-250]      <- 168 px di bawah baris terakhir
+    MenuLine_Back        y[-310 ..-264]
+    rel tab  x[-540..-272]  vs  baris x[-216..544]   <- jalur X terpisah
+
+Uji tumpang tindih rect keempat baris terhadap Note, MenuLine_Back, keempat MenuLine_Tab,
+dan TabRule: **NOL tabrakan**. Halaman `Tab_Performa` tinggi 452 px, baris terakhir berakhir
+di -222 relatif halaman — masih sisa 230 px, muat untuk baris berikutnya kalau perlu.
+
+Dua jalur yang paling sering bikin baris baru "hilang", keduanya dicek:
+1. **`UiTheme.SettingsPrefab` -> `Assets/Prefabs/UI/SettingsPage.prefab`** — prefab yang SAMA
+   dengan yang disunting, jadi overlay setelan in-game (ESC saat run, `GrimoireUI.OpenSettings`)
+   ikut dapat barisnya tanpa ada yang perlu diingat.
+2. **Instance di `MainMenu.unity`** membawa keempat baris di urutan & posisi yang benar, dan
+   scene-nya `dirty=False` — perubahan diwarisi lewat prefab, bukan lewat override di scene.
+
+`LocText._tmp` di baris hasil duplikat menunjuk TMP-nya SENDIRI (dicek untuk seluruh 14 LocText
+di panel) — Instantiate memetakan ulang referensi internal dengan benar, jadi label baris baru
+tidak membajak teks baris sumbernya.
+
+Console 0 error / 0 warning.
+
+**Ronde 12d (2026-08-18, "rapihin text tooltip, terlalu banyak informasi, layoutnya bikin pusing"):**
+
+Diukur dulu, bukan ditebak: `TooltipCard.prefab -> Body` fontSize = **22**, sementara kode
+menulis judul `<size=17>` dan sub-baris `<size=11>`.
+
+- **JUDULNYA LEBIH KECIL DARIPADA ISINYA** (17 vs 22). Itu sebabnya kartu ini tidak punya
+  "atas" — mata tidak menemukan tempat mulai membaca dan seluruhnya terbaca sebagai satu
+  gumpalan. Bukan soal selera, hierarkinya memang terbalik.
+- **Sub-baris 11 = tepat separuh badan.** Di kartu 520 px itu bukan "teks kecil", itu teks yang
+  tidak terbaca. Aturan yang disimpulkan dan ditulis di doc kelas: *baris yang tidak cukup besar
+  untuk dibaca bukan informasi, ia kebisingan yang memakan tempat — buang atau besarkan, jangan
+  dikecilkan supaya muat.*
+
+Diubah (SEMUA di `TooltipBuilder.cs`, nol aset disentuh):
+- Tiga konstanta ukuran `Head`=26 / `Sub`=16 / `SizeEnd`, menggantikan SELURUH `<size=nn>`
+  mentah yang berserakan (7 tempat). Hierarki jadi benar: judul 26 > angka 22 > keterangan 16.
+- **Bentuk & jumlah petak DICABUT dari baris jenis.** Dulu: "base rune · LINE 3 · 3 cells ·
+  Lightning". Alasannya bukan sekadar padat — bentuk piece-nya sedang DIPANDANGI pemain saat itu
+  juga (kartunya muncul karena kursor ada di atasnya), dan jumlah petak tinggal dihitung dari
+  bentuk yang sama. Elemen TETAP untuk rune: ia menentukan skill mana yang dapat bonus, dan itu
+  tidak kelihatan dari gambar. `tip.typeline` jadi tidak terpakai (dibiarkan, tidak berbahaya);
+  `tip.typeline.element` masih dipakai — **nol file bahasa perlu disentuh**.
+- **Garis pemisah `————————` DICABUT** — di kartu selebar ini ia pita gelap selebar penuh yang
+  membelah kartu jadi dua benda, demi memisahkan satu angka kecil. Turun ukuran + turun warna
+  sudah memisahkan tanpa menggambar apa pun.
+- **Blurb DICABUT dari kartu.** Kalimat suasana pada ukuran yang tidak terbaca = 2-3 baris kartu
+  untuk sesuatu yang tidak pernah sampai ke mata. `def.Blurb` TIDAK dihapus dan tetap dipakai
+  `PlaygroundBootstrap`.
+- Harga jual TETAP — dicek dulu, `SellValueOf` cuma ditampilkan di sini (satu-satunya tempat
+  pemain bisa melihatnya), jadi tidak boleh ikut dibuang.
+
+Hasil nyata (dibangkitkan dari PieceDefinition SUNGGUHAN lewat refleksi, bukan mockup):
+
+    SEBELUM  Spark Rune : 7 baris, 4 tingkat ukuran (17/11/22/11), judul terkecil kedua
+    SESUDAH  Chrono Rune: 5 baris, 3 tingkat ukuran (26/16/22), judul terbesar
+
+Tinggi kartu dihitung runtime lewat `_tipText.GetPreferredValues(...)` di GrimoireUI:6247 —
+jadi baris yang berkurang otomatis mengecilkan kartunya, prefab tidak perlu disentuh.
+Diuji untuk TIGA jalur kode berbeda (rune / sigil / skill), console 0 error / 0 warning.
+
+**PRAMUAT RUANGAN DIKEMBALIKAN** ("brarti kita bisa multipel scene lagi dong, biar gak loading").
+Benar, dan itu koreksi atas Ronde 12: pramuat tidak pernah membebani pertarungan — root yang
+dimatikan tidak digambar sama sekali. Yang membuat berat sepenuhnya di tempat lain (resolusi
+render). Jadi `Preload` kembali di `Init`, `Show`/`Hide` kembali sekadar nyala-mati, dan
+`Unload` dicabut. **Yang TIDAK ikut kembali: bug-nya.** `Adopt(Scene)` tetap menerima handle
+asli lewat `SceneManager.sceneLoaded` (bukan `GetSceneByName` yang mengembalikan scene PERTAMA
+sekalipun ada dua bernama sama), root tetap DITAMBAHKAN ke daftar bukan menimpanya, dan `_want`
+tetap dipisah dari `_shown` untuk scene yang mendarat setelah pemain pergi.
+TERVERIFIKASI lewat refleksi: `Preload`=True, `Unload`=False, `Adopt` param = `Scene`.
+
+**Ronde 12e (2026-08-18, "shop buat aja di combat arena tapi malem hari, hilangin etalase,
+cukup dia aja, kasih light misterius, kasih vfx di sampingnya"):**
+
+**TEMUAN YANG MENGUBAH BENTUK PEKERJAAN: toko selama ini DOBEL PANGGUNG.**
+`RunDirector.EnterRest` sudah membangun pulau rehat di arena (ganti wajah biome + kapsul
+"Penjaga Pulau" + api unggun + label TextMesh), LALU `GrimoireUI.ShowRoomFor` memuat
+`Room_Shop` yang menutupi semuanya dengan kameranya sendiri. Jadi pulau yang dibangun tiap
+singgah ke toko TIDAK PERNAH TERLIHAT sekali pun. Yang diminta user ternyata =
+**membuang lapisan yang berlebih**, bukan menambah fitur.
+
+Temuan kedua: **`FxLibrary.IslandGuardian` sudah ada dan sudah terisi sejak lama
+(`Vfx_PenjagaPulau.prefab`) tapi TIDAK PERNAH dibaca kode mana pun** — `BuildIsland`
+menetaskan kapsul primitifnya sendiri. Slot itu sekarang dipakai, **dan di situlah karakter
+chibi baru user dipasang** (`penjual_chibi.blend` sedang dikerjakan user).
+
+Yang diubah:
+- `GrimoireUI.ShowRoomFor`: `case Shop` → `_rooms.Hide()` (dulu `Show(ShopScene)`).
+  **Etalase (`Meja`, `Peti_Kiri`, `Peti_Kanan`, `Peti_Tumpuk`) hilang dengan sendirinya** —
+  semuanya isi `Room_Shop` yang tidak lagi ditampilkan. Nol objek perlu dihapus dari mana pun.
+- `RunDirector`: field publik baru `ShopBiome` + `Fx` (pola yang sama dengan `Theme`).
+  `EnterRest` memakai `ShopBiome` HANYA saat kind==Shop; kejadian tetap `_restBiome`
+  (`Biome_sanctum`) — dipisah supaya membuat toko jadi malam tidak menyeret kejadian ikut malam.
+- `RunDirector.BuildIsland` dipecah: `BuildCampfire()` (kejadian, api unggun hangat lama) vs
+  **`BuildShopLights()`** (toko). Sosok penjaganya kini dari `Fx.IslandGuardian`; kapsul jadi
+  jaring pengaman. `hostLift` dipisah 0 (prefab, berdiri di kakinya) vs 0,9 (kapsul, titik
+  tengah di perut) — menyamakannya membuat salah satu melayang atau terbenam.
+- **Label `TextMesh` "PEDAGANG" DICABUT untuk toko** (kejadian masih "PERTAPA"). Panel dagang
+  terbuka di detik yang sama dan sudah menyebut siapa dia; teks melayang di arena gelap persis
+  jenis "text gak jelas" yang sudah berkali-kali dicabut dari layar ini.
+- `RoomLoader`: **`Room_Shop` tidak ikut dipramuat lagi** — tidak ada yang menampilkannya, dan
+  scene yang dipramuat tanpa penampil adalah pola yang sudah terbukti melahirkan bug Room_Slot.
+  Konstanta `ShopScene` sengaja DITINGGAL (kode lain mungkin masih menyebutnya), dan
+  `AdoptIfAlreadyOpen(ShopScene)` tetap dipanggil supaya menggarapnya di editor tidak membuat
+  isinya menempel di layar arena.
+
+**RESEP CAHAYA MISTERIUS (dua lampu, pembagian tugasnya yang penting):**
+Satu lampu terang saja = malam yang disorot lampu sorot, terbaca sebagai siang yang digelapkan.
+Yang bikin sosok terbaca misterius: ia dikenali dari TEPINYA dulu, bukan dari wajahnya.
+1. `Lentera Penjual` — point, warna (1 · 0,74 · 0,42), intensity 5,5, range **7** (pendek!),
+   offset (0,9 · 1,25 · 1,5). Menerangi seukuran orang saja; sisa pulau tetap gelap.
+2. `Rim Malam` — point, warna (0,42 · 0,52 · 1), intensity 9, range 16, offset
+   (−1,1 · 3,1 · **4,2**) = dari BELAKANG dan lebih tinggi. Tidak menerangi sisi yang menghadap
+   pemain; tugasnya menggambar garis tepi di bahu/kepala supaya siluetnya lepas dari latar.
+Keduanya `LightShadows.None` — dari kamera menunduk bayangannya tidak terlihat, dan sudah
+terukur di project ini bahwa bayangan dibayar per PIKSEL (Ronde 12b).
+
+**ASET BARU: `Assets/GameData/Biomes/Biome_shop_night.asset`** — salinan
+`Biome_forest_midnight` (aset asli TIDAK disentuh; ia juga dipakai sebagai wajah wave, jadi
+mengeditnya akan mengubah wave malam biasa). Ditambah entri **`MagicField_blue`**
+(chance 1 · count 2 · spread **9** · height 0) — prefab ini satu-satunya ambient VFX yang belum
+dipakai biome mana pun. Spread 9 dipilih meniru `MagicField_pink` di `Biome_sanctum`: cukup
+rapat untuk MENGAPIT penjualnya, bukan menyebar se-arena. Warisan dari midnight tetap:
+Fireflies, Embers_calm, Moonlight, Leaves_green.
+
+`Proto.unity` disunting langsung di file (scene tidak sedang terbuka, jadi tidak ada yang
+menimpa balik): baris `_shopBiome` disisipkan setelah `_restBiome`.
+
+TERVERIFIKASI: refleksi assembly baru (`ShopBiome`/`Fx`/`BuildShopLights`/`BuildCampfire`/
+`_shopBiome` semua ada); `Proto.unity` tetap terbaca Unity dengan `_shopBiome=Biome_shop_night`,
+`_restBiome=Biome_sanctum`, `_fx=FxLibrary`; console 0 error / 0 warning.
+
+**BELUM DINILAI MATA USER — dan angka cahayanya memang tebakan pertama.** Yang kemungkinan
+perlu diputar: intensity/range kedua lampu, posisi rim, dan `spread` MagicField_blue. Semuanya
+data/konstanta, murah diubah. **Karakter chibi tinggal di-drop ke `FxLibrary.IslandGuardian`** —
+sekarang isinya masih `Vfx_PenjagaPulau` (mesh placeholder).

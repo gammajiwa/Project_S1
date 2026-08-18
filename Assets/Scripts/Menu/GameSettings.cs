@@ -25,6 +25,7 @@ namespace Proto
         const string KeyDamageText = "opt.fx.damagetext";
         const string KeyEnemyShadows = "opt.fx.enemyshadows";
         const string KeyWeatherVfx = "opt.fx.weather";
+        const string KeyDetail = "opt.gfx.detail";
 
         public bool Fullscreen = true;
         public int Width;
@@ -50,6 +51,18 @@ namespace Proto
         // nyala secara bawaan — mematikan adalah keputusan pemilik mesin kentang, bukan bawaan
         // yang menghukum semua orang. Yang gameplay (jumlah musuh, drop) TIDAK boleh pindah ke
         // sini: setting performa yang mengubah aturan main adalah cheat yang menyamar.
+
+        /// <summary>
+        /// Preset detail grafis — RENDAH / SEDANG / TINGGI / ULTRA. Lihat <see cref="GraphicsDetail"/>
+        /// untuk isi tiap tingkat dan angka pengukuran yang menentukannya.
+        ///
+        /// Beda dari tiga toggle di bawahnya: yang ini berlaku SEKETIKA, tidak menunggu run
+        /// berikutnya. Bisa begitu karena yang diputarnya properti pipeline dan kamera, bukan
+        /// keputusan yang sudah terlanjur dibaca saat scene lahir — dan setelan performa yang
+        /// hasilnya bisa dilihat saat itu juga adalah satu-satunya yang benar-benar bisa dipakai
+        /// pemain untuk mencari titik nyamannya.
+        /// </summary>
+        public int GraphicsDetailLevel = GraphicsDetail.Default;
 
         [Tooltip("Angka damage melayang.")]
         public bool DamageText = true;
@@ -77,7 +90,9 @@ namespace Proto
                 MusicVolume = PlayerPrefs.GetFloat(KeyMusic, 0.7f),
                 DamageText = PlayerPrefs.GetInt(KeyDamageText, 1) == 1,
                 EnemyShadows = PlayerPrefs.GetInt(KeyEnemyShadows, 1) == 1,
-                WeatherVfx = PlayerPrefs.GetInt(KeyWeatherVfx, 1) == 1
+                WeatherVfx = PlayerPrefs.GetInt(KeyWeatherVfx, 1) == 1,
+                GraphicsDetailLevel = GraphicsDetail.Clamp(
+                    PlayerPrefs.GetInt(KeyDetail, GraphicsDetail.Default))
             };
 
             return s;
@@ -96,11 +111,14 @@ namespace Proto
             PlayerPrefs.SetInt(KeyDamageText, DamageText ? 1 : 0);
             PlayerPrefs.SetInt(KeyEnemyShadows, EnemyShadows ? 1 : 0);
             PlayerPrefs.SetInt(KeyWeatherVfx, WeatherVfx ? 1 : 0);
+            PlayerPrefs.SetInt(KeyDetail, GraphicsDetailLevel);
             PlayerPrefs.Save();
         }
 
         public void Apply()
         {
+            GraphicsDetail.Apply(GraphicsDetailLevel);
+
             QualitySettings.vSyncCount = VSync ? 1 : 0;
 
             // A frame cap does nothing while vSync drives presentation, so don't pretend it applies.

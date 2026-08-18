@@ -20,6 +20,22 @@ namespace Proto
             _balance = balance;
         }
 
+        // Ukuran huruf kartu. Sama alasannya dengan warna di bawah: angka yang diketik ulang di
+        // tiap baris adalah cara termurah membuat kartu ini berantakan lagi — dan itu memang yang
+        // sudah terjadi sekali.
+        //
+        // Badan teks kartu (TooltipCard.prefab -> Body) berukuran 22. Dulu judulnya ditulis
+        // <size=17> — LEBIH KECIL daripada isinya — jadi kartu ini tidak punya "atas": mata tidak
+        // menemukan tempat memulai, dan seluruhnya terbaca sebagai satu gumpalan. Dan sub-barisnya
+        // <size=11>, tepat separuh badan; di kartu selebar 520 px itu bukan teks kecil, itu teks
+        // yang tidak terbaca sama sekali. Baris yang tidak terbaca bukan informasi, ia kebisingan
+        // yang memakan tempat.
+        //
+        // Sekarang tiga tingkat saja, dan urutannya benar: judul > angka > keterangan.
+        const string Head = "<size=26>";   // nama benda. Satu-satunya yang lebih besar dari angka.
+        const string Sub = "<size=16>";    // keterangan: jenis, asal, harga, catatan.
+        const string SizeEnd = "</size>";
+
         // Warna kartu. Dipisah jadi konstanta karena tiap potongan dipakai di beberapa tempat,
         // dan kode hex yang diketik ulang di tiap baris adalah cara termurah membuat dua baris
         // yang seharusnya sederajat pelan-pelan jadi beda warna.
@@ -34,15 +50,23 @@ namespace Proto
         /// <summary>
         /// Kartu hover dalam TIGA lapis, dan urutannya yang menentukan apakah ia terbaca:
         ///
-        /// 1. <b>Kepala</b> — nama (paling besar), bintang, jenis/bentuk/petak, dan status.
-        ///    Ini yang menjawab "benda apa ini".
-        /// 2. <b>Angka</b> — ukuran normal, tanpa hiasan. Ini yang dicari mata saat membandingkan
-        ///    dua piece, jadi ia tidak boleh berbagi ukuran dan warna dengan apa pun di atas atau
-        ///    di bawahnya.
-        /// 3. <b>Kaki</b> — harga jual dan blurb, di balik garis, kecil dan redup. Keduanya bukan
-        ///    angka yang dipakai mengambil keputusan; dulu mereka duduk di antara baris-baris
-        ///    efek dengan ukuran dan warna yang sama, dan itu yang membuat seluruh kartu terbaca
-        ///    sebagai satu blok teks tanpa awal.
+        /// 1. <b>Kepala</b> (26) — nama dan bintang, lalu satu baris keterangan (16): jenis benda
+        ///    dan dari mana ia datang. Ini yang menjawab "benda apa ini".
+        /// 2. <b>Angka</b> (22, ukuran badan kartu) — tanpa hiasan. Ini yang dicari mata saat
+        ///    membandingkan dua piece, jadi ia tidak boleh berbagi ukuran dengan apa pun di atas
+        ///    atau di bawahnya.
+        /// 3. <b>Kaki</b> (16, redup) — harga jual. Satu baris, tanpa garis pemisah.
+        ///
+        /// <b>Kartu ini pernah dirombak karena "kebanyakan informasi, layoutnya bikin pusing".</b>
+        /// Yang dibuang: bentuk dan jumlah petak (sedang dipandangi pemain saat itu juga), garis
+        /// pemisah (pita gelap yang membelah kartu demi satu angka kecil), dan blurb (kalimat
+        /// suasana pada ukuran yang tidak terbaca). Yang diperbaiki: judulnya dulu <c>size=17</c>
+        /// sementara badan kartu 22 — <b>judulnya lebih kecil daripada isinya</b>, jadi kartu ini
+        /// tidak punya tempat untuk mulai membaca dan seluruhnya terbaca sebagai satu gumpalan.
+        ///
+        /// Aturan yang menyusul dari itu: <b>kalau sebuah baris tidak cukup besar untuk dibaca,
+        /// ia bukan informasi — ia kebisingan yang memakan tempat.</b> Buang atau besarkan; jangan
+        /// dikecilkan supaya "muat".
         /// </summary>
         public string Build(PieceDefinition def, CompiledSpell spell, string origin)
         {
@@ -63,19 +87,19 @@ namespace Proto
                 }
             }
 
-            _sb.Append("<size=17><b>").Append(Loc.T("piece." + def.Id + ".name", def.DisplayName))
-               .Append("</b></size>");
+            _sb.Append(Head).Append("<b>").Append(Loc.T("piece." + def.Id + ".name", def.DisplayName))
+               .Append("</b>").Append(SizeEnd);
             if (def.Stars > 0)
                 _sb.Append("  ").Append(Gold).Append(Shapes.StarText(def.Stars)).Append(End);
             _sb.Append('\n');
 
-            _sb.Append("<size=11>").Append(Grey).Append(TypeLine(def)).Append(End);
+            _sb.Append(Sub).Append(Grey).Append(TypeLine(def)).Append(End);
             if (!string.IsNullOrEmpty(tag))
                 _sb.Append(Grey).Append("  ·  ").Append(End).Append(Blue).Append(tag).Append(End);
-            _sb.Append("</size>\n");
+            _sb.Append(SizeEnd).Append('\n');
 
             if (note != null)
-                _sb.Append("<size=11>").Append(Warn).Append(note).Append(End).Append("</size>\n");
+                _sb.Append(Sub).Append(Warn).Append(note).Append(End).Append(SizeEnd).Append('\n');
 
             _sb.Append('\n');
 
@@ -83,27 +107,46 @@ namespace Proto
             else if (def.Kind == CastKind.Passive) AppendSigil(def, spell, origin);
             else AppendSkill(def, spell);
 
-            _sb.Append("<size=11>").Append(Dim).Append("————————————————————\n");
-            _sb.Append(Loc.F("tip.sell", _balance.SellValueOf(def))).Append(End).Append("</size>");
-
-            if (!string.IsNullOrEmpty(def.Blurb))
-                _sb.Append("\n<size=11><i>").Append(Dim)
-                   .Append(Loc.T("piece." + def.Id + ".blurb", def.Blurb))
-                   .Append(End).Append("</i></size>");
+            // Kaki kartu: harga jual saja, satu baris.
+            //
+            // GARIS PEMISAH DICABUT. Di kartu selebar ini ia jadi pita gelap selebar penuh yang
+            // membelah kartu jadi dua benda — padahal yang dipisahkannya cuma satu angka kecil.
+            // Turun ukuran dan turun warna sudah memisahkan dengan sendirinya, tanpa menggambar
+            // apa pun.
+            //
+            // BLURB DICABUT. Ia kalimat suasana, bukan angka yang dipakai memutuskan, dan ia
+            // ditulis pada ukuran yang tidak terbaca — jadi ia menghabiskan dua sampai tiga baris
+            // kartu untuk sesuatu yang bahkan tidak sampai ke mata pemain. Teksnya sendiri tidak
+            // hilang dari project: `def.Blurb` tetap ada dan tetap dipakai di tempat lain.
+            _sb.Append(Sub).Append(Dim)
+               .Append(Loc.F("tip.sell", _balance.SellValueOf(def)))
+               .Append(End).Append(SizeEnd);
 
             return _sb.ToString();
         }
 
-        /// <summary>Jenis, bentuk, dan luas — tiga fakta yang selalu ada, dalam satu baris.</summary>
+        /// <summary>
+        /// Jenis benda ini, dan untuk rune juga elemennya. Itu saja.
+        ///
+        /// <b>Bentuk dan jumlah petak DICABUT dari baris ini.</b> Dulu ia berbunyi
+        /// "base rune · LINE 3 · 3 cells · Lightning" — empat fakta berjejal di baris terkecil di
+        /// kartu, dan dua di antaranya menjawab pertanyaan yang tidak sedang ditanyakan siapa pun:
+        /// bentuk piece-nya sedang DIPANDANGI pemain saat itu juga — kartunya muncul karena
+        /// kursornya ada di atas piece itu — dan jumlah petak tinggal dihitung dari bentuk yang
+        /// sama. Menuliskannya ulang tidak menambah apa pun, tapi ia memakan baris yang sama
+        /// dengan jenis dan asal, yang keduanya TIDAK bisa dilihat dari gambar.
+        ///
+        /// Elemen tetap tinggal untuk rune, karena dialah yang menentukan skill mana yang dapat
+        /// bonus di atasnya — dan itu tidak kelihatan dari bentuknya sama sekali.
+        /// </summary>
         static string TypeLine(PieceDefinition def)
         {
             string kind = def.Layer == Layer.Rune ? Loc.T("tip.kind.rune")
                 : def.Kind == CastKind.Passive ? Loc.T("tip.kind.sigil")
                 : KindName(def.Kind);
 
-            string line = Loc.F("tip.typeline", kind, Shapes.NameOf(def.Shape), def.Cells.Length);
-            if (def.Layer == Layer.Rune) line += Loc.F("tip.typeline.element", def.Element);
-            return line;
+            if (def.Layer == Layer.Rune) kind += Loc.F("tip.typeline.element", def.Element);
+            return kind;
         }
 
         void AppendRune(PieceDefinition def)
@@ -153,9 +196,9 @@ namespace Proto
             // yang SUDAH kepasang diberi tahu bahwa ia belum berdiri di atas rune.
             bool aktif = spell == null && origin != null && origin.StartsWith("KEPASANG");
 
-            _sb.Append("<size=11>").Append(aktif ? Good : Warn)
+            _sb.Append(Sub).Append(aktif ? Good : Warn)
                 .Append(Loc.T(aktif ? "tip.sigil.active" : "tip.sigil.inactive"))
-                .Append(End).Append("</size>\n");
+                .Append(End).Append(SizeEnd).Append('\n');
         }
 
         void AppendStats(PieceDefinition def)
@@ -282,15 +325,15 @@ namespace Proto
 
             if (spell == null)
             {
-                _sb.Append("<size=11>").Append(Warn)
-                    .Append(Loc.T("tip.skill.base")).Append(End).Append("</size>\n");
+                _sb.Append(Sub).Append(Warn)
+                    .Append(Loc.T("tip.skill.base")).Append(End).Append(SizeEnd).Append('\n');
                 return;
             }
 
             if (spell.DamageBonus <= 0f && spell.CooldownBonus <= 0f && spell.RadiusBonus <= 0f)
             {
-                _sb.Append("<size=11>").Append(Grey)
-                    .Append(Loc.T("tip.skill.nobuff")).Append(End).Append("</size>\n");
+                _sb.Append(Sub).Append(Grey)
+                    .Append(Loc.T("tip.skill.nobuff")).Append(End).Append(SizeEnd).Append('\n');
                 return;
             }
 

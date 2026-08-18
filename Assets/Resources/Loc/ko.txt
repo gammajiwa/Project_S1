@@ -385,6 +385,10 @@
 # TODO piece.wintersend.name=Winter's End
 
 # ---------------- settings ----------------
+# TODO settings.detail.high=HIGH
+# TODO settings.detail.low=LOW
+# TODO settings.detail.medium=MEDIUM
+# TODO settings.detail.ultra=ULTRA
 # TODO settings.framecap.unlimited=UNLIMITED
 # TODO settings.framecap.value={0} FPS
 # TODO settings.fullscreen.off=WINDOWED
@@ -400,6 +404,7 @@
 # TODO settings.reset.idle=CLEAR CODEX
 # TODO settings.resolution.value={0} x {1}
 # TODO settings.row.damagetext=Damage numbers
+# TODO settings.row.detail=Graphics detail
 # TODO settings.row.enemyshadows=Enemy shadows
 # TODO settings.row.framecap=FPS cap
 # TODO settings.row.language=Language

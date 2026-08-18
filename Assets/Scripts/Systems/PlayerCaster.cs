@@ -13,6 +13,19 @@ namespace Proto
         {
             public Transform T;
             public Vector3 Dir;
+
+            /// <summary>
+            /// Posisi peluru di frame sebelumnya — pangkal sapuan uji kena frame ini.
+            ///
+            /// Disimpan terpisah dari <see cref="T"/> dan bukan sekadar dihitung mundur dari arah
+            /// dan kecepatan, karena pantulan mengubah arah di tengah frame: menghitung mundur dari
+            /// arah yang BARU akan menyapu ruas yang tidak pernah dilalui peluru.
+            ///
+            /// Saat lahir, isinya titik tengah badan pemain — bukan moncongnya. Peluru digambar
+            /// keluar dari badan (lihat MuzzleOffset), tapi yang diuji tetap dari pusat, jadi musuh
+            /// yang sedang menempel di pemain tidak terlewat di frame pertama.
+            /// </summary>
+            public Vector3 Prev;
             public float Life;
             public float Damage;
             public StatusDefinition Status;
@@ -1430,7 +1443,20 @@ namespace Proto
             _mpb.SetColor(BaseColorId, color);
             p.T.GetComponent<Renderer>().SetPropertyBlock(_mpb);
 
-            p.T.position = from;
+            // Lahir DI LUAR badan, bukan di titik pusatnya. Peluru yang menetas di dalam dada
+            // pelemparnya terbaca sebagai muncul begitu saja, bukan sebagai ditembakkan — arah
+            // tembakan baru terbaca setelah peluru sudah terlanjur menyeberangi setengah layar.
+            //
+            // Yang bergeser hanya GAMBARNYA. Uji kenanya tetap disapu dari pusat (lihat
+            // Projectile.Prev), jadi menggeser moncong tidak menciptakan celah buta di depan
+            // pemain — pergeseran moncong yang ikut menggeser uji kena persis akan membuat musuh
+            // yang menempel jadi kebal.
+            Vector3 muzzleDir = dir;
+            muzzleDir.y = 0f;
+            muzzleDir = muzzleDir.sqrMagnitude > 0.0001f ? muzzleDir.normalized : Vector3.forward;
+
+            p.Prev = from;
+            p.T.position = from + muzzleDir * MuzzleOffset;
 
             // Prefab efek menjadi badan peluru; bola primitifnya menciut jadi inti nyaris tak
             // terlihat. Tetap ada karena dialah yang dites tabrakannya — efek cuma bajunya.
@@ -1464,6 +1490,35 @@ namespace Proto
             p.Active = true;
         }
 
+        /// <summary>
+        /// Seberapa jauh di depan pusat badan peluru DIGAMBAR lahir. Badan pemain berskala 0,9,
+        /// jadi setengah lebarnya sekitar 0,45 — 0,85 menaruh peluru bersih di luar siluetnya
+        /// tanpa terlihat menetas di udara kosong.
+        /// </summary>
+        const float MuzzleOffset = 0.85f;
+
+        /// <summary>
+        /// Setengah lebar badan peluru untuk uji kena.
+        ///
+        /// Dulu tidak ada angka ini: uji kena memakai satu 0,75 datar yang diam-diam mencampur
+        /// "sebesar apa pelurunya" dengan "sebesar apa musuhnya". Selama keduanya jadi satu angka,
+        /// musuh sebesar apa pun diuji sebesar grunt. Sekarang terpisah, dan 0,3 + 0,45 (badan
+        /// grunt) = 0,75 yang lama persis — grunt tidak berubah rasanya, yang lain jadi benar.
+        /// </summary>
+        const float ProjectileRadius = 0.3f;
+
+        /// <summary>
+        /// Setengah lebar badan rudal pengejar dan orb signature. Angka datar lamanya 0,8, dan
+        /// 0,35 + 0,45 (badan grunt) = 0,8 yang sama — keduanya tidak berubah rasanya.
+        ///
+        /// Mereka mengidap penyakit yang persis sama dengan peluru, dan rudal MALAH LEBIH PARAH:
+        /// kecepatannya diatur per skill dan bisa jauh di atas 16 u/s, jadi langkah per frame-nya
+        /// lebih panjang lagi dan lompatannya lebih sering. Sebuah rudal pengejar yang menembus
+        /// sasarannya adalah kegagalan yang paling tidak masuk akal buat pemain — ia dituntun ke
+        /// sana, lalu tidak kena.
+        /// </summary>
+        const float HomingRadius = 0.35f;
+
         void TickProjectiles(float dt)
         {
             const float speed = 16f;
@@ -1480,11 +1535,23 @@ namespace Proto
                     continue;
                 }
 
+                Vector3 from = p.Prev;
                 p.T.position += p.Dir * (speed * dt);
+                p.Prev = p.T.position;
                 if (p.Vfx != null) p.Vfx.position = p.T.position;
 
-                var hit = _enemies.NearestExcluding(p.T.position, 0.75f, p.LastHit);
+                // Disapu sepanjang ruas yang barusan dilewati, bukan diintip di titik akhirnya.
+                // Di frame rate rendah satu langkah bisa lebih panjang dari badan musuh, dan uji
+                // titik di ujung langkah berarti musuh yang dilompati tidak pernah ditanyakan.
+                var hit = _enemies.FirstAlongSegment(from, p.T.position, ProjectileRadius, p.LastHit);
                 if (hit == null) continue;
+
+                // Dipindahkan ke tempat kejadian. Setelah disapu, peluru bisa berhenti di seberang
+                // musuh yang ditembusnya — dan kilatan, busur pantulan, serta pangkal sapuan
+                // berikutnya semuanya membaca posisi ini.
+                p.T.position = new Vector3(hit.Pos.x, p.T.position.y, hit.Pos.z);
+                p.Prev = p.T.position;
+                if (p.Vfx != null) p.Vfx.position = p.T.position;
 
                 _enemies.Damage(hit, p.Damage, p.Status, p.StatusDuration, p.Points, true,
                     p.SourceName, null, p.Crit);

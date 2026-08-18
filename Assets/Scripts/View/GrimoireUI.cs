@@ -3410,12 +3410,34 @@ namespace Proto
                 var panel = MapView();
                 var reachable = map.Reachable();
 
+                // Kotak klik = ukuran yang DIGAMBAR (lihat MapNodeSize), bukan angka tetap.
+                //
+                // Dan yang menang bukan yang PERTAMA ketemu di list, melainkan yang kliknya
+                // paling DALAM: jaraknya dibagi radiusnya sendiri. Node peta ini ukurannya
+                // berbeda empat kali lipat antar jenis, jadi mereka saling bertumpang tindih —
+                // "yang pertama di urutan reachable" berarti node yang kepilih bukan node yang
+                // ditunjuk, dan urutannya sendiri tidak berarti apa-apa buat pemain.
+                RunNode best = null;
+                float bestScore = 1f;
+
                 for (int i = 0; i < reachable.Count; i++)
                 {
-                    Vector2 at = MapNodePos(reachable[i], panel, map.Floors, map.Lanes);
-                    if (Vector2.Distance(mouse, at) > 34f) continue;
+                    var n = reachable[i];
+                    Vector2 at = MapNodePos(n, panel, map.Floors, map.Lanes);
 
-                    BeginMapTravel(reachable[i]);
+                    float radius = MapNodeSize(n, map.At == n.Index, true) * 0.5f;
+                    if (radius <= 0.01f) continue;
+
+                    float score = Vector2.Distance(mouse, at) / radius;
+                    if (score > bestScore) continue;
+
+                    bestScore = score;
+                    best = n;
+                }
+
+                if (best != null)
+                {
+                    BeginMapTravel(best);
                     return true;
                 }
 
@@ -4872,9 +4894,8 @@ namespace Proto
                 bool next = reachable.Contains(n);
                 bool walked = _run.Trail.Contains(n.Index);
 
-                // Jitter ukuran & rotasi ala peta referensi — ber-seed, jadi diam di tempat.
+                // Jitter rotasi ala peta referensi — ber-seed, jadi diam di tempat.
                 uint h = (uint)((n.Index + 1) * 1274126177u);
-                float wobble = ((h & 0xFF) / 255f - 0.5f) * 0.24f;
                 float twist = (((h >> 8) & 0xFF) / 255f - 0.5f) * 14f;
 
                 // Ukuran membawa DUA hal sekaligus, dan urutannya penting.
@@ -4888,12 +4909,7 @@ namespace Proto
                 // Dua kali dinaikkan dan dua kali masih "kekecilan" — sekarang seukuran node
                 // peta Slay the Spire yang jadi rujukannya: icon adalah ISI petanya, bukan
                 // hiasan di antara jalur. Jalurnya cuma pengantar antar icon.
-                float size = (now ? 104f : next ? 88f : 76f) * KindScale(n.Kind);
-
-                // Jitter ber-seed, jadi diam di tempat. Boss dikecualikan: ia satu-satunya node
-                // yang ukurannya BERARTI SESUATU secara mutlak, dan boss yang kebetulan diundi
-                // kecil akan berhenti terbaca sebagai puncak act.
-                if (n.Kind != RunNodeKind.Boss) size *= 1f + wobble;
+                float size = MapNodeSize(n, now, next);
 
                 var tone = RunDirector.KindColor(n.Kind);
                 Color ring;
@@ -4972,10 +4988,37 @@ namespace Proto
         /// menyusuri lantai demi lantai mencari huruf B.
         ///
         /// Sisanya menurun sesuai seberapa besar taruhannya: elite itu pertarungan yang bisa
-        /// membunuh, toko dan slot menghabiskan koin, kejadian cuma menawarkan pilihan. Yang
-        /// paling banyak jumlahnya — pertarungan biasa — sengaja jadi yang paling kecil, karena
+        /// membunuh, toko menghabiskan koin, kejadian cuma menawarkan pilihan. Yang paling
+        /// banyak jumlahnya — pertarungan biasa — sengaja jadi yang paling kecil, karena
         /// node yang muncul di mana-mana tidak perlu meminta perhatian.
         /// </summary>
+        /// <summary>
+        /// Ukuran GAMBAR satu node peta, satuan kanvas. SATU sumber untuk DUA pemakai: yang
+        /// menggambarnya dan yang menguji kliknya.
+        ///
+        /// Dulu keduanya punya angka sendiri, dan itu bug: gambar memakai
+        /// <c>(104/88/76) × KindScale</c> — radius 44 px untuk Fight sampai 176 px untuk Boss —
+        /// sementara hit-test memakai radius DATAR 34 px. Akibatnya dua arah sekaligus:
+        /// pinggiran icon besar MATI kliknya (lebih dari separuh badan Elite, 96% badan Boss),
+        /// dan icon besar menutupi titik tengah tetangganya sehingga klik di atas gambar A
+        /// terbaca sebagai node B. Selama dua angka ini hidup terpisah, bug itu pasti balik.
+        /// </summary>
+        static float MapNodeSize(RunNode n, bool now, bool next)
+        {
+            float size = (now ? 104f : next ? 88f : 76f) * KindScale(n.Kind);
+
+            // Jitter ber-seed, jadi diam di tempat. Boss dikecualikan: ia satu-satunya node
+            // yang ukurannya BERARTI SESUATU secara mutlak, dan boss yang kebetulan diundi
+            // kecil akan berhenti terbaca sebagai puncak act.
+            if (n.Kind != RunNodeKind.Boss)
+            {
+                uint h = (uint)((n.Index + 1) * 1274126177u);
+                size *= 1f + ((h & 0xFF) / 255f - 0.5f) * 0.24f;
+            }
+
+            return size;
+        }
+
         static float KindScale(RunNodeKind kind)
         {
             // Selisihnya DILEBARKAN atas permintaan pemilik project: "ukurannya jangan sama".

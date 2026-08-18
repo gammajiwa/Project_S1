@@ -386,6 +386,10 @@ piece.wintersend.blurb=EVOLVED. An eight-metre crater of ice, dropped where it h
 piece.wintersend.name=Winter's End
 
 # ---------------- settings ----------------
+settings.detail.high=TINGGI
+settings.detail.low=RENDAH
+settings.detail.medium=SEDANG
+settings.detail.ultra=ULTRA
 settings.framecap.unlimited=TANPA BATAS
 settings.framecap.value={0} FPS
 settings.fullscreen.off=JENDELA
@@ -401,6 +405,7 @@ settings.reset.hint=butuh dua klik
 settings.reset.idle=KOSONGKAN CODEX
 settings.resolution.value={0} x {1}
 settings.row.damagetext=Teks damage
+settings.row.detail=Detail grafis
 settings.row.enemyshadows=Bayangan musuh
 settings.row.framecap=Batas FPS
 settings.row.language=Bahasa

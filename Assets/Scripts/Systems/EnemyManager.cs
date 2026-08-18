@@ -533,6 +533,31 @@ namespace Proto
         const float BodyHeight = 2.2f;
 
         /// <summary>
+        /// Setengah lebar badan musuh berukuran normal, satuan dunia.
+        ///
+        /// Angka ini ada karena selama ini tidak ada. Setiap uji kena — peluru, sinar, ledakan —
+        /// memperlakukan musuh sebagai TITIK tanpa ukuran, lalu memakai satu radius datar yang
+        /// dikarang di tempat pemanggilan. Peluru memakai 0,75 untuk semuanya. Padahal musuh
+        /// digambar sebesar <see cref="Enemy.Scale"/>: stalker 0,75 · grunt 1 · spitter 1,1 ·
+        /// cursed 1,45 · dan kepala boss berkali-kali lipat itu. Akibatnya yang dilaporkan pemilik
+        /// project: "musuh dekat tapi tidak kena damage" — badannya memenuhi layar, tapi yang
+        /// diuji cuma satu titik di tengahnya.
+        ///
+        /// Dipilih 0,45 supaya musuh baku TIDAK berubah rasanya: peluru dulu memakai satu angka
+        /// 0,75 yang mencampur ukuran peluru dan ukuran musuh jadi satu; sekarang keduanya dipisah
+        /// jadi 0,3 (peluru) + 0,45 (badan grunt) = 0,75 yang sama persis. Yang berubah hanya
+        /// musuh yang memang tidak seukuran grunt — dan itu justru yang dibetulkan.
+        /// </summary>
+        public const float BodyRadius = 0.45f;
+
+        /// <summary>
+        /// Radius kena satu musuh, ikut ukuran badan yang benar-benar digambar.
+        /// SATU sumber untuk semua uji kena, supaya gambar dan tabrakan tidak bisa lagi berpisah.
+        /// </summary>
+        public static float HitRadius(Enemy e) =>
+            e == null ? BodyRadius : BodyRadius * Mathf.Max(0.1f, e.Scale);
+
+        /// <summary>
         /// Kecepatan yang dianggap lari penuh, dipakai memilih antara animasi jalan dan lari.
         /// </summary>
         const float RunSpeed = 3.2f;
@@ -2255,6 +2280,62 @@ namespace Proto
 
                 e.Knock += away * force;
             }
+        }
+
+        /// <summary>
+        /// Musuh pertama yang tersapu RUAS GARIS <paramref name="from"/> → <paramref name="to"/>,
+        /// dengan ukuran badan masing-masing musuh, bukan satu angka datar.
+        ///
+        /// Ini menutup dua lubang sekaligus di jalur peluru, dan keduanya cuma kelihatan sebagai
+        /// satu gejala: "sudah nembak tapi musuhnya tidak kena".
+        ///
+        /// <b>Satu — peluru melompati musuh.</b> Dulu peluru dipindah dulu sejauh satu langkah,
+        /// baru ditanya "ada musuh di sekitar posisi barumu?". Itu uji TITIK di posisi akhir, jadi
+        /// yang dilewati di tengah langkah tidak pernah ditanyakan sama sekali. Peluru melaju 16
+        /// unit/detik: di 60 fps satu langkah 0,27 unit dan radius 0,75 masih menutupinya, tapi di
+        /// 24 fps langkahnya 0,66 — dan satu frame tersendat saja peluru sudah menyeberangi musuh
+        /// tanpa sekali pun diuji. Makin berat gamenya, makin sering tembakan "tembus". Menyapu
+        /// ruasnya membuat kecepatan frame tidak lagi ikut menentukan siapa yang kena.
+        ///
+        /// <b>Dua — musuh yang menempel di pangkal.</b> Jaraknya diukur ke titik terdekat di ruas
+        /// yang sudah DIJEPIT ke [0, panjang], jadi tutup pangkalnya ikut menguji. Musuh yang
+        /// berdiri menempel di badan pemain kena di frame pertama; sebelumnya ia berada di
+        /// belakang posisi peluru setelah langkah pertama dan lolos begitu saja.
+        /// </summary>
+        /// <param name="probeRadius">Ukuran benda yang menyapu — badan pelurunya sendiri.</param>
+        public Enemy FirstAlongSegment(Vector3 from, Vector3 to, float probeRadius, Enemy skip)
+        {
+            Vector3 seg = to - from;
+            seg.y = 0f;
+
+            float len = seg.magnitude;
+            Vector3 heading = len > 0.0001f ? seg / len : Vector3.zero;
+
+            Enemy best = null;
+            float bestAlong = float.MaxValue;
+
+            for (int i = 0; i < _pool.Count; i++)
+            {
+                var e = _pool[i];
+                if (!e.Alive || e == skip) continue;
+
+                Vector3 d = e.Pos - from;
+                d.y = 0f;
+
+                // Dijepit ke ruasnya, jadi ini kapsul dan bukan sinar tak berujung: musuh di depan
+                // ujung langkah belum kena, musuh di belakang pangkal juga tidak — tapi yang PERSIS
+                // di pangkal kena, dan itulah musuh yang menempel di pemain.
+                float along = len > 0.0001f ? Mathf.Clamp(Vector3.Dot(d, heading), 0f, len) : 0f;
+                if (along >= bestAlong) continue;
+
+                float reach = probeRadius + HitRadius(e);
+                if ((d - heading * along).sqrMagnitude > reach * reach) continue;
+
+                bestAlong = along;
+                best = e;
+            }
+
+            return best;
         }
 
         /// <summary>

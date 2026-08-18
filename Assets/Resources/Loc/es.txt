@@ -385,6 +385,10 @@ menu.startrun=EMPEZAR
 # TODO piece.wintersend.name=Winter's End
 
 # ---------------- settings ----------------
+settings.detail.high=ALTO
+settings.detail.low=BAJO
+settings.detail.medium=MEDIO
+settings.detail.ultra=ULTRA
 settings.framecap.unlimited=SIN LÍMITE
 settings.framecap.value={0} FPS
 settings.fullscreen.off=VENTANA
@@ -400,6 +404,7 @@ settings.reset.hint=requiere dos clics
 settings.reset.idle=VACIAR CÓDICE
 settings.resolution.value={0} x {1}
 settings.row.damagetext=Números de daño
+settings.row.detail=Detalle gráfico
 settings.row.enemyshadows=Sombras de enemigos
 settings.row.framecap=Límite de FPS
 settings.row.language=Idioma
