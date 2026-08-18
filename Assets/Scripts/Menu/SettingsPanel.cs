@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -365,9 +365,9 @@ namespace Proto
             if (_detailPrev != null) _detailPrev.interactable = _settings.GraphicsDetailLevel > 0;
             if (_detailNext != null) _detailNext.interactable = _settings.GraphicsDetailLevel < GraphicsDetail.Count - 1;
 
-            SetText(_damageTextValue, _settings.DamageText ? "HIDUP" : "MATI");
-            SetText(_enemyShadowsValue, _settings.EnemyShadows ? "HIDUP" : "MATI");
-            SetText(_weatherVfxValue, _settings.WeatherVfx ? "HIDUP" : "MATI");
+            SetText(_damageTextValue, Loc.T(_settings.DamageText ? "settings.on" : "settings.off"));
+            SetText(_enemyShadowsValue, Loc.T(_settings.EnemyShadows ? "settings.on" : "settings.off"));
+            SetText(_weatherVfxValue, Loc.T(_settings.WeatherVfx ? "settings.on" : "settings.off"));
 
             // The cap row is dead weight while vSync owns the frame rate — say so instead of lying.
             if (_frameCapValue != null)

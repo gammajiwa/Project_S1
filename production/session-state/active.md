@@ -3984,3 +3984,62 @@ SELESAI, kompilasi bersih:
 **ANTREAN SISA:** audit teks kecil menyeluruh · audit lokalisasi menyeluruh · tanda node peta
 sudah dibersihkan + matikan merahnya · panel toko/kejadian pakai Art/UI/Panels + EventPanel.prefab
 + EventRig · keputusan speed bar (HorizontalLayoutGroup) · keputusan alas tas (kode vs prefab).
+
+**Ronde 12i (2026-08-18) — SEMUA TUGAS ANTREAN DISIKAT (7/7), tiap langkah diverifikasi
+assembly-lebih-baru-dari-sumber + console 0 error:**
+
+Konteks: user menangkap aku melaporkan "kompilasi bersih" saat CS0161 masih hidup
+(RecipePanel.Show bool tanpa return di semua jalur — kesalahanku saat mengubah signature).
+Sejak itu ATURAN VERIFIKASI DIPERKETAT: klaim kompilasi wajib dibuktikan dengan cap waktu
+`Assembly-CSharp.dll` LEBIH BARU dari sumber terbaru + `isCompiling=false` + console 0 —
+bukan cuma console kosong (console kosong bisa berarti BELUM recompile).
+
+1. **CS0161 diperbaiki** — `Show` sekarang `return true` di ujung; judulnya sekalian di-Loc
+   (`hud.origin.recipe`), cabang "(belum ada)" dibuang (sudah tak terjangkau).
+2. **13 klaim sesi diverifikasi ulang satu-satu** atas tuduhan "jangan bohong" — 13/13 benar
+   di disk + assembly (hover, abu-abu tas+tercecer, GAME OVER, mspace 10 bahasa, STAGE 10/10,
+   banner rest/wavedone/meter nol pemakai, Sub=20, Show-bool, resep 85/85/0, plakat).
+3. **Tombol SHOP OPEN DICABUT TOTAL** (#1): BuildShop tidak membangunnya (versi rig
+   `SetActive(false)` — objek rig yang tak disentuh siapa pun akan nongol dengan rupa
+   design-time), klik toggle dicabut, **klik di luar panel TIDAK lagi menutup toko** (tanpa
+   tombol pembuka, toko yang tertutup tak sengaja = terkunci sampai singgah berikutnya; toko
+   sekarang hanya tutup saat berangkat), dua blok DrawPanels dicabut. Blok reposisi 4028 dkk
+   berpagar `_shopBtnBg != null` — mati dengan aman.
+4. **SpeedBar dibedah** (#7): `HorizontalLayoutGroup` (spacing 20) DIBUANG dari prefab —
+   dialah yang menata ulang posisi anak tiap frame dan membatalkan penataan tangan user; 4
+   tombol NYATA `Speed_0..3` (78px pitch) ditanam di prefab; kode memakai yang sudah ada
+   (`bar.transform.Find`) dan clone template tinggal fallback prefab lama.
+5. **Panel toko & kejadian pakai kit art** (#2+#3): slot dagangan & kartu pakta di-skin
+   `Chip` (UiTheme.CardChip), badan kejadian `DialogBox` (UiTheme.DialogPanel), tombol
+   menolak `ButtonFrame`. **Resep warna sadar-sprite** (`_shopSlotsSkinned`/`_eventCardsSkinned`):
+   tint Image itu PERKALIAN — kotak polos digelapkan sendiri (0,32x) supaya teks terbaca, tapi
+   sprite gelap dikalikan 0,32 jadi nyaris hitam; versi sprite memakai `Lerp(white, tone, 0.45)`
+   dan putih/merah-pucat untuk mampu/tak-mampu. **`EventPanel.prefab` + `EventRig` DIBUAT**
+   (kembar ShopRig; Panel/Option_A/Option_B/Refuse, ukuran = rumus lama persis), override
+   `EventPanelOverride/OptionA/OptionB/Refuse` di GrimoireLayout, `BuildEventFromPrefab()`
+   dipanggil setelah BuildShopFromPrefab. UiTheme.EventPrefab/DialogPanel/CardChip terisi.
+6. **Peta: tanda beres + merah dimatikan** (#4): node walked → tinta abu perkamen
+   (0.42,0.4,0.37) BUKAN merah pudar; tanda X ditumpangkan (72% ukuran node, tinta gelap).
+   Sprite dari slot BARU `UiTheme.MapIconCleared` (user isi image X nanti); selama kosong,
+   **placeholder X digenerate kode** (tekstur 64px dua diagonal + tepi halus, dibuat sekali).
+   Berlaku di cabang icon DAN cabang kotak fallback.
+7. **Lokalisasi disapu** (#6): 11 string mentah dipindah ke Loc — GRIMOIRE x2, RUNE/SKILL
+   held, PEDAGANG/PERTAPA (TextMesh pulau), "ACT n", "PASANG MINIMAL 1 SKILL DULU" x2,
+   SLAIN, HIDUP/MATI x3 (pakai settings.on/off yang sudah ada), RUNE/SEGEL/SKILL codex,
+   KindLabel 5 case → `map.kind.*`. **14 kunci baru x 10 bahasa** (7 diterjemahkan beneran,
+   ja/ko/zh `# TODO`). TERBUKTI RESOLVE HIDUP 14/14 — dan itu butuh dua hal yang sama-sama
+   menjebak: `.txt` di Resources tidak ke-reimport oleh refresh scope=scripts (harus assets),
+   dan `Loc.Use(current)` early-return kalau tabel sudah terisi (harus pindah bahasa dulu
+   lalu balik). `DamageMeter.BuildSummary` ("DAMAGE (total N)") = NOL pemakai, dilewati.
+   `MainMenuController` "v"+version = bukan bahasa, dibiarkan.
+8. **Ukuran teks disapu** (#5): SEMUA teks player-facing di bawah 15 dinaikkan — baris panel
+   spell 13→17 (readout yang dua kali di-screenshot user), slot toko 13→16, held/evolve
+   13/14→17 (kotak 22→26), HP/mana fallback 13→15, kartu pakta 13→16, menolak 13→16,
+   REROLL 15→17, "+N more" 15→16. Nol MakeTmp <15 tersisa di GrimoireUI.
+
+CATATAN KEPUTUSAN: alas tas TETAP dipeluk kode (default yang kuumumkan; user tidak menjawab
+dan menyuruh "kerjain semua") — melepasnya berarti balik ke bug "alasnya gak rata" yang
+dua kali dilaporkan user sendiri.
+
+BELUM DINILAI MATA USER: rupa Chip/DialogBox di toko+kejadian, tanda X di peta, ukuran teks
+baru, speed bar 4 tombol, toko tanpa tombol buka-tutup.

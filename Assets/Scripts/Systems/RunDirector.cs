@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace Proto
@@ -165,7 +165,7 @@ namespace Proto
                 Act++;
                 Map = GenerateMap();
                 Trail.Clear();
-                OnAnnounce?.Invoke("ACT " + Act, new Color(1f, 0.84f, 0.32f));
+                OnAnnounce?.Invoke(Loc.F("announce.act", Act), new Color(1f, 0.84f, 0.32f));
             }
 
             // Bukan langsung ke peta: drop baru tumpah dan grimoire baru terbuka. Pemain
@@ -187,7 +187,7 @@ namespace Proto
 
             if (CanEmbark != null && !CanEmbark())
             {
-                OnAnnounce?.Invoke("PASANG MINIMAL 1 SKILL DULU", new Color(1f, 0.75f, 0.4f));
+                OnAnnounce?.Invoke(Loc.T("announce.needskill"), new Color(1f, 0.75f, 0.4f));
                 return;
             }
 
@@ -216,7 +216,7 @@ namespace Proto
 
             if (CanEmbark != null && !CanEmbark())
             {
-                OnAnnounce?.Invoke("PASANG MINIMAL 1 SKILL DULU", new Color(1f, 0.75f, 0.4f));
+                OnAnnounce?.Invoke(Loc.T("announce.needskill"), new Color(1f, 0.75f, 0.4f));
                 return;
             }
 
@@ -330,11 +330,11 @@ namespace Proto
         {
             switch (kind)
             {
-                case RunNodeKind.Elite: return "ELITE";
-                case RunNodeKind.Shop: return "TOKO";
-                case RunNodeKind.Event: return "???";
-                case RunNodeKind.Boss: return "BOSS";
-                default: return "STAGE";
+                case RunNodeKind.Elite: return Loc.T("map.kind.elite");
+                case RunNodeKind.Shop: return Loc.T("map.kind.shop");
+                case RunNodeKind.Event: return Loc.T("map.kind.event");
+                case RunNodeKind.Boss: return Loc.T("map.kind.boss");
+                default: return Loc.T("map.kind.fight");
             }
         }
 
@@ -432,7 +432,7 @@ namespace Proto
             hostLabelGo.transform.rotation = Quaternion.Euler(68f, 0f, 0f);
 
             var hostLabel = hostLabelGo.AddComponent<TextMesh>();
-            hostLabel.text = kind == RunNodeKind.Shop ? "PEDAGANG" : "PERTAPA";
+            hostLabel.text = Loc.T(kind == RunNodeKind.Shop ? "island.host.shop" : "island.host.hermit");
             hostLabel.font = _font;
             hostLabel.fontSize = 40;
             hostLabel.characterSize = 0.05f;

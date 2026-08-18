@@ -448,8 +448,8 @@ namespace Proto
 
         static string KindLabel(PieceDefinition piece)
         {
-            if (piece.IsRune) return "RUNE";
-            return piece.IsPassive ? "SEGEL" : "SKILL";
+            if (piece.IsRune) return Loc.T("held.kind.rune");
+            return Loc.T(piece.IsPassive ? "codex.kind.sigil" : "held.kind.skill");
         }
     }
 }

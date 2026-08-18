@@ -906,7 +906,7 @@ namespace Proto
             _gridTitle = MakeTmp("GridTitle", titleAt, new Vector2(400, 24), 17,
                 _theme != null ? _theme.GridTitleInk : new Color(0.85f, 0.82f, 0.95f),
                 Vector2.zero, TextAlignmentOptions.BottomLeft);
-            _gridTitle.text = "GRIMOIRE";
+            _gridTitle.text = Loc.T("hud.grid.title");
 
             // Prefab yang sudah membawa ornamen judulnya sendiri mematikan tulisan bawaan.
             // Objeknya tetap DIBUAT, cuma tidak digambar: UpdateHud menulis ke sini tiap frame,
@@ -915,11 +915,11 @@ namespace Proto
 
             // Below the three icon strips, which now own the band straight under the mana bar.
             _heldText = MakeTmp("HeldInfo", new Vector2(Margin, StripAilmentY - 62f),
-                new Vector2(880, 22), 13, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
+                new Vector2(880, 26), 17, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
                 TextAlignmentOptions.TopLeft);
 
             _evolveText = MakeTmp("EvolveInfo", new Vector2(Margin, StripAilmentY - 84f),
-                new Vector2(880, 22), 14, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
+                new Vector2(880, 26), 17, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
                 TextAlignmentOptions.TopLeft);
             _evolveText.text = "";
         }
@@ -1557,7 +1557,7 @@ namespace Proto
                 if (!_shopSlotsSkinned) Frame(_shopSlotBg[i]);
                 _shopSlotBg[i].enabled = false;
 
-                _shopSlotText[i] = MakeTmp($"ShopSlotText_{i}", Vector2.zero, new Vector2(ShopSlotW - 10, 40), 13,
+                _shopSlotText[i] = MakeTmp($"ShopSlotText_{i}", Vector2.zero, new Vector2(ShopSlotW - 10, 40), 16,
                     Color.white, Vector2.zero, TextAlignmentOptions.Bottom);
                 _shopSlotText[i].enabled = false;
             }
@@ -1570,7 +1570,7 @@ namespace Proto
                 Frame(_rerollBg);
             _rerollBg.enabled = false;
 
-            _rerollLabel = MakeTmp("RerollLabel", Vector2.zero, new Vector2(240, 22), 15,
+            _rerollLabel = MakeTmp("RerollLabel", Vector2.zero, new Vector2(240, 24), 17,
                 Color.white, Vector2.zero, TextAlignmentOptions.Bottom);
             _rerollLabel.enabled = false;
 
@@ -1660,7 +1660,7 @@ namespace Proto
                 _spellFill[i].fillOrigin = 0;
 
                 _spellText[i] = MakeTmp($"SpellText_{i}", new Vector2(SpellPanelRight - 8, y - 2),
-                    new Vector2(SpellPanelW - 10, 36), 13, TextBone, new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
+                    new Vector2(SpellPanelW - 10, 36), 17, TextBone, new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
 
                 // Takik warna piece di bibir kiri baris — dibuat SETELAH teks supaya tergambar
                 // paling atas. Warnanya diisi DrawSpells dari warna piece yang menempati baris.
@@ -1676,7 +1676,7 @@ namespace Proto
             // cukup diakui jumlahnya. Menampilkan SEMUA baris adalah alasan panel lama memanjang
             // sampai apa pun yang duduk di dekatnya tertimpa.
             _spellMore = MakeTmp("SpellMore", new Vector2(SpellPanelRight - 8, SpellPanelTop - 26f),
-                new Vector2(SpellPanelW, 22), 15, TextDim, new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
+                new Vector2(SpellPanelW, 22), 16, TextDim, new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
             _spellMore.text = "";
         }
 
@@ -1752,7 +1752,7 @@ namespace Proto
             // Ekor "+N" tetap kode: posisinya dihitung ulang mengikuti berapa baris yang
             // sedang tampil. (Judul panel DIBUANG atas permintaan pemilik project.)
             _spellMore = MakeTmp("SpellMore", new Vector2(SpellPanelRight - 8, SpellPanelTop - 26f),
-                new Vector2(SpellPanelW, 22), 15, TextDim, new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
+                new Vector2(SpellPanelW, 22), 16, TextDim, new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
             _spellMore.text = "";
             return true;
         }
@@ -2227,7 +2227,7 @@ namespace Proto
                 _hpFill.type = Image.Type.Filled;
                 _hpFill.fillMethod = Image.FillMethod.Horizontal;
                 _hpFill.fillOrigin = 0;
-                _hpLabel = MakeTmp("HpLabel", new Vector2(Margin + 6, -51), new Vector2(250, 18), 13,
+                _hpLabel = MakeTmp("HpLabel", new Vector2(Margin + 6, -51), new Vector2(250, 20), 15,
                     Color.white, new Vector2(0f, 1f), TextAlignmentOptions.TopLeft);
 
                 _manaBg = MakeImage("ManaBg", new Vector2(Margin, -72), new Vector2(260, 18),
@@ -2237,7 +2237,7 @@ namespace Proto
                 _manaFill.type = Image.Type.Filled;
                 _manaFill.fillMethod = Image.FillMethod.Horizontal;
                 _manaFill.fillOrigin = 0;
-                _manaLabel = MakeTmp("ManaLabel", new Vector2(Margin + 6, -73), new Vector2(250, 18), 13,
+                _manaLabel = MakeTmp("ManaLabel", new Vector2(Margin + 6, -73), new Vector2(250, 20), 15,
                     Color.white, new Vector2(0f, 1f), TextAlignmentOptions.TopLeft);
 
                 _hpHover = _hpFill.rectTransform;
@@ -3126,7 +3126,7 @@ namespace Proto
             {
                 // Layar GAME OVER yang bicara sekarang; banner di tengah arena cuma akan
                 // bertumpuk dengan judulnya sendiri.
-                _gridTitle.text = "GRIMOIRE";
+                _gridTitle.text = Loc.T("hud.grid.title");
                 _bannerText.text = "";
 
                 if (ProtoInput.RestartDown) LoadScene(GameSceneName);
@@ -4299,16 +4299,16 @@ namespace Proto
             // Kartu pakta membawa tiga baris — nama, berkah, kutuk — jadi kotaknya lebih tinggi
             // dan hurufnya lebih kecil dari label tombol biasa. Dua baris pertama boleh dibaca
             // sekilas; baris kutuk justru yang harus dibaca pelan, dan itu tidak muat di 60 piksel.
-            _eventALabel = MakeTmp("EventALabel", Vector2.zero, new Vector2(276f, 126f), 13,
+            _eventALabel = MakeTmp("EventALabel", Vector2.zero, new Vector2(276f, 126f), 16,
                 Color.white, Vector2.zero, TextAlignmentOptions.Center);
-            _eventBLabel = MakeTmp("EventBLabel", Vector2.zero, new Vector2(276f, 126f), 13,
+            _eventBLabel = MakeTmp("EventBLabel", Vector2.zero, new Vector2(276f, 126f), 16,
                 Color.white, Vector2.zero, TextAlignmentOptions.Center);
 
             _eventCBg = MakeImage("EventC", Vector2.zero, Vector2.zero,
                 PanelInk, Vector2.zero);
             if (!Skin(_eventCBg, _theme != null ? _theme.ButtonFrame : null))
                 Frame(_eventCBg);
-            _eventCLabel = MakeTmp("EventCLabel", Vector2.zero, new Vector2(240f, 30f), 13,
+            _eventCLabel = MakeTmp("EventCLabel", Vector2.zero, new Vector2(240f, 30f), 16,
                 TextDim, Vector2.zero, TextAlignmentOptions.Center);
 
             Centre(_eventBg.rectTransform);
@@ -6142,7 +6142,7 @@ namespace Proto
                 return;
             }
 
-            string kind = _held.Layer == Layer.Rune ? "RUNE" : "SKILL";
+            string kind = Loc.T(_held.Layer == Layer.Rune ? "held.kind.rune" : "held.kind.skill");
             _heldText.text = kind + " - " + _held.DisplayName + "   " + _held.Blurb;
         }
 

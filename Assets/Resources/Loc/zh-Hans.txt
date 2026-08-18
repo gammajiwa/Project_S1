@@ -551,3 +551,17 @@
 # TODO tip.skill.range=range {0}
 # TODO tip.typeline={0}  ·  {1}  ·  {2} cells
 # TODO tip.typeline.element=  ·  {0}
+# TODO announce.act=ACT {0}
+# TODO announce.needskill=PLACE AT LEAST 1 SKILL FIRST
+# TODO announce.slain=SLAIN
+# TODO codex.kind.sigil=SIGIL
+# TODO held.kind.rune=RUNE
+# TODO held.kind.skill=SKILL
+# TODO hud.grid.title=GRIMOIRE
+# TODO island.host.hermit=HERMIT
+# TODO island.host.shop=MERCHANT
+# TODO map.kind.boss=BOSS
+# TODO map.kind.elite=ELITE
+# TODO map.kind.event=???
+# TODO map.kind.fight=STAGE
+# TODO map.kind.shop=SHOP

@@ -339,7 +339,7 @@ namespace Proto
                 ui.Announce(boss.Def.DisplayName.ToUpperInvariant(), new Color(1f, 0.35f, 0.3f));
 
             enemies.OnBossDied += at =>
-                ui.Announce("SLAIN", new Color(1f, 0.85f, 0.4f), at);
+                ui.Announce(Loc.T("announce.slain"), new Color(1f, 0.85f, 0.4f), at);
 
             caster.OnHurt += () => audio.Play(AudioDirector.Sound.Hit, 0.6f, 0.8f);
         }
