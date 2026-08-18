@@ -44,14 +44,22 @@ namespace Proto
         public int Count { get; private set; }
 
         /// <summary>Bentuk primitif yang diwarnai dari palet: satu bucket per warna.</summary>
-        // Shader tembus-pandang pohon DICABUT atas perintah pemilik project ("gak pernah
-        // bener") — semua prop kembali ke URP/Lit bawaan. Berkas Grimoire/PropSeeThrough dan
-        // SeeThroughFeeder masih parkir di disk, tidak direferensikan siapa pun.
-        public PropBatch(Mesh mesh, Color[] palette, bool castShadows = false)
+        //
+        // Shader tembus-pandang pohon PERNAH DICABUT ("gak pernah bener") dan sekarang
+        // dipasang lagi atas permintaan pemilik project — bedanya versi ini memudar dengan
+        // ALPHA, bukan melubangi diri dengan dither. Keluhannya yang membawanya kembali:
+        // "kamera bloking terus".
+        public PropBatch(Mesh mesh, Color[] palette, bool castShadows = false,
+            bool seeThrough = false)
         {
             _mesh = mesh;
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            // Prop tinggi (pohon) memakai shader yang memudar di sekitar pemain saat
+            // menghalangi. Selain itu — atau kalau shadernya belum terkompilasi — jatuh ke
+            // URP/Lit biasa, dan pohonnya sekadar kembali pejal, bukan merah muda.
+            Shader shader = null;
+            if (seeThrough) shader = Shader.Find("Grimoire/PropSeeThrough");
+            if (shader == null) shader = Shader.Find("Universal Render Pipeline/Lit");
             if (shader == null) shader = Shader.Find("Standard");
 
             var materials = new Material[palette.Length];
@@ -91,7 +99,8 @@ namespace Proto
         /// file itu kotor lalu ikut tersimpan — perubahan diam-diam pada paket pihak ketiga yang
         /// baru ketahuan saat file-nya muncul di diff.
         /// </summary>
-        public PropBatch(Mesh mesh, Material[] sources, bool castShadows = false)
+        public PropBatch(Mesh mesh, Material[] sources, bool castShadows = false,
+            bool seeThrough = false)
         {
             _mesh = mesh;
 
@@ -101,12 +110,20 @@ namespace Proto
 
             Allocate(count, true);
 
+            // Pohon mesh ikut memudar: salinannya ditukar ke shader tembus pandang, dan Unity
+            // memindahkan properti yang namanya sama (_BaseMap, _BaseColor, _Cutoff, _Cull) —
+            // teksturnya selamat, potongan daunnya selamat, sisi gambarnya selamat; cuma cara
+            // gambarnya yang berganti. Keyword material (_ALPHATEST_ON) ikut tersalin karena
+            // ia menempel di material, bukan di shadernya.
+            var seeThroughShader = seeThrough ? Shader.Find("Grimoire/PropSeeThrough") : null;
+
             var copies = new Material[count];
 
             for (int i = 0; i < count; i++)
             {
                 var source = sources[i] != null ? sources[i] : sources[0];
                 copies[i] = new Material(source) { enableInstancing = true };
+                if (seeThroughShader != null) copies[i].shader = seeThroughShader;
                 _submesh[i] = i;
             }
 

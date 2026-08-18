@@ -1,16 +1,47 @@
-// Pohon (batang, tajuk, pohon mesh) yang berdiri DI DEPAN pemain melubangi dirinya dengan
-// pola dither di sekitar posisi layar pemain — pemain tidak pernah hilang di balik hutan.
+// Pohon (batang, tajuk, pohon mesh) yang berdiri DI DEPAN pemain MEMUDAR di sekitar posisi
+// layar pemain — pemain tidak pernah hilang di balik hutan.
 //
 // Kenapa shader, bukan ganti material per pohon: pohon digambar lewat PropBatch
 // (RenderMeshInstanced, ribuan instance, tanpa GameObject per pohon), jadi tidak ada renderer
-// individual yang bisa dipudarkan. Lubangnya harus diputuskan per PIKSEL.
+// individual yang bisa dipudarkan. Pudarnya harus diputuskan per PIKSEL.
+//
+// ALPHA, BUKAN DITHER. Versi pertama shader ini melubangi diri dengan pola dither Bayer —
+// clip() per piksel di antrean Opaque. Itu ditolak pemilik project ("gak pernah bener"):
+// lubang dither tidak pernah terbaca sebagai kaca, melainkan sebagai taburan bintik yang
+// bercampur warna tanah, dan tepinya berkerlip tiap kamera bergerak satu piksel. Sekarang
+// pohonnya benar-benar TEMBUS: antrean Transparent-1, blending alpha biasa, dan gradasinya
+// mulus dari pejal di tepi sampai bayangan tipis di pusat.
+//
+// ANTREANNYA MASIH PEJAL (Geometry+400 = 2400), bukan Transparent — dan itu keputusan yang
+// paling mudah salah di seluruh berkas ini.
+//
+// URP menganggap apa pun di bawah 2500 sebagai pejal. Tinggal DI SITU berarti:
+//   - lantai, rumput, pemain, dan musuh (semua antrean 2000) sudah tergambar saat pohon
+//     menyusul, jadi campuran alpha-nya bercampur dengan yang benar;
+//   - pohon IKUT masuk `_CameraDepthTexture`, yang disalin URP sesudah pass pejal. Ini
+//     alasan sebenarnya. PC_Renderer memasang HAZE (kabut volumetrik) dan ia membaca
+//     kedalaman scene; pohon yang pindah ke antrean transparan hilang dari peta itu, dan
+//     kabutnya lalu dihitung memakai kedalaman TANAH DI BELAKANG pohon — pohon dekat pun
+//     ikut diselimuti kabut sejauh latarnya. SSAO ikut kehilangan mereka;
+//   - VFX (3000) tetap tergambar sesudahnya, dan karena pohon menulis kedalaman, sihir yang
+//     berada di balik pohon tetap tertutup dengan benar.
+//
+// ZWrite tetap ON walau berbaur: pohon yang lebih jauh ditolak kedalaman oleh pohon yang
+// lebih dekat, jadi tumpukan pohon tidak pernah berbaur dua kali jadi gumpalan gelap.
+//
+// Harganya: piksel pohon yang memudar TEPAT di atas langit akan bercampur dengan warna
+// bersih kamera, bukan dengan langit (skybox digambar sesudah pejal). Di sini itu tidak
+// pernah terjadi — kameranya ortografis menunduk dan pudarnya cuma terjadi di lingkaran
+// sekitar pemain, yaitu tengah layar, yang selalu tanah.
 //
 // Datanya global, diisi SeeThroughFeeder tiap frame:
 //   _SeeThroughData     xy = posisi viewport pemain, z = kedalaman mata pemain,
 //                       w  = jari-jari lubang (porsi tinggi layar)
-//   _SeeThroughStrength 0 = mati, 1 = pusat lubang hilang penuh
+//   _SeeThroughStrength 0 = mati, 1 = pudar penuh sampai _SeeThroughMin
+//   _SeeThroughMin      sisa keburaman di PUSAT lubang. 0 = hilang sama sekali; di atas nol
+//                       pohonnya jadi bayangan tipis — masih terbaca sebagai pohon.
 //
-// Bayangan TIDAK ikut bolong — pass ShadowCaster dibiarkan pejal, supaya cahaya tidak bocor
+// Bayangan TIDAK ikut memudar — pass ShadowCaster dibiarkan pejal, supaya cahaya tidak bocor
 // dari pohon yang cuma tembus di mata kamera.
 Shader "Grimoire/PropSeeThrough"
 {
@@ -21,16 +52,36 @@ Shader "Grimoire/PropSeeThrough"
         _Color("Color (legacy)", Color) = (1, 1, 1, 1)
         _Smoothness("Smoothness", Range(0, 1)) = 0
         _Metallic("Metallic", Range(0, 1)) = 0
+
+        // Dua properti ini TIDAK dipakai shader ini sendiri — ia menampungnya supaya nilai
+        // milik material paket pihak ketiga selamat saat shadernya ditukar di PropBatch.
+        // Kartu daun paket aset memakai potong-alpha dan sering dua sisi; tanpa keduanya
+        // daunnya berubah jadi kartu pejal satu sisi begitu pohon mesh ikut tembus pandang.
+        _Cutoff("Alpha Cutoff", Range(0, 1)) = 0.5
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 2
     }
 
     SubShader
     {
-        Tags { "RenderType" = "Opaque" "RenderPipeline" = "UniversalPipeline" "Queue" = "Geometry" }
+        // Geometry+400 (2400): paling belakang di antrean PEJAL. Lihat catatan panjang di atas
+        // — angka ini yang menjaga pohon tetap ada di peta kedalaman yang dibaca HAZE & SSAO.
+        Tags
+        {
+            "RenderType" = "Opaque"
+            "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Geometry+400"
+            "IgnoreProjector" = "True"
+        }
 
         Pass
         {
             Name "ForwardLit"
             Tags { "LightMode" = "UniversalForward" }
+
+            Blend SrcAlpha OneMinusSrcAlpha
+            ZWrite On
+            ZTest LEqual
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -47,6 +98,12 @@ Shader "Grimoire/PropSeeThrough"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fog
 
+            // multi_compile, bukan shader_feature: materialnya dirakit SAAT JALAN (salinan
+            // material paket yang shadernya ditukar), jadi tidak ada satu pun aset .mat yang
+            // bisa dibaca pemangkas varian saat build. shader_feature akan terpangkas habis
+            // dan kartu daun kehilangan potongannya justru di build, bukan di editor.
+            #pragma multi_compile _ _ALPHATEST_ON
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -59,10 +116,13 @@ Shader "Grimoire/PropSeeThrough"
                 half4 _Color;
                 half _Smoothness;
                 half _Metallic;
+                half _Cutoff;
+                half _Cull;
             CBUFFER_END
 
             float4 _SeeThroughData;
             float _SeeThroughStrength;
+            float _SeeThroughMin;
 
             struct Attributes
             {
@@ -101,25 +161,18 @@ Shader "Grimoire/PropSeeThrough"
                 return o;
             }
 
-            half Dither4x4(float2 pixel)
-            {
-                int2 p = int2(fmod(pixel, 4.0));
-                int index = p.y * 4 + p.x;
-
-                // Matriks Bayer 4x4, dinormalkan 1..16 / 16.
-                const half d[16] =
-                {
-                    0.0625, 0.5625, 0.1875, 0.6875,
-                    0.8125, 0.3125, 0.9375, 0.4375,
-                    0.2500, 0.7500, 0.1250, 0.6250,
-                    1.0000, 0.5000, 0.8750, 0.3750
-                };
-                return d[index];
-            }
-
             half4 frag(Varyings i) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(i);
+
+                half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv) * _BaseColor;
+
+                // Potongan daun dulu, sebelum apa pun yang lain. Hanya kalau materialnya
+                // memang memintanya — alpha peta warna milik batang & batu sering berisi
+                // data lain, dan memotong dengannya tanpa diminta membuat propnya lenyap.
+                #ifdef _ALPHATEST_ON
+                clip(albedo.a - _Cutoff);
+                #endif
 
                 // Posisi layar piksel ini, disamakan ruangnya dengan WorldToViewportPoint
                 // (y dari BAWAH) — SV_POSITION menghitung y dari atas di D3D.
@@ -133,16 +186,22 @@ Shader "Grimoire/PropSeeThrough"
                 toPlayer.x *= aspect;
                 float dist = length(toPlayer);
 
-                // Tepi lembutnya CINCIN TIPIS (80%..100% jari-jari), bukan setengah lubang:
-                // zona dither yang lebar membuat pohon di dekat pemain jadi taburan bintik
-                // bercampur warna tanah — persis "berantakan" yang ditunjuk pemilik project.
-                // Pusatnya bolong PENUH, tepinya baru menyisir dither.
-                half hole = 1.0 - smoothstep(_SeeThroughData.w * 0.8, _SeeThroughData.w, dist);
-                bool inFront = i.viewZ < _SeeThroughData.z - 0.4;
-                half keep = 1.0 - (inFront ? hole * _SeeThroughStrength : 0.0);
-                clip(keep - Dither4x4(i.positionCS.xy));
+                // Gradasinya LEBAR sekarang (35%..100% jari-jari), kebalikan dari versi dither.
+                // Cincin tipis dulu wajib karena dither yang melebar jadi bintik; alpha justru
+                // sebaliknya — peralihan pendek terbaca sebagai lubang bertepi keras yang
+                // ikut bergerak bersama pemain, dan itu yang mencuri perhatian dari lapangan.
+                half hole = 1.0 - smoothstep(_SeeThroughData.w * 0.35, _SeeThroughData.w, dist);
 
-                half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv) * _BaseColor;
+                // 0,4 unit toleransi: piksel yang sebidang dengan pemain bukan penghalang,
+                // dan tanpa jeda ini pohon yang berdiri PERSIS di garis pemain berkedip
+                // antara pejal dan tembus tiap langkah.
+                bool inFront = i.viewZ < _SeeThroughData.z - 0.4;
+                half fade = inFront ? hole * _SeeThroughStrength : 0.0;
+
+                // Pusatnya menyisakan _SeeThroughMin, bukan nol. Pohon yang HILANG total
+                // membuat hutannya berlubang saat pemain lewat; bayangan tipis tetap
+                // membaca sebagai pohon yang sedang dilewati.
+                half alpha = lerp(1.0, saturate(_SeeThroughMin), saturate(fade));
 
                 // Pencahayaan lewat jalur resmi URP, bukan Lambert rakitan — cara termudah
                 // agar hasilnya identik dengan URP/Lit di Forward+ maupun Forward biasa
@@ -159,14 +218,18 @@ Shader "Grimoire/PropSeeThrough"
 
                 SurfaceData surfaceData = (SurfaceData)0;
                 surfaceData.albedo = albedo.rgb;
-                surfaceData.alpha = 1;
+                surfaceData.alpha = alpha;
                 surfaceData.metallic = _Metallic;
                 surfaceData.smoothness = _Smoothness;
                 surfaceData.occlusion = 1;
 
                 half4 color = UniversalFragmentPBR(inputData, surfaceData);
+
+                // Kabutnya dicampur ke RGB saja. MixFog versi transparan tidak boleh menyentuh
+                // alpha: pohon jauh yang ikut kehilangan alpha karena kabut akan menampakkan
+                // langit lewat badannya sendiri.
                 color.rgb = MixFog(color.rgb, i.fogFactor);
-                color.a = 1;
+                color.a = alpha;
                 return color;
             }
             ENDHLSL
@@ -179,14 +242,29 @@ Shader "Grimoire/PropSeeThrough"
             ZWrite On
             ZTest LEqual
             ColorMask 0
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma vertex shadowVert
             #pragma fragment shadowFrag
             #pragma multi_compile_instancing
+            #pragma multi_compile _ _ALPHATEST_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                half4 _BaseColor;
+                half4 _Color;
+                half _Smoothness;
+                half _Metallic;
+                half _Cutoff;
+                half _Cull;
+            CBUFFER_END
 
             float3 _LightDirection;
 
@@ -194,12 +272,14 @@ Shader "Grimoire/PropSeeThrough"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
+                float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct ShadowVaryings
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
             };
 
             ShadowVaryings shadowVert(ShadowAttributes v)
@@ -210,6 +290,7 @@ Shader "Grimoire/PropSeeThrough"
                 float3 positionWS = TransformObjectToWorld(v.positionOS.xyz);
                 float3 normalWS = TransformObjectToWorldNormal(v.normalOS);
                 o.positionCS = TransformWorldToHClip(ApplyShadowBias(positionWS, normalWS, _LightDirection));
+                o.uv = TRANSFORM_TEX(v.uv, _BaseMap);
 
                 #if UNITY_REVERSED_Z
                 o.positionCS.z = min(o.positionCS.z, o.positionCS.w * UNITY_NEAR_CLIP_VALUE);
@@ -219,7 +300,16 @@ Shader "Grimoire/PropSeeThrough"
                 return o;
             }
 
-            half4 shadowFrag(ShadowVaryings i) : SV_Target { return 0; }
+            half4 shadowFrag(ShadowVaryings i) : SV_Target
+            {
+                // Bayangan tetap PEJAL — tembus pandang cuma urusan mata kamera. Yang ikut
+                // hanyalah potongan daun: kartu daun yang membayang sebagai kotak penuh
+                // membuat bayangan pohon jadi papan iklan.
+                #ifdef _ALPHATEST_ON
+                clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).a * _BaseColor.a - _Cutoff);
+                #endif
+                return 0;
+            }
             ENDHLSL
         }
 
@@ -229,23 +319,40 @@ Shader "Grimoire/PropSeeThrough"
             Tags { "LightMode" = "DepthOnly" }
             ZWrite On
             ColorMask 0
+            Cull [_Cull]
 
             HLSLPROGRAM
             #pragma vertex depthVert
             #pragma fragment depthFrag
             #pragma multi_compile_instancing
+            #pragma multi_compile _ _ALPHATEST_ON
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                float4 _BaseMap_ST;
+                half4 _BaseColor;
+                half4 _Color;
+                half _Smoothness;
+                half _Metallic;
+                half _Cutoff;
+                half _Cull;
+            CBUFFER_END
 
             struct DepthAttributes
             {
                 float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct DepthVaryings
             {
                 float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
             };
 
             DepthVaryings depthVert(DepthAttributes v)
@@ -254,10 +361,17 @@ Shader "Grimoire/PropSeeThrough"
 
                 DepthVaryings o;
                 o.positionCS = TransformObjectToHClip(v.positionOS.xyz);
+                o.uv = TRANSFORM_TEX(v.uv, _BaseMap);
                 return o;
             }
 
-            half4 depthFrag(DepthVaryings i) : SV_Target { return 0; }
+            half4 depthFrag(DepthVaryings i) : SV_Target
+            {
+                #ifdef _ALPHATEST_ON
+                clip(SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, i.uv).a * _BaseColor.a - _Cutoff);
+                #endif
+                return 0;
+            }
             ENDHLSL
         }
     }

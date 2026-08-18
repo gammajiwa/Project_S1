@@ -53,7 +53,10 @@ MonoBehaviour:
   NightChance: 0.5
   DuskChance: 0.35
   MidnightChance: 0.35
-  CameraDeadZone: 0.22
+  CameraDeadLeft: 0.22
+  CameraDeadRight: 0.15
+  CameraDeadBottom: 0.14
+  CameraDeadTop: 0.13
   EnemySeparation: 1.3
   SeparationWeight: 3
   InterceptLead: 1.1
@@ -90,7 +93,7 @@ MonoBehaviour:
   MapLanes: 5
   MapEliteChance: 0.15
   MapShopChance: 0.1
-  MapEventChance: 0.07
+  MapEventChance: 0.15
   MapGambleChance: 0
   MapEliteMinFloor: 5
   MapOpensRun: 1

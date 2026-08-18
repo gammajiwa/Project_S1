@@ -326,10 +326,22 @@ namespace Proto
         [Tooltip("Peluang jenis node istimewa per node — sisanya pertarungan biasa.")]
         [Range(0f, 1f)] public float MapEliteChance = 0.15f;
         [Range(0f, 1f)] public float MapShopChance = 0.12f;
-        [Range(0f, 1f)] public float MapEventChance = 0.1f;
+
+        [Tooltip("KEJADIAN — node tanda tanya, tempat pemain memilih pakta (modifier dunia).\n\n" +
+                 "Angkanya MEWARISI jatah node SLOT yang diparkir. Waktu slot diturunkan ke nol, " +
+                 "delapan persen itu tidak diberikan ke siapa pun: seluruhnya jatuh ke " +
+                 "pertarungan biasa, yang naik dari 68% ke 75% seluruh peta. Kejadian sendiri " +
+                 "tinggal 5% — kira-kira SATU node di seluruh layar peta — dan yang terbaca " +
+                 "pemilik project bukan 'kejadian jadi langka' melainkan 'kejadiannya ikut " +
+                 "dibuang'. Membuang satu jenis node tanpa memindahkan jatahnya membuat peta " +
+                 "lebih monoton, bukan lebih ringkas.")]
+        [Range(0f, 1f)] public float MapEventChance = 0.15f;
+
         [Tooltip("NOL di aset untuk rilis ini — node SLOT diparkir buat update berikutnya, " +
-                 "kode & panelnya utuh. Menaikkan angka ini yang menghidupkannya kembali.")]
-        [Range(0f, 1f)] public float MapGambleChance = 0.08f;
+                 "kode & panelnya utuh. Menaikkan angka ini yang menghidupkannya kembali — " +
+                 "dan kalau itu terjadi, turunkan MapEventChance kembali ke 0,07 supaya " +
+                 "kepadatan node istimewa tidak berubah dua kali.")]
+        [Range(0f, 1f)] public float MapGambleChance = 0f;
 
         [Tooltip("Elite baru boleh muncul dari lantai ini. Elite di lantai awal bukan " +
                  "pilihan melainkan tembok.\n\n" +

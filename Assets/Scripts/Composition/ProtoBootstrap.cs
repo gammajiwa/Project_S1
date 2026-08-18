@@ -140,6 +140,13 @@ namespace Proto
             var arenaCam = _rig.gameObject.AddComponent<ArenaCamera>();
             arenaCam.Init(playerGo.transform, cam, _balance);
 
+            // Pengisi data pudar tembus pandang pohon (shader Grimoire/PropSeeThrough) —
+            // duduk di kamera karena posisi layar pemain milik kamera, bukan milik pemain.
+            // Jari-jari, kekuatan, dan keburaman pusatnya bisa disetel di Inspector SELAGI
+            // main: komponennya ada di GameObject kamera, bernama sama dengan kelasnya.
+            var seeThrough = cam.gameObject.AddComponent<SeeThroughFeeder>();
+            seeThrough.Init(playerGo.transform, cam);
+
             // Musuh lahir relatif terhadap apa yang TERLIHAT, bukan terhadap pemain. Kamera punya
             // zona mati, jadi pemain boleh menyimpang jauh dari pusat layar — kotak yang mengikuti
             // pemain akan menetaskan musuh di dalam layar, di sisi yang barusan ditinggalkan.
