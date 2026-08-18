@@ -334,7 +334,7 @@ namespace Proto
                 case RunNodeKind.Shop: return "TOKO";
                 case RunNodeKind.Event: return "???";
                 case RunNodeKind.Boss: return "BOSS";
-                default: return "WAVE";
+                default: return "STAGE";
             }
         }
 

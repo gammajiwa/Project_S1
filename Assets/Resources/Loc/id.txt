@@ -49,19 +49,19 @@ hud.drops.sold=kelebihan kejual +{0} koin
 hud.evolve=EVOLVE!
 hud.exit=KELUAR KE MENU
 hud.full.sold=penuh, {0} kejual +{1}
-hud.gameover.info=run berakhir di wave {0}   -   {1} koin
+hud.gameover.info=run berakhir di stage {0}
 hud.gameover.menu=KE MENU UTAMA
 hud.gameover.title=GAME OVER
-hud.grid.locked=GRIMOIRE   (TERKUNCI - wave lagi jalan)
+hud.grid.locked=GRIMOIRE   (TERKUNCI - stage lagi jalan)
 hud.grid.open=GRIMOIRE   (bisa diubah)
 hud.hp.label=HP  {0} / {1}
 hud.hp.regen=   (+{0}/dtk)
-hud.line.enemies=   ·   musuh {0}
+hud.line.enemies=   ·   musuh <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   HABISKAN SISANYA
-hud.line.gold=   ·   <color=#E3C079>{0} koin</color>
-hud.line.kills=   ·   kills {0}
-hud.line.left=   ·   sisa {0}/{1}
-hud.line.wave=<color=#E3C079>WAVE {0}</color>
+hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> koin</color>
+hud.line.kills=   ·   kills <mspace=0.52em>{0}</mspace>
+hud.line.left=   ·   sisa <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+hud.line.wave=<color=#E3C079>STAGE <mspace=0.52em>{0}</mspace></color>
 hud.loose.sold={0} tercecer kejual  +{1} koin
 hud.mana.label=MANA  {0} / {1}
 hud.mana.regen=   (+{0}/dtk)
@@ -77,7 +77,7 @@ hud.speed.hint=kecepatan  (tombol 1/2/3/4)
 hud.spells.title=SPELL AKTIF
 hud.spells.more=+{0} lainnya
 hud.start.depart=LANJUT
-hud.start.wave=MULAI WAVE
+hud.start.wave=MULAI STAGE
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

@@ -49,19 +49,19 @@ hud.drops.sold=excedente vendido +{0} monedas
 hud.evolve=¡EVOLUCIÓN!
 hud.exit=SALIR AL MENÚ
 hud.full.sold=lleno, {0} vendido +{1}
-hud.gameover.info=partida terminada en la oleada {0}   -   {1} monedas
+hud.gameover.info=partida terminada en la fase {0}
 hud.gameover.menu=AL MENÚ PRINCIPAL
 hud.gameover.title=FIN DE LA PARTIDA
-hud.grid.locked=GRIMORIO   (BLOQUEADO - oleada en curso)
+hud.grid.locked=GRIMORIO   (BLOQUEADO - fase en curso)
 hud.grid.open=GRIMORIO   (editable)
 hud.hp.label=PV  {0} / {1}
 hud.hp.regen=   (+{0}/s)
-hud.line.enemies=   ·   enemigos {0}
+hud.line.enemies=   ·   enemigos <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   ACABA CON LOS QUE QUEDAN
-hud.line.gold=   ·   <color=#E3C079>{0} monedas</color>
-hud.line.kills=   ·   bajas {0}
-hud.line.left=   ·   quedan {0}/{1}
-hud.line.wave=<color=#E3C079>OLEADA {0}</color>
+hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> monedas</color>
+hud.line.kills=   ·   bajas <mspace=0.52em>{0}</mspace>
+hud.line.left=   ·   quedan <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+hud.line.wave=<color=#E3C079>FASE <mspace=0.52em>{0}</mspace></color>
 hud.loose.sold={0} sueltos vendidos  +{1} monedas
 hud.mana.label=MANÁ  {0} / {1}
 hud.mana.regen=   (+{0}/s)
@@ -76,7 +76,7 @@ hud.speed.hint=velocidad  (teclas 1/2/3/4)
 hud.spells.title=HECHIZOS ACTIVOS
 hud.spells.more=+{0} más
 hud.start.depart=CONTINUAR
-hud.start.wave=INICIAR OLEADA
+hud.start.wave=INICIAR FASE
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

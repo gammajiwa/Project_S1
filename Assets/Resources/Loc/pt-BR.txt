@@ -49,19 +49,19 @@ hud.drops.sold=excedente vendido +{0} moedas
 hud.evolve=EVOLUÇÃO!
 hud.exit=SAIR PARA O MENU
 hud.full.sold=cheio, {0} vendido +{1}
-hud.gameover.info=run encerrada na onda {0}   -   {1} moedas
+hud.gameover.info=run encerrada na fase {0}
 hud.gameover.menu=MENU PRINCIPAL
 hud.gameover.title=FIM DE JOGO
-hud.grid.locked=GRIMÓRIO   (TRAVADO - onda em curso)
+hud.grid.locked=GRIMÓRIO   (TRAVADO - fase em curso)
 hud.grid.open=GRIMÓRIO   (editável)
 hud.hp.label=PV  {0} / {1}
 hud.hp.regen=   (+{0}/s)
-hud.line.enemies=   ·   inimigos {0}
+hud.line.enemies=   ·   inimigos <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   ACABE COM O RESTO
-hud.line.gold=   ·   <color=#E3C079>{0} moedas</color>
-hud.line.kills=   ·   abates {0}
-hud.line.left=   ·   restam {0}/{1}
-hud.line.wave=<color=#E3C079>ONDA {0}</color>
+hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> moedas</color>
+hud.line.kills=   ·   abates <mspace=0.52em>{0}</mspace>
+hud.line.left=   ·   restam <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+hud.line.wave=<color=#E3C079>FASE <mspace=0.52em>{0}</mspace></color>
 hud.loose.sold={0} soltos vendidos  +{1} moedas
 hud.mana.label=MANA  {0} / {1}
 hud.mana.regen=   (+{0}/s)
@@ -76,7 +76,7 @@ hud.speed.hint=velocidade  (teclas 1/2/3/4)
 hud.spells.title=MAGIAS ATIVAS
 hud.spells.more=+{0} mais
 hud.start.depart=CONTINUAR
-hud.start.wave=INICIAR ONDA
+hud.start.wave=INICIAR FASE
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Proto
 {
@@ -329,6 +329,15 @@ namespace Proto
         public static Rect? ShopRerollOverride;
         public static Rect? StartButtonOverride;
         public static Rect? ShopButtonOverride;
+
+        // Kembarannya untuk panel KEJADIAN (EventRig) - aturan mainnya sama persis.
+        public static Rect? EventPanelOverride;
+        public static Rect? EventOptionAOverride;
+        public static Rect? EventOptionBOverride;
+        public static Rect? EventRefuseOverride;
+
+        /// <summary>Badan panel kejadian: kotak rig kalau ada, badan panel bersama kalau tidak.</summary>
+        public static Rect EventPanelRect() => EventPanelOverride ?? PanelRect();
 
         public static Rect StartButtonRect()
         {

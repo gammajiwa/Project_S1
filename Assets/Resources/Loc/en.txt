@@ -49,19 +49,19 @@ hud.drops.sold=overflow sold +{0} coins
 hud.evolve=EVOLVE!
 hud.exit=EXIT TO MENU
 hud.full.sold=full, {0} sold +{1}
-hud.gameover.info=run ended on wave {0}   -   {1} coins
+hud.gameover.info=run ended on stage {0}
 hud.gameover.menu=TO MAIN MENU
 hud.gameover.title=GAME OVER
-hud.grid.locked=GRIMOIRE   (LOCKED - wave running)
+hud.grid.locked=GRIMOIRE   (LOCKED - stage running)
 hud.grid.open=GRIMOIRE   (editable)
 hud.hp.label=HP  {0} / {1}
 hud.hp.regen=   (+{0}/s)
-hud.line.enemies=   ·   enemies {0}
+hud.line.enemies=   ·   enemies <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   FINISH THE REST
-hud.line.gold=   ·   <color=#E3C079>{0} coins</color>
-hud.line.kills=   ·   kills {0}
-hud.line.left=   ·   left {0}/{1}
-hud.line.wave=<color=#E3C079>WAVE {0}</color>
+hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> coins</color>
+hud.line.kills=   ·   kills <mspace=0.52em>{0}</mspace>
+hud.line.left=   ·   left <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+hud.line.wave=<color=#E3C079>STAGE <mspace=0.52em>{0}</mspace></color>
 hud.loose.sold={0} loose sold  +{1} coins
 hud.mana.label=MANA  {0} / {1}
 hud.mana.regen=   (+{0}/s)
@@ -77,7 +77,7 @@ hud.speed.hint=speed  (keys 1/2/3/4)
 hud.spells.title=ACTIVE SPELLS
 hud.spells.more=+{0} more
 hud.start.depart=CONTINUE
-hud.start.wave=START WAVE
+hud.start.wave=START STAGE
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

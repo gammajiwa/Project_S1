@@ -49,19 +49,19 @@ hud.drops.sold=излишек продан +{0} монет
 hud.evolve=ЭВОЛЮЦИЯ!
 hud.exit=ВЫЙТИ В МЕНЮ
 hud.full.sold=полно, {0} продан +{1}
-hud.gameover.info=забег окончен на волне {0}   -   {1} монет
+hud.gameover.info=забег окончен на этапе {0}
 hud.gameover.menu=В ГЛАВНОЕ МЕНЮ
 hud.gameover.title=ИГРА ОКОНЧЕНА
-hud.grid.locked=ГРИМУАР   (ЗАКРЫТ - идёт волна)
+hud.grid.locked=ГРИМУАР   (ЗАКРЫТ - идёт этап)
 hud.grid.open=ГРИМУАР   (можно менять)
 hud.hp.label=ЗД  {0} / {1}
 hud.hp.regen=   (+{0}/с)
-hud.line.enemies=   ·   врагов {0}
+hud.line.enemies=   ·   врагов <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   ДОБЕЙ ОСТАЛЬНЫХ
-hud.line.gold=   ·   <color=#E3C079>{0} монет</color>
-hud.line.kills=   ·   убийств {0}
-hud.line.left=   ·   осталось {0}/{1}
-hud.line.wave=<color=#E3C079>ВОЛНА {0}</color>
+hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> монет</color>
+hud.line.kills=   ·   убийств <mspace=0.52em>{0}</mspace>
+hud.line.left=   ·   осталось <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+hud.line.wave=<color=#E3C079>ЭТАП <mspace=0.52em>{0}</mspace></color>
 hud.loose.sold={0} с земли продано  +{1} монет
 hud.mana.label=МАНА  {0} / {1}
 hud.mana.regen=   (+{0}/с)
@@ -76,7 +76,7 @@ hud.speed.hint=скорость  (клавиши 1/2/3/4)
 hud.spells.title=АКТИВНЫЕ ЗАКЛИНАНИЯ
 hud.spells.more=ещё +{0}
 hud.start.depart=ДАЛЬШЕ
-hud.start.wave=НАЧАТЬ ВОЛНУ
+hud.start.wave=НАЧАТЬ ЭТАП
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

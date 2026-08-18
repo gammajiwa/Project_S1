@@ -49,19 +49,19 @@
 # TODO hud.evolve=EVOLVE!
 # TODO hud.exit=EXIT TO MENU
 # TODO hud.full.sold=full, {0} sold +{1}
-# TODO hud.gameover.info=run ended on wave {0}   -   {1} coins
+# TODO hud.gameover.info=run ended on stage {0}
 # TODO hud.gameover.menu=TO MAIN MENU
 # TODO hud.gameover.title=GAME OVER
-# TODO hud.grid.locked=GRIMOIRE   (LOCKED - wave running)
+# TODO hud.grid.locked=GRIMOIRE   (LOCKED - stage running)
 # TODO hud.grid.open=GRIMOIRE   (editable)
 # TODO hud.hp.label=HP  {0} / {1}
 # TODO hud.hp.regen=   (+{0}/s)
-# TODO hud.line.enemies=   ·   enemies {0}
+# TODO hud.line.enemies=   ·   enemies <mspace=0.52em>{0}</mspace>
 # TODO hud.line.finish=   ·   FINISH THE REST
-# TODO hud.line.gold=   ·   <color=#E3C079>{0} coins</color>
-# TODO hud.line.kills=   ·   kills {0}
-# TODO hud.line.left=   ·   left {0}/{1}
-# TODO hud.line.wave=<color=#E3C079>WAVE {0}</color>
+# TODO hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> coins</color>
+# TODO hud.line.kills=   ·   kills <mspace=0.52em>{0}</mspace>
+# TODO hud.line.left=   ·   left <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+# TODO hud.line.wave=<color=#E3C079>STAGE <mspace=0.52em>{0}</mspace></color>
 # TODO hud.loose.sold={0} loose sold  +{1} coins
 # TODO hud.mana.label=MANA  {0} / {1}
 # TODO hud.mana.regen=   (+{0}/s)
@@ -76,7 +76,7 @@
 # TODO hud.spells.title=ACTIVE SPELLS
 # TODO hud.spells.more=+{0} more
 # TODO hud.start.depart=CONTINUE
-# TODO hud.start.wave=START WAVE
+# TODO hud.start.wave=START STAGE
 # TODO hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

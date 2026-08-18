@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 namespace Proto
@@ -92,6 +92,25 @@ namespace Proto
                  "tombol LANJUT. Isi panelnya tetap digambar kode — yang kamu tata LETAKNYA.\n\n" +
                  "Kosong = tata letak hitungan lama.")]
         public GameObject ShopPrefab;
+
+        [Tooltip("PREFAB penempat panel KEJADIAN, membawa komponen EventRig.\n\n" +
+                 "Kotak-kotak kosong: badan panel, dua kartu pakta, tombol MENOLAK. Isi panelnya " +
+                 "tetap digambar kode — yang kamu tata LETAKNYA.\n\nKosong = tata letak hitungan lama.")]
+        public GameObject EventPrefab;
+
+        [Tooltip("Latar BADAN panel kejadian — DialogBox dari kit Panels. " +
+                 "Kosong = kotak gelap polos lama.")]
+        public Sprite DialogPanel;
+
+        [Tooltip("Bingkai KARTU kecil: slot dagangan toko dan kartu pakta kejadian — Chip dari " +
+                 "kit Panels. Kosong = kotak warna lama dengan garis Frame.")]
+        public Sprite CardChip;
+
+        [Tooltip("Tanda NODE PETA YANG SUDAH DIBERESKAN - gambar X (atau apa pun) yang " +
+                 "ditumpangkan di atas icon node yang sudah diinjak.\n\n" +
+                 "Kosong = placeholder X generatan kode, supaya tandanya tetap ada sebelum " +
+                 "art-nya jadi.")]
+        public Sprite MapIconCleared;
 
         [Tooltip("PREFAB deret tombol KECEPATAN (1x/2x/...). Letak, ukuran, jarak, dan rupa " +
                  "tombolnya SEPENUHNYA milik prefab — kode cuma meng-clone cetakan di dalamnya " +

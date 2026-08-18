@@ -33,7 +33,13 @@ namespace Proto
         //
         // Sekarang tiga tingkat saja, dan urutannya benar: judul > angka > keterangan.
         const string Head = "<size=26>";   // nama benda. Satu-satunya yang lebih besar dari angka.
-        const string Sub = "<size=16>";    // keterangan: jenis, asal, harga, catatan.
+        const string Sub = "<size=20>";    // keterangan: jenis, asal, harga, catatan.
+                                           // 20, bukan 16: badan kartu 22, dan 16 masih
+                                           // dilaporkan tidak kebaca. Yang membedakan
+                                           // tingkatan sekarang WARNA (abu redup), bukan
+                                           // ukuran - ukuran cuma perlu cukup beda untuk
+                                           // terbaca sebagai keterangan, bukan untuk
+                                           // memaksa mata menyipit.
         const string SizeEnd = "</size>";
 
         // Warna kartu. Dipisah jadi konstanta karena tiap potongan dipakai di beberapa tempat,

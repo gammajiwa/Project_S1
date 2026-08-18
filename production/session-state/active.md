@@ -3887,3 +3887,100 @@ Ada pengaman: kalau jumlah material < jumlah submesh, slotnya di-pad dengan mate
 TERVERIFIKASI: 147 dipasang / 0 gagal; **0 slot material null tersisa**; jumlah submesh = jumlah
 material untuk setiap jenis mesh; dan urutannya dicek silang dengan kolom submesh hasil potretan
 (`Spruce submesh=0 -> UNS_Spruce_Tree_Branch`) — jadi batang tidak tertukar dengan daun.
+
+**Ronde 12g (2026-08-18) — teks dicabut + akar "prefab-ku balik lagi" ditemukan:**
+
+SELESAI & terkompilasi bersih:
+- **Plakat HUD berhenti menyusut.** `GrimoireUI.cs:6655` dulu menulis
+  `sizeDelta = (preferredWidth + 24, 36)` TIAP REDRAW — tinggi **36 dipaku**, jadi berapa pun
+  yang disetel tangan di prefab menyusut balik sebelum sempat terlihat, tanpa satu pun pesan.
+  Sekarang ada `_hudPlaqueOwnsSize`: plakat yang datang dari rig TIDAK disentuh ukurannya;
+  hanya plakat gambar-kode (fallback) yang ikut panjang kalimat.
+- **Banner "WAVE n BERES" DICABUT** (2 jalur). Peringatan `hud.banner.needskill` SENGAJA
+  ditinggal — ia menjelaskan kenapa tombol lanjut tidak jalan, itu bukan hiasan. `hud.banner.build`
+  (wave 0) juga tinggal: onboarding pertama kali.
+- **"total 1024" DICABUT** (`hud.meter.total`). `BuildOtherSources` TETAP — reaksi & ailment
+  tidak punya baris sendiri di panel spell, membuangnya benar-benar menghilangkan angkanya.
+  Kalau tidak ada sumber lain, barisnya kosong dan tidak tergambar apa pun.
+
+**DUA "kenapa prefabku balik lagi" — AKARNYA BEDA, dan keduanya BUTUH KEPUTUSAN USER:**
+
+1. **Tombol speed (1x/2x/3x/4x).** Bukan kode yang menimpanya — **`SpeedBar.prefab` root-nya
+   punya `HorizontalLayoutGroup`**. Layout group MENGHITUNG ULANG posisi anak tiap frame, jadi
+   posisi per-tombol yang disetel tangan memang dibuang oleh Unity sendiri. Ditambah:
+   `BuildSpeedBarFromPrefab` meng-clone SATU `ButtonTemplate` empat kali, jadi kalau empat
+   tombol ditata satu-satu di prefab, tiga di antaranya tidak pernah dibaca.
+   *Pilihan:* (a) buang HorizontalLayoutGroup + taruh 4 tombol nyata di prefab, kode berhenti
+   meng-clone; atau (b) biarkan layout group yang menata, dan yang disetel tangan cukup
+   spacing/padding/ukuran template.
+
+2. **Alas tas (kotak petak di kanan buku).** Ini kode, dan **DISENGAJA** — `GrimoireUI.cs:1170`.
+   Alasannya tercatat di komentarnya: petak tas dihitung dari `GridOverride` milik prefab BUKU
+   (RightX/BagY ikut bergeser saat papan bergeser), jadi alas yang letaknya ditulis tangan PASTI
+   meleset begitu papan pindah — itulah keluhan **"alasnya gak rata"** yang sudah dua kali
+   dilaporkan user sendiri (Ronde 11).
+   *Konflik nyata antara dua permintaan user sendiri.* Pilihan: (a) kode tetap memeluk petak
+   (rata otomatis, tapi letak tangan diabaikan); atau (b) prefab yang menang (letak tangan
+   dihormati, tapi kalau papan bergeser alasnya meleset lagi).
+
+**ANTREAN BELUM DIKERJAKAN:**
+- Peta: tandai node yang sudah dibersihkan (placeholder dulu, user akan pasang gambar X), dan
+  **matikan warna merahnya**.
+- Panel toko & kejadian pakai `Assets/Art/UI/Panels`; perbaiki `ShopPanel.prefab` (sekarang
+  ANCHOR KOSONG — nol Image, visualnya digambar kode), dan buat `EventPanel.prefab` + `EventRig`
+  (kejadian belum punya prefab sama sekali — semuanya `MakeImage`/`MakeTmp` di kode).
+  Art tersedia dengan border 9-slice benar: PanelFrame(96,96,96,60) · PanelHeader(70,24,70,48) ·
+  DialogBox(72,72,72,72) · Button(40,34,40,34) · ButtonHover(52,46,52,46) · Chip(40,30,40,30) ·
+  NamePlate(70,0,70,0) · Divider · Bullet* · Chevron* · Ring*.
+- Resep: user tidak mau 1 item = 1 resep. Ingin satu item bisa dilebur lewat beberapa resep /
+  resepnya bisa diganti-ganti. BELUM diinvestigasi.
+
+**Ronde 12h (2026-08-18) — sapuan teks HUD + jawaban soal resep:**
+
+SELESAI, kompilasi bersih:
+- **Item belum terpasang jadi ABU-ABU.** `StashedTint` = (0,52 · 0,52 · 0,58). Parameter `dim`
+  ditambahkan eksplisit ke `DrawPieceArt`/`DrawPieceIcon`/`DrawPieceVisual` — SENGAJA tidak
+  menumpang flag `loose` yang sudah ada, karena `loose` itu penanda LAPISAN gambar, dan mencampur
+  dua arti di satu flag adalah cara paling murah membuat bug berikutnya. Isi tas dipanggil dengan
+  `dim: true`; yang terpasang di papan tetap warna asli. Keluhan user: "bingung gw mana item
+  kepasang mana engga".
+  *Nyaris salah:* penggantian pewarnaan mengenai 3 tempat, satu di antaranya `Skin()` yang tidak
+  punya parameter `dim` — ketahuan sebelum kompilasi, dikembalikan.
+- **Layar GAME OVER**: subjudul 22 → **34** (judulnya 92, jadi 22 terbaca mungil), dan **koin
+  DICABUT** dari `hud.gameover.info` di 10 bahasa. Alasan: angka yang tidak bisa dipakai lagi
+  setelah run berakhir bukan hasil, cuma keterangan.
+- **"WAVE" → "STAGE" di 10 bahasa**, 40/40 pasangan terganti. Dikerjakan dengan TABEL PASANGAN
+  EKSAK per bahasa, bukan regex: kata "wave" juga hidup di `piece.infernowave.name`
+  (Inferno Wave Sigil) dan di blurb Ripple yang bicara gelombang sungguhan — keduanya TIDAK
+  tersentuh, sudah diverifikasi. Terjemahan: de Welle→Stufe · es oleada→fase · fr vague→niveau ·
+  pt-BR onda→fase · ru волна→этап · ja/ko/zh masih placeholder Inggris.
+- **Baris HUD atas berhenti goyang.** Akarnya: angka tumbuh digitnya (5 → 161) sehingga seluruh
+  sisa kalimat bergeser tiap kali angkanya naik. Fix: tiap `{N}` di 5 kunci `hud.line.*` dibungkus
+  `<mspace=0.52em>` — SETIAP DIGIT jadi selebar sama. 0,52em dipilih karena
+  BarlowSemiCondensed itu font sempit; angka yang lebih besar akan terlihat renggang.
+  Dikerjakan di 10 bahasa, 5 kunci masing-masing.
+
+**JAWABAN TERUKUR SOAL RESEP — dua dugaan user terbantah datanya:**
+
+    171 resep · 99 item hasil unik
+    item dengan LEBIH DARI SATU resep = 51
+    resep yang HASILNYA rune          = 10
+    resep yang BAHANNYA rune          =  0
+
+- **"1 item cuma bisa 1 resep" TIDAK BENAR.** Kode (`RecipePanel.Collect`) sudah mengumpulkan
+  SEMUA resep yang cocok — yang membuat piece itu DAN yang memakainya — dan datanya pun sudah
+  punya **51 item dengan 2-3 resep**. Batas tampilnya `MaxRows = 5`; item dengan lebih dari 5
+  resep akan terpotong DIAM-DIAM (belum ada yang sebanyak itu, tapi ini utang).
+- **"rune di-hover + ALT, evo gak keluar" BUKAN BUG.** `Frost Rune` adalah satu dari **6 rune
+  yang memang tidak punya resep sama sekali**: Chrono, Ember, **Frost**, Plain, Spark, Void
+  (dari 16 rune; 10 sisanya punya). Kartunya benar menampilkan "(belum ada)" — ia sedang jujur.
+  Ditambah: **nol resep memakai rune sebagai BAHAN**, jadi bahkan rune yang bisa dibuat pun tidak
+  pernah punya bagian "dipakai untuk apa".
+  Ini keputusan DESAIN, bukan perbaikan kode: kalau enam rune dasar itu harus bisa dibuat/dilebur,
+  resepnya harus ditambahkan sebagai data.
+- Temuan sampingan: `RecipePanel.cs:264` menulis `"RESEP  -  "` dan `"   (belum ada)"` MENTAH,
+  tidak lewat `Loc` — masuk daftar temuan lokalisasi.
+
+**ANTREAN SISA:** audit teks kecil menyeluruh · audit lokalisasi menyeluruh · tanda node peta
+sudah dibersihkan + matikan merahnya · panel toko/kejadian pakai Art/UI/Panels + EventPanel.prefab
++ EventRig · keputusan speed bar (HorizontalLayoutGroup) · keputusan alas tas (kode vs prefab).

@@ -49,19 +49,19 @@ hud.drops.sold=surplus vendu +{0} pièces
 hud.evolve=ÉVOLUTION !
 hud.exit=QUITTER VERS LE MENU
 hud.full.sold=plein, {0} vendu +{1}
-hud.gameover.info=partie terminée à la vague {0}   -   {1} pièces
+hud.gameover.info=partie terminée au niveau {0}
 hud.gameover.menu=MENU PRINCIPAL
 hud.gameover.title=PARTIE TERMINÉE
-hud.grid.locked=GRIMOIRE   (VERROUILLÉ - vague en cours)
+hud.grid.locked=GRIMOIRE   (VERROUILLÉ - niveau en cours)
 hud.grid.open=GRIMOIRE   (modifiable)
 hud.hp.label=PV  {0} / {1}
 hud.hp.regen=   (+{0}/s)
-hud.line.enemies=   ·   ennemis {0}
+hud.line.enemies=   ·   ennemis <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   ACHÈVE LES DERNIERS
-hud.line.gold=   ·   <color=#E3C079>{0} pièces</color>
-hud.line.kills=   ·   éliminations {0}
-hud.line.left=   ·   restants {0}/{1}
-hud.line.wave=<color=#E3C079>VAGUE {0}</color>
+hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> pièces</color>
+hud.line.kills=   ·   éliminations <mspace=0.52em>{0}</mspace>
+hud.line.left=   ·   restants <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+hud.line.wave=<color=#E3C079>NIVEAU <mspace=0.52em>{0}</mspace></color>
 hud.loose.sold={0} au sol vendus  +{1} pièces
 hud.mana.label=MANA  {0} / {1}
 hud.mana.regen=   (+{0}/s)
@@ -76,7 +76,7 @@ hud.speed.hint=vitesse  (touches 1/2/3/4)
 hud.spells.title=SORTS ACTIFS
 hud.spells.more=+{0} de plus
 hud.start.depart=CONTINUER
-hud.start.wave=LANCER LA VAGUE
+hud.start.wave=LANCER LE NIVEAU
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

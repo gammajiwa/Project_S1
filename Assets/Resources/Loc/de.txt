@@ -49,19 +49,19 @@ hud.drops.sold=Überschuss verkauft +{0} Münzen
 hud.evolve=EVOLUTION!
 hud.exit=ZURÜCK ZUM MENÜ
 hud.full.sold=voll, {0} verkauft +{1}
-hud.gameover.info=Lauf endete in Welle {0}   -   {1} Münzen
+hud.gameover.info=Lauf endete in Stufe {0}
 hud.gameover.menu=ZUM HAUPTMENÜ
 hud.gameover.title=SPIEL VORBEI
-hud.grid.locked=GRIMOIRE   (GESPERRT - Welle läuft)
+hud.grid.locked=GRIMOIRE   (GESPERRT - Stufe läuft)
 hud.grid.open=GRIMOIRE   (änderbar)
 hud.hp.label=LP  {0} / {1}
 hud.hp.regen=   (+{0}/s)
-hud.line.enemies=   ·   Gegner {0}
+hud.line.enemies=   ·   Gegner <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   MACH DEN REST FERTIG
-hud.line.gold=   ·   <color=#E3C079>{0} Münzen</color>
-hud.line.kills=   ·   Kills {0}
-hud.line.left=   ·   übrig {0}/{1}
-hud.line.wave=<color=#E3C079>WELLE {0}</color>
+hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> Münzen</color>
+hud.line.kills=   ·   Kills <mspace=0.52em>{0}</mspace>
+hud.line.left=   ·   übrig <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
+hud.line.wave=<color=#E3C079>STUFE <mspace=0.52em>{0}</mspace></color>
 hud.loose.sold={0} am Boden verkauft  +{1} Münzen
 hud.mana.label=MANA  {0} / {1}
 hud.mana.regen=   (+{0}/s)
@@ -76,7 +76,7 @@ hud.speed.hint=Tempo  (Tasten 1/2/3/4)
 hud.spells.title=AKTIVE ZAUBER
 hud.spells.more=+{0} weitere
 hud.start.depart=WEITER
-hud.start.wave=WELLE STARTEN
+hud.start.wave=STUFE STARTEN
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

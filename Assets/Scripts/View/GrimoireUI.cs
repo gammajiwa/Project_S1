@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -189,6 +189,11 @@ namespace Proto
         Image[] _mapRings = System.Array.Empty<Image>();
         TextMeshProUGUI[] _mapGlyphs = System.Array.Empty<TextMeshProUGUI>();
         Image[] _mapIcons = System.Array.Empty<Image>();
+
+        /// <summary>Tanda "sudah dibereskan" di atas node yang telah diinjak. Sprite dari tema;
+        /// placeholder X generatan kode selama art-nya belum ada.</summary>
+        Image[] _mapClearedMarks = System.Array.Empty<Image>();
+        Sprite _clearedPlaceholder;
         int _mapSig = -1;
 
         // Bahan tampilan: kertas, bingkai, warna tinta. Boleh null — tiap pemakainya wajib jatuh
@@ -325,6 +330,12 @@ namespace Proto
         TextMeshProUGUI[] _shopSlotText;
         Image _rerollBg;
         TextMeshProUGUI _rerollLabel;
+        /// <summary>Kartu pakta memakai sprite Chip - resep pewarnaannya beda dari kotak polos.</summary>
+        bool _eventCardsSkinned;
+
+        /// <summary>Slot dagangan memakai sprite Chip - sama alasannya.</summary>
+        bool _shopSlotsSkinned;
+
         Image _shopBtnBg;
         TextMeshProUGUI _shopBtnLabel;
 
@@ -394,6 +405,12 @@ namespace Proto
 
         Image _hudPlaque;
 
+        /// <summary>
+        /// Plakat HUD datang dari prefab, jadi ukurannya BUKAN urusan kode lagi.
+        /// Lihat tempat ia diset dan tempat Redraw memeriksanya.
+        /// </summary>
+        bool _hudPlaqueOwnsSize;
+
         /// <summary>Row order for the panel: indices into Book.Spells, sorted by damage.</summary>
         readonly int[] _spellOrder = new int[MaxSpellRows];
 
@@ -403,8 +420,6 @@ namespace Proto
 
         // --- damage meter ---
         readonly DamageMeter _meter = new DamageMeter();
-        TextMeshProUGUI _meterText;
-        float _meterTimer;
 
         StatusStrip _buffStrip;
         StatusStrip _debuffStrip;
@@ -1259,9 +1274,12 @@ namespace Proto
             // Visual piece (art atau ikon terpusat) ikut menempel di piece yang menggeletak/
             // dipajang, skala mengikuti. Lapisan LOOSE, bukan lapisan depan biasa: petak
             // tercecer dinaikkan ke atas panel, dan art di lapisan biasa tenggelam di baliknya.
+            // Tercecer di tanah = BELUM TERPASANG, jadi diredupkan sama seperti isi tas.
+            // Yang menyala penuh hanya yang sudah duduk di papan — itu satu-satunya jawaban
+            // yang dicari mata: mana yang sudah kepasang, mana yang belum.
             if (!tiled)
                 DrawPieceVisual(def, origin, rot, LooseCellSize * scale, LooseCellGap * scale,
-                    alpha, loose: true);
+                    alpha, loose: true, dim: true);
 
             return cursor;
         }
@@ -1286,7 +1304,7 @@ namespace Proto
                 new Color(1f, 0.93f, 0.88f), new Vector2(0.5f, 0.5f), TextAlignmentOptions.Center);
             _overTitle.text = Loc.T("hud.gameover.title");
 
-            _overInfo = MakeTmp("OverInfo", new Vector2(0f, 88f), new Vector2(900f, 34f), 22,
+            _overInfo = MakeTmp("OverInfo", new Vector2(0f, 88f), new Vector2(900f, 48f), 34,
                 new Color(1f, 0.76f, 0.7f), new Vector2(0.5f, 0.5f), TextAlignmentOptions.Center);
 
             _overMenuBg = MakeImage("OverMenuBg", Vector2.zero, Vector2.zero,
@@ -1358,7 +1376,9 @@ namespace Proto
             SetAlpha(_overInfo, _overFade);
             SetAlpha(_overMenuLabel, _overFade);
 
-            _overInfo.text = Loc.F("hud.gameover.info", Enemies.Wave, _gold);
+            // Koin DICABUT dari layar mati atas permintaan pemilik project. Angka yang tidak
+            // bisa dipakai lagi setelah run berakhir bukan hasil, ia cuma keterangan.
+            _overInfo.text = Loc.F("hud.gameover.info", Enemies.Wave);
 
             var menu = GameOverMenuRect();
             Seat(_overMenuBg.rectTransform, menu);
@@ -1461,42 +1481,19 @@ namespace Proto
 
         void BuildShop()
         {
-            var shopRect = ShopButtonRect();
             var hudRig = AttachCombatHudRig();
 
+            // TOMBOL TOKO DICABUT TOTAL atas perintah pemilik project ("ngapain shop bisa
+            // dibuka-tutup"). Panel dagang terbuka sendiri begitu singgah di node toko dan
+            // tertutup saat berangkat — tidak ada lagi saklar di tengah.
+            //
+            // Versi prefab ikut DIMATIKAN, bukan sekadar tidak di-wire: objek rig yang tidak
+            // disentuh siapa pun akan tinggal di layar dengan rupa design-time-nya, dan itu
+            // persis "tombol misterius" yang beberapa kali harus dicabut dari layar ini.
+            _shopBtnBg = null;
+            _shopBtnLabel = null;
             if (hudRig != null && hudRig.ShopToggle != null)
-            {
-                // Tombol TOKO dari prefab HUD: badan dan label milik tangan user — sprite,
-                // font, dan letaknya dari prefab; kode tinggal menulis teks dan warna keadaan.
-                // Nonaktif = user menghapusnya; jangan bangkitkan versi gambar-kode.
-                _shopBtnBg = hudRig.ShopToggle;
-                _shopBtnLabel = hudRig.ShopLabel;
-
-                if (_shopBtnLabel == null)
-                {
-                    // Sama dengan tombol LANJUT: DrawShop menulis .enabled/.text tanpa periksa
-                    // null, jadi label darurat menempel sebagai anak badannya.
-                    _shopBtnLabel = MakeTmp("ShopBtnLabel", Vector2.zero,
-                        new Vector2(shopRect.width, 20), 14, TextGold,
-                        new Vector2(0.5f, 0.5f), TextAlignmentOptions.Center);
-                    _shopBtnLabel.rectTransform.SetParent(_shopBtnBg.rectTransform, false);
-                    _shopBtnLabel.rectTransform.anchorMin = Vector2.zero;
-                    _shopBtnLabel.rectTransform.anchorMax = Vector2.one;
-                    _shopBtnLabel.rectTransform.offsetMin = Vector2.zero;
-                    _shopBtnLabel.rectTransform.offsetMax = Vector2.zero;
-                }
-            }
-            else
-            {
-                _shopBtnBg = MakeImage("ShopBtn", new Vector2(shopRect.xMin, shopRect.yMin),
-                    shopRect.size, PanelInk, Vector2.zero);
-                if (!Skin(_shopBtnBg, _theme != null ? _theme.ButtonFrame : null))
-                    Frame(_shopBtnBg);
-                _shopBtnLabel = MakeTmp("ShopBtnLabel", new Vector2(shopRect.xMin, shopRect.yMin + 8f),
-                    new Vector2(shopRect.width, 20), 14, TextGold, Vector2.zero, TextAlignmentOptions.Bottom);
-            }
-
-            _shopBtnLabel.text = "TOKO";
+                hudRig.ShopToggle.gameObject.SetActive(false);
 
             // Baris "ALT + hover = lihat resep" dulu duduk di sini: teks selebar 220 px di atas
             // petak yang cuma 88 px, jadi ia menindih tombol PETA di sebelahnya. Bukan tombol,
@@ -1555,7 +1552,9 @@ namespace Proto
                     paper != null && !darkPanel
                         ? new Color(0.16f, 0.115f, 0.085f, 0.94f)
                         : new Color(0.13f, 0.13f, 0.18f, 0.95f), Vector2.zero);
-                Frame(_shopSlotBg[i]);
+                // Chip dari kit Panels; garis Frame lama hanya kalau art belum dipasang.
+                _shopSlotsSkinned = Skin(_shopSlotBg[i], _theme != null ? _theme.CardChip : null);
+                if (!_shopSlotsSkinned) Frame(_shopSlotBg[i]);
                 _shopSlotBg[i].enabled = false;
 
                 _shopSlotText[i] = MakeTmp($"ShopSlotText_{i}", Vector2.zero, new Vector2(ShopSlotW - 10, 40), 13,
@@ -1841,7 +1840,14 @@ namespace Proto
 
             for (int i = 0; i < Speeds.Length; i++)
             {
-                var clone = Instantiate(template.gameObject, template.parent, false);
+                // Tombol NYATA di prefab menang. Dulu SATU template di-clone empat kali di sini,
+                // dan itu setengah dari keluhan "tombolnya balik lagi": tiga tombol yang ditata
+                // tangan di prefab tidak pernah dibaca sama sekali. (Setengahnya lagi
+                // HorizontalLayoutGroup di root, yang menata ulang anak tiap frame — sudah
+                // dibuang dari prefabnya.) Clone tinggal jadi jaring untuk prefab lama.
+                var pre = bar.transform.Find($"Speed_{i}");
+                var clone = pre != null ? pre.gameObject
+                    : Instantiate(template.gameObject, template.parent, false);
                 clone.name = $"Speed_{i}";
                 clone.SetActive(true);
 
@@ -2161,6 +2167,12 @@ namespace Proto
             if (hudRig != null && hudRig.HudPlaque != null)
             {
                 _hudPlaque = hudRig.HudPlaque;
+
+                // Ukuran plakat jadi milik PREFAB, bukan kode. Selama ini Redraw menimpanya tiap
+                // frame dengan (lebar teks + 24) x 36 — tinggi 36 itu DIPAKU, jadi berapa pun yang
+                // disetel tangan di prefab akan menyusut balik ke 36 sebelum sempat terlihat, dan
+                // tidak ada satu pun pesan yang menjelaskan kenapa.
+                _hudPlaqueOwnsSize = true;
             }
             else
             {
@@ -2173,6 +2185,21 @@ namespace Proto
             if (hudRig != null && hudRig.HudLine != null)
             {
                 _hudText = hudRig.HudLine;
+
+                // Plakatnya sekarang BERUKURAN TETAP (milik prefab), jadi kalimatnya yang harus
+                // muat — bukan sebaliknya. Tanpa ini, baris terpanjang tumpah lewat tepi kanan
+                // plakat dan ekornya ("0 coins") terpotong; itu persis regresi yang lahir begitu
+                // plakat berhenti melebar mengikuti teks.
+                //
+                // Ukuran yang disetel tangan jadi BATAS ATAS, bukan digeser: kalimat yang sudah
+                // muat tidak pernah berubah sedikit pun, dan hanya yang kepanjangan yang menyusut.
+                // Turun paling banyak ke 72% — di bawah itu ia berhenti terbaca, dan teks yang
+                // muat tapi tak terbaca sama saja dengan tidak muat.
+                _hudText.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+                _hudText.overflowMode = TextOverflowModes.Overflow;
+                _hudText.enableAutoSizing = true;
+                _hudText.fontSizeMax = _hudText.fontSize;
+                _hudText.fontSizeMin = Mathf.Max(8f, _hudText.fontSize * 0.72f);
             }
             else
             {
@@ -2299,13 +2326,11 @@ namespace Proto
 
         void BuildMeter()
         {
-            // A single line now, the tail of the spell block — the whole meter block it replaced
-            // was a second copy of information the rows already carry. Posisi di sini cuma
-            // tebakan awal: DrawSpells menaruhnya di bawah baris terakhir (dan di bawah "+N")
-            // begitu tahu berapa baris yang benar-benar tampil.
-            _meterText = MakeTmp("Meter", new Vector2(SpellPanelRight - 8, SpellPanelTop - 46f),
-                new Vector2(SpellPanelW + 120, 24), 15, TextDim,
-                new Vector2(1f, 1f), TextAlignmentOptions.MidlineRight);
+            // BARIS METER DICABUT atas permintaan pemilik project ("gak ada text lagi info dmg").
+            // Ia dulu menempel di bawah "+N more" dan mengulang rincian damage yang sudah dibawa
+            // baris-baris spell di atasnya. DamageMeter sendiri TETAP HIDUP - ia yang mengurutkan
+            // baris spell dan menghitung persentasenya (DealtBy / ShareOf); yang dibuang hanya
+            // teksnya di layar.
 
             BuildStripAnchors();
 
@@ -2320,8 +2345,11 @@ namespace Proto
 
             // Kapasitas 12: katalognya 22, tapi node kejadian datang beberapa kali per act dan
             // pakta tidak pernah bisa diambil dua kali. Dua belas adalah run yang sangat panjang.
-            _pactStrip = new StatusStrip(_canvas.transform, TmpFont, 12, StripPactIcon,
-                new Color(1f, 0.82f, 0.4f), vertical: true);
+            // DISAMAKAN dengan buff & kutukan — permintaan pemilik project: ukuran ikon,
+            // jarak slot, dan arah tumbuh persis sama. Yang membedakan pakta tinggal
+            // warnanya dan barisnya sendiri di paling bawah.
+            _pactStrip = new StatusStrip(_canvas.transform, TmpFont, 12, StripIcon,
+                new Color(1f, 0.82f, 0.4f));
         }
 
         /// <summary>
@@ -2386,33 +2414,6 @@ namespace Proto
                 if (_evolveText != null)
                     _evolveText.rectTransform.anchoredPosition = origin + new Vector2(0f, -84f);
             }
-        }
-
-        /// <summary>
-        /// One line above the spell panel: the run total, plus whatever damage did NOT come from a
-        /// placed skill — reactions and ailments, which have no row of their own.
-        /// </summary>
-        void DrawMeter()
-        {
-            // Throttled: the numbers move constantly but nobody reads them four times a frame.
-            _meterTimer -= Time.unscaledDeltaTime;
-            if (_meterTimer > 0f) return;
-
-            _meterTimer = 0.25f;
-
-            if (_meter.Total <= 0f)
-            {
-                _meterText.text = "";
-                return;
-            }
-
-            _sb.Length = 0;
-            _sb.Append(Loc.F("hud.meter.total", Mathf.RoundToInt(_meter.Total)));
-
-            string others = _meter.BuildOtherSources(IsPlacedSkill, 4);
-            if (others.Length > 0) _sb.Append("      ").Append(others);
-
-            _meterText.text = _sb.ToString();
         }
 
         /// <summary>True when this damage source already has its own row in the spell panel.</summary>
@@ -3151,11 +3152,16 @@ namespace Proto
                     // peta". Tombolnya sendiri sudah kelihatan di pojok layar, jadi yang tersisa
                     // cuma kalimat yang menutupi lapangan tiap kali wave berakhir.
                     if (_run.Resting)
-                        _bannerText.text = Loc.F("hud.banner.rest", RunDirector.KindLabel(_run.RestKind));
+                        // "REST ISLE - TOKO" DICABUT. Pulaunya sendiri sudah panggung yang
+                        // bercerita, dan teks di tengah layar cuma menutupi barang.
+                        _bannerText.text = "";
                     else if (Enemies.Wave == 0)
                         _bannerText.text = Loc.T("hud.banner.build");
                     else
-                        _bannerText.text = Loc.F("hud.banner.wavedone", Enemies.Wave);
+                        // "WAVE n BERES" DICABUT atas permintaan pemilik project. Lapangan yang
+                        // sudah bersih dan tombol LANJUT yang sudah menyala sudah mengatakannya;
+                        // kalimat di tengah arena cuma menutupi barang jatuh.
+                        _bannerText.text = "";
 
                     if (Book.Spells.Count == 0)
                     {
@@ -3172,10 +3178,8 @@ namespace Proto
 
                 if (Enemies.Wave == 0)
                     _bannerText.text = Loc.T("hud.banner.build");
-                else if (ShopEventActive)
-                    _bannerText.text = Loc.F("hud.banner.wavedone.shop", Enemies.Wave);
                 else
-                    _bannerText.text = Loc.F("hud.banner.wavedone", Enemies.Wave);
+                    _bannerText.text = "";
 
                 if (!showStart)
                 {
@@ -3480,12 +3484,6 @@ namespace Proto
             // harus menelan segalanya. Toko bukan modal — klik di luarnya saja sudah menutupnya.
             if ((CanStartWave() || CanDepart()) && StartButtonRect().Contains(mouse)) return false;
 
-            if (ShopEventActive && ShopButtonRect().Contains(mouse))
-            {
-                _shopOpen = !_shopOpen;
-                return true;
-            }
-
             if (!_shopOpen) return false;
 
             // KOTAK DAGANGAN MENANG atas piece tercecer, dan urutan inilah perbaikannya.
@@ -3509,25 +3507,11 @@ namespace Proto
             // diambil, tanpa satu pun tanda kenapa.
             if (ScreenToLoose(mouse) >= 0) return false;
 
-            if (!PanelRect().Contains(mouse))
-            {
-                // Klik yang MENUTUP panel tidak ikut ditelan — kecuali tangan sedang
-                // memegang piece.
-                //
-                // Laporan pemilik project: "ui shop masih bloking, kadang gak bisa ditarik".
-                // Sebabnya di sini: klik pertama di luar panel habis dipakai untuk menutup,
-                // jadi mengambil piece butuh DUA klik — dan yang pertama tidak memberi tanda
-                // apa pun bahwa ia sudah terpakai. Yang terbaca pemain bukan "panelnya
-                // tertutup", melainkan "tarikan saya tidak jalan".
-                //
-                // Yang memegang piece tetap ditelan: menjatuhkan barang ke tempat yang baru
-                // saja tertutup adalah kehilangan yang tidak bisa dibatalkan, dan itu jauh
-                // lebih mahal daripada satu klik yang terbuang.
-                _shopOpen = false;
-                _panelCloseFrame = Time.frameCount;
-                if (Sfx != null) Sfx.UiClose();
-                return _held != null;
-            }
+            // Klik di luar panel LOLOS ke lapangan, dan panelnya TETAP TERBUKA. Dulu klik
+            // pertama di luar dipakai menutup toko — tapi tombol pembuka-tutupnya sudah dicabut,
+            // jadi menutup di sini berarti toko yang tertutup tak sengaja tidak bisa dibuka lagi
+            // sampai singgah berikutnya. Toko sekarang cuma tutup saat pemain berangkat.
+            if (!PanelRect().Contains(mouse)) return false;
 
             if (RerollRect().Contains(mouse))
             {
@@ -3988,6 +3972,7 @@ namespace Proto
 
             BuildRunPanels();
             BuildShopFromPrefab();
+            BuildEventFromPrefab();
 
             // Paling akhir: OnMapChoose di atas sudah terpasang, dan membukanya sebelum itu
             // berarti peta berpindah ke mode pemilih tanpa ada yang mendengarnya.
@@ -4001,6 +3986,39 @@ namespace Proto
         /// melintasi pemuatan ulang scene, dan tema yang prefabnya dicopot di tengah sesi tidak
         /// boleh meninggalkan tata letak lama menggantung.
         /// </summary>
+        /// <summary>
+        /// Kembaran BuildShopFromPrefab untuk panel KEJADIAN: prefab EventRig menyerahkan
+        /// kotak-kotaknya, dan null di slot mana pun jatuh ke rumus hitungan lama.
+        /// </summary>
+        void BuildEventFromPrefab()
+        {
+            EventPanelOverride = null;
+            EventOptionAOverride = null;
+            EventOptionBOverride = null;
+            EventRefuseOverride = null;
+
+            if (_theme == null || _theme.EventPrefab == null) return;
+
+            var go = Instantiate(_theme.EventPrefab, _canvas.transform, false);
+            go.name = "EventAnchors";
+
+            var rig = go.GetComponent<EventRig>() ?? go.GetComponentInChildren<EventRig>(true);
+            if (rig == null)
+            {
+                Debug.LogWarning("[GrimoireUI] EventPrefab tidak punya EventRig - tata letak " +
+                                 "hitungan lama yang dipakai.");
+                Destroy(go);
+                return;
+            }
+
+            Canvas.ForceUpdateCanvases();
+
+            if (rig.Panel != null) EventPanelOverride = CanvasRectOf(rig.Panel);
+            if (rig.OptionA != null) EventOptionAOverride = CanvasRectOf(rig.OptionA);
+            if (rig.OptionB != null) EventOptionBOverride = CanvasRectOf(rig.OptionB);
+            if (rig.Refuse != null) EventRefuseOverride = CanvasRectOf(rig.Refuse);
+        }
+
         void BuildShopFromPrefab()
         {
             ShopPanelOverride = null;
@@ -4182,6 +4200,7 @@ namespace Proto
             _mapRings = new Image[nodeCap];
             _mapGlyphs = new TextMeshProUGUI[nodeCap];
             _mapIcons = new Image[nodeCap];
+            _mapClearedMarks = new Image[nodeCap];
 
             for (int i = 0; i < nodeCap; i++)
             {
@@ -4212,6 +4231,15 @@ namespace Proto
                 Centre(_mapIcons[i].rectTransform);
                 _mapIcons[i].preserveAspect = true;
                 _mapIcons[i].enabled = false;
+
+                // Tanda BERES - lahir paling akhir supaya tergambar DI ATAS icon nodenya.
+                _mapClearedMarks[i] = MakeImage("MapCleared" + i, Vector2.zero, new Vector2(30f, 30f),
+                    Color.white, Vector2.zero);
+                _mapClearedMarks[i].transform.SetParent(_mapRoot, false);
+                Centre(_mapClearedMarks[i].rectTransform);
+                _mapClearedMarks[i].preserveAspect = true;
+                _mapClearedMarks[i].raycastTarget = false;
+                _mapClearedMarks[i].enabled = false;
             }
 
             // KARAKTER pemain di peta: HITAM pekat, mengikuti palet peta rujukannya —
@@ -4251,17 +4279,23 @@ namespace Proto
             // ---- kejadian ----
             _eventBg = MakeImage("EventBg", Vector2.zero, new Vector2(PanelW, PanelH),
                 new Color(0.055f, 0.05f, 0.09f, 0.97f), Vector2.zero);
-            Frame(_eventBg, 1.5f);
+            // DialogBox dari kit Panels; kotak gelap polos hanya kalau art-nya belum dipasang.
+            if (!Skin(_eventBg, _theme != null ? _theme.DialogPanel : null))
+                Frame(_eventBg, 1.5f);
             _eventTitle = MakeTmp("EventTitle", Vector2.zero, new Vector2(500f, 30f), 22,
                 TextGold, Vector2.zero, TextAlignmentOptions.Center);
             _eventBody = MakeTmp("EventBody", Vector2.zero, new Vector2(540f, 140f), 17,
                 TextBone, Vector2.zero, TextAlignmentOptions.Center);
             _eventABg = MakeImage("EventA", Vector2.zero, Vector2.zero,
                 new Color(0.2f, 0.4f, 0.25f, 0.95f), Vector2.zero);
-            Frame(_eventABg);
             _eventBBg = MakeImage("EventB", Vector2.zero, Vector2.zero,
                 new Color(0.4f, 0.24f, 0.45f, 0.95f), Vector2.zero);
-            Frame(_eventBBg);
+
+            // Chip dari kit Panels untuk kedua kartu pakta. Flag-nya dibaca PaintPactCard:
+            // sprite membawa gelapnya sendiri, jadi resep warnanya beda dengan kotak polos.
+            _eventCardsSkinned = Skin(_eventABg, _theme != null ? _theme.CardChip : null)
+                               & Skin(_eventBBg, _theme != null ? _theme.CardChip : null);
+            if (!_eventCardsSkinned) { Frame(_eventABg); Frame(_eventBBg); }
             // Kartu pakta membawa tiga baris — nama, berkah, kutuk — jadi kotaknya lebih tinggi
             // dan hurufnya lebih kecil dari label tombol biasa. Dua baris pertama boleh dibaca
             // sekilas; baris kutuk justru yang harus dibaca pelan, dan itu tidak muat di 60 piksel.
@@ -4272,7 +4306,8 @@ namespace Proto
 
             _eventCBg = MakeImage("EventC", Vector2.zero, Vector2.zero,
                 PanelInk, Vector2.zero);
-            Frame(_eventCBg);
+            if (!Skin(_eventCBg, _theme != null ? _theme.ButtonFrame : null))
+                Frame(_eventCBg);
             _eventCLabel = MakeTmp("EventCLabel", Vector2.zero, new Vector2(240f, 30f), 13,
                 TextDim, Vector2.zero, TextAlignmentOptions.Center);
 
@@ -4297,13 +4332,87 @@ namespace Proto
             _eventCLabel.enabled = false;
         }
 
+        /// <summary>
+        /// Menyalakan / mematikan tanda BERES sebuah node.
+        ///
+        /// Sprite-nya dari tema (MapIconCleared - "nanti gw tambahin image X"); selama slot itu
+        /// kosong, placeholder X digenerate sekali dan dipakai terus. Placeholder di kode, bukan
+        /// aset, supaya tandanya hidup hari ini juga dan tinggal ditukar dari Inspector nanti.
+        /// </summary>
+        void ShowClearedMark(int i, bool on, Vector2 pos, float nodeSize)
+        {
+            var mark = _mapClearedMarks != null && i < _mapClearedMarks.Length ? _mapClearedMarks[i] : null;
+            if (mark == null) return;
+
+            mark.enabled = on;
+            if (!on) return;
+
+            var sprite = _theme != null && _theme.MapIconCleared != null
+                ? _theme.MapIconCleared
+                : ClearedPlaceholder();
+
+            mark.sprite = sprite;
+            mark.rectTransform.anchoredPosition = pos;
+
+            // Sedikit lebih kecil dari nodenya: tanda menumpang di atas icon, bukan menggantikan.
+            float side = nodeSize * 0.72f;
+            mark.rectTransform.sizeDelta = new Vector2(side, side);
+            mark.rectTransform.localEulerAngles = Vector3.zero;
+
+            // Tinta gelap pekat - "matikan warnanya": tandanya netral, bukan merah.
+            mark.color = new Color(0.16f, 0.13f, 0.11f, 0.9f);
+        }
+
+        /// <summary>Placeholder X: dua garis diagonal di tekstur 64px, dibuat sekali.</summary>
+        Sprite ClearedPlaceholder()
+        {
+            if (_clearedPlaceholder != null) return _clearedPlaceholder;
+
+            const int size = 64;
+            const float half = 5.5f;   // setengah tebal garis, piksel
+
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            var px = new Color32[size * size];
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                // Jarak ke dua diagonal; di dalam salah satunya = bagian dari X.
+                float d1 = Mathf.Abs(x - y) * 0.7071f;
+                float d2 = Mathf.Abs(x + y - (size - 1)) * 0.7071f;
+                float d = Mathf.Min(d1, d2);
+
+                // Tepi dihaluskan 1,5 px supaya tidak bergerigi di peta.
+                float a = Mathf.Clamp01((half - d) / 1.5f);
+
+                // Ujung-ujung X dipangkas melingkar supaya tidak menyentuh sudut tekstur.
+                float cx = x - (size - 1) * 0.5f, cy = y - (size - 1) * 0.5f;
+                float r = Mathf.Sqrt(cx * cx + cy * cy) / ((size - 1) * 0.5f);
+                a *= Mathf.Clamp01((1f - r) / 0.12f + 1f) * (r > 1f ? 0f : 1f);
+
+                px[y * size + x] = new Color32(255, 255, 255, (byte)(a * 255f));
+            }
+
+            tex.SetPixels32(px);
+            tex.Apply(false, true);
+            tex.name = "ClearedX";
+
+            _clearedPlaceholder = Sprite.Create(tex, new Rect(0, 0, size, size),
+                new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+            return _clearedPlaceholder;
+        }
+
         /// <summary>Widget yang diposisikan lewat titik TENGAHNYA — pivot bawaan MakeImage ada
         /// di pojok, dan panel yang dihitung dari pojok selalu meleset separuh ukurannya.</summary>
         static void Centre(RectTransform rt) => rt.pivot = new Vector2(0.5f, 0.5f);
 
         static Rect EventOptionRect(int side)
         {
-            var panel = PanelRect();
+            // Kotak rig menang; rumus lama cuma untuk prefab yang belum lengkap.
+            if (side == 0 && EventOptionAOverride.HasValue) return EventOptionAOverride.Value;
+            if (side == 1 && EventOptionBOverride.HasValue) return EventOptionBOverride.Value;
+
+            var panel = EventPanelRect();
             float w = (panel.width - 48f) * 0.5f;
             float x = side == 0 ? panel.xMin + 16f : panel.xMax - 16f - w;
             return new Rect(x, panel.yMin + 58f, w, 132f);
@@ -4319,7 +4428,9 @@ namespace Proto
         /// </summary>
         static Rect EventRefuseRect()
         {
-            var panel = PanelRect();
+            if (EventRefuseOverride.HasValue) return EventRefuseOverride.Value;
+
+            var panel = EventPanelRect();
             return new Rect(panel.center.x - 118f, panel.yMin + 16f, 236f, 32f);
         }
 
@@ -4888,6 +4999,7 @@ namespace Proto
                 _mapRings[i].enabled = show && icon == null;
                 _mapGlyphs[i].enabled = show && icon == null;
                 _mapIcons[i].enabled = show && icon != null;
+                if (_mapClearedMarks[i] != null && !show) _mapClearedMarks[i].enabled = false;
                 if (!show) continue;
 
                 bool now = map.At == n.Index;
@@ -4919,8 +5031,9 @@ namespace Proto
                 else if (next) ring = _theme != null ? _theme.MapRingInk : Color.white;
                 else if (walked)
                 {
-                    ring = new Color(0.55f, 0.85f, 0.55f, 0.7f);
-                    tone.a = 0.85f;
+                    // Sama dengan cabang icon: warna jenis DIMATIKAN untuk yang sudah beres.
+                    ring = new Color(0.5f, 0.5f, 0.48f, 0.5f);
+                    tone = new Color(0.45f, 0.44f, 0.42f, 0.75f);
                 }
                 else
                 {
@@ -4939,7 +5052,11 @@ namespace Proto
                     // yang lama terang — dipakai langsung di icon, ia lenyap di perkamen.
                     var inkTone = KindInk(n.Kind);
 
-                    if (walked && !now) inkTone.a = 0.5f;
+                    // BERES = warnanya DIMATIKAN, bukan sekadar dipudarkan. Elite yang sudah
+                    // ditumbangkan tidak boleh tetap menyala merah - merah artinya "bahaya di
+                    // depan", dan node di belakangmu bukan bahaya lagi. Abu tinta perkamen,
+                    // plus tanda X di atasnya (sprite tema, atau placeholder generatan).
+                    if (walked && !now) inkTone = new Color(0.42f, 0.4f, 0.37f, 0.5f);
                     else if (!now && !next)
                     {
                         // Terkunci: dipucatkan ke arah abu perkamen — jenisnya masih kebaca
@@ -4953,6 +5070,8 @@ namespace Proto
                     _mapIcons[i].rectTransform.sizeDelta = new Vector2(size, size);
                     _mapIcons[i].rectTransform.localEulerAngles = new Vector3(0f, 0f, twist);
                     _mapIcons[i].color = inkTone;
+
+                    ShowClearedMark(i, walked && !now, pos, size);
                 }
                 else
                 {
@@ -4969,6 +5088,8 @@ namespace Proto
                     _mapGlyphs[i].rectTransform.anchoredPosition = pos;
                     _mapGlyphs[i].text = RunDirector.KindLabel(n.Kind).Substring(0, 1);
                     _mapGlyphs[i].color = new Color(0f, 0f, 0f, 0.85f);
+
+                    ShowClearedMark(i, walked && !now, pos, size);
 
                     // Hurufnya ikut membesar bersama kotaknya. Ukuran tetap membuat huruf di
                     // node boss yang empat kali lipat terlihat seperti tersasar di tengah kotak
@@ -5239,7 +5360,7 @@ namespace Proto
 
             if (!open) return;
 
-            var panel = PanelRect();
+            var panel = EventPanelRect();
             _eventBg.rectTransform.anchoredPosition = panel.center;
 
             // Alasan yang sama dengan latar mesin slot: kotak panelnya boleh milik prefab.
@@ -5281,13 +5402,21 @@ namespace Proto
             // memang membayar koin itu.
             if (pact == null)
             {
-                bg.color = new Color(0.25f, 0.22f, 0.27f, 0.9f);
+                bg.color = _eventCardsSkinned
+                    ? new Color(0.62f, 0.6f, 0.66f, 1f)
+                    : new Color(0.25f, 0.22f, 0.27f, 0.9f);
                 label.text = Loc.F("event.nothing", _balance.EventGoldGift);
                 return;
             }
 
             var tone = pact.Color;
-            bg.color = new Color(tone.r * 0.32f, tone.g * 0.32f, tone.b * 0.32f, 0.96f);
+
+            // Tint pada Image itu PERKALIAN. Kotak polos butuh digelapkan sendiri (0,32x) supaya
+            // teks putih terbaca; sprite Chip sudah membawa gelapnya, jadi cukup disemu ke arah
+            // warna paktanya - mengalikan 0,32 ke sprite gelap menghasilkan kartu nyaris hitam.
+            bg.color = _eventCardsSkinned
+                ? Color.Lerp(Color.white, tone, 0.45f)
+                : new Color(tone.r * 0.32f, tone.g * 0.32f, tone.b * 0.32f, 0.96f);
 
             _sb.Length = 0;
             _sb.Append(pact.DisplayName).Append("\n\n");
@@ -5310,7 +5439,6 @@ namespace Proto
             DrawLoose();
             DrawSpells();
             DrawHud();
-            DrawMeter();
             DrawBuffs();
             DrawRunPanels(Time.deltaTime);
             UpdateTooltip();
@@ -5500,8 +5628,19 @@ namespace Proto
         /// satuan petak dari pojok kiri-bawah, putaran positif searah jarum jam. Rotasi
         /// piece di papan ikut memutar art beserta offsetnya.
         /// </summary>
+        /// <summary>
+        /// Warna item yang BELUM TERPASANG di papan — isi tas dan piece yang menggeletak.
+        ///
+        /// Diredupkan DAN dipucatkan sedikit, bukan cuma diturunkan alpha-nya: alpha saja membuat
+        /// ikon terlihat "setengah jadi" di atas latar gelap, sementara warna abu membuatnya
+        /// terbaca sebagai barang yang MENUNGGU. Pemilik project: "bingung gw mana item kepasang
+        /// mana engga" — begitu terpasang ia kembali ke warna aslinya, dan perbedaan itu yang
+        /// menjawab pertanyaannya dalam sekali lihat, tanpa perlu hover satu-satu.
+        /// </summary>
+        static readonly Color StashedTint = new Color(0.52f, 0.52f, 0.58f, 1f);
+
         Image DrawPieceArt(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
-            float cellPx, float gapPx, float alpha, bool loose = false)
+            float cellPx, float gapPx, float alpha, bool loose = false, bool dim = false)
         {
             // RUNE TIDAK DISENTUH — perintah pemilik project: rune sudah benar lewat
             // lapisan tile per-petak (RuneTiles). Art dari SO hanya untuk skill & segel.
@@ -5518,7 +5657,8 @@ namespace Proto
 
             var img = TakeArt(def.ArtBehindCells, loose);
             img.sprite = def.Art;
-            img.color = new Color(1f, 1f, 1f, alpha);
+            var ink = dim ? StashedTint : Color.white;
+            img.color = new Color(ink.r, ink.g, ink.b, alpha);
 
             // Pool-nya dipakai bergantian oleh gambar biasa, lapisan ISI jam cooldown, dan
             // ikon terpusat — status render di-reset di sini supaya bekas fillAmount/letupan/
@@ -5541,7 +5681,7 @@ namespace Proto
         /// layar starter, supaya benda yang sama tampil serupa di mana pun.
         /// </summary>
         Image DrawPieceIcon(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
-            float cellPx, float gapPx, float alpha, bool loose = false)
+            float cellPx, float gapPx, float alpha, bool loose = false, bool dim = false)
         {
             // Rune dan ikon glyph rune tidak lewat sini — mereka sudah digambar sebagai tile
             // per petak, dan ikon terpusat di atasnya jadi gambar dobel.
@@ -5585,7 +5725,8 @@ namespace Proto
 
             var img = TakeArt(false, loose);
             img.sprite = def.Icon;
-            img.color = new Color(1f, 1f, 1f, alpha);
+            var ink = dim ? StashedTint : Color.white;
+            img.color = new Color(ink.r, ink.g, ink.b, alpha);
             img.type = Image.Type.Simple;
             img.fillAmount = 1f;
             img.preserveAspect = true;
@@ -5603,11 +5744,11 @@ namespace Proto
         /// primitif bukan lagi rupa piece di mana pun — perintah pemilik project.
         /// </summary>
         Image DrawPieceVisual(PieceDefinition def, Vector2 shapeBottomLeft, int rot,
-            float cellPx, float gapPx, float alpha, bool loose = false)
+            float cellPx, float gapPx, float alpha, bool loose = false, bool dim = false)
         {
             return def != null && def.Art != null
-                ? DrawPieceArt(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose)
-                : DrawPieceIcon(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose);
+                ? DrawPieceArt(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose, dim)
+                : DrawPieceIcon(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose, dim);
         }
 
         void DrawPlacedArt()
@@ -5849,8 +5990,9 @@ namespace Proto
                 var inst = _bag.Placed[i];
                 if (inst == null || inst.Def == null) continue;
 
+                // Isi tas = belum terpasang, jadi diredupkan. Lihat StashedTint.
                 DrawPieceVisual(inst.Def, BagAnchor(inst.Origin.x, inst.Origin.y), inst.Rot,
-                    BagCell, BagGap, 1f, loose: true);
+                    BagCell, BagGap, 1f, loose: true, dim: true);
             }
 
             if (_held == null) return;
@@ -6130,11 +6272,16 @@ namespace Proto
                     return;
                 }
 
-                _tipBg.enabled = false;
-                _tipText.enabled = false;
-                _recipes.Show(hovered, UiMouse);
-                ShowHoverRange(hovered, spell);
-                return;
+                // Piece TANPA resep tidak punya apa pun untuk ditampilkan kartu ini — ALT-nya
+                // jatuh kembali ke kartu keterangan biasa di bawah, bukan memunculkan kartu
+                // kosong. Enam rune dasar persis kasus itu.
+                if (_recipes.Show(hovered, UiMouse))
+                {
+                    _tipBg.enabled = false;
+                    _tipText.enabled = false;
+                    ShowHoverRange(hovered, spell);
+                    return;
+                }
             }
 
             _recipes.Hide();
@@ -6327,18 +6474,10 @@ namespace Proto
             bool eventOn = ShopEventActive;
             if (!eventOn) _shopOpen = false;
 
-            _shopBtnBg.enabled = eventOn;
-            _shopBtnLabel.enabled = eventOn;
-            _shopBtnLabel.text = Loc.T("shop.button");
-
             _panelBg.enabled = _shopOpen;
             _panelTitle.enabled = _shopOpen;
             _rerollBg.enabled = _shopOpen;
             _rerollLabel.enabled = _shopOpen;
-
-            _shopBtnBg.color = _shopOpen
-                ? new Color(0.35f, 0.55f, 0.8f, 0.95f)
-                : new Color(0.25f, 0.4f, 0.6f, 0.95f);
 
             for (int i = 0; i < ShopSlots; i++)
             {
@@ -6379,7 +6518,9 @@ namespace Proto
                 var def = _shop[i];
                 if (def == null)
                 {
-                    _shopSlotBg[i].color = new Color(0.1f, 0.1f, 0.12f, 0.7f);
+                    _shopSlotBg[i].color = _shopSlotsSkinned
+                        ? new Color(0.45f, 0.45f, 0.5f, 0.85f)
+                        : new Color(0.1f, 0.1f, 0.12f, 0.7f);
                     _shopSlotText[i].text = Loc.T("shop.sold");
                     _shopSlotText[i].color = new Color(0.5f, 0.5f, 0.55f);
                     continue;
@@ -6388,9 +6529,13 @@ namespace Proto
                 int price = _balance.PriceOf(def);
                 bool afford = _gold >= price;
 
-                _shopSlotBg[i].color = afford
-                    ? new Color(0.15f, 0.16f, 0.22f, 0.95f)
-                    : new Color(0.16f, 0.11f, 0.11f, 0.95f);
+                // Sprite Chip membawa gelapnya sendiri - tint gelap lama membuatnya nyaris
+                // hitam. Putih = terjangkau; semu merah pucat = koin kurang.
+                _shopSlotBg[i].color = _shopSlotsSkinned
+                    ? (afford ? Color.white : new Color(1f, 0.72f, 0.68f, 1f))
+                    : (afford
+                        ? new Color(0.15f, 0.16f, 0.22f, 0.95f)
+                        : new Color(0.16f, 0.11f, 0.11f, 0.95f));
 
                 _sb.Length = 0;
                 _sb.Append(PieceName(def)).Append("  ").Append(Shapes.StarText(def.Stars)).Append('\n');
@@ -6518,9 +6663,6 @@ namespace Proto
 
                 float tail = SpellPanelTop - 26f - shown * _spellRowPitch;
                 _spellMore.rectTransform.anchoredPosition = new Vector2(SpellPanelRight - 8, tail);
-                _meterText.rectTransform.anchoredPosition =
-                    new Vector2(SpellPanelRight - 8, tail - 20f);
-
             }
 
             _spellMore.enabled = hidden > 0;
@@ -6638,8 +6780,11 @@ namespace Proto
             _sb.Append(Loc.F("hud.line.gold", _gold));
             _hudText.text = _sb.ToString();
 
-            // Plakat mengikuti panjang kalimat, bukan sebaliknya.
-            _hudPlaque.rectTransform.sizeDelta = new Vector2(_hudText.preferredWidth + 24f, 36f);
+            // Plakat gambar-kode mengikuti panjang kalimat, bukan sebaliknya. Plakat dari PREFAB
+            // tidak disentuh sama sekali: kalau pemiliknya sudah menyetel ukurannya dengan tangan,
+            // menimpanya tiap frame bukan "menyesuaikan", itu membatalkan.
+            if (!_hudPlaqueOwnsSize)
+                _hudPlaque.rectTransform.sizeDelta = new Vector2(_hudText.preferredWidth + 24f, 36f);
 
             AnimateBars(Time.unscaledDeltaTime);
 

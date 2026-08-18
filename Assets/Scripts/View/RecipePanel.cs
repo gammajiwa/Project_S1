@@ -227,25 +227,45 @@ namespace Proto
             }
         }
 
-        public void Show(PieceDefinition piece, Vector2 mouse)
+        /// <summary>
+        /// Menampilkan kartu resep sebuah piece.
+        /// </summary>
+        /// <returns>
+        /// <b>False kalau piece ini tidak punya resep sama sekali</b> — dan kartunya TIDAK
+        /// ditampilkan. Pemanggil memakai ini untuk jatuh kembali ke kartu keterangan biasa.
+        ///
+        /// Dulu kartunya tetap muncul dengan tulisan "(belum ada)", dan itu yang dilaporkan pemilik
+        /// project sebagai "pencet ALT di rune, evo-nya gak keluar": kartu kosong terbaca sebagai
+        /// fitur yang rusak, bukan sebagai jawaban. Enam rune dasar (Chrono, Ember, Frost, Plain,
+        /// Spark, Void) memang tidak punya resep, dan NOL resep memakai rune sebagai bahan — jadi
+        /// untuk mereka kartu ini tidak punya apa pun untuk dikatakan.
+        /// </returns>
+        public bool Show(PieceDefinition piece, Vector2 mouse)
         {
             if (piece == null)
             {
                 Hide();
-                return;
+                return false;
             }
 
             // DIPATOK: selama kartu masih menampilkan piece yang sama, jangan ditata ulang —
             // kartu yang mengejar mouse tidak bisa dibaca, dan membaca ("bahan apa yang
             // kurang?") adalah satu-satunya tugas kartu ini. Pindah piece = tata ulang
             // di posisi mouse yang baru.
-            if (piece == _shownFor && Visible) return;
+            if (piece == _shownFor && Visible) return true;
             _shownFor = piece;
 
             Collect(piece);
 
+            // Tidak punya resep sama sekali = tidak ada yang bisa dikatakan kartu ini. Ia tidak
+            // ditampilkan, dan pemanggil kembali ke kartu keterangan biasa.
+            if (_rows.Count == 0)
+            {
+                Hide();
+                return false;
+            }
+
             float height = TitleHeight + _rows.Count * RowHeight + 18f;
-            if (_rows.Count == 0) height = TitleHeight + 26f;
 
             // Pivot is the top-left corner, so `top` is where the panel starts and it grows down.
             // Satuan kanvas, bukan piksel mentah — mouse yang diterima panel ini juga sudah
@@ -260,12 +280,15 @@ namespace Proto
 
             _title.enabled = true;
             _title.color = ResultText;
-            _title.text = _rows.Count > 0
-                ? "RESEP  -  " + piece.DisplayName
-                : "RESEP  -  " + piece.DisplayName + "   (belum ada)";
+
+            // Lewat Loc, bukan string mentah: "RESEP" hardcoded adalah persis jenis teks yang
+            // dilaporkan "gak ke-local". Cabang "(belum ada)" sudah tidak mungkin sampai sini —
+            // _rows kosong sudah pulang lebih awal di atas.
+            _title.text = Loc.T("hud.origin.recipe") + "  -  " + piece.DisplayName;
             _title.rectTransform.anchoredPosition = origin + new Vector2(PadX, -6f);
 
             for (int r = 0; r < MaxRows; r++) LayoutRow(r, origin);
+            return true;
         }
 
         /// <summary>

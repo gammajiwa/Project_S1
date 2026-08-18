@@ -38,6 +38,24 @@ namespace Proto
                 0.7f * Mathf.Clamp01(GameSettings.Load().SfxVolume));
         }
 
+        /// <summary>
+        /// Sorot baris menu. Memakai klip <c>PieceHover</c> yang sudah ada di AudioTheme — bunyi
+        /// yang sama dengan menyorot piece di grimoire, dan itu memang disengaja: satu isyarat
+        /// untuk satu arti ("kursor ada di atas sesuatu yang bisa dipilih") di seluruh game.
+        ///
+        /// <b>Setengah keras dari klik.</b> Sorot terjadi berkali-kali lipat lebih sering daripada
+        /// klik — sekadar melintasi empat baris menu sudah membunyikannya empat kali. Pada volume
+        /// yang sama dengan klik, ia berhenti terbaca sebagai umpan balik dan mulai terbaca sebagai
+        /// berisik.
+        /// </summary>
+        public static void Hover()
+        {
+            if (_alive == null || _alive._theme == null || _alive._theme.PieceHover == null) return;
+
+            _alive._blip.PlayOneShot(_alive._theme.PieceHover,
+                0.35f * Mathf.Clamp01(GameSettings.Load().SfxVolume));
+        }
+
         void Awake()
         {
             _theme = Resources.Load<AudioTheme>("AudioTheme");

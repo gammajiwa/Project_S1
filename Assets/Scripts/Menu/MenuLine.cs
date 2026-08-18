@@ -85,7 +85,14 @@ namespace Proto
             if (_markerGroup != null) _markerGroup.alpha = _blend;
         }
 
-        public void OnPointerEnter(PointerEventData eventData) => _hot = true;
+        public void OnPointerEnter(PointerEventData eventData)
+        {
+            // Bunyi HANYA saat masuk dari luar. Baris yang sudah panas tidak membunyikannya lagi,
+            // dan baris sticky (tab yang sedang terbuka) juga tidak — menyorot ulang sesuatu yang
+            // sudah menyala bukan kejadian baru buat pemain.
+            if (!_hot && !_sticky) MenuMusic.Hover();
+            _hot = true;
+        }
 
         public void OnPointerExit(PointerEventData eventData) => _hot = false;
 
