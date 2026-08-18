@@ -559,3 +559,5 @@ map.kind.elite=ELITE
 map.kind.event=???
 map.kind.fight=STAGE
 map.kind.shop=SHOP
+vitals.hp=LIFE
+vitals.mana=MANA

@@ -565,3 +565,5 @@
 # TODO map.kind.event=???
 # TODO map.kind.fight=STAGE
 # TODO map.kind.shop=SHOP
+# TODO vitals.hp=LIFE
+# TODO vitals.mana=MANA

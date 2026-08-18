@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -378,7 +378,10 @@ namespace Proto
                     origin + new Vector2(x, rowTop - IconSize - 6f);
             }
 
-            Paint(_resultIcon[row], recipe.Result, complete);
+            // Hasil evolusinya SELALU terang - perintah pemilik project: yang gelap cuma
+            // bahan yang belum dimiliki. Icon hasil yang ikut gelap terbaca sebagai "skill ini
+            // tidak bisa didapat", padahal yang dikatakannya seharusnya "ini hadiahnya".
+            Paint(_resultIcon[row], recipe.Result, true);
             _resultIcon[row].rectTransform.anchoredPosition =
                 origin + new Vector2(PadX + (ResultColumn - IconSize) * 0.5f, rowTop - 4f);
             _resultRect[row] = new Rect(origin.x + PadX, origin.y + rowTop - 4f - InspectH,
@@ -386,7 +389,7 @@ namespace Proto
 
             _resultLabel[row].text = recipe.Result.DisplayName + "\n" +
                                      Shapes.StarText(recipe.Result.Stars);
-            _resultLabel[row].color = complete ? ResultText : DarkText;
+            _resultLabel[row].color = ResultText;
             _resultLabel[row].rectTransform.anchoredPosition =
                 origin + new Vector2(PadX, rowTop - IconSize - 6f);
 

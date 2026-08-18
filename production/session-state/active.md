@@ -4043,3 +4043,36 @@ dua kali dilaporkan user sendiri.
 
 BELUM DINILAI MATA USER: rupa Chip/DialogBox di toko+kejadian, tanda X di peta, ukuran teks
 baru, speed bar 4 tombol, toko tanpa tombol buka-tutup.
+
+**Ronde 13 (2026-08-18) — lima laporan screenshot + "SEMUANYA PREFAB, jangan hardcode":**
+
+Semua diverifikasi assembly-lebih-baru + console 0.
+
+1. **Kartu NYAWA/MANA**: (a) posisinya dijatuhkan ke bawah-kanan kursor (`ShowCard` dapat
+   param opsional `at`; vitals memakai `mouse + (46, -64)`) — kartu yang lahir persis di kursor
+   menutupi bola sebelahnya; (b) teks "NYAWA" ternyata HARDCODED → `vitals.hp`/`vitals.mana`
+   di 10 bahasa (en LIFE, id NYAWA, de LEBEN, es VIDA, fr VIE, pt VIDA, ru ЖИЗНЬ).
+2. **X peta bocor ke arena**: tanda beres tidak ikut jalur sembunyi peta (blok `!open` di
+   DrawRunPanels me-nol-kan node/ring/glyph/icon tapi bukan marks) → tertinggal menyala di
+   koordinat kanvas terakhirnya, terbaca "X misterius di tanah". Ditambahkan ke loop hide.
+3. **Rune tercecer/tas masih terang**: rune digambar lewat jalur TILE (RuneCellView.Bind),
+   bukan DrawPieceIcon — jadi luput dari aturan abu-abu. Kini tint tile tercecer di-lerp ke
+   abu (0.45,0.45,0.5 @0.55); `DrawTileLayer` diberi param `stashed` dan jalur tas memanggil
+   dengan true. Bind tile tas
+   sudah menerapkan lerp abu yang sama (utang dibayar di ronde yang sama).
+4. **HUD line "amburadul"**: sisa STAGE · kills · koin saja — `hud.line.left`,
+   `hud.line.enemies`, `hud.line.finish` dicabut dari penyusunnya (kunci loc dibiarkan).
+5. **Evo peek**: icon HASIL selalu terang (dulu ikut gelap saat bahan kurang — terbaca "skill
+   ini tidak bisa didapat"); bahan yang belum dimiliki tetap gelap (sudah dari dulu).
+6. **SpeedBar nyasar**: akar = template ber-anchor (1,1) → clone memanjang keluar bar sampai
+   menimpa plakat. Empat tombol dipatok anchor (0,0.5) pos 10+i·78 DI DALAM bar; posisi bar
+   sendiri tetap milik user. (Posisi tangan user -291/-199/-112/-24 tertimpa — itu workaround
+   mereka atas bug anchor; barisan baru rapi di dalam bar.)
+7. **"SEMUANYA PREFAB"**: `ShopPanel.prefab` & `EventPanel.prefab` kini membawa VISUALNYA
+   SENDIRI (Panel=PanelFrame/DialogBox + Title/Body TMP; slot & kartu=Chip+Label; Reroll &
+   Refuse=Button+Label; font TmpFont) dan `GrimoireUI` MENGADOPSINYA: `FindTmpChild`,
+   `_shopVisualsFromPrefab`/`_eventVisualsFromPrefab`, referensi kode dialihkan ke objek
+   prefab, SEMUA penulisan posisi/ukuran di DrawPanels/DrawEvent/PaintPactCard berpagar flag.
+   Objek gambar-kode tetap lahir sebagai jaring prefab-belum-lengkap. Hit-test tetap kotak rig.
+
+BELUM DINILAI MATA: rupa panel prefab baru in-game, kartu vitals posisi baru, speed bar.

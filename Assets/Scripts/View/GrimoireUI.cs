@@ -333,6 +333,16 @@ namespace Proto
         /// <summary>Kartu pakta memakai sprite Chip - resep pewarnaannya beda dari kotak polos.</summary>
         bool _eventCardsSkinned;
 
+        /// <summary>
+        /// Visual panel toko datang dari PREFAB (ShopPanel.prefab membawa Image/TMP sendiri).
+        /// Kode berhenti menulis posisi/ukurannya - "TERISI = milik prefab", aturan yang sama
+        /// dengan CombatHud. Kode tinggal mengisi teks, warna keadaan, dan menggambar isi slot.
+        /// </summary>
+        bool _shopVisualsFromPrefab;
+
+        /// <summary>Kembarannya untuk panel kejadian.</summary>
+        bool _eventVisualsFromPrefab;
+
         /// <summary>Slot dagangan memakai sprite Chip - sama alasannya.</summary>
         bool _shopSlotsSkinned;
 
@@ -1267,8 +1277,11 @@ namespace Proto
 
                 var tile = _looseTiles.Take();
                 tile.Cover(img.rectTransform, LooseCellGap / Mathf.Max(1f, LooseCellSize));
+                // Tercecer = belum terpasang: rune diperlakukan sama dengan skill - tile-nya
+                // disemu ke abu dulu, warna aslinya baru menyala saat duduk di papan.
                 tile.Bind(RuneTiles.BakedTileAt(def, i), RuneTiles.GlyphAt(def, i),
-                    RuneTiles.AreaTint(def, i, def.Color), alpha);
+                    Color.Lerp(RuneTiles.AreaTint(def, i, def.Color),
+                        new Color(0.45f, 0.45f, 0.5f), 0.55f), alpha);
             }
 
             // Visual piece (art atau ikon terpusat) ikut menempel di piece yang menggeletak/
@@ -2535,10 +2548,10 @@ namespace Proto
         string VitalsTooltip(Vector2 mouse)
         {
             if (VitalHit(_hpHoverRects, _hpHover, mouse))
-                return VitalsCard("NYAWA", Player.Hp, Player.MaxHp, Player.HpRegen);
+                return VitalsCard(Loc.T("vitals.hp"), Player.Hp, Player.MaxHp, Player.HpRegen);
 
             if (VitalHit(_manaHoverRects, _manaHover, mouse))
-                return VitalsCard("MANA", Player.Mana, Player.MaxMana, Player.ManaRegen);
+                return VitalsCard(Loc.T("vitals.mana"), Player.Mana, Player.MaxMana, Player.ManaRegen);
 
             return null;
         }
@@ -4017,6 +4030,53 @@ namespace Proto
             if (rig.OptionA != null) EventOptionAOverride = CanvasRectOf(rig.OptionA);
             if (rig.OptionB != null) EventOptionBOverride = CanvasRectOf(rig.OptionB);
             if (rig.Refuse != null) EventRefuseOverride = CanvasRectOf(rig.Refuse);
+
+            // ---- ADOPSI VISUAL, aturan yang sama dengan toko di atas ----
+            if (rig.Panel != null)
+            {
+                var img = rig.Panel.GetComponent<Image>();
+                if (img != null)
+                {
+                    _eventBg = img;
+                    _eventBg.enabled = false;
+                    _eventVisualsFromPrefab = true;
+                }
+
+                var title = FindTmpChild(rig.Panel, "Title");
+                if (title != null) { _eventTitle = title; _eventTitle.enabled = false; }
+
+                var body = FindTmpChild(rig.Panel, "Body");
+                if (body != null) { _eventBody = body; _eventBody.enabled = false; }
+            }
+
+            if (_eventVisualsFromPrefab)
+            {
+                var imgA = rig.OptionA != null ? rig.OptionA.GetComponent<Image>() : null;
+                if (imgA != null) { _eventABg = imgA; _eventABg.enabled = false; }
+                var labelA = FindTmpChild(rig.OptionA, "Label");
+                if (labelA != null) { _eventALabel = labelA; _eventALabel.enabled = false; }
+
+                var imgB = rig.OptionB != null ? rig.OptionB.GetComponent<Image>() : null;
+                if (imgB != null) { _eventBBg = imgB; _eventBBg.enabled = false; }
+                var labelB = FindTmpChild(rig.OptionB, "Label");
+                if (labelB != null) { _eventBLabel = labelB; _eventBLabel.enabled = false; }
+
+                var imgC = rig.Refuse != null ? rig.Refuse.GetComponent<Image>() : null;
+                if (imgC != null) { _eventCBg = imgC; _eventCBg.enabled = false; }
+                var labelC = FindTmpChild(rig.Refuse, "Label");
+                if (labelC != null) { _eventCLabel = labelC; _eventCLabel.enabled = false; }
+
+                _eventCardsSkinned = imgA != null && imgA.sprite != null
+                                  && imgB != null && imgB.sprite != null;
+            }
+        }
+
+        /// <summary>TMP anak bernama <paramref name="childName"/> di bawah kotak rig, atau null.</summary>
+        static TextMeshProUGUI FindTmpChild(Component root, string childName)
+        {
+            if (root == null) return null;
+            var t = root.transform.Find(childName);
+            return t != null ? t.GetComponent<TextMeshProUGUI>() : null;
         }
 
         void BuildShopFromPrefab()
@@ -4046,6 +4106,62 @@ namespace Proto
 
             if (rig.Panel != null) ShopPanelOverride = CanvasRectOf(rig.Panel);
             if (rig.Reroll != null) ShopRerollOverride = CanvasRectOf(rig.Reroll);
+
+            // ---- ADOPSI VISUAL: prefab yang membawa Image/TMP-nya sendiri MENANG ----
+            // Perintah pemilik project: "jangan hard code, buat semuanya prefab biar gw bisa
+            // edit sendiri". Objek gambar-kode lama tetap lahir sebagai jaring untuk prefab
+            // yang belum lengkap; yang teradopsi menggantikan referensinya, dan yang lama
+            // tinggal diam dalam keadaan mati.
+            if (rig.Panel != null)
+            {
+                var img = rig.Panel.GetComponent<Image>();
+                if (img != null)
+                {
+                    _panelBg = img;
+                    _panelBg.enabled = false;
+                    _shopVisualsFromPrefab = true;
+                }
+
+                var title = FindTmpChild(rig.Panel, "Title");
+                if (title != null)
+                {
+                    _panelTitle = title;
+                    _panelTitleInk = title.color;
+                    _panelTitle.enabled = false;
+                }
+            }
+
+            if (_shopVisualsFromPrefab && rig.Slots != null)
+            {
+                for (int i = 0; i < rig.Slots.Length && i < ShopSlots; i++)
+                {
+                    if (rig.Slots[i] == null) continue;
+
+                    var img = rig.Slots[i].GetComponent<Image>();
+                    if (img != null)
+                    {
+                        _shopSlotBg[i] = img;
+                        _shopSlotBg[i].enabled = false;
+                        _shopSlotsSkinned = img.sprite != null;
+                    }
+
+                    var label = FindTmpChild(rig.Slots[i], "Label");
+                    if (label != null)
+                    {
+                        _shopSlotText[i] = label;
+                        _shopSlotText[i].enabled = false;
+                    }
+                }
+            }
+
+            if (_shopVisualsFromPrefab && rig.Reroll != null)
+            {
+                var img = rig.Reroll.GetComponent<Image>();
+                if (img != null) { _rerollBg = img; _rerollBg.enabled = false; }
+
+                var label = FindTmpChild(rig.Reroll, "Label");
+                if (label != null) { _rerollLabel = label; _rerollLabel.enabled = false; }
+            }
 
             // Rig HUD combat lebih tinggi pangkatnya untuk dua tombol ini: kalau kotaknya ada
             // di sana, rig toko tidak boleh menimpanya — dua sumber yang rebutan berakhir
@@ -4680,6 +4796,12 @@ namespace Proto
                     _mapRings[i].enabled = false;
                     _mapGlyphs[i].enabled = false;
                     _mapIcons[i].enabled = false;
+
+                    // Tanda X ikut jalur sembunyi yang sama. Tanpa baris ini ia tertinggal
+                    // menyala di koordinat kanvas terakhirnya - dan di atas arena itu terbaca
+                    // sebagai "ada X misterius di tanah", persis yang dilaporkan.
+                    if (i < _mapClearedMarks.Length && _mapClearedMarks[i] != null)
+                        _mapClearedMarks[i].enabled = false;
                 }
 
                 for (int i = 0; i < _mapEdges.Length; i++)
@@ -5361,24 +5483,29 @@ namespace Proto
             if (!open) return;
 
             var panel = EventPanelRect();
-            _eventBg.rectTransform.anchoredPosition = panel.center;
+            if (!_eventVisualsFromPrefab)
+                _eventBg.rectTransform.anchoredPosition = panel.center;
 
-            // Alasan yang sama dengan latar mesin slot: kotak panelnya boleh milik prefab.
-            _eventBg.rectTransform.sizeDelta = panel.size;
+            if (!_eventVisualsFromPrefab)
+            {
+                _eventBg.rectTransform.sizeDelta = panel.size;
+                _eventTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
+                _eventBody.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 92f);
+            }
 
-            _eventTitle.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 28f);
             _eventTitle.text = Loc.T("event.title");
-
-            _eventBody.rectTransform.anchoredPosition = new Vector2(panel.center.x, panel.yMax - 92f);
             _eventBody.text = Loc.T("event.body");
 
             PaintPactCard(0, EventOptionRect(0), _eventABg, _eventALabel);
             PaintPactCard(1, EventOptionRect(1), _eventBBg, _eventBLabel);
 
             var c = EventRefuseRect();
-            _eventCBg.rectTransform.anchoredPosition = c.center;
-            _eventCBg.rectTransform.sizeDelta = c.size;
-            _eventCLabel.rectTransform.anchoredPosition = c.center;
+            if (!_eventVisualsFromPrefab)
+            {
+                _eventCBg.rectTransform.anchoredPosition = c.center;
+                _eventCBg.rectTransform.sizeDelta = c.size;
+                _eventCLabel.rectTransform.anchoredPosition = c.center;
+            }
             _eventCLabel.text = Loc.F("event.refuse", _balance.EventGoldGift);
         }
 
@@ -5391,9 +5518,12 @@ namespace Proto
         /// </summary>
         void PaintPactCard(int slot, Rect area, Image bg, TextMeshProUGUI label)
         {
-            bg.rectTransform.anchoredPosition = area.center;
-            bg.rectTransform.sizeDelta = area.size;
-            label.rectTransform.anchoredPosition = area.center;
+            if (!_eventVisualsFromPrefab)
+            {
+                bg.rectTransform.anchoredPosition = area.center;
+                bg.rectTransform.sizeDelta = area.size;
+                label.rectTransform.anchoredPosition = area.center;
+            }
 
             var pact = slot < _pactOffer.Length ? _pactOffer[slot] : null;
 
@@ -5852,8 +5982,9 @@ namespace Proto
 
         void DrawBagTiles()
         {
+            // stashed: isi tas belum terpasang, rune-nya ikut aturan abu-abu.
             DrawTileLayer(ref _bagTiles, _bagCells, Backpack.Width, Backpack.Height,
-                c => _bag.At(c), false);
+                c => _bag.At(c), false, stashed: true);
         }
 
         /// <summary>
@@ -5862,7 +5993,7 @@ namespace Proto
         /// digeser atau petaknya diperbesar lewat prefab, tile-nya ikut tanpa diberi tahu.
         /// </summary>
         void DrawTileLayer(ref RuneTilePool pool, Image[] cells, int width, int height,
-            System.Func<Vector2Int, RuneInstance> at, bool previewHeld)
+            System.Func<Vector2Int, RuneInstance> at, bool previewHeld, bool stashed = false)
         {
             if (cells == null || cells.Length == 0 || cells[0] == null) return;
 
@@ -5917,8 +6048,12 @@ namespace Proto
 
                         var tile = pool.Take();
                         tile.Cover(under.rectTransform, CellGap / Mathf.Max(1f, CellSize));
+                        // stashed (tas) = belum terpasang: tint rune disemu ke abu, aturan
+                        // yang sama dengan piece tercecer dan ikon skill di tas.
+                        var tileTint = RuneTiles.AreaTint(inst.Def, k, inst.Def.Color);
+                        if (stashed) tileTint = Color.Lerp(tileTint, new Color(0.45f, 0.45f, 0.5f), 0.55f);
                         tile.Bind(RuneTiles.BakedTileAt(inst.Def, k), RuneTiles.GlyphAt(inst.Def, k),
-                            RuneTiles.AreaTint(inst.Def, k, inst.Def.Color), alpha);
+                            tileTint, alpha);
                     }
                 }
             }
@@ -6170,7 +6305,12 @@ namespace Proto
                 }
 
                 _recipes.Hide();
-                ShowCard(strip);
+
+                // Kartu bola HP/mana DIJATUHKAN ke bawah-kanan kursor, bukan ditempel di
+                // kursor. Bolanya ada di pojok kiri-atas: kartu yang lahir persis di kursor
+                // menutupi bola sebelahnya - benda yang sedang dibaca pemain tertutup oleh
+                // keterangannya sendiri.
+                ShowCard(strip, new Vector2(UiMouse.x + 46f, UiMouse.y - 64f));
                 Player.HideRange();
                 return;
             }
@@ -6380,7 +6520,7 @@ namespace Proto
         /// kosong, sementara skill dengan sepuluh baris menulis keluar dari kotaknya sendiri —
         /// dan yang keluar itu justru baris terakhir, tempat blurb-nya berada.
         /// </summary>
-        void ShowCard(string body)
+        void ShowCard(string body, Vector2? at = null)
         {
             _tipText.text = body;
 
@@ -6397,7 +6537,7 @@ namespace Proto
             float boxHeight = height + _tipPadY * 2f;
             _tipBg.rectTransform.sizeDelta = new Vector2(_tipWidth, boxHeight);
 
-            var m = UiMouse;
+            var m = at ?? UiMouse;
             float x = Mathf.Min(m.x + 18f, ScreenW - _tipWidth - 8f);
 
             // Pivotnya kiri-ATAS, jadi y adalah tepi atas kartu: yang harus dijaga tetap di
@@ -6488,16 +6628,18 @@ namespace Proto
             if (!_shopOpen) return cursor;
 
             var panel = PanelRect();
-            _panelBg.rectTransform.anchoredPosition = panel.center;
 
-            // Ukurannya ikut kotak prefab, bukan cuma posisinya. Selama ini latar panel dikunci di
-            // PanelW x PanelH bawaan sementara kotaknya boleh ditata tangan — dua angka yang
-            // kebetulan sama, sampai kotaknya digeser sekali saja dan latarnya berhenti menutupi
-            // isinya sendiri.
-            _panelBg.rectTransform.sizeDelta = panel.size;
+            // Posisi & ukuran HANYA ditulis untuk visual gambar-kode. Yang datang dari prefab
+            // sudah ditata tangan - menimpanya tiap frame persis "kenapa prefabku balik lagi"
+            // yang berkali-kali dilaporkan.
+            if (!_shopVisualsFromPrefab)
+            {
+                _panelBg.rectTransform.anchoredPosition = panel.center;
+                _panelBg.rectTransform.sizeDelta = panel.size;
 
-            _panelTitle.rectTransform.anchoredPosition = new Vector2(panel.xMin + 14f, panel.yMax - 8f);
-            _panelTitle.rectTransform.pivot = new Vector2(0f, 1f);
+                _panelTitle.rectTransform.anchoredPosition = new Vector2(panel.xMin + 14f, panel.yMax - 8f);
+                _panelTitle.rectTransform.pivot = new Vector2(0f, 1f);
+            }
 
             // Judulnya yang menjawab tarikan yang ditolak — bukan pojok kiri layar. Baris ini
             // menempel di atas etalase, yaitu tempat mata pemain sudah berada saat ia mencoba.
@@ -6508,12 +6650,13 @@ namespace Proto
             for (int i = 0; i < ShopSlots; i++)
             {
                 var rect = ShopSlotRect(i);
-                _shopSlotBg[i].rectTransform.anchoredPosition = new Vector2(rect.xMin, rect.yMin);
-
-                // Ukuran ikut kotak prefab, bukan konstanta — sama seperti badan panel di atas.
-                _shopSlotBg[i].rectTransform.sizeDelta = rect.size;
-                _shopSlotText[i].rectTransform.anchoredPosition = new Vector2(rect.xMin + 5f, rect.yMin + 6f);
-                _shopSlotText[i].rectTransform.sizeDelta = new Vector2(rect.width - 10f, 40f);
+                if (!_shopVisualsFromPrefab)
+                {
+                    _shopSlotBg[i].rectTransform.anchoredPosition = new Vector2(rect.xMin, rect.yMin);
+                    _shopSlotBg[i].rectTransform.sizeDelta = rect.size;
+                    _shopSlotText[i].rectTransform.anchoredPosition = new Vector2(rect.xMin + 5f, rect.yMin + 6f);
+                    _shopSlotText[i].rectTransform.sizeDelta = new Vector2(rect.width - 10f, 40f);
+                }
 
                 var def = _shop[i];
                 if (def == null)
@@ -6552,13 +6695,17 @@ namespace Proto
             }
 
             var reroll = RerollRect();
-            _rerollBg.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin);
-            _rerollBg.rectTransform.sizeDelta = reroll.size;
+            if (!_shopVisualsFromPrefab)
+            {
+                _rerollBg.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin);
+                _rerollBg.rectTransform.sizeDelta = reroll.size;
+            }
             _rerollBg.color = _gold >= _rerollCost
                 ? new Color(0.28f, 0.36f, 0.18f, 0.95f)
                 : new Color(0.3f, 0.15f, 0.13f, 0.95f);
 
-            _rerollLabel.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin + 8f);
+            if (!_shopVisualsFromPrefab)
+                _rerollLabel.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin + 8f);
             _rerollLabel.rectTransform.sizeDelta = new Vector2(reroll.width, 22f);
             _rerollLabel.text = Loc.F("shop.reroll", _rerollCost);
 
@@ -6768,14 +6915,9 @@ namespace Proto
             _sb.Length = 0;
             _sb.Append(Loc.F("hud.line.wave", Enemies.Wave));
 
-            if (Enemies.WaveActive)
-            {
-                _sb.Append(Enemies.Closing
-                    ? Loc.T("hud.line.finish")
-                    : Loc.F("hud.line.left", Enemies.PendingSpawns + Enemies.AliveCount, Enemies.WaveTotal));
-            }
-
-            _sb.Append(Loc.F("hud.line.enemies", Enemies.AliveCount));
+            // Cuma yang penting: STAGE, kills, koin - perintah pemilik project. "left x/y",
+            // "enemies N", dan "FINISH THE REST" dicabut: jumlah musuh sudah kelihatan di
+            // lapangan, dan baris yang isinya berubah-ubah itulah yang membuatnya tak bisa diam.
             _sb.Append(Loc.F("hud.line.kills", Enemies.Kills));
             _sb.Append(Loc.F("hud.line.gold", _gold));
             _hudText.text = _sb.ToString();
