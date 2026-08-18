@@ -69,7 +69,9 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 1
+    Value: 250
   Stat: 0
   StatValue: 0
   Blurb: A shield absorbs 95 damage for 9 seconds.

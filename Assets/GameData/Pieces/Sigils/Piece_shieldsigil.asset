@@ -72,6 +72,8 @@ MonoBehaviour:
   Stats:
   - Type: 3
     Value: 5
+  - Type: 1
+    Value: 600
   Stat: 0
   StatValue: 0
   Blurb: Pengurangan damage yang nyata.

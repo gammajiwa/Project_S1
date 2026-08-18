@@ -4076,3 +4076,111 @@ Semua diverifikasi assembly-lebih-baru + console 0.
    Objek gambar-kode tetap lahir sebagai jaring prefab-belum-lengkap. Hit-test tetap kotak rig.
 
 BELUM DINILAI MATA: rupa panel prefab baru in-game, kartu vitals posisi baru, speed bar.
+
+**Ronde 14 (2026-08-18) — sisiran loc KETAT (teks dari ASET DATA) + HP tebal + strip menetap:**
+
+Semua diverifikasi assembly-lebih-baru + console 0.
+
+- **KATEGORI BOCORAN BARU DITEMUKAN: teks dari aset data.** Sapuan sebelumnya hanya menangkap
+  string literal di kode; "SUMPAH SUNYI (PACT - permanent) + Semua skill 45% lebih murah"
+  datang dari `WorldModifierDefinition.DisplayName/BoonText/BaneText` yang dirender mentah.
+  Fix pola yang sudah ada di project (`Loc.T("piece."+Id+".name", fallback)`):
+  `PactName/PactBoon/PactBane` (kunci `pact.<Id>.name/boon/bane`) + `ReactionName`
+  (`reaction.<namaAset>.name` — ReactionDefinition TIDAK punya field Id, kunci diturunkan dari
+  nama aset; stabil selama aset tidak di-rename). **KONVENSI NAMA: tetap Inggris di SEMUA
+  bahasa** (mengikuti status.bleed.name=BLEED yang sama di en & id); yang diterjemahkan hanya
+  boon/bane. 22 pakta dinamai Inggris (ARUS DERAS→RAPIDS, SUMPAH SUNYI→VOW OF SILENCE, dst).
+  **+750 kunci loc** (22 pakta × 3 + 9 reaksi = 75 × 10 bahasa; en/id terisi beda, 5 bahasa
+  lain sementara pakai teks Inggris TANPA tanda TODO — bukan placeholder, keputusan: kalimat
+  boon/bane Inggris lebih baik daripada Indonesia bocor; ja/ko/zh tetap `# TODO`).
+  10 titik kode dialihkan: floater reaksi, strip pakta (judul `hud.pact.tip` diisi PactName —
+  ini persis baris di screenshot), announce pakta, kartu pakta kejadian, baris held (nama+blurb
+  piece via Loc), baris panel spell (**kunci meter TETAP DisplayName mentah** — nama terjemahan
+  tidak boleh jadi kunci pencatatan damage atau angkanya hilang saat ganti bahasa), 3 titik
+  RecipePanel, origin "TERCECER"→`hud.origin.loose` (+10 bahasa).
+  Temuan sapuan kata-Indonesia sisanya = `[Tooltip]` Inspector semua (bukan layar pemain).
+  TERBUKTI HIDUP: 66/66 kunci pakta + 9/9 reaksi resolve; simulasi strip menghasilkan
+  "VOW OF SILENCE   (PACT - permanent)".
+
+- **MAX HP "kok selalu 100" — akar DATA, bukan kode.** Pipeline sehat: `MaxHp = Base(100) +
+  Total(MaxHp)`, tanpa cap (Mathf.Max itu LANTAI), tanpa gating rune di Compile. Faktanya cuma
+  **6 dari 136 piece** membawa MaxHp, total +380 kalau SEMUA dipasang. (grep teks "MaxHp" di
+  aset = nol — stat tersimpan sebagai INDEX ENUM; hitung pakai SerializedObject, enum idx 1.)
+  Dinaikkan ×10: Bastion 600 · Bulwark 1200 · Coral 300 · Grand 900 · Heartwood 500 ·
+  Vitality 300 (+3800 total) + boon KULIT BATU 80→800. **Bane pakta TIDAK dikali** — bane -45
+  pada base 100 sudah pedih; ×10 membunuh pemain baru seketika. Stack penuh ≈ 4.700–5.000 ✓.
+  Loc ikut: pact.kulitbatu.boon (10 bhs) + blurb runebenteng/segelbenteng (+600/+1200, 10 bhs).
+  Hero tak disentuh (Frostwarden 140 / Stormcaller 78 / Emberwright -1→base).
+
+- **STRIP MENETAP + REDUP** (perintah: "jangan di-hide; yang di-hide debuff musuh ke kita aja;
+  kalau jeda padam, jalan terang"):
+  `StatusStrip.Push(..., bool dim)` — dim = ikon ×0,4 alpha 0,5, angka disembunyikan.
+  BUFF KITA: `_seenBuffs` (List, kursi tetap — urutan strip tidak melompat antar frame);
+  slot hidup = terang + sisa waktu, pernah-hidup-kini-jeda = redup tanpa angka.
+  AILMENT KITA (tally lapangan): `_seenAilments` (HashSet index db) — pernah menempel = menetap,
+  redup saat count 0, terang + angka saat jalan. Iterasi tetap urutan database = posisi stabil.
+  DEBUFF MUSUH KE KITA: perilaku lama, hilang saat habis (satu-satunya yang memang harus).
+  Registry per-scene (reset natural saat run baru — UI dibangun ulang).
+- **IKON PAKTA 1,35×** strip biasa (54→72,9) — pakta itu aturan dunia sepanjang run, bukan efek
+  lewat.
+
+BELUM DINILAI MATA: nama pakta Inggris in-game, HP ribuan saat sigil dipasang, strip redup.
+
+**Ronde 15 (2026-08-18) — "HP gak permanent" + icon toko hilang + teks info pindah:**
+
+Semua diverifikasi assembly-lebih-baru + console 0.
+
+- **AKAR "max HP 500 balik ke 100": EVOLUSI MEMAKAN SIGIL HP-NYA.** Screenshot user sendiri
+  yang membongkarnya: "EVOLVE! Sword Sigil + Coral Sigil -> Shield Sigil". Evolusi otomatis di
+  akhir wave mengonsumsi Coral (+300), papan dikompilasi ulang tanpa si pemberi HP, nyawa
+  maksimum runtuh diam-diam. BUKAN bug persistensi stat.
+  Fix: **`Grimoire.InheritedMaxHp`** — kontribusi MaxHp bahan yang dilebur DIWARISKAN permanen
+  (per-run), dicatat di `Merge` SEBELUM bahan dibuang, dikurangi MaxHp bawaan HASIL evolusi
+  (`Mathf.Max(0, eaten - MaxHpOf(result))` — supaya sigil-HP → sigil-HP-lebih-besar tidak dobel
+  dihitung), dijumlahkan di `Compile` setelah `Array.Clear`. Helper `MaxHpOf(def)` membaca stat
+  tunggal + array. TERUJI: `MaxHpOf(Coral) = 300` via refleksi editor.
+- **Icon dagangan toko lenyap** — efek samping adopsi prefab Ronde 13: `ShopAnchors` lahir
+  PALING AKHIR di kanvas sehingga chip prefab menutupi kolam gambar piece yang lahir lebih dulu.
+  Fix: `SetSiblingIndex(_panelBg lama + 1)` untuk ShopAnchors & EventAnchors — kembali ke
+  lapisan latar panel gambar-kode lama, kolam art tetap di atasnya.
+- **Vitality Sigil DIDAFTARKAN ke ContentDatabase** (127→128). Dia item HP 1★ (satu-satunya
+  selain Coral yang CanDrop) tapi TIDAK pernah bisa muncul. `CanDrop => Stars <= 1`, jadi dari
+  6 item HP hanya Coral+Vitality yang mengalir bebas; sisanya lewat undian berbobot
+  (★3=4,5% ≥wave5 · ★4=1,5% ≥wave11) atau resep — itulah rasa "di-lock di 100".
+  **8 piece lain juga tidak terdaftar** (drizzle/frostbitefield/geode/infernowave/power/rime/
+  root/wellspring) — TIDAK kudaftarkan tanpa izin (aturan "sedikit tapi unik"); menunggu
+  keputusan user.
+- **Teks info (held + evolve) pindah ke ATAS MATA grimoire** ("nanti ketutup buff") + naik ke
+  19 + rata tengah. Dihitung dari `GridRect()` (ikut prefab buku bergeser); konversi koordinat
+  y-dari-bawah (GridRect) → y-negatif-dari-atas (anchor) lewat ScreenH — dua sistem yang tidak
+  boleh disamakan mentah.
+- Konfirmasi arah strip (pesan user): debuff musuh→kita hilang saat habis ✓ (sudah begitu),
+  semua yang PERNAH kita trigger menetap redup ✓ (terpasang Ronde 14, tinggal dinilai mata).
+
+BELUM DINILAI MATA: icon toko balik, HP bertahan setelah evolusi, teks info di atas mata.
+
+**Ronde 15b (2026-08-18) — "harus ada yang nambahin Max HP di mana-mana":**
+
+MaxHp sekarang mengalir dari EMPAT pintu (console 0, aset tersimpan):
+
+| pintu | isi |
+|---|---|
+| Sigil (5 baru) | Shield *3 +600 (HASIL evolusi Sword+Coral — rantai HP berlanjut!) · Ward *2 +350 · Dewfall *2 +300 · Purifier *5 +1000 · Dawn *5 +800 |
+| Skill (4 baru) | Minor Heal +150 · Greater Heal +350 · Aegis (Piece_wardaegis) +250 · Lesser Ward (Piece_wardpetty) +150 |
+| Buff sementara (2) | Fortify +400 · AEGIS (Buff_perisai) +300 — selama buff hidup |
+| Pakta (boon baru) | DARAH TEBAL +500 (teks boon ikut di 10 bahasa) |
+
+Total piece ber-MaxHp: **6 → 15**, jumlah nilai +7750. Penempatan IKUT TEMA (penyembuh/
+pelindung dapat HP; glass-cannon crit tidak) dan ikut tangga bintang (*1 150-300 · *2 300-400 ·
+*3 600 · *5 800-1000). Baris stat tooltip piece/buff otomatis (Describe/DescribeMods) — tidak
+butuh kunci loc baru. Jebakan nama aset: Aegis = `Piece_wardaegis`, Lesser Ward =
+`Piece_wardpetty` (bukan Piece_aegis/lesserward).
+
+BELUM DINILAI MATA: laju HP di run nyata — angka-angka ini tebakan pertama yang enak diputar.
+
+*Ronde 15c:* **Pendaftaran Vitality Sigil DIBATALKAN atas perintah user** ("jangan asal
+didaftarkan, tambahin efek samping aja") - ContentDatabase kembali 127, kesembilan sigil
+tak terdaftar TETAP di luar daftar. Catatan faktual: Icon & Art kesembilannya sebenarnya
+TERISI (hasil generator), tapi keputusan kurasi milik user - jalur MaxHp cukup lewat efek
+samping di 9 piece terdaftar + 2 buff + 1 pakta (Ronde 15b). ATURAN BARU: jangan pernah
+mendaftarkan piece ke ContentDatabase tanpa izin eksplisit user.

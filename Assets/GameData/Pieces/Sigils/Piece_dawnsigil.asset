@@ -83,6 +83,8 @@ MonoBehaviour:
     Value: 0.15
   - Type: 7
     Value: 0.15
+  - Type: 1
+    Value: 800
   Stat: 0
   StatValue: 0
   Blurb: "Fajar: pulih, cepat, dan keras \u2014 semuanya sekaligus."

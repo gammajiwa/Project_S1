@@ -21,6 +21,8 @@ MonoBehaviour:
   Mods:
   - Type: 3
     Value: 14
+  - Type: 1
+    Value: 400
   IsDebuff: 0
   ResistShortensDuration: 1
   Blurb: Kulit mengeras. Tiap pukulan yang masuk dipangkas.

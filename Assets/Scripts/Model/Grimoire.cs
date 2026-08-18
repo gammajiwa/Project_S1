@@ -281,6 +281,19 @@ namespace Proto
         /// <summary>Total HP yang pulih per musuh mati. Aturan agregat yang sama.</summary>
         public float KillRestoreHp;
 
+        /// <summary>
+        /// MaxHp WARISAN dari bahan yang dimakan evolusi.
+        ///
+        /// Laporan pemilik project: "max HP-nya udah 500, wave kelar jadi seratus lagi" - yang
+        /// terjadi: evolusi otomatis di akhir wave MENGONSUMSI sigil ber-MaxHp (Sword + Coral ->
+        /// Shield), papan dikompilasi ulang tanpa si pemberi HP, dan nyawa maksimum runtuh diam-
+        /// diam tepat ketika pemain merasa baru saja jadi lebih kuat. Evolusi seharusnya menukar
+        /// piece jadi yang lebih baik - bukan diam-diam menarik kembali nyawa yang sudah dibeli.
+        /// Maka kontribusi MaxHp bahan yang dilebur DIWARISKAN permanen ke sini (per-run; reset
+        /// bersama Grimoire baru), dan Compile menambahkannya di atas stat papan.
+        /// </summary>
+        public float InheritedMaxHp;
+
         public float BonusMaxHp => Stats[(int)StatKind.MaxHp];
         public float BonusMaxMana => Stats[(int)StatKind.MaxMana];
         public float BonusManaRegen => Stats[(int)StatKind.ManaRegen];
@@ -946,6 +959,15 @@ namespace Proto
                 foreach (var c in group[i].Cells()) footprint.Add(c);
             }
 
+            // MaxHp bahan diwariskan SEBELUM mereka dibuang - lihat InheritedMaxHp.
+            // Dikurangi MaxHp bawaan HASILNYA (kalau ada), supaya evolusi sigil-HP menjadi
+            // sigil-HP yang lebih besar tidak dobel dihitung: warisan hanya menambal selisih
+            // yang benar-benar hilang, dan tidak pernah negatif.
+            float eaten = 0f;
+            for (int i = 0; i < group.Count; i++)
+                eaten += MaxHpOf(group[i].Def);
+            InheritedMaxHp += Mathf.Max(0f, eaten - MaxHpOf(result));
+
             for (int i = 0; i < group.Count; i++) Placed.Remove(group[i]);
             Rebuild();
 
@@ -967,6 +989,22 @@ namespace Proto
 
             log.Add(line.ToString());
             return true;
+        }
+
+        /// <summary>Total stat MaxHp yang dibawa sebuah piece (stat tunggal + array Stats).</summary>
+        static float MaxHpOf(PieceDefinition def)
+        {
+            if (def == null) return 0f;
+
+            float v = 0f;
+            if (def.Stat == StatKind.MaxHp) v += def.StatValue;
+
+            var mods = def.Stats;
+            if (mods != null)
+                for (int i = 0; i < mods.Length; i++)
+                    if (mods[i].Type == StatKind.MaxHp) v += mods[i].Value;
+
+            return v;
         }
 
         /// <summary>Titik tengah sekumpulan petak, dalam koordinat petak.</summary>
@@ -1086,6 +1124,7 @@ namespace Proto
             KillRestoreMana = 0f;
             KillRestoreHp = 0f;
             System.Array.Clear(Stats, 0, Stats.Length);
+            Stats[(int)StatKind.MaxHp] += InheritedMaxHp;
 
             // Any placed piece may hand out stats: runes, sigils, even skills.
             foreach (var piece in Placed)

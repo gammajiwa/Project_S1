@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -114,7 +114,7 @@ namespace Proto
             _used = 0;
         }
 
-        public void Push(Sprite icon, Color tint, string number, string tooltip)
+        public void Push(Sprite icon, Color tint, string number, string tooltip, bool dim = false)
         {
             if (_used >= _icons.Length) return;
 
@@ -125,10 +125,16 @@ namespace Proto
             _icons[_used].sprite = icon;
 
             // Without a sprite the Image draws a white box, so the tint has to carry the colour.
-            _icons[_used].color = icon != null ? Color.white : tint;
+            //
+            // dim = entri yang MENETAP tapi sedang tidak jalan (cooldown / tidak ada korban di
+            // lapangan). Dulu entri begini di-hide, dan pemain kehilangan peta build-nya sendiri
+            // tiap kali efeknya jeda; sekarang ia meredup, dan terang lagi begitu jalan.
+            var ink = icon != null ? Color.white : tint;
+            if (dim) ink = new Color(ink.r * 0.4f, ink.g * 0.4f, ink.b * 0.45f, 0.5f);
+            _icons[_used].color = ink;
             _icons[_used].rectTransform.anchoredPosition = new Vector2(x, y);
 
-            _numbers[_used].enabled = !string.IsNullOrEmpty(number);
+            _numbers[_used].enabled = !dim && !string.IsNullOrEmpty(number);
             _numbers[_used].text = number;
             _numbers[_used].rectTransform.anchoredPosition =
                 new Vector2(x + _icon + 3f, y - _icon * 0.28f);

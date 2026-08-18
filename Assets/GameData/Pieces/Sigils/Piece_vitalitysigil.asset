@@ -67,7 +67,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 1
-    Value: 30
+    Value: 300
   Stat: 0
   StatValue: 0
   Blurb: +30 HP maksimum.

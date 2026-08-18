@@ -67,7 +67,7 @@ MonoBehaviour:
   ElementMatchBonus: 0
   Stats:
   - Type: 1
-    Value: 60
+    Value: 600
   - Type: 3
     Value: 4
   Stat: 0

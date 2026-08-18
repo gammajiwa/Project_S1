@@ -73,6 +73,8 @@ MonoBehaviour:
     Value: 0.35
   - Type: 17
     Value: 0.25
+  - Type: 1
+    Value: 350
   Stat: 0
   StatValue: 0
   Blurb: Debuff lebih singkat, kaki lebih ringan.

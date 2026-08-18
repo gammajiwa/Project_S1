@@ -79,6 +79,8 @@ MonoBehaviour:
     Value: 4
   - Type: 17
     Value: 0.2
+  - Type: 1
+    Value: 1000
   Stat: 0
   StatValue: 0
   Blurb: 'Pemurni: kutukan luruh, kulit keras, langkah ringan.'

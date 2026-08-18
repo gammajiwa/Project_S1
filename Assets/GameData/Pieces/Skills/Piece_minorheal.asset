@@ -66,7 +66,9 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 1
+    Value: 150
   Stat: 0
   StatValue: 0
   Blurb: A small top-up on a long cooldown. One cell.

@@ -432,6 +432,16 @@ namespace Proto
         readonly DamageMeter _meter = new DamageMeter();
 
         StatusStrip _buffStrip;
+
+        /// <summary>
+        /// Buff yang PERNAH menyala di run ini. Strip buff tidak lagi menghapus entri yang
+        /// jeda - ia meredupkannya, supaya peta build pemain tetap terbaca. Yang tetap
+        /// menghilang sepenuhnya hanya debuff musuh ke kita (strip sebelah).
+        /// </summary>
+        readonly List<BuffDefinition> _seenBuffs = new List<BuffDefinition>();
+
+        /// <summary>Ailment (index database) yang pernah menempel di lapangan run ini.</summary>
+        readonly HashSet<int> _seenAilments = new HashSet<int>();
         StatusStrip _debuffStrip;
         StatusStrip _ailmentStrip;
 
@@ -619,7 +629,7 @@ namespace Proto
             // Reaksi = pengumuman, bukan kabar biasa. Skala 2,2 ≈ font 44 — sekelas judul,
             // karena reaksi memang kejadian paling keren di lapangan dan hurufnya harus
             // sepadan dengan ledakannya.
-            Enemies.OnReaction += (pos, rx) => PushFloater(pos, rx.DisplayName + "!", rx.FlashColor, 2.2f);
+            Enemies.OnReaction += (pos, rx) => PushFloater(pos, ReactionName(rx) + "!", rx.FlashColor, 2.2f);
 
             // Saklar curang tetap menang atas pilihan pemain: itu memang gunanya, dan starter yang
             // dipaksa dari DebugConfig harus tetap dipaksa walau menu barusan memilih yang lain.
@@ -925,12 +935,12 @@ namespace Proto
 
             // Below the three icon strips, which now own the band straight under the mana bar.
             _heldText = MakeTmp("HeldInfo", new Vector2(Margin, StripAilmentY - 62f),
-                new Vector2(880, 26), 17, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
-                TextAlignmentOptions.TopLeft);
+                new Vector2(880, 28), 19, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
+                TextAlignmentOptions.Center);
 
             _evolveText = MakeTmp("EvolveInfo", new Vector2(Margin, StripAilmentY - 84f),
-                new Vector2(880, 26), 17, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
-                TextAlignmentOptions.TopLeft);
+                new Vector2(880, 28), 19, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
+                TextAlignmentOptions.Center);
             _evolveText.text = "";
         }
 
@@ -2361,7 +2371,9 @@ namespace Proto
             // DISAMAKAN dengan buff & kutukan — permintaan pemilik project: ukuran ikon,
             // jarak slot, dan arah tumbuh persis sama. Yang membedakan pakta tinggal
             // warnanya dan barisnya sendiri di paling bawah.
-            _pactStrip = new StatusStrip(_canvas.transform, TmpFont, 12, StripIcon,
+            // Ikon pakta SATU TINGKAT LEBIH BESAR dari buff/debuff biasa - permintaan pemilik
+            // project: pakta itu aturan dunia sepanjang run, bukan efek lewat.
+            _pactStrip = new StatusStrip(_canvas.transform, TmpFont, 12, StripIcon * 1.35f,
                 new Color(1f, 0.82f, 0.4f));
         }
 
@@ -2417,15 +2429,26 @@ namespace Proto
             if (StatusStripRig.TryOrigin(rig.AilmentArea, out origin))
             {
                 _ailmentOrigin = origin;
+            }
 
-                // Dua baris keterangan menumpang di bawah strip ailment. Membiarkannya di angka
-                // tetap berarti mereka tertinggal menggantung di tempat strip yang sudah pindah,
-                // dan yang memindahkan stripnya tidak akan menduga keduanya ikut terlibat.
+            // Dua baris keterangan (info piece dipegang + pesan evolusi) pindah ke ATAS MATA
+            // grimoire - perintah pemilik project: di kolom kiri mereka tertutup strip buff yang
+            // sekarang menetap. Di atas mata, kolomnya selalu kosong dan matanya sendiri jadi
+            // penunjuk arah baca. Dihitung dari GridRect (papan yang diadopsi dari prefab buku),
+            // jadi ikut bergeser kalau bukunya dipindah.
+            //
+            // GridRect memakai y-dari-BAWAH; anchor teks (0,1) memakai y-negatif-dari-atas -
+            // dikonversi lewat ScreenH, bukan disamakan mentah.
+            {
+                var grid = GridRect();
+                float cx = grid.center.x - 440f;                       // lebar teks 880, pivot kiri
+                float eyeTop = grid.yMax + 118f;                       // di atas mata (mata ~90 px)
+
                 if (_heldText != null)
-                    _heldText.rectTransform.anchoredPosition = origin + new Vector2(0f, -62f);
+                    _heldText.rectTransform.anchoredPosition = new Vector2(cx, eyeTop + 28f - ScreenH);
 
                 if (_evolveText != null)
-                    _evolveText.rectTransform.anchoredPosition = origin + new Vector2(0f, -84f);
+                    _evolveText.rectTransform.anchoredPosition = new Vector2(cx, eyeTop - ScreenH);
             }
         }
 
@@ -2447,7 +2470,9 @@ namespace Proto
         /// </summary>
         void DrawBuffs()
         {
-            PushSlots(_buffStrip, Player.Buffs, _buffOrigin);
+            // Buff KITA menetap (redup saat jeda). Debuff musuh ke kita tetap lenyap saat
+            // habis - dialah satu-satunya yang memang harus hilang, perintah pemilik project.
+            PushSlots(_buffStrip, Player.Buffs, _buffOrigin, _seenBuffs);
             PushSlots(_debuffStrip, Player.Debuffs, _debuffOrigin);
 
             _ailmentStrip.Begin(_ailmentOrigin);
@@ -2456,12 +2481,17 @@ namespace Proto
             for (int i = 0; i < _db.Statuses.Count && i < counts.Length; i++)
             {
                 var status = _db.Statuses[i];
+                if (status == null) continue;
 
-                // Only what is actually on the field. A permanent row of zeroes is noise.
-                if (status == null || counts[i] <= 0) continue;
+                // Ailment KITA menetap begitu pernah menempel: build pemain tetap terbaca
+                // walau lapangan sedang bersih - redup saat nol, terang plus angka saat jalan.
+                bool active = counts[i] > 0;
+                if (active) _seenAilments.Add(i);
+                else if (!_seenAilments.Contains(i)) continue;
 
-                _ailmentStrip.Push(status.Icon, status.Color, counts[i].ToString(),
-                    Loc.F("hud.ailment.tip", StatusName(status), counts[i], status.Blurb));
+                _ailmentStrip.Push(status.Icon, status.Color, active ? counts[i].ToString() : "",
+                    Loc.F("hud.ailment.tip", StatusName(status), counts[i], status.Blurb),
+                    dim: !active);
             }
 
             _ailmentStrip.Apply();
@@ -2502,9 +2532,9 @@ namespace Proto
                 if (p == null) continue;
 
                 _sb.Length = 0;
-                _sb.Append(Loc.F("hud.pact.tip", p.DisplayName)).Append('\n');
-                if (!string.IsNullOrEmpty(p.BoonText)) _sb.Append("+ ").Append(p.BoonText).Append('\n');
-                if (!string.IsNullOrEmpty(p.BaneText)) _sb.Append("- ").Append(p.BaneText);
+                _sb.Append(Loc.F("hud.pact.tip", PactName(p))).Append('\n');
+                if (!string.IsNullOrEmpty(p.BoonText)) _sb.Append("+ ").Append(PactBoon(p)).Append('\n');
+                if (!string.IsNullOrEmpty(p.BaneText)) _sb.Append("- ").Append(PactBane(p));
 
                 // Tanpa angka: pakta tidak menghitung mundur, dan kotak angka kosong di sebelah
                 // tiap ikon cuma melebarkan kolomnya ke dalam layar.
@@ -2514,9 +2544,49 @@ namespace Proto
             _pactStrip.Apply();
         }
 
-        void PushSlots(StatusStrip strip, PlayerCaster.BuffSlot[] slots, Vector2 origin)
+        void PushSlots(StatusStrip strip, PlayerCaster.BuffSlot[] slots, Vector2 origin,
+            List<BuffDefinition> retain = null)
         {
             strip.Begin(origin);
+
+            // Daftar menetap diisi dulu dari slot yang sedang hidup, supaya entri baru langsung
+            // punya kursi tetap dan urutan strip tidak melompat-lompat antar frame.
+            if (retain != null)
+            {
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    var def = slots[i].Def;
+                    if (def != null && !retain.Contains(def)) retain.Add(def);
+                }
+
+                for (int r = 0; r < retain.Count; r++)
+                {
+                    var def = retain[r];
+
+                    int slot = -1;
+                    for (int i = 0; i < slots.Length; i++)
+                        if (slots[i].Def == def) { slot = i; break; }
+
+                    if (slot < 0)
+                    {
+                        // Menetap tapi sedang jeda: redup, tanpa angka. Terang lagi begitu jalan.
+                        strip.Push(def.Icon, def.Color, "",
+                            BuffName(def) + "\n" + _tooltips.DescribeMods(def), dim: true);
+                        continue;
+                    }
+
+                    int stacks = Mathf.Max(1, slots[slot].Stacks);
+                    string label = def.IsCharge ? stacks + "x" : slots[slot].Remaining.ToString("0.0");
+
+                    strip.Push(def.Icon, def.Color, label,
+                        BuffName(def) + (def.IsCharge ? "  -  " + Loc.F("hud.buff.charge", stacks, def.MaxStacks) : "")
+                        + "  -  " + slots[slot].Remaining.ToString("0.0") + "s\n" +
+                        _tooltips.DescribeMods(def));
+                }
+
+                strip.Apply();
+                return;
+            }
 
             for (int i = 0; i < slots.Length; i++)
             {
@@ -2661,6 +2731,27 @@ namespace Proto
 
         static string StatusName(StatusDefinition def)
             => def == null ? "" : Loc.T("status." + def.Id + ".name", def.DisplayName);
+
+        /// <summary>
+        /// Nama PAKTA lewat tabel bahasa. Aset paktanya ditulis dalam Bahasa Indonesia
+        /// ("SUMPAH SUNYI"), jadi tanpa ini nama Indonesia bocor ke UI bahasa apa pun —
+        /// persis yang dilaporkan pemilik project.
+        /// </summary>
+        static string PactName(WorldModifierDefinition p)
+            => p == null ? "" : Loc.T("pact." + p.Id + ".name", p.DisplayName);
+
+        static string PactBoon(WorldModifierDefinition p)
+            => p == null ? "" : Loc.T("pact." + p.Id + ".boon", p.BoonText);
+
+        static string PactBane(WorldModifierDefinition p)
+            => p == null ? "" : Loc.T("pact." + p.Id + ".bane", p.BaneText);
+
+        /// <summary>
+        /// Nama REAKSI lewat tabel bahasa. ReactionDefinition tidak punya field Id, jadi
+        /// kuncinya diturunkan dari nama asetnya — stabil selama asetnya tidak di-rename.
+        /// </summary>
+        static string ReactionName(ReactionDefinition rx)
+            => rx == null ? "" : Loc.T("reaction." + rx.name.ToLowerInvariant() + ".name", rx.DisplayName);
 
         static string BuffName(BuffDefinition def)
             => def == null ? "" : Loc.T("buff." + def.Id + ".name", def.DisplayName);
@@ -4015,6 +4106,10 @@ namespace Proto
             var go = Instantiate(_theme.EventPrefab, _canvas.transform, false);
             go.name = "EventAnchors";
 
+            // Alasan yang sama dengan ShopAnchors di atas.
+            if (_eventBg != null)
+                go.transform.SetSiblingIndex(_eventBg.transform.GetSiblingIndex() + 1);
+
             var rig = go.GetComponent<EventRig>() ?? go.GetComponentInChildren<EventRig>(true);
             if (rig == null)
             {
@@ -4090,6 +4185,12 @@ namespace Proto
 
             var go = Instantiate(_theme.ShopPrefab, _canvas.transform, false);
             go.name = "ShopAnchors";
+
+            // DITARIK ke lapisan latar panel gambar-kode lama. Prefab ini lahir PALING AKHIR
+            // di kanvas, jadi tanpa ini chip-nya menutupi kolam gambar piece yang lahir lebih
+            // dulu - etalase tampil, barang dagangannya lenyap di belakang kartunya sendiri.
+            if (_panelBg != null)
+                go.transform.SetSiblingIndex(_panelBg.transform.GetSiblingIndex() + 1);
 
             var rig = go.GetComponent<ShopRig>() ?? go.GetComponentInChildren<ShopRig>(true);
 
@@ -5445,7 +5546,7 @@ namespace Proto
 
             if (Player.Pacts == null || !Player.Pacts.Take(pact)) return;
 
-            Announce(pact.DisplayName, pact.Color);
+            Announce(PactName(pact), pact.Color);
 
             _pactOffer[0] = null;
             _pactOffer[1] = null;
@@ -5549,9 +5650,9 @@ namespace Proto
                 : new Color(tone.r * 0.32f, tone.g * 0.32f, tone.b * 0.32f, 0.96f);
 
             _sb.Length = 0;
-            _sb.Append(pact.DisplayName).Append("\n\n");
-            _sb.Append("+  ").Append(pact.BoonText).Append("\n\n");
-            _sb.Append("-  ").Append(pact.BaneText);
+            _sb.Append(PactName(pact)).Append("\n\n");
+            _sb.Append("+  ").Append(PactBoon(pact)).Append("\n\n");
+            _sb.Append("-  ").Append(PactBane(pact));
 
             label.text = _sb.ToString();
         }
@@ -6278,7 +6379,9 @@ namespace Proto
             }
 
             string kind = Loc.T(_held.Layer == Layer.Rune ? "held.kind.rune" : "held.kind.skill");
-            _heldText.text = kind + " - " + _held.DisplayName + "   " + _held.Blurb;
+            // Nama & blurb piece lewat tabel bahasa - kunci piece.* sudah lengkap (272 kunci).
+            _heldText.text = kind + " - " + PieceName(_held) + "   "
+                           + Loc.T("piece." + _held.Id + ".blurb", _held.Blurb);
         }
 
         /// <summary>Detailed hover card + the ground ring showing the hovered skill's reach.</summary>
@@ -6332,7 +6435,7 @@ namespace Proto
                 if (looseIndex >= 0)
                 {
                     hovered = _loose[looseIndex];
-                    origin = "TERCECER";
+                    origin = Loc.T("hud.origin.loose");
                 }
 
                 if (hovered == null)
@@ -6833,7 +6936,10 @@ namespace Proto
                     s.Source.Def.Color.b, 0.95f);
 
                 _sb.Length = 0;
-                _sb.Append(i + 1).Append(". ").Append(s.Source.Def.DisplayName);
+                // DisplayName mentah TETAP dipakai sebagai kunci meter di bawah - nama
+                // terjemahan tidak boleh jadi kunci pencatatan damage, atau angkanya hilang
+                // begitu bahasa diganti. Yang lewat Loc hanya yang DIGAMBAR.
+                _sb.Append(i + 1).Append(". ").Append(PieceName(s.Source.Def));
 
                 // Share of the run's damage, folded in from what used to be a separate meter panel.
                 int share = _meter.ShareOf(s.Source.Def.DisplayName);

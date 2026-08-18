@@ -284,7 +284,8 @@ namespace Proto
             // Lewat Loc, bukan string mentah: "RESEP" hardcoded adalah persis jenis teks yang
             // dilaporkan "gak ke-local". Cabang "(belum ada)" sudah tidak mungkin sampai sini —
             // _rows kosong sudah pulang lebih awal di atas.
-            _title.text = Loc.T("hud.origin.recipe") + "  -  " + piece.DisplayName;
+            _title.text = Loc.T("hud.origin.recipe") + "  -  "
+                        + Loc.T("piece." + piece.Id + ".name", piece.DisplayName);
             _title.rectTransform.anchoredPosition = origin + new Vector2(PadX, -6f);
 
             for (int r = 0; r < MaxRows; r++) LayoutRow(r, origin);
@@ -372,7 +373,7 @@ namespace Proto
                     PartColumn, InspectH);
 
                 _partLabel[i].enabled = true;
-                _partLabel[i].text = part.DisplayName;
+                _partLabel[i].text = Loc.T("piece." + part.Id + ".name", part.DisplayName);
                 _partLabel[i].color = owned ? LitText : DarkText;
                 _partLabel[i].rectTransform.anchoredPosition =
                     origin + new Vector2(x, rowTop - IconSize - 6f);
@@ -387,8 +388,8 @@ namespace Proto
             _resultRect[row] = new Rect(origin.x + PadX, origin.y + rowTop - 4f - InspectH,
                 ResultColumn, InspectH);
 
-            _resultLabel[row].text = recipe.Result.DisplayName + "\n" +
-                                     Shapes.StarText(recipe.Result.Stars);
+            _resultLabel[row].text = Loc.T("piece." + recipe.Result.Id + ".name", recipe.Result.DisplayName)
+                                     + "\n" + Shapes.StarText(recipe.Result.Stars);
             _resultLabel[row].color = ResultText;
             _resultLabel[row].rectTransform.anchoredPosition =
                 origin + new Vector2(PadX, rowTop - IconSize - 6f);

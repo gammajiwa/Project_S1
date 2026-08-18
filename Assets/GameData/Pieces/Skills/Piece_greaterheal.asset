@@ -67,7 +67,9 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 1
+    Value: 350
   Stat: 0
   StatValue: 0
   Blurb: EVOLVED. A real heal, but you wait a long time for it.

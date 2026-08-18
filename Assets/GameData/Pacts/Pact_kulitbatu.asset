@@ -22,7 +22,7 @@ MonoBehaviour:
   - Type: 3
     Value: 40
   - Type: 1
-    Value: 80
+    Value: 800
   Bane:
   - Type: 17
     Value: -1.2

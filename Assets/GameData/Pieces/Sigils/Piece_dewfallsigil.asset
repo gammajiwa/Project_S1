@@ -72,6 +72,8 @@ MonoBehaviour:
     Value: 2
   - Type: 5
     Value: 2
+  - Type: 1
+    Value: 300
   Stat: 0
   StatValue: 0
   Blurb: Embun kecil untuk nyawa dan mana sekaligus.

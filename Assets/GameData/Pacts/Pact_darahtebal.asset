@@ -21,6 +21,8 @@ MonoBehaviour:
   Boon:
   - Type: 7
     Value: 0.35
+  - Type: 1
+    Value: 500
   Bane: []
   EnemyHpMul: 1.4
   EnemySpeedMul: 1

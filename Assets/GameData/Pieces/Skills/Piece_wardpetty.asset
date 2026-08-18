@@ -65,7 +65,9 @@ MonoBehaviour:
   Aura: 0
   AuraValue: 0
   ElementMatchBonus: 0
-  Stats: []
+  Stats:
+  - Type: 1
+    Value: 150
   Stat: 0
   StatValue: 0
   Blurb: A shield absorbs 38 damage for 8 seconds. Refuses to be recast while the
