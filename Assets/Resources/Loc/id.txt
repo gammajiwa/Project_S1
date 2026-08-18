@@ -70,13 +70,14 @@ hud.newpiece=BARU: {0}
 hud.origin.bag=DI TAS (nggak nembak)
 hud.origin.locked=KEPASANG - TERKUNCI, nggak ikut evolusi
 hud.origin.placed=KEPASANG
+hud.origin.recipe=RESEP
 hud.pact.tip={0}   (PAKTA - permanen)
 hud.regen=\npulih {0} per detik
 hud.speed.hint=kecepatan  (tombol 1/2/3/4)
 hud.spells.title=SPELL AKTIF
 hud.spells.more=+{0} lainnya
-hud.start.depart=LANJUT   (SPACE)
-hud.start.wave=MULAI WAVE   (SPACE)
+hud.start.depart=LANJUT
+hud.start.wave=MULAI WAVE
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

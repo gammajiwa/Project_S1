@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,7 +18,7 @@ namespace Proto
     public class StatusStrip
     {
         readonly Image[] _icons;
-        readonly Text[] _numbers;
+        readonly TextMeshProUGUI[] _numbers;
         readonly string[] _tooltips;
         readonly Rect[] _rects;
 
@@ -38,7 +39,7 @@ namespace Proto
         Vector2 _origin;
         int _used;
 
-        public StatusStrip(Transform canvas, Font font, int capacity, float iconSize,
+        public StatusStrip(Transform canvas, TMP_FontAsset font, int capacity, float iconSize,
             Color numberColor, bool vertical = false)
         {
             _icon = iconSize;
@@ -49,7 +50,7 @@ namespace Proto
             _slot = iconSize + (vertical ? 8f : 36f);
 
             _icons = new Image[capacity];
-            _numbers = new Text[capacity];
+            _numbers = new TextMeshProUGUI[capacity];
             _tooltips = new string[capacity];
             _rects = new Rect[capacity];
 
@@ -81,20 +82,20 @@ namespace Proto
             return img;
         }
 
-        static Text MakeText(Transform canvas, Font font, string name, Color color)
+        static TextMeshProUGUI MakeText(Transform canvas, TMP_FontAsset font, string name, Color color)
         {
             var go = new GameObject(name);
             go.transform.SetParent(canvas, false);
 
-            var text = go.AddComponent<Text>();
-            text.font = font;
+            var text = go.AddComponent<TextMeshProUGUI>();
+            if (font != null) text.font = font;
             text.fontSize = 18;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyles.Bold;
             text.color = color;
-            text.alignment = TextAnchor.MiddleLeft;
+            text.alignment = TextAlignmentOptions.Left;
             text.raycastTarget = false;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Overflow;
 
             var rt = text.rectTransform;
             rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);

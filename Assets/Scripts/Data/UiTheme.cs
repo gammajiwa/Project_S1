@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace Proto
@@ -35,16 +36,21 @@ namespace Proto
         public Sprite PanelPaper;
 
         [Header("Font")]
-        [Tooltip("Font seluruh UI dalam run: tombol, panel, label, tooltip. Kosong = font " +
-                 "bawaan Unity (LegacyRuntime/Arial), yang selama ini dipakai karena belum " +
-                 "ada slotnya sama sekali.")]
+        [Tooltip("Font legacy — SATU-SATUNYA pemakainya label 3D dunia di pulau singgah " +
+                 "(TextMesh milik RunDirector). Seluruh UI kanvas sudah TextMeshPro dan " +
+                 "membaca TmpFont; slot ini tidak menyentuh UI mana pun lagi.")]
         public Font UiFont;
 
-        [Tooltip("Font ANGKA damage melayang. Dipisah dari UiFont dengan sengaja: popup damage " +
-                 "hidup 0,75 detik di atas layar yang penuh, dan yang dibaca di situ bukan " +
-                 "kata melainkan besaran. Berat yang lebih tebal terbaca lebih cepat.\n\n" +
-                 "Kosong = ikut UiFont.")]
-        public Font NumberFont;
+        [Tooltip("Font TMP seluruh teks HUD combat yang lahir dari kode — aturan pemilik " +
+                 "project: SEMUA teks TextMeshPro, tidak ada lagi UI Text legacy. " +
+                 "Kosong = font bawaan TMP.")]
+        public TMP_FontAsset TmpFont;
+
+        [Tooltip("Font TMP ANGKA damage melayang. Dipisah dari TmpFont dengan sengaja: popup " +
+                 "damage hidup 0,75 detik di atas layar yang penuh, dan yang dibaca di situ " +
+                 "bukan kata melainkan besaran. Berat yang lebih tebal terbaca lebih cepat.\n\n" +
+                 "Kosong = ikut TmpFont.")]
+        public TMP_FontAsset TmpNumberFont;
 
         [Tooltip("PREFAB papan grimoire — cara yang dipakai sekarang. Isinya bebas: sampul, " +
                  "hiasan, apa pun.\n\n" +
@@ -86,6 +92,57 @@ namespace Proto
                  "tombol LANJUT. Isi panelnya tetap digambar kode — yang kamu tata LETAKNYA.\n\n" +
                  "Kosong = tata letak hitungan lama.")]
         public GameObject ShopPrefab;
+
+        [Tooltip("PREFAB deret tombol KECEPATAN (1x/2x/...). Letak, ukuran, jarak, dan rupa " +
+                 "tombolnya SEPENUHNYA milik prefab — kode cuma meng-clone cetakan di dalamnya " +
+                 "sebanyak jumlah kecepatan, mengisi labelnya, dan menyalakan keadaan terpilih.\n\n" +
+                 "Isi prefab: root ber-HorizontalLayoutGroup, satu anak nonaktif bernama " +
+                 "'ButtonTemplate' berisi anak 'Idle', 'Active', dan 'Label' (teks TMP).\n\n" +
+                 "Terisi = tombolnya jadi tombol UGUI beneran (klik ikut ke mana pun kamu " +
+                 "memindahkannya). Kosong = deret hitungan kode yang lama.")]
+        public GameObject SpeedBarPrefab;
+
+        [Tooltip("PREFAB kartu HOVER (keterangan piece, HP/mana, resep). LEBAR dan tepi " +
+                 "dalamnya milik prefab — perbesar kartunya di sini kalau kekecilan.\n\n" +
+                 "Isi prefab: root ber-Image (bingkai, Sliced) + satu anak bernama 'Body' " +
+                 "ber-TextMeshProUGUI; jarak Body ke tepi root itulah tepi dalam kartu.\n\n" +
+                 "Tinggi dan posisi tetap dihitung kode: tingginya ikut panjang teks, " +
+                 "posisinya mengikuti kursor. Kosong = kartu hitungan lama (lebar 380).")]
+        public GameObject TooltipPrefab;
+
+        [Tooltip("PREFAB kartu RESEP (ALT + hover piece). Root ber-Image = badan kartunya — " +
+                 "sprite, tint, dan bahan panel milikmu. Ukuran & posisi tetap ditulis kode: " +
+                 "tinggi ikut jumlah baris resep, dan kartunya DIPATOK di dekat mouse saat " +
+                 "dibuka (diam selama ALT ditahan supaya bisa dibaca).\n\n" +
+                 "Kosong = kotak gelap polos gambar-kode.")]
+        public GameObject RecipeCardPrefab;
+
+        [Tooltip("PREFAB penata letak HUD COMBAT, membawa komponen CombatHudRig.\n\n" +
+                 "Isinya kotak-kotak kosong yang kamu geser sendiri: baris info kiri-atas " +
+                 "(wave/gold) + plakatnya, tombol LANJUT (yang muncul saat wave beres), " +
+                 "tombol TOKO, bar boss, dan alas TAS. Isi tiap kotak tetap digambar kode — " +
+                 "yang kamu tata LETAKNYA.\n\n" +
+                 "Kotak yang dibiarkan kosong kembali ke letak hitungan lama.")]
+        public GameObject CombatHudPrefab;
+
+        [Tooltip("SATU PREFAB PAYUNG untuk seluruh UI combat. Isinya boleh memuat semua bagian " +
+                 "sekaligus sebagai anak: Vitals (VitalsRig), strip status (StatusStripRig), " +
+                 "panel singgah (ShopRig), 'SpeedBar', 'SpellPanel', 'TooltipCard', dan kotak " +
+                 "HUD (CombatHudRig).\n\n" +
+                 "Kalau terisi, SEMUA bagian dicari di dalam prefab ini lebih dulu — slot " +
+                 "per-bagian di bawah cuma cadangan untuk bagian yang tidak ada di sini. " +
+                 "Satu tempat, satu kali buka, semua ketata.")]
+        public GameObject CombatUiPrefab;
+
+        [Tooltip("PREFAB panel DAFTAR SKILL (meter damage kanan layar).\n\n" +
+                 "Isi prefab: root (letak & lebar panel) berisi wadah ber-VerticalLayoutGroup, " +
+                 "dan di dalamnya satu anak nonaktif bernama 'RowTemplate' dengan anak " +
+                 "berurutan: 'Bg' (Image), 'Fill' (Image), 'Text' (teks TMP), 'Notch' (Image).\n\n" +
+                 "Urutan itu WAJIB — di UGUI urutan anak adalah urutan gambar, dan takik " +
+                 "sengaja paling akhir supaya tergambar di atas teks.\n\n" +
+                 "Kode meng-clone cetakan itu lalu cuma mengisi teks, panjang isian, warna " +
+                 "takik, dan menyalakan baris terpakai. Kosong = daftar hitungan lama.")]
+        public GameObject SpellPanelPrefab;
 
         [Tooltip("Alas di belakang petak papan. DIKOSONGKAN atas permintaan pemilik project: " +
                  "bingkai berhias di belakang petak membuat dua bingkai bersarang, dan yang " +
@@ -249,6 +306,16 @@ namespace Proto
         [Tooltip("Warna ruas jalur antar node yang BELUM dilalui.")]
         public Color MapPathInk = new Color(0.42f, 0.30f, 0.18f, 0.85f);
 
+        [Tooltip("Warna jalur yang SEDANG DITAWARKAN — pilihan langkah berikutnya. Ini baris " +
+                 "terpenting di seluruh peta: kalau ia tidak terbaca, pemain tidak tahu ke mana " +
+                 "ia boleh pergi. JANGAN kuning/emas — perkamennya sendiri kuning dan keduanya " +
+                 "lebur jadi satu.")]
+        public Color MapPathOfferedInk = new Color(0.78f, 0.09f, 0.07f, 1f);
+
+        [Tooltip("Warna jalur yang SUDAH dilalui. Hijau pucat hilang di perkamen terang; " +
+                 "yang dipakai sekarang hijau tua yang masih terbaca sebagai 'sudah lewat'.")]
+        public Color MapPathWalkedInk = new Color(0.16f, 0.42f, 0.20f, 0.9f);
+
         [Tooltip("Warna label KAMU di atas token pemain.")]
         public Color MapYouInk = new Color(0.45f, 0.20f, 0.03f, 1f);
 
@@ -268,6 +335,15 @@ namespace Proto
 
         [Tooltip("Token pemain di peta. Kosong = bulatan polos seperti sebelumnya.")]
         public Sprite MapIconYou;
+
+        // ------------------------------------------------------------------ garis evolusi
+
+        [Header("Garis evolusi")]
+        [Tooltip("Material busur listrik untuk garis penghubung evolusi (shader " +
+                 "Grimoire/UiArcBolt). Goyangan, kedip, dan nyalanya disetel di material — " +
+                 "bukan di kode. KOSONG = garis lurus polos seperti sebelum ada shader ini, " +
+                 "yang tetap benar, cuma diam.")]
+        public Material EvoBoltMaterial;
 
         // ------------------------------------------------------------------ ukuran peta kecil
 

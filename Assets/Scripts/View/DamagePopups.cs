@@ -1,5 +1,5 @@
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Proto
 {
@@ -45,7 +45,7 @@ namespace Proto
 
         class Popup
         {
-            public Text Label;
+            public TextMeshProUGUI Label;
             public RectTransform Rect;
             public Vector3 World;
             public float Amount;
@@ -59,23 +59,37 @@ namespace Proto
         readonly Popup[] _pool = new Popup[PoolSize];
         readonly Camera _camera;
 
-        public DamagePopups(Transform canvas, Font font, Camera camera)
+        // Kanvas induk — skalanya membagi hasil WorldToScreenPoint. anchoredPosition
+        // bersatuan UNIT KANVAS (piksel layar / scaleFactor); menulis piksel layar mentah
+        // ke sana menggencet semua popup ke arah kiri-bawah begitu jendela game lebih
+        // kecil dari resolusi referensi ("dmg popup ngumpul di pojok kiri bawah").
+        readonly Canvas _canvasRef;
+
+        float CanvasScale => _canvasRef != null ? Mathf.Max(0.0001f, _canvasRef.scaleFactor) : 1f;
+
+        /// <summary>Satu material outline BERSAMA seluruh kolam — lihat catatan di konstruktor.</summary>
+        Material _outlineMat;
+
+        public DamagePopups(Transform canvas, TMP_FontAsset font, Camera camera)
         {
             _camera = camera;
+            _canvasRef = canvas != null ? canvas.GetComponentInParent<Canvas>() : null;
 
             for (int i = 0; i < PoolSize; i++)
             {
                 var go = new GameObject($"Dmg_{i}");
                 go.transform.SetParent(canvas, false);
 
-                var text = go.AddComponent<Text>();
-                text.font = font;
+                var text = go.AddComponent<TextMeshProUGUI>();
+                if (font != null) text.font = font;
                 text.fontSize = 18;
-                text.fontStyle = FontStyle.Bold;
-                text.alignment = TextAnchor.MiddleCenter;
+                // TANPA FontStyles.Bold: font angkanya sudah SemiBold, dan faux-bold TMP
+                // menebalkan dengan menggeser-geser vertex — digabung outline, angkanya
+                // keluar sebagai gumpalan ("popup dmg berantakan", laporan pemilik project).
+                text.alignment = TextAlignmentOptions.Center;
                 text.raycastTarget = false;
-                text.horizontalOverflow = HorizontalWrapMode.Overflow;
-                text.verticalOverflow = VerticalWrapMode.Overflow;
+                text.textWrappingMode = TextWrappingModes.NoWrap;
+                text.overflowMode = TextOverflowModes.Overflow;
                 text.text = "";
 
                 // OUTLINE, bukan drop shadow.
@@ -85,13 +99,19 @@ namespace Proto
                 // badan musuh, tepi lingkaran sihir. Sisi yang tidak dibayangi akan bertemu
                 // sesuatu seterang dirinya sendiri, dan di situ angkanya lenyap.
                 //
-                // Outline mengelilingi glyph dari empat penjuru sekaligus, jadi tidak ada sisi
-                // yang bisa kalah. Ongkosnya empat kali lipat vertex per label — untuk kolam 48
-                // label pendek umur itu murah, dan angka yang tidak terbaca harganya jauh lebih
-                // mahal daripada vertex.
-                var outline = go.AddComponent<Outline>();
-                outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-                outline.effectDistance = new Vector2(2f, 2f);
+                // Outline SDF di material, dan materialnya SATU untuk seluruh kolam: menyetel
+                // outlineWidth per label akan mencetak 48 material instance dan memecah batching
+                // 48 label jadi 48 draw call. Alpha pudar tetap jalan — shader TMP mengalikan
+                // face dan outline dengan alpha warna vertex.
+                if (_outlineMat == null)
+                {
+                    _outlineMat = new Material(text.fontSharedMaterial);
+                    // 0,12 — bukan 0,22: di angka kecil (18-20pt) outline setebal itu
+                    // menelan rongga glyph dan angkanya membeku jadi titik.
+                    _outlineMat.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.12f);
+                    _outlineMat.SetColor(ShaderUtilities.ID_OutlineColor, new Color(0f, 0f, 0f, 0.9f));
+                }
+                text.fontSharedMaterial = _outlineMat;
 
                 var rect = text.rectTransform;
                 rect.anchorMin = rect.anchorMax = Vector2.zero;
@@ -245,7 +265,7 @@ namespace Proto
                 p.World += Vector3.up * (RiseSpeed * dt);
                 p.Bump = Mathf.MoveTowards(p.Bump, 0f, dt * 4f);
 
-                var screen = _camera.WorldToScreenPoint(p.World);
+                var screen = _camera.WorldToScreenPoint(p.World) / CanvasScale;
                 p.Rect.anchoredPosition = new Vector2(screen.x, screen.y);
                 // Sentakan lahir lebih besar dan mengempis lebih lambat: itu bagian "jedar"-nya.
                 p.Rect.localScale = Vector3.one * (1f + p.Bump * 0.8f);

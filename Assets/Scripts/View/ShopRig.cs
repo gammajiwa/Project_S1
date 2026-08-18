@@ -35,6 +35,11 @@ namespace Proto
                  "bukan tawar-menawar koordinat di kode.")]
         public RectTransform StartButton;
 
+        [Tooltip("Kotak tombol TOKO (buka/tutup panel dagang) di HUD. Kosong = letak hitungan " +
+                 "lama di kolom kanan papan. Diisi = gambar DAN kliknya sama-sama pindah ke " +
+                 "kotak ini, jadi boleh ditaruh di mana pun.")]
+        public RectTransform ShopToggle;
+
         [Header("Bantuan menata (editor saja)")]
         [Tooltip("Gambar semua kotak di Scene view. Tidak berpengaruh saat main.")]
         public bool ShowGuide = true;
@@ -49,6 +54,7 @@ namespace Proto
             Draw(Panel, GuideInk);
             Draw(Reroll, GuideInk);
             Draw(StartButton, new Color(0.5f, 1f, 0.55f, GuideInk.a));
+            Draw(ShopToggle, new Color(1f, 0.85f, 0.4f, GuideInk.a));
 
             if (Slots == null) return;
             var faint = GuideInk;

@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -30,13 +31,13 @@ namespace Proto
                  "membuat besarnya satu pukulan terbaca setelah pukulannya lewat. Boleh kosong.")]
         public Image HpChip;
 
-        [Tooltip("Tulisan angka HP. Boleh kosong kalau bolanya sudah bercerita sendiri.")]
-        public Text HpLabel;
+        [Tooltip("Tulisan angka HP (TMP). Boleh kosong kalau bolanya sudah bercerita sendiri.")]
+        public TextMeshProUGUI HpLabel;
 
         [Header("Mana")]
         public Image ManaFill;
 
-        public Text ManaLabel;
+        public TextMeshProUGUI ManaLabel;
 
         [Header("Daerah hover")]
         [Tooltip("Kotak yang memunculkan kartu keterangan HP saat kursor lewat di atasnya — " +

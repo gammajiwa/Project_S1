@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,14 +20,16 @@ namespace Proto
         const int MaxRows = 5;
         const int MaxParts = 3;
 
-        const float IconSize = 44f;
-        const float RowHeight = 62f;
-        const float ResultColumn = 88f;
-        const float ArrowColumn = 26f;
-        const float PartColumn = 78f;
-        const float PadX = 12f;
-        const float TitleHeight = 26f;
-        const float FooterHeight = 20f;
+        // Dinaikkan TIGA kali atas permintaan pemilik project (ikon 44 -> 54 -> 64 -> 72;
+        // huruf 11 -> 13 -> 15 -> 18): kartu ini dibaca sambil ALT ditahan untuk
+        // merencanakan farming, bukan dilirik — ukurannya harus ukuran baca.
+        const float IconSize = 72f;
+        const float RowHeight = 104f;
+        const float ResultColumn = 136f;
+        const float ArrowColumn = 40f;
+        const float PartColumn = 124f;
+        const float PadX = 18f;
+        const float TitleHeight = 44f;
 
         const float PanelWidth = PadX * 2f + ResultColumn + ArrowColumn + MaxParts * PartColumn;
 
@@ -40,28 +43,66 @@ namespace Proto
         readonly ContentDatabase _db;
         readonly System.Func<PieceDefinition, int> _ownedCount;
         readonly Transform _canvas;
-        readonly Font _font;
+        readonly TMP_FontAsset _font;
+        readonly GameObject _cardPrefab;
+
+        /// <summary>Piece yang kartunya sedang terpampang — kunci patokan (lihat Show).</summary>
+        PieceDefinition _shownFor;
+
+        /// <summary>Kartu sedang tampil. Dipakai gerbang patokan ALT di GrimoireUI.</summary>
+        public bool Visible => _bg != null && _bg.enabled;
 
         Image _bg;
-        Text _title;
-        Text _footer;
+        TextMeshProUGUI _title;
 
         readonly Image[] _resultIcon = new Image[MaxRows];
-        readonly Text[] _resultLabel = new Text[MaxRows];
-        readonly Text[] _arrow = new Text[MaxRows];
+        readonly TextMeshProUGUI[] _resultLabel = new TextMeshProUGUI[MaxRows];
+        readonly TextMeshProUGUI[] _arrow = new TextMeshProUGUI[MaxRows];
         readonly Image[] _partIcon = new Image[MaxRows * MaxParts];
-        readonly Text[] _partLabel = new Text[MaxRows * MaxParts];
+        readonly TextMeshProUGUI[] _partLabel = new TextMeshProUGUI[MaxRows * MaxParts];
 
         readonly List<RecipeDefinition> _rows = new List<RecipeDefinition>(MaxRows);
         readonly Dictionary<PieceDefinition, int> _seen = new Dictionary<PieceDefinition, int>();
 
-        public RecipePanel(Transform canvas, Font font, ContentDatabase db,
-            System.Func<PieceDefinition, int> ownedCount)
+        // Kotak hover per ikon+label (satuan kanvas, y dari bawah): kartu yang dipatok bisa
+        // ditanya balik — hover ikonnya menjawab "ini item apaan" lewat kartu keterangan.
+        const float InspectH = IconSize + 44f;
+        readonly Rect[] _resultRect = new Rect[MaxRows];
+        readonly Rect[] _partRect = new Rect[MaxRows * MaxParts];
+
+        /// <summary>
+        /// Piece milik ikon kartu yang sedang ditunjuk mouse, null kalau tidak ada.
+        /// Baris di luar resep yang tampil tidak pernah menjawab.
+        /// </summary>
+        public PieceDefinition HoverPiece(Vector2 mouse)
+        {
+            if (!Visible) return null;
+
+            for (int r = 0; r < _rows.Count && r < MaxRows; r++)
+            {
+                if (_resultRect[r].Contains(mouse)) return _rows[r].Result;
+
+                var parts = _rows[r].Ingredients;
+                int count = parts != null ? Mathf.Min(parts.Length, MaxParts) : 0;
+
+                for (int p = 0; p < count; p++)
+                {
+                    if (parts[p] != null && _partRect[r * MaxParts + p].Contains(mouse))
+                        return parts[p];
+                }
+            }
+
+            return null;
+        }
+
+        public RecipePanel(Transform canvas, TMP_FontAsset font, ContentDatabase db,
+            System.Func<PieceDefinition, int> ownedCount, GameObject cardPrefab = null)
         {
             _canvas = canvas;
             _font = font;
             _db = db;
             _ownedCount = ownedCount;
+            _cardPrefab = cardPrefab;
 
             Build();
             Hide();
@@ -69,28 +110,60 @@ namespace Proto
 
         // ---------- construction ----------
 
+        /// <summary>
+        /// Badan kartu: dari PREFAB kalau tema membawa satu — sprite, tint, dan bahan panel
+        /// milik tangan user. Ukuran dan posisi TETAP ditulis kode tiap kali tampil, karena
+        /// tinggi kartu mengikuti jumlah baris resep dan posisinya mengikuti mouse saat dibuka.
+        /// </summary>
+        Image MakeBackdrop()
+        {
+            if (_cardPrefab != null)
+            {
+                var go = UnityEngine.Object.Instantiate(_cardPrefab, _canvas, false);
+                go.name = "RecipeCard";
+
+                var img = go.GetComponent<Image>();
+                if (img != null)
+                {
+                    // Anchor/pivot diseragamkan supaya angka posisi kode berarti sama
+                    // apa pun yang disetel di prefab — pola yang sama dengan kartu hover.
+                    var rt = img.rectTransform;
+                    rt.anchorMin = rt.anchorMax = Vector2.zero;
+                    rt.pivot = new Vector2(0f, 1f);
+                    rt.sizeDelta = new Vector2(PanelWidth, 200f);
+                    return img;
+                }
+
+                UnityEngine.Object.Destroy(go);
+                Debug.LogWarning("[RecipePanel] RecipeCardPrefab tidak punya Image di root — " +
+                                 "kotak gambar-kode dipakai.");
+            }
+
+            return MakeImage("RecipeBg", new Vector2(PanelWidth, 200f), Backdrop);
+        }
+
         void Build()
         {
-            _bg = MakeImage("RecipeBg", new Vector2(PanelWidth, 200f), Backdrop);
-            _title = MakeText("RecipeTitle", new Vector2(PanelWidth - PadX * 2f, TitleHeight), 14,
-                TextAnchor.UpperLeft);
-            _footer = MakeText("RecipeFooter", new Vector2(PanelWidth - PadX * 2f, FooterHeight), 11,
-                TextAnchor.UpperLeft);
+            _bg = MakeBackdrop();
+            // Footer petunjuk DIBUANG atas permintaan pemilik project ("di bawah ada text
+            // gak jelas") — baris bahan yang menyala/padam sudah menceritakan aturannya.
+            _title = MakeText("RecipeTitle", new Vector2(PanelWidth - PadX * 2f, TitleHeight), 24,
+                TextAlignmentOptions.TopLeft);
 
             for (int r = 0; r < MaxRows; r++)
             {
                 _resultIcon[r] = MakeImage($"RecipeResult_{r}", new Vector2(IconSize, IconSize), Lit);
-                _resultLabel[r] = MakeText($"RecipeResultLabel_{r}", new Vector2(ResultColumn, 26f), 11,
-                    TextAnchor.UpperCenter);
-                _arrow[r] = MakeText($"RecipeArrow_{r}", new Vector2(ArrowColumn, 24f), 16,
-                    TextAnchor.UpperCenter);
+                _resultLabel[r] = MakeText($"RecipeResultLabel_{r}", new Vector2(ResultColumn, 44f), 18,
+                    TextAlignmentOptions.Top);
+                _arrow[r] = MakeText($"RecipeArrow_{r}", new Vector2(ArrowColumn, 40f), 28,
+                    TextAlignmentOptions.Top);
 
                 for (int p = 0; p < MaxParts; p++)
                 {
                     int i = r * MaxParts + p;
                     _partIcon[i] = MakeImage($"RecipePart_{r}_{p}", new Vector2(IconSize, IconSize), Lit);
-                    _partLabel[i] = MakeText($"RecipePartLabel_{r}_{p}", new Vector2(PartColumn, 26f), 11,
-                        TextAnchor.UpperCenter);
+                    _partLabel[i] = MakeText($"RecipePartLabel_{r}_{p}", new Vector2(PartColumn, 44f), 18,
+                        TextAlignmentOptions.Top);
                 }
             }
         }
@@ -112,18 +185,18 @@ namespace Proto
             return img;
         }
 
-        Text MakeText(string name, Vector2 size, int fontSize, TextAnchor align)
+        TextMeshProUGUI MakeText(string name, Vector2 size, int fontSize, TextAlignmentOptions align)
         {
             var go = new GameObject(name);
             go.transform.SetParent(_canvas, false);
 
-            var text = go.AddComponent<Text>();
-            text.font = _font;
+            var text = go.AddComponent<TextMeshProUGUI>();
+            if (_font != null) text.font = _font;
             text.fontSize = fontSize;
             text.alignment = align;
             text.raycastTarget = false;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.textWrappingMode = TextWrappingModes.Normal;
+            text.overflowMode = TextOverflowModes.Overflow;
 
             var rt = text.rectTransform;
             rt.anchorMin = rt.anchorMax = Vector2.zero;
@@ -136,9 +209,9 @@ namespace Proto
 
         public void Hide()
         {
+            _shownFor = null;
             _bg.enabled = false;
             _title.enabled = false;
-            _footer.enabled = false;
 
             for (int r = 0; r < MaxRows; r++)
             {
@@ -162,10 +235,17 @@ namespace Proto
                 return;
             }
 
+            // DIPATOK: selama kartu masih menampilkan piece yang sama, jangan ditata ulang —
+            // kartu yang mengejar mouse tidak bisa dibaca, dan membaca ("bahan apa yang
+            // kurang?") adalah satu-satunya tugas kartu ini. Pindah piece = tata ulang
+            // di posisi mouse yang baru.
+            if (piece == _shownFor && Visible) return;
+            _shownFor = piece;
+
             Collect(piece);
 
-            float height = TitleHeight + _rows.Count * RowHeight + FooterHeight + 14f;
-            if (_rows.Count == 0) height = TitleHeight + FooterHeight + 20f;
+            float height = TitleHeight + _rows.Count * RowHeight + 18f;
+            if (_rows.Count == 0) height = TitleHeight + 26f;
 
             // Pivot is the top-left corner, so `top` is where the panel starts and it grows down.
             // Satuan kanvas, bukan piksel mentah — mouse yang diterima panel ini juga sudah
@@ -186,12 +266,6 @@ namespace Proto
             _title.rectTransform.anchoredPosition = origin + new Vector2(PadX, -6f);
 
             for (int r = 0; r < MaxRows; r++) LayoutRow(r, origin);
-
-            _footer.enabled = true;
-            _footer.color = DarkText;
-            _footer.text = "taruh bahannya BERSENTUHAN di grimoire  -  garis biru = kurang, emas = jadi";
-            _footer.rectTransform.anchoredPosition =
-                origin + new Vector2(PadX, -(height - FooterHeight + 2f));
         }
 
         /// <summary>
@@ -271,6 +345,8 @@ namespace Proto
                 Paint(_partIcon[i], part, owned);
                 _partIcon[i].rectTransform.anchoredPosition =
                     origin + new Vector2(x + (PartColumn - IconSize) * 0.5f, rowTop - 4f);
+                _partRect[i] = new Rect(origin.x + x, origin.y + rowTop - 4f - InspectH,
+                    PartColumn, InspectH);
 
                 _partLabel[i].enabled = true;
                 _partLabel[i].text = part.DisplayName;
@@ -282,6 +358,8 @@ namespace Proto
             Paint(_resultIcon[row], recipe.Result, complete);
             _resultIcon[row].rectTransform.anchoredPosition =
                 origin + new Vector2(PadX + (ResultColumn - IconSize) * 0.5f, rowTop - 4f);
+            _resultRect[row] = new Rect(origin.x + PadX, origin.y + rowTop - 4f - InspectH,
+                ResultColumn, InspectH);
 
             _resultLabel[row].text = recipe.Result.DisplayName + "\n" +
                                      Shapes.StarText(recipe.Result.Stars);

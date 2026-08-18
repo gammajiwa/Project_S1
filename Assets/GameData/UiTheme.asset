@@ -16,13 +16,20 @@ MonoBehaviour:
   LoadingSigil: {fileID: 21300000, guid: 60ad9ecc59aaf4b4f9b5f53582ec4c31, type: 3}
   PanelPaper: {fileID: 21300000, guid: f101820f095d43d9b67c8cca4a3b5d87, type: 3}
   UiFont: {fileID: 12800000, guid: ed53511e9e19952459410f4520c7318b, type: 3}
-  NumberFont: {fileID: 12800000, guid: a40fde09f47fe214ca9c245fb51abf40, type: 3}
+  TmpFont: {fileID: 11400000, guid: 7bcf2008bfeba6547866ff5ebe9fc858, type: 2}
+  TmpNumberFont: {fileID: 11400000, guid: 7822ce44b5199b1418d0c92a047e228b, type: 2}
   GrimoirePanelPrefab: {fileID: 4725670757830398596, guid: 9e613509076f1824bb2986daeac17b35, type: 3}
   GrimoireFrame: {fileID: 21300000, guid: 8e93eba3dd21c6548b82dc8a2404e10f, type: 3}
   VitalsPrefab: {fileID: 9135706996123029156, guid: e186026d193fb7d4480926b63ea50484, type: 3}
   StatusStripsPrefab: {fileID: 8380833403937783449, guid: e52f3bff49bb2494da5158b1591b473e, type: 3}
   SettingsPrefab: {fileID: 8437507822836442132, guid: a50a681ab2ee19e41b0cf1f82f1d855a, type: 3}
   ShopPrefab: {fileID: 1582209453909252090, guid: 00bedc846ae31d543a9302ac94975008, type: 3}
+  SpeedBarPrefab: {fileID: 1443906414187444929, guid: 0e34eeeea90118a44a2dc94a168c10f8, type: 3}
+  TooltipPrefab: {fileID: 5874278397917121659, guid: cf69bccd064b3f84681cf4ba3825209f, type: 3}
+  RecipeCardPrefab: {fileID: 8610794763635466469, guid: ae91edc1be7eb8548b0927746cdd078d, type: 3}
+  CombatHudPrefab: {fileID: 4166239460120388460, guid: 94074023ec3c8564a8f7e6ebaf88e0f6, type: 3}
+  CombatUiPrefab: {fileID: 0}
+  SpellPanelPrefab: {fileID: 4273485407101955990, guid: 42be409ee09e5824f9754129a1b72aa0, type: 3}
   GridFrame: {fileID: 0}
   BagPanel: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
   InfoPanel: {fileID: -333528122, guid: 94b960581fb482e4495bd3cc3be70992, type: 3}
@@ -56,13 +63,16 @@ MonoBehaviour:
   MapTitleInk: {r: 0.24, g: 0.13, b: 0.05, a: 1}
   MapLegendInk: {r: 0.36, g: 0.24, b: 0.13, a: 1}
   MapPathInk: {r: 0.42, g: 0.3, b: 0.18, a: 0.85}
+  MapPathOfferedInk: {r: 0.78, g: 0.09, b: 0.07, a: 1}
+  MapPathWalkedInk: {r: 0.16, g: 0.42, b: 0.2, a: 0.9}
   MapYouInk: {r: 0.8, g: 0.1, b: 0.06, a: 1}
   MapRingInk: {r: 0.28, g: 0.17, b: 0.07, a: 1}
-  MapIconFight: {fileID: 21300000, guid: 98ab11df5166d9f4ab9c350c681bc7a9, type: 3}
-  MapIconElite: {fileID: 21300000, guid: de80fb86c8520064caf8f8fda593fcc3, type: 3}
-  MapIconShop: {fileID: 21300000, guid: badbcc80793eab54dac34506786ea571, type: 3}
-  MapIconEvent: {fileID: 21300000, guid: 0e833415ee8c8a24f9cbfd85766fd78d, type: 3}
-  MapIconGamble: {fileID: 21300000, guid: 3bb9324018b608946852d2cc4d10fce7, type: 3}
-  MapIconBoss: {fileID: 21300000, guid: a0a72733ae7075649854db9db9cf1ff0, type: 3}
-  MapIconYou: {fileID: 21300000, guid: 33c72215c0fa8a741a832b131f037526, type: 3}
+  MapIconFight: {fileID: -1064911745, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  MapIconElite: {fileID: 1049054341, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  MapIconShop: {fileID: 1735424675, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  MapIconEvent: {fileID: -259064076, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  MapIconGamble: {fileID: 1088061637, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  MapIconBoss: {fileID: -1445156730, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  MapIconYou: {fileID: -773895012, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  EvoBoltMaterial: {fileID: 2100000, guid: e16998999fca6394a80799ef723566a0, type: 2}
   PeekScreenFraction: {x: 0.56, y: 0.78}

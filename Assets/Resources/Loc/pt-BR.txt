@@ -75,8 +75,8 @@ hud.regen=\ncura {0} por segundo
 hud.speed.hint=velocidade  (teclas 1/2/3/4)
 hud.spells.title=MAGIAS ATIVAS
 hud.spells.more=+{0} mais
-hud.start.depart=CONTINUAR   (ESPAÇO)
-hud.start.wave=INICIAR ONDA   (ESPAÇO)
+hud.start.depart=CONTINUAR
+hud.start.wave=INICIAR ONDA
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

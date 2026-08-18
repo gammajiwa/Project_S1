@@ -70,13 +70,14 @@ hud.newpiece=NEW: {0}
 hud.origin.bag=IN BAG (not firing)
 hud.origin.locked=PLACED - LOCKED, skipped by evolution
 hud.origin.placed=PLACED
+hud.origin.recipe=RECIPE
 hud.pact.tip={0}   (PACT - permanent)
 hud.regen=\nheals {0} per second
 hud.speed.hint=speed  (keys 1/2/3/4)
 hud.spells.title=ACTIVE SPELLS
 hud.spells.more=+{0} more
-hud.start.depart=CONTINUE   (SPACE)
-hud.start.wave=START WAVE   (SPACE)
+hud.start.depart=CONTINUE
+hud.start.wave=START WAVE
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

@@ -95,6 +95,7 @@ MonoBehaviour:
   - {fileID: 3141995757459830524}
   Reroll: {fileID: 2860763108384927871}
   StartButton: {fileID: 8956909640417514146}
+  ShopToggle: {fileID: 0}
   ShowGuide: 1
   GuideInk: {r: 1, g: 0.72, b: 0.35, a: 1}
 --- !u!1 &1802195496838616506

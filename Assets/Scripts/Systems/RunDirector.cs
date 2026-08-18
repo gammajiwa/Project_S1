@@ -385,7 +385,10 @@ namespace Proto
             BuildIsland(kind);
 
             OnRestEntered?.Invoke(kind);
-            OnAnnounce?.Invoke("PULAU REHAT — " + KindLabel(kind), KindColor(kind));
+
+            // Banner "PULAU REHAT — X" DIBUANG atas permintaan pemilik project ("abis
+            // ngambil event ada text gak jelas"): pulaunya sendiri sudah panggung yang
+            // bercerita, dan teks di tengah layar cuma menutupi barangnya.
         }
 
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");

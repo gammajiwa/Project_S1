@@ -256,6 +256,26 @@ namespace Proto
             return new Vector2Int(x, y);
         }
 
+        /// <summary>
+        /// Petak papan yang ditunjuk kursor, TANPA dibulatkan — 3,0 berarti tepat di tengah
+        /// petak 3, 3,49 berarti masih di petak 3 tapi hampir menyentuh petak 4.
+        ///
+        /// Ada khusus untuk magnet papan (<c>SnapAssist</c>). Begitu petaknya dibulatkan, satu
+        /// petak jadi satu titik, dan magnet kehilangan satu-satunya keterangan yang menjawab
+        /// "tetangga mana yang dimaksud": DI SEBELAH MANA kursor berdiri di dalam petak itu.
+        /// Tanpa keterangan itu ia terpaksa menebak, dan tebakan yang stabil tetap terasa
+        /// seperti papan yang punya kemauan sendiri.
+        ///
+        /// Setengah petak dikurangi di ujung supaya angkanya sebidang dengan INDEKS petak:
+        /// kursor di pusat petak 3 menghasilkan tepat 3, bukan 3,5.
+        /// </summary>
+        public static Vector2 ScreenToCellF(Vector2 mouse)
+        {
+            float step = CellSize + CellGap;
+            return new Vector2((mouse.x - GridX + CellGap * 0.5f) / step - 0.5f,
+                               (mouse.y - GridY + CellGap * 0.5f) / step - 0.5f);
+        }
+
         public static Vector2Int ScreenToBagCell(Vector2 mouse)
         {
             float step = BagCell + BagGap;
@@ -308,14 +328,17 @@ namespace Proto
         public static Rect[] ShopSlotsOverride;
         public static Rect? ShopRerollOverride;
         public static Rect? StartButtonOverride;
+        public static Rect? ShopButtonOverride;
 
         public static Rect StartButtonRect()
         {
             if (StartButtonOverride.HasValue) return StartButtonOverride.Value;
 
-            float cx = ScreenW * 0.5f;
-            float cy = ScreenH * 0.5f + 120f;
-            return new Rect(cx - StartButtonW * 0.5f, cy - StartButtonH * 0.5f, StartButtonW, StartButtonH);
+            // POJOK KANAN-BAWAH, gaya baris menu — BUKAN tengah layar. Rect tengah yang lama
+            // adalah sumber klik "misterius": tiap jalur yang gagal memasang override membuat
+            // klik di tengah layar terbaca BERANGKAT — menutup toko, membuka peta. Rumah
+            // tombol ini sekarang SATU dan pasti, apa pun keadaan prefab.
+            return new Rect(ScreenW - 28f - StartButtonW, 22f, StartButtonW, StartButtonH);
         }
 
         public static Rect PanelRect() =>
@@ -347,7 +370,11 @@ namespace Proto
         // Satu-satunya tombol yang tersisa di kolom ini, dan ia cuma muncul saat toko buka.
         // Teman-temannya sudah pergi: label resep (bukan tombol), kotak JUAL (LANJUT yang
         // menjual sekarang), dan PETA (tombol M sudah melakukan hal yang sama).
-        public static Rect ShopButtonRect() => new Rect(RightX(), ButtonRowY, 120, 34);
+        // Letaknya boleh ditata tangan lewat ShopRig.ShopToggle di prefab panel singgah —
+        // tanpa override ini, menggeser kotaknya di prefab tidak memindahkan apa pun karena
+        // gambar DAN klik sama-sama membaca rumus di bawah.
+        public static Rect ShopButtonRect() =>
+            ShopButtonOverride ?? new Rect(RightX(), ButtonRowY, 120, 34);
 
         // ---------- layar GAME OVER ----------
         //

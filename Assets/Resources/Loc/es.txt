@@ -75,8 +75,8 @@ hud.regen=\ncura {0} por segundo
 hud.speed.hint=velocidad  (teclas 1/2/3/4)
 hud.spells.title=HECHIZOS ACTIVOS
 hud.spells.more=+{0} más
-hud.start.depart=CONTINUAR   (ESPACIO)
-hud.start.wave=INICIAR OLEADA   (ESPACIO)
+hud.start.depart=CONTINUAR
+hud.start.wave=INICIAR OLEADA
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

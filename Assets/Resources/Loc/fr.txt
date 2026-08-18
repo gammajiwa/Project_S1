@@ -75,8 +75,8 @@ hud.regen=\nsoigne {0} par seconde
 hud.speed.hint=vitesse  (touches 1/2/3/4)
 hud.spells.title=SORTS ACTIFS
 hud.spells.more=+{0} de plus
-hud.start.depart=CONTINUER   (ESPACE)
-hud.start.wave=LANCER LA VAGUE   (ESPACE)
+hud.start.depart=CONTINUER
+hud.start.wave=LANCER LA VAGUE
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

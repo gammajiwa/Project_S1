@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -49,7 +50,6 @@ namespace Proto
         ContentDatabase _db;
         EnemyManager _enemies;
         PlayerCaster _caster;
-        Font _font;
         Canvas _canvas;
         Transform _rig;
 
@@ -63,8 +63,8 @@ namespace Proto
         // dilihat saat ruang uji dibuka adalah skill yang tidak menembak sama sekali. Benar secara
         // logika, dan terbaca seperti rusak.
         float _spread = 6.5f;
-        Text _readout;
-        Text _hint;
+        TextMeshProUGUI _readout;
+        TextMeshProUGUI _hint;
 
         // Damage per piece, dijumlah sejak boneka terakhir dipasang. Ini satu-satunya angka yang
         // menjawab "skill ini sebenarnya sekuat apa" tanpa ikut campur RNG wave.
@@ -96,7 +96,7 @@ namespace Proto
 
         DamagePopups _popups;
 
-        Text[] _floaters;
+        TextMeshProUGUI[] _floaters;
         float[] _floatLife;
         Vector3[] _floatWorld;
         Camera _lens;
@@ -113,9 +113,6 @@ namespace Proto
             Application.runInBackground = true;
             _db = _database;
             _look.ApplyEnvironment();
-
-            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            if (_font == null) _font = Resources.GetBuiltinResource<Font>("Arial.ttf");
 
             BuildScene();
             BuildCatalogue();
@@ -209,10 +206,10 @@ namespace Proto
         /// </summary>
         void BuildReadouts()
         {
-            _popups = new DamagePopups(_canvas.transform, _font, _lens);
+            _popups = new DamagePopups(_canvas.transform, null, _lens);
             _enemies.OnEnemyDamaged += _popups.Push;
 
-            _floaters = new Text[FloatPoolSize];
+            _floaters = new TextMeshProUGUI[FloatPoolSize];
             _floatLife = new float[FloatPoolSize];
             _floatWorld = new Vector3[FloatPoolSize];
 
@@ -221,14 +218,13 @@ namespace Proto
                 var go = new GameObject($"Float_{i}");
                 go.transform.SetParent(_canvas.transform, false);
 
-                var text = go.AddComponent<Text>();
-                text.font = _font;
+                var text = go.AddComponent<TextMeshProUGUI>();
                 text.fontSize = 20;
-                text.fontStyle = FontStyle.Bold;
-                text.alignment = TextAnchor.MiddleCenter;
+                text.fontStyle = FontStyles.Bold;
+                text.alignment = TextAlignmentOptions.Center;
                 text.raycastTarget = false;
-                text.horizontalOverflow = HorizontalWrapMode.Overflow;
-                text.verticalOverflow = VerticalWrapMode.Overflow;
+                text.textWrappingMode = TextWrappingModes.NoWrap;
+                text.overflowMode = TextOverflowModes.Overflow;
 
                 var rt = text.rectTransform;
                 rt.anchorMin = rt.anchorMax = Vector2.zero;
@@ -267,7 +263,10 @@ namespace Proto
                 _floatLife[i] -= dt;
                 _floatWorld[i] += Vector3.up * (1.4f * dt);
 
-                var screen = _lens.WorldToScreenPoint(_floatWorld[i]);
+                // Dibagi skala kanvas: anchoredPosition bersatuan unit kanvas, bukan piksel
+                // layar — tanpa ini floater merosot ke kiri-bawah di jendela kecil.
+                var screen = _lens.WorldToScreenPoint(_floatWorld[i]) /
+                    Mathf.Max(0.0001f, _canvas.scaleFactor);
                 _floaters[i].rectTransform.anchoredPosition = new Vector2(screen.x, screen.y);
 
                 var c = _floaters[i].color;
@@ -700,7 +699,7 @@ namespace Proto
             sr.scrollSensitivity = 28f;
             sr.viewport = srt;
 
-            Label(panel, "PILIH PIECE  (" + _catalogue.Count + ")", 14, TextAnchor.MiddleLeft,
+            Label(panel, "PILIH PIECE  (" + _catalogue.Count + ")", 14, TextAlignmentOptions.Left,
                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(8f, -30f), new Vector2(-8f, -6f));
 
             for (int i = 0; i < _catalogue.Count; i++)
@@ -714,16 +713,17 @@ namespace Proto
                 row.GetComponent<LayoutElement>().preferredHeight = 24f;
                 row.GetComponent<Image>().color = new Color(0.1f, 0.11f, 0.15f, 0.85f);
 
-                var text = new GameObject("T", typeof(RectTransform), typeof(Text));
+                var text = new GameObject("T", typeof(RectTransform), typeof(TextMeshProUGUI));
                 text.transform.SetParent(row.transform, false);
                 var trt = (RectTransform)text.transform;
                 trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
                 trt.offsetMin = new Vector2(6f, 0f); trt.offsetMax = new Vector2(-6f, 0f);
 
-                var t = text.GetComponent<Text>();
-                t.font = _font;
+                var t = text.GetComponent<TextMeshProUGUI>();
                 t.fontSize = 12;
-                t.alignment = TextAnchor.MiddleLeft;
+                t.alignment = TextAlignmentOptions.Left;
+                t.textWrappingMode = TextWrappingModes.NoWrap;
+                t.overflowMode = TextOverflowModes.Overflow;
                 t.color = p.Color;
                 t.text = new string('*', p.Stars) + "  " + p.DisplayName + "   <" +
                          (p.IsRune ? "RUNE" : p.IsPassive ? "SEGEL" : p.Kind.ToString()) + ">";
@@ -742,15 +742,15 @@ namespace Proto
             var bar = Panel(_canvas.transform, new Vector2(1f, 1f), new Vector2(1f, 1f),
                 new Vector2(-448f, -438f), new Vector2(-8f, -8f), new Color(0.05f, 0.06f, 0.09f, 0.92f));
 
-            _readout = Label(bar, "", 12, TextAnchor.UpperLeft,
+            _readout = Label(bar, "", 12, TextAlignmentOptions.TopLeft,
                 Vector2.zero, Vector2.one, new Vector2(10f, 8f), new Vector2(-10f, -34f));
 
-            Label(bar, "PENGATURAN BONEKA", 13, TextAnchor.MiddleLeft,
+            Label(bar, "PENGATURAN BONEKA", 13, TextAlignmentOptions.Left,
                 new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(10f, -28f), new Vector2(-10f, -6f));
 
             // Lebih lebar dan lebih tinggi: petunjuknya sekarang empat baris, dan yang lama
             // (-420 lebar, 80 tinggi) membungkusnya jadi tujuh baris yang saling menumpuk.
-            _hint = Label(_canvas.transform, "", 12, TextAnchor.LowerRight,
+            _hint = Label(_canvas.transform, "", 12, TextAlignmentOptions.BottomRight,
                 new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-760f, 8f), new Vector2(-8f, 108f));
         }
 
@@ -1051,18 +1051,17 @@ namespace Proto
             return rt;
         }
 
-        Text Label(Transform parent, string content, int size, TextAnchor anchor,
+        TextMeshProUGUI Label(Transform parent, string content, int size, TextAlignmentOptions anchor,
             Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
         {
-            var go = new GameObject("Label", typeof(RectTransform), typeof(Text));
+            var go = new GameObject("Label", typeof(RectTransform), typeof(TextMeshProUGUI));
             go.transform.SetParent(parent, false);
 
             var rt = (RectTransform)go.transform;
             rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
             rt.offsetMin = offsetMin; rt.offsetMax = offsetMax;
 
-            var t = go.GetComponent<Text>();
-            t.font = _font;
+            var t = go.GetComponent<TextMeshProUGUI>();
             t.fontSize = size;
             t.alignment = anchor;
             t.color = Ink;

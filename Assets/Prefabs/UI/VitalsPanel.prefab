@@ -579,7 +579,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 20, y: -43.3}
+  m_AnchoredPosition: {x: 20, y: -2.19}
   m_SizeDelta: {x: 260, y: 130}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &6834971296398099647
@@ -599,5 +599,5 @@ MonoBehaviour:
   HpLabel: {fileID: 0}
   ManaFill: {fileID: 1169611436867941442}
   ManaLabel: {fileID: 0}
-  HpHover: {fileID: 0}
-  ManaHover: {fileID: 0}
+  HpHover: {fileID: 5407523026794163560}
+  ManaHover: {fileID: 2526216707585722000}

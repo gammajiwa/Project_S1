@@ -75,8 +75,8 @@ hud.regen=\nлечит {0} в секунду
 hud.speed.hint=скорость  (клавиши 1/2/3/4)
 hud.spells.title=АКТИВНЫЕ ЗАКЛИНАНИЯ
 hud.spells.more=ещё +{0}
-hud.start.depart=ДАЛЬШЕ   (ПРОБЕЛ)
-hud.start.wave=НАЧАТЬ ВОЛНУ   (ПРОБЕЛ)
+hud.start.depart=ДАЛЬШЕ
+hud.start.wave=НАЧАТЬ ВОЛНУ
 hud.time.suffix={0}   (T)
 
 # ---------------- kind ----------------

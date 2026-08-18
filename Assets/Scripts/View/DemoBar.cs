@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,7 +22,7 @@ namespace Proto
     {
         BiomeDresser _dresser;
         Weather _weather;
-        Text _label;
+        TextMeshProUGUI _label;
 
         readonly List<Button> _faceButtons = new List<Button>();
         readonly List<Button> _moodButtons = new List<Button>();
@@ -242,18 +243,20 @@ namespace Proto
             Refresh();
         }
 
-        Text MakeLabel(RectTransform parent, string text)
+        TextMeshProUGUI MakeLabel(RectTransform parent, string text)
         {
             var go = new GameObject("Label");
             go.transform.SetParent(parent, false);
 
-            var label = go.AddComponent<Text>();
-            label.font = BarFont();
+            var label = go.AddComponent<TextMeshProUGUI>();
+            var font = BarFont();
+            if (font != null) label.font = font;
             label.fontSize = 13;
-            label.alignment = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignmentOptions.Center;
             label.color = new Color(1f, 0.93f, 0.72f);
             label.text = text;
-            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+            label.overflowMode = TextOverflowModes.Overflow;
 
             var le = go.AddComponent<LayoutElement>();
             le.minHeight = 18f;
@@ -281,13 +284,15 @@ namespace Proto
             var textGo = new GameObject("Teks");
             textGo.transform.SetParent(go.transform, false);
 
-            var text = textGo.AddComponent<Text>();
-            text.font = BarFont();
+            var text = textGo.AddComponent<TextMeshProUGUI>();
+            var buttonFont = BarFont();
+            if (buttonFont != null) text.font = buttonFont;
             text.fontSize = 12;
-            text.alignment = TextAnchor.MiddleCenter;
+            text.alignment = TextAlignmentOptions.Center;
             text.color = new Color(0.9f, 0.86f, 0.76f);
             text.text = caption;
-            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Overflow;
 
             var rt = textGo.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
@@ -298,12 +303,9 @@ namespace Proto
             return button;
         }
 
-        /// <summary>Tema UI, disuntik composition root. Boleh null — jatuh ke font bawaan Unity.</summary>
+        /// <summary>Tema UI, disuntik composition root. Boleh null — jatuh ke font bawaan TMP.</summary>
         public UiTheme Theme;
 
-        Font BarFont() =>
-            Theme != null && Theme.UiFont != null
-                ? Theme.UiFont
-                : Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        TMP_FontAsset BarFont() => Theme != null ? Theme.TmpFont : null;
     }
 }
