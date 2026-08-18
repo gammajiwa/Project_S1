@@ -40,6 +40,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6748226477406224250}
     m_Modifications:
+    - target: {fileID: 951893132730420449, guid: fae4d506e7ce45a4ea5aea765ff24183, type: 3}
+      propertyPath: moveWithTransform
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1919085850329955370, guid: fae4d506e7ce45a4ea5aea765ff24183, type: 3}
+      propertyPath: moveWithTransform
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1919085850794473501, guid: fae4d506e7ce45a4ea5aea765ff24183, type: 3}
+      propertyPath: moveWithTransform
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2310687242253424809, guid: fae4d506e7ce45a4ea5aea765ff24183, type: 3}
       propertyPath: m_Name
       value: Orb_lightning

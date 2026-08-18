@@ -3800,3 +3800,90 @@ TERVERIFIKASI: refleksi assembly baru (`ShopBiome`/`Fx`/`BuildShopLights`/`Build
 perlu diputar: intensity/range kedua lampu, posisi rim, dan `spread` MagicField_blue. Semuanya
 data/konstanta, murah diubah. **Karakter chibi tinggal di-drop ke `FxLibrary.IslandGuardian`** —
 sekarang isinya masih `Vfx_PenjagaPulau` (mesh placeholder).
+
+**Ronde 12f (2026-08-18) — TOKO DI ROOM_SHOP, bukan di arena. Ronde 12e DIBATALKAN.**
+
+Ronde 12e (toko pindah ke arena) **DICABUT TUNTAS atas perintah user** ("yg lu buat itu hapus
+aja"). Yang dikembalikan: `GrimoireUI.ShowRoomFor` case Shop → `Show(ShopScene)`,
+`RoomLoader.Init` pramuat ShopScene lagi, `RunDirector` (field `ShopBiome`/`Fx`, `BuildIsland`
+asli, `BuildShopLights`/`BuildCampfire`/`MakeLight` dibuang), `ProtoBootstrap._shopBiome`,
+baris `_shopBiome` di `Proto.unity`, dan aset `Biome_shop_night.asset` dihapus.
+TERVERIFIKASI: `grep` nol jejak, `Proto.unity` hilang dari `git diff`, `RunDirector.cs` juga.
+
+**PELAJARAN MAHAL: "clone stage Proto" TIDAK BISA HARFIAH.** `Proto.unity` isinya cuma DUA
+objek — `_Bootstrap` (ProtoBootstrap) dan `Ground` (Terrain). Pohon/semak/batu **dibuat saat
+Play** oleh `BiomeDresser`, dan bahkan saat jalan pun **bukan GameObject sama sekali**: mereka
+`Matrix4x4[][]` di `PropBatch._baked` yang digambar `Graphics.RenderMeshInstanced`. Tidak ada
+yang bisa di-copy-paste.
+
+Dan menjalankan `BiomeDresser` KEDUA di Room_Shop **berbahaya**: ia menulis ke `RenderSettings`
+(skybox/ambient/fog) yang GLOBAL, bukan per-scene — dua dresser hidup bersama akan rebutan.
+
+**Jalan yang dipakai: MEMOTRET, bukan menjalankan.** Masuk Play di Proto → baca
+`PropBatch._baked` lewat refleksi → saring radius 30 dari pusat pulau rehat (50,0,42), tempat
+hutannya memang paling rapat → keluar Play → tanam sebagai GameObject nyata di Room_Shop.
+Hasil: **147 objek, 179.967 tris** (Spruce1 x23, Spruce2 x28, Bush x35, Rock1 x26, Rock5 x9,
+Mushrooms x7, TinyRock x7, Stump x4, Branch x7, Log x1), semua di bawah satu induk `Hutan`.
+Sebaran & rotasinya IDENTIK dengan arena karena diambil dari matriks yang sama.
+*Catatan teknis:* `RenderParams.material` itu **property, bukan field** — `GetField` mengembalikan
+null dan bikin NRE. Pakai `GetProperty`.
+
+**BUG YANG KUBUAT DAN KUBETULKAN:** `Terrain.CreateTerrainGameObject` **menolak di-parent**
+lewat `SetParent` biasa — Ground jadi root sendiri DAN posisinya ter-reset ke (0,0,0),
+sementara seluruh toko ada di **x=3000**. Akibatnya tanahnya 3000 unit dari tokonya dan
+penjualnya berdiri di kekosongan ("kenapa ground-nya kayak gini"). Perbaikan: `SetParent(null)`
+dulu, set posisi, baru `SetParent(room, true)`.
+**Terrain pivotnya di SUDUT, bukan tengah** — membentang ke +x/+z, jadi supaya titik (3000, 2.5)
+jatuh di tengah, sudutnya digeser mundur setengah ukuran: **(2920, 0, −67,5)**. Permukaan
+terverifikasi y=0 rata di seluruh area toko.
+
+Isi Room_Shop sekarang: `Lantai`+`Dinding` DIMATIKAN (bukan dihapus — terrain menggantikannya,
+dan dinding di atas tanah terbuka terbaca salah); `Bulan` (dulu `Cahaya`) = directional biru
+pucat 0.42 dari (38,200); `Lentera Penjual` hangat int7 **range 8** di DEPAN; `Rim Malam` biru
+int11 range14 di BELAKANG+tinggi; ambient Trilight biru gelap + fog ExpSq 0.022; latar kamera
+0B0F1A; `Vfx Malam` = MagicField_blue x2 (mengapit) + Embers_calm + Fireflies x2 + Moonlight
+digantung **y=94.5 miring −17** (resep god-ray project ini). Etalase (`Meja`+3 `Peti`) sudah
+dihapus USER sendiri sebelum aku mulai. TerrainData disalin jadi `Shop_Terrain.asset` — TIDAK
+berbagi dengan arena, jadi mengukirnya tidak mengubah arena. Cat terrain sudah ikut tersalin
+(4 layer: Grass 37% / Grass_Sun 25% / Grass_Shade 15% / Dirt 23%).
+
+**KARAKTER SUDAH DIGANTI USER**: `Penjual` sekarang mesh `char1` dengan armature
+`Hips/Spine/...`, bukan `Penjual_HP`/`Rangka_Penjual` lagi.
+
+**SPARK SHARDS GLITCH — AKARNYA DITEMUKAN, BUKAN DITUKAR.** `Piece_sparkshards` itu
+`Kind = Orbit` (3 pecahan mengelilingi pemain terus-menerus). `Vfx_Spark Shards` punya TIGA
+partikel ber-`simulationSpace = World`: `Lightning_trail`, `Shadow_trail`, dan `Sparks_trail`
+(yang terakhir render mode **Stretch**). Partikel World-space **tinggal di tempat ia lahir**
+sementara pemancarnya ngebut memutar → cincin partikel basi yang tak pernah menyusul, dan yang
+Stretch memanjang jadi coretan. **Menukar ke VFX lain yang juga punya trail World akan glitch
+persis sama.** Diperbaiki: ketiganya → `Local`. Seluruh 7 partikel sekarang Local.
+Kandidat tukar kalau ternyata tetap tidak disuka (loop + nol World-space + keluarga petir):
+`Ion Storm`, `Storm Cell`, `Segel Sel Badai`.
+
+BELUM DINILAI MATA USER: rupa Room_Shop malam, dan Spark Shards sesudah diperbaiki.
+
+*Ronde 12f — lanjutan: POHON PINK DIPERBAIKI.*
+
+Gejala: seluruh 147 objek `Hutan` tergambar magenta. Sebab: **`PropBatch` MENYALIN material saat
+runtime** (`RenderMeshInstanced` menuntut instance sendiri — lihat komentar di PropBatch:97),
+jadi material yang kubaca waktu memotret adalah **instance runtime yang tidak punya path aset**.
+`AssetDatabase.GetAssetPath` mengembalikan string kosong → pencarian material mengembalikan null
+→ 147 dari 147 slot material NULL → magenta.
+
+**Pelajaran: jangan pernah mengambil referensi aset dari objek runtime hasil `Instantiate`/copy.
+Ambil dari SUMBER datanya.** Di sini sumbernya `BiomeDefinition.MeshTrees/MeshScatter/MeshGrass`
+→ `MeshProp.Materials`, yang isinya material aset sungguhan:
+
+    Spruce 1_LOD2 / Spruce 2_LOD2 -> UNS_Spruce_Tree_Branch + UNS_Color_Palette  (DUA, 2 submesh)
+    Bush_LOD1                      -> UNS_Bush_Leaves
+    Stump/Rock1/Rock5/Mushrooms/TinyRock/Log/Branch -> UNS_Color_Palette
+    Grass_LOD2                     -> UNS_Grass
+
+Peta dibangun dari SEMUA aset BiomeDefinition (kalau satu biome kurang lengkap, yang lain
+menambal), lalu `sharedMaterials` dipasang sebagai ARRAY — bukan `sharedMaterial` tunggal.
+Cemara punya 2 submesh; memasang satu material meninggalkan submesh kedua tidak tergambar.
+Ada pengaman: kalau jumlah material < jumlah submesh, slotnya di-pad dengan material terakhir.
+
+TERVERIFIKASI: 147 dipasang / 0 gagal; **0 slot material null tersisa**; jumlah submesh = jumlah
+material untuk setiap jenis mesh; dan urutannya dicek silang dengan kolom submesh hasil potretan
+(`Spruce submesh=0 -> UNS_Spruce_Tree_Branch`) — jadi batang tidak tertukar dengan daun.
