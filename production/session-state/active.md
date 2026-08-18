@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Paket feedback tempur (FootSmoke, hit sparks, vignette, game over, buku)
-Task: 5 item terpasang & terverifikasi angka; menunggu penilaian mata pemilik project
+Feature: Ruangan singgah (Penjual toko, Altar kejadian) + pencabutan slot
+Task: Slot dicabut tuntas + pemulihan pasca mati lampu; retopo Penjual/Altar & hit-test peta menunggu
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -3297,3 +3297,63 @@ popup damage menggerombol, pembesaran ronde ketiga, teks sampah lanjutan, tombol
 - Screenshot verifikasi juga mengonfirmasi ronde sebelumnya hidup: baris info di kanan
   bola + plakat besar, panel spell besar terbaca, alas tas memeluk petak di belakangnya,
   tombol debug siang/malam hilang. Kompilasi BERSIH, console 0 error/warning.
+
+**Ronde 11 (2026-08-18, pemulihan mati lampu + "slot udah gw buang kok masih ke slot"):**
+
+*Pemulihan.* Listrik mati ~13:55; `active.md` terakhir ditulis 10:14, jadi ada 3,5 jam
+kerja yang TIDAK tercatat. Direkonstruksi dari timestamp + isi file, semuanya SELAMAT
+di disk (belum di-commit sejak `7c843d0`):
+
+| Jam | Yang mendarat |
+|---|---|
+| 09:37–10:02 | `AltarEvent.fbx` + `M_AltarEvent` + 3 tekstur, `Prefabs/Ambient/AltarEvent.prefab` (Altar, Book, 4 Brazier, 4 Cahaya, CahayaBuku/Kunci, Cuaca), terpasang sebagai prefab instance di `Room_Event` |
+| 10:10–13:54 | `Penjual.fbx` (klip **Idle** 3,96 s @24fps), 3 tekstur, `M_Penjual`, `AC_Penjual.controller` (1 state), `Prefabs/Characters/Penjual.prefab` (Animator + SkinnedMeshRenderer + armature `Rangka_Penjual` 15 tulang: Root/Pinggul/Dada/Leher/Kepala/Bahu·Lengan·Siku·Tangan L-R/Jubah/Ransel) |
+| 13:55 | Penjual dipasang di `Room_Shop` — pos (0, 1,934, 3,75), skala 1,469 |
+| 13:23–13:45 | 4 font SDF + `StatusStrips.prefab` ikut kesenggol (belum diperiksa) |
+
+`Assets/GameData/HazeProfile_RoomEvent.asset` **YATIM** — nol yang mereferensi, dan
+isinya cuma satu entri komponen null. Global Volume Room_Event masih pakai profile
+lama (`3db9273…`). Kelihatannya kepotong di tengah jalan; belum disentuh.
+
+Blend berjalan lewat **Git LFS** (`*.blend`/`*.fbx` di `.gitattributes`, 993 objek LFS).
+`.git/lfs` 1,9 GB vs `.git/objects` 288 MB — jadi history TIDAK bengkak, yang besar
+storage LFS. Commit blend 620 MB aman secara history.
+
+- **MESIN SCULPT MASUK KE GAME** (diukur dari `AssetDatabase`, bukan taksiran):
+  `Penjual.fbx` → mesh `Penjual_HP` **2.147.210 verts / 3.093.418 tris** (139 MB);
+  `AltarEvent.fbx` → `Altar` 1.138.307 v / 1.401.434 t + `Book` 464.275 v / 578.403 t
+  (83 MB). `Penjual.prefab` menempelkan SkinnedMeshRenderer ke **`Penjual_HP`** — sculpt
+  high-poly-nya sendiri. Satu NPC toko diam = 3,1 juta tris, padahal arena penuh 500
+  musuh cuma 5 draw call @59 fps. **Retopo/decimate belum dikerjakan.**
+
+- **SLOT DICABUT TUNTAS** (perintah user setelah laporan "milih wave biasa kok malah ke
+  slot"). Yang diukur duluan: 300 peta dari balance yang hidup → **Gamble 0** (Fight
+  20222 · Event 3566 · Elite 2893 · Shop 2805 · Boss 300). Nodenya memang tidak bisa
+  lahir sejak `MapGambleChance`=0, dan ikon peta ketujuhnya sprite berbeda semua
+  (Icon_0…Icon_6) — jadi BUKAN "cuma diganti icon".
+  **Akar sebenarnya: `RoomLoader.Init()` masih `Preload(SlotScene)` tiap run.** Kalau
+  `Room_Slot` kebetulan sudah terbuka di Hierarchy saat Play ditekan — persis kondisi
+  waktu menggarap scene ruangan — `LoadSceneAsync` memuat kopi KEDUA sementara `Adopt()`
+  cuma mematikan root scene PERTAMA (`GetSceneByName` ambil yang pertama). Kopi kedua
+  tinggal di layar bersama kameranya, tanpa node slot sama sekali.
+  **INVARIAN BARU: scene yang dipramuat RoomLoader jangan ditinggal terbuka di Hierarchy
+  saat Play** — masih berlaku untuk Room_Shop & Room_Event.
+  Dicabut: enum `Gamble` + param `gambleChance`, case di KindColor/KindLabel/host BANDAR,
+  `SlotScene`+Preload, DrawGamble/RollGambleOutcome/SettleGamble/SlotFaces + 12 field
+  `_slot*`/`_gamble*` + blok klik + konstruksi panel + 4 case di GrimoireUI (−257 baris),
+  5 field balance, `MapIconGamble`, `SlotSpin`/`SlotSpinStart`/`SlotTick`, 7 loc key × 7
+  bahasa, Room_Slot keluar Build Settings, scene dipindah ke
+  `Assets/_Archive/Scenes/Room_Slot.unity` (DIARSIP, tidak dihapus).
+  **`slot.nogold` SENGAJA DITINGGAL** — dipakai ulang judul panel TOKO saat koin kurang.
+  TERVERIFIKASI: refleksi assembly baru (Gamble/SlotScene/GambleCost/MapIconGamble/
+  SlotSpin/SlotTick semua `False`), sebaran 300 peta **identik angka per angka** dengan
+  sebelum pencabutan (cabang mati tidak menggeser undian `dice`), diff aset tepat 13
+  baris terhapus dan tidak ada yang lain, console 0 error / 0 warning.
+
+- **BUG KLIK PETA DITEMUKAN, BELUM DIPERBAIKI** (menunggu keputusan user):
+  `HandlePanelClick` menguji node dengan radius **DATAR 34 px**, sementara node digambar
+  `(104 diinjak / 88 bisa dituju / 76 sisanya) × KindScale` (Boss 4× · Elite 1,7× ·
+  Shop 1,5× · Event 1,35× · Fight 1×) = radius gambar **44–176 px**. Pinggiran icon besar
+  mati kliknya; icon besar menutupi titik tengah tetangganya; dan loopnya ambil node
+  **pertama di urutan `reachable`, bukan yang terdekat**. Keluarga yang sama dengan bug
+  rect StartButton (Ronde 10e) dan hover bola vitals (Ronde 10d).

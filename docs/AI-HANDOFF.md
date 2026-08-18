@@ -452,6 +452,8 @@ nyata** yang dilempar dekat pemain lalu tersedot masuk · **kamera dead-zone**
 | 8 | **Navigasi keyboard/gamepad di menu** |
 | 9 | **Refactor `GrimoireUI`** | ~1940 baris, lihat §12 |
 | 10 | **`design/gdd/content-plan.md` usang** | targetnya masih angka lama (15–23 skill); isi sekarang 70 piece |
+| 11 | **Retopo Penjual & Altar** | sculpt mentah 2,1 juta / 1,1 juta verts terpasang apa adanya di prefab yang dipakai game — lihat §43.4 |
+| 12 | **Hit-test node peta** | radius klik DATAR 34 px vs icon yang digambar 44–176 px, dan yang diambil node PERTAMA di list bukan yang terdekat — lihat §43.3 |
 
 ---
 
@@ -3224,3 +3226,74 @@ Bentuk final (permintaan user, mockup tile berbingkai):
   ditemukan ikut berbingkai. Glyph layer papan/tas/codex tetap jalan.
 - "Problem detected while importing" saat batch = noise penghapusan; verifikasi
   akhir: 16 prefab utuh, sel=glyph match, grid 74 sel.
+
+---
+
+## 43. Slot DICABUT TUNTAS, dan mesin sculpt yang masuk ke game (2026-08-18)
+
+### 43.1 Kenapa node slot yang "sudah nol" tetap bisa nongol
+
+Laporan pemilik project: "gw milih wave biasa kok malah ke slot". Yang diukur lebih
+dulu, bukan ditebak: 300 peta di-generate dengan `GameBalance.asset` yang hidup →
+Fight 20222 · Event 3566 · Elite 2893 · Shop 2805 · Boss 300 · **Gamble 0**. Node
+slotnya memang tidak bisa lahir sejak `MapGambleChance` diturunkan ke 0.
+
+**Yang nongol RUANGANNYA, bukan nodenya.** `RoomLoader.Init()` masih
+`Preload(SlotScene)` tiap run. Kalau `Room_Slot` kebetulan sudah terbuka di Hierarchy
+saat Play ditekan — hal yang normal terjadi saat mengerjakan scene ruangan —
+`LoadSceneAsync` memuat kopi KEDUA, sementara `Adopt()` hanya mematikan root scene
+yang **pertama** (`GetSceneByName` mengembalikan yang pertama ketemu). Kopi kedua
+tinggal di layar lengkap dengan `Kamera Ruangan`-nya.
+
+**Ini invarian baru: scene yang dipramuat `RoomLoader` TIDAK BOLEH dibiarkan terbuka
+di Hierarchy saat Play.** Berlaku juga untuk `Room_Shop` dan `Room_Event` yang masih
+dipramuat.
+
+### 43.2 Yang dicabut
+
+| Tempat | Yang hilang |
+|---|---|
+| `Model/RunMap.cs` | `RunNodeKind.Gamble`, parameter `gambleChance` di `Generate()` |
+| `Systems/RunDirector.cs` | case Gamble di `KindColor`/`KindLabel`, host "BANDAR" |
+| `View/RoomLoader.cs` | `SlotScene`, `Preload(SlotScene)` |
+| `View/GrimoireUI.cs` | `DrawGamble`/`RollGambleOutcome`/`SettleGamble`, `SlotFaces`, 12 field `_slot*`/`_gamble*`, blok klik, konstruksi panel, case Gamble di `KindScale`/`KindInk`/`KindIcon`/`ShowRoomFor` (−257 baris) |
+| `Data/GameBalance.cs` | `MapGambleChance`, `GambleCost`, `GambleWeights`, `GambleSmallGold`, `GambleBigGold` |
+| `Data/UiTheme.cs` | `MapIconGamble` |
+| `Data/AudioTheme.cs` + `Systems/AudioDirector.cs` | `SlotSpin`, `SlotSpinStart()`, `SlotTick()` |
+| `Resources/Loc/*.txt` | 7 key slot × 7 bahasa |
+| Build Settings | `Room_Slot.unity` dikeluarkan |
+| Scene | dipindah ke `Assets/_Archive/Scenes/Room_Slot.unity` — **diarsip, bukan dihapus** |
+
+**`slot.nogold` SENGAJA DITINGGAL** — key itu dipakai ulang judul panel TOKO saat koin
+kurang (`GrimoireUI` ~6323). Menghapusnya mematikan pesan toko, bukan slot.
+
+Verifikasi: sebaran 300 peta setelah pencabutan **identik angka per angka** dengan
+sebelumnya — menghapus cabang `gambleChance` tidak menggeser satu pun undian `dice`,
+karena cabangnya memang tidak pernah diambil. Kompilasi bersih, console 0/0.
+
+### 43.3 Bug klik peta — DITEMUKAN, BELUM DIPERBAIKI
+
+`GrimoireUI.HandlePanelClick` menguji node dengan **radius DATAR 34 px**, sementara
+node digambar `(104 diinjak / 88 bisa dituju / 76 sisanya) × KindScale` —
+Boss 4× · Elite 1,7× · Shop 1,5× · Event 1,35× · Fight 1×. Jadi node yang bisa dituju
+tergambar radius **44 px (Fight) sampai 176 px (Boss)** tapi kotak kliknya tetap 34 px:
+pinggiran icon besar MATI kliknya, dan icon besar menutupi titik tengah tetangganya.
+Loopnya juga mengambil **yang pertama ketemu di urutan `reachable`, bukan yang
+terdekat** — dua node bertumpang tindih = yang kepilih bukan yang ditunjuk.
+Keluarga bug yang sama dengan rect StartButton dan hover bola vitals.
+
+### 43.4 Mesin sculpt MASUK KE GAME — belum diretopo
+
+Diukur lewat `AssetDatabase` (bukan perkiraan):
+
+| Aset | Mesh | Verts | Tris | Ukuran FBX |
+|---|---|---|---|---|
+| `Art/Models/Penjual/Penjual.fbx` | `Penjual_HP` | 2.147.210 | 3.093.418 | 139 MB |
+| `Art/Models/AltarEvent/AltarEvent.fbx` | `Altar` | 1.138.307 | 1.401.434 | 83 MB |
+| ” | `Book` | 464.275 | 578.403 | ” |
+
+`Penjual.prefab` menempelkan `SkinnedMeshRenderer` langsung ke **`Penjual_HP`** —
+sculpt high-poly-nya sendiri, bukan versi low-poly. Room_Shop sekarang membawa
+3,1 juta tris untuk SATU NPC diam; Room_Event ~2 juta tris. Bandingkan dengan arena:
+500 musuh @ 59 fps, 5 draw call. Retopo/decimate + bake ke low-poly adalah pekerjaan
+yang belum dilakukan, bukan pilihan gaya.
