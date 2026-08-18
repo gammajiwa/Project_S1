@@ -226,8 +226,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -324,7 +326,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.24, g: 0.2, b: 0.15, a: 1}
-    - _Color: {r: 0.24, g: 0.2, b: 0.15, a: 1}
+    - _Color: {r: 0.23999995, g: 0.19999996, b: 0.14999998, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -436,7 +438,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &324262215
 Transform:
   m_ObjectHideFlags: 0
@@ -526,8 +528,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -624,7 +628,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.196, g: 0.126, b: 0.077, a: 0.7}
-    - _Color: {r: 0.196, g: 0.126, b: 0.077, a: 0.7}
+    - _Color: {r: 0.19599995, g: 0.12599996, b: 0.076999985, a: 0.7}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -916,8 +920,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -1014,11 +1020,85 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.16, g: 0.13, b: 0.1, a: 1}
-    - _Color: {r: 0.16, g: 0.13, b: 0.1, a: 1}
+    - _Color: {r: 0.15999997, g: 0.12999997, b: 0.09999997, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!1001 &743171612
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2096931211}
+    m_Modifications:
+    - target: {fileID: 1659642433144756323, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_Name
+      value: Penjual
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.4690452
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.4690452
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.4690452
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.934001
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+--- !u!4 &743171613 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3034480829937483193, guid: ad0dcbcfaa051ff4a83b96eae1723260, type: 3}
+  m_PrefabInstance: {fileID: 743171612}
+  m_PrefabAsset: {fileID: 0}
 --- !u!21 &906055009
 Material:
   serializedVersion: 8
@@ -1036,8 +1116,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -1134,7 +1216,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.28, g: 0.18, b: 0.11, a: 1}
-    - _Color: {r: 0.28, g: 0.18, b: 0.11, a: 1}
+    - _Color: {r: 0.27999997, g: 0.17999998, b: 0.10999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -1149,6 +1231,7 @@ GameObject:
   m_Component:
   - component: {fileID: 991247119}
   - component: {fileID: 991247120}
+  - component: {fileID: 991247121}
   m_Layer: 0
   m_Name: Cahaya
   m_TagString: Untagged
@@ -1236,6 +1319,35 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!114 &991247121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 991247118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!21 &1287031909
 Material:
   serializedVersion: 8
@@ -1253,8 +1365,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -1351,7 +1465,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.8, g: 0.688, b: 0.49600002, a: 0.8}
-    - _Color: {r: 0.8, g: 0.688, b: 0.49600002, a: 0.8}
+    - _Color: {r: 0.8, g: 0.688, b: 0.496, a: 0.8}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -1373,7 +1487,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1299125196
 Transform:
   m_ObjectHideFlags: 0
@@ -1553,8 +1667,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -1651,7 +1767,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.224, g: 0.14400001, b: 0.088, a: 0.8}
-    - _Color: {r: 0.224, g: 0.14400001, b: 0.088, a: 0.8}
+    - _Color: {r: 0.22399998, g: 0.14399996, b: 0.08799996, a: 0.8}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -1673,8 +1789,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -1771,7 +1889,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.224, g: 0.14400001, b: 0.088, a: 0.8}
-    - _Color: {r: 0.224, g: 0.14400001, b: 0.088, a: 0.8}
+    - _Color: {r: 0.22399998, g: 0.14399996, b: 0.08799996, a: 0.8}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -1921,8 +2039,10 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
+  stringTagMap:
+    RenderType: Opaque
+  disabledShaderPasses:
+  - MOTIONVECTORS
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -2019,7 +2139,7 @@ Material:
     - _ZWrite: 1
     m_Colors:
     - _BaseColor: {r: 0.088, g: 0.071499996, b: 0.055000003, a: 0.55}
-    - _Color: {r: 0.088, g: 0.071499996, b: 0.055000003, a: 0.55}
+    - _Color: {r: 0.08799996, g: 0.07149998, b: 0.054999977, a: 0.55}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
@@ -2063,6 +2183,7 @@ Transform:
   - {fileID: 221506319}
   - {fileID: 382420160}
   - {fileID: 1954885694}
+  - {fileID: 743171613}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
