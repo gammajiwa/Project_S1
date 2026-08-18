@@ -40,14 +40,17 @@ namespace Proto
         int _used;
 
         public StatusStrip(Transform canvas, TMP_FontAsset font, int capacity, float iconSize,
-            Color numberColor, bool vertical = false)
+            Color numberColor, bool vertical = false, float slotPadding = -1f)
         {
             _icon = iconSize;
             _vertical = vertical;
 
-            // Yang mendatar butuh ruang untuk angka di sebelah ikonnya; yang menurun tidak — ia
-            // memang tidak membawa angka, karena pakta tidak punya hitungan mundur untuk dibaca.
-            _slot = iconSize + (vertical ? 8f : 36f);
+            // Jarak antar slot ditentukan oleh ADA-TIDAKNYA ANGKA, bukan oleh arah tumbuh.
+            // Strip yang membawa angka perlu 36 piksel di sebelah ikon; yang tidak, cukup 8.
+            // Dulu dua hal ini terikat pada arah, dan itu keliru: strip mendatar TANPA angka
+            // (pakta) jadi ikut membayar ruang 36 piksel dan 12 ikonnya melebar 1224 piksel
+            // sampai saling menumpuk di tepi layar.
+            _slot = iconSize + (slotPadding >= 0f ? slotPadding : (vertical ? 8f : 36f));
 
             _icons = new Image[capacity];
             _numbers = new TextMeshProUGUI[capacity];

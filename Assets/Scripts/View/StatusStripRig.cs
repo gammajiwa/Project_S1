@@ -41,9 +41,11 @@ namespace Proto
         public RectTransform AilmentArea;
 
         [Tooltip("Kotak untuk strip PAKTA — berkah & kutuk permanen yang kamu pilih sendiri di " +
-                 "node kejadian. Kosong = kolom TEGAK di tepi kanan layar.\n\n" +
-                 "Strip ini satu-satunya yang tumbuh KE BAWAH, jadi yang dipakai dari kotak ini " +
-                 "tetap pojok kiri-atasnya, dan ikon berikutnya turun dari sana.")]
+                 "node kejadian.\n\n" +
+                 "Tumbuh MENDATAR ke kanan seperti tiga strip lain, dari pojok kiri-atas kotak " +
+                 "ini. Ikonnya lebih besar (66 vs 54) dan jaraknya rapat karena pakta tidak " +
+                 "membawa angka — sediakan sekitar 900 piksel mendatar supaya dua belas pakta " +
+                 "muat tanpa keluar layar.")]
         public RectTransform PactArea;
 
         [Header("Bantuan menata (editor saja)")]
