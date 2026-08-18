@@ -2810,3 +2810,490 @@ seizin user "coba config ini"): startSizeY - 75-95 (curve max 0.5714-1, scalar 2
 minScalar 70-75) di Assets/Prefabs/Light/Sunlight.prefab + Moonlight.prefab. Pivot beam
 y -0.5 (berdiri dari tanah), jadi base tetap nempel tanah, ujung atas selalu di luar
 layar (butuh ~72 di worst case ortho 18 pitch 60). Struktur/child prefab TIDAK disentuh.
+
+**Ronde 6 (2026-08-18, 2 keluhan user — nomor 3 terpotong, belum ditanya ulang):**
+
+*(1) "shop gak bisa di-drag itemnya".* Alur bawa-lalu-bayar memang SUDAH ada
+(`_heldShopSlot` → taruh di papan/tas → `FinalizeShopPurchase`; taruh sembarangan →
+`CancelShopCarry` pulang ke slot). Yang rusak: jalan menuju alur itu. Tiga akar,
+semuanya di `GrimoireUI`, semuanya GAGAL DIAM — tidak ada satu pun tanda kenapa:
+  a. **Piece tercecer mendahului kotak dagangan.** `HandlePanelClick` punya pengecualian
+     "klik ke piece tercecer selalu lolos dari guard panel", dan ia berdiri SEBELUM loop
+     slot. `ScatterPos()` membentang dari kanan papan sampai tepi layar → melintasi panel
+     toko yang duduk di tengah, dan kolom kanan etalase (slot 2 & 5) persis di jalurnya.
+     Satu barang jatuhan menutupi slot = tarikan berbelok jadi ambil barang jatuhan.
+     Fix: `ShopSlotAt()` + `TakeFromShop()` dijalankan LEBIH DULU; pengecualian tercecer
+     tetap berlaku untuk sisa badan panel.
+  b. **Emas kurang = no-op senyap.** `if (_gold < price) return true;` — tanpa suara,
+     tanpa tulisan. Fix: `_shopNag` 1,6 dtk → judul panel berganti jadi `slot.nogold`
+     (kunci loc SUDAH ada di 10 bahasa) warna merah + `Sfx.UiClick()`.
+  c. **Tombol kecepatan bisa menelan klik panel.** `HandleSpeed()` jalan sebelum
+     `HandleInput()`; panel toko sekarang kotak yang ditata tangan di `ShopPanel.prefab`,
+     jadi boleh digeser ke mana saja termasuk ke atas tombol HUD. Fix: klik di dalam
+     `PanelRect()` saat panel terbuka tidak lagi dilihat `HandleSpeed`.
+  Bonus: klik ke slot ASAL barang yang sedang dibawa = mengembalikannya (dulu slot itu
+  kosong dan kliknya tidak melakukan apa-apa).
+
+*(2) Shader pohon tembus pandang DIPASANG LAGI — versi ALPHA, bukan dither.*
+Permintaan user: "balikin lagi... itu itemnya gak pake alfa, coba soft dulu pake shader
+yg bisa transparan soalnya kamera bloking terus". Dicabut di commit 807c31e ("gak pernah
+bener"); yang dikembalikan bukan versi lama.
+  - `PropSeeThrough.shader` ditulis ulang: `Blend SrcAlpha OneMinusSrcAlpha` + `ZWrite On`,
+    gradasi lebar 35%–100% jari-jari, pusat menyisakan `_SeeThroughMin` (default 0,14 —
+    bayangan tipis, bukan lubang). Matriks Bayer/`clip()` dibuang seluruhnya.
+  - **Antreannya 2400 (Geometry+400), BUKAN Transparent.** Ini yang paling mudah salah:
+    PC_Renderer memasang HAZE (kabut volumetrik) yang membaca `SampleSceneDepth`, dan
+    `m_CopyDepthMode: 0` = salin depth SESUDAH pass pejal. Pohon di antrean transparan
+    hilang dari peta itu → kabut dihitung memakai kedalaman tanah di belakang pohon.
+    Di 2400 pohon tetap pejal bagi URP (batas opaque 2500) jadi ikut peta kedalaman,
+    sementara lantai/rumput/pemain/musuh (antrean 2000) sudah tergambar duluan sehingga
+    campuran alpha-nya benar. VFX 3000 tetap di atas, dan tertutup benar karena ZWrite.
+  - **`_ALPHATEST_ON` + `_Cutoff` + `_Cull` ditambahkan** — inilah "gak pake alfa" yang
+    dikeluhkan. TERVERIFIKASI: `UNS_Spruce_Tree_Branch` (material pohon mesh di 5 biome)
+    memang alpha-cutout `_Cutoff` 0,50; shader lama tidak punya jalur potong sama sekali,
+    jadi kartu daun akan jadi kotak pejal. Salinan material lolos cek: map ✓ cutoff 0,50 ✓
+    cull 2 ✓ keyword `_ALPHATEST_ON` ✓ queue 2400 ✓. `multi_compile`, bukan
+    `shader_feature` — materialnya dirakit saat jalan, tak ada .mat yang bisa dibaca
+    pemangkas varian saat build.
+  - Kabel: `PropBatch` (dua konstruktor) & `BiomeDresser.Collect` dapat `seeThrough` lagi;
+    batang + tajuk + pohon mesh `seeThrough: true`, rumput/batu TIDAK. `SeeThroughFeeder`
+    dipasang lagi di kamera oleh `ProtoBootstrap`, sekarang mengirim `_SeeThroughMin` juga.
+  - **`Grimoire/PropSeeThrough` didaftarkan ke Always Included Shaders**
+    (ProjectSettings/GraphicsSettings.asset). Tanpa ini `Shader.Find` mengembalikan null
+    di BUILD (tak ada satu pun .mat yang mereferensikannya) dan pohonnya diam-diam pejal
+    lagi — jebakan yang persis sama dengan "gak pernah bener" yang pertama.
+
+Kompilasi bersih: `scriptCompilationFailed=False`, shader `hasError=False msgs=0`
+queue=2400 passes=3. **BELUM dinilai mata** — punch list: pudarnya cukup/kelewat
+(setel `SeeThroughFeeder.Radius` 0,18 & `MinAlpha` 0,14 di Inspector kamera SELAGI main),
+kartu daun pohon mesh masih berpotong, kabut HAZE masih benar di sekitar pohon, dan
+apakah tarikan barang toko sekarang selalu sampai.
+
+**Ronde 7 (2026-08-18, 3 permintaan user):**
+
+*(1) Ikon peta diganti sheet baru.* `Assets/Art/Icons/Map/IconMap.png` sudah teriris 7
+sub-sprite (Icon_0..Icon_6, `spriteMode: 2`). Pemetaannya dibaca dari letak rect di meta
+lalu DICOCOKKAN ke gambarnya (sheet dibuka & dilihat, bukan ditebak dari nama):
+baris atas x=0/380/851/1230 = tengkorak polos / tengkorak bertanduk bermahkota / kantong
+koin / "?"; baris bawah x=64/510/1099 = dadu / tengkorak iblis besar / sosok berjubah.
+Hasil wiring di `Assets/GameData/UiTheme.asset`:
+Fight←Icon_0, Elite←Icon_2, Shop←Icon_1 (kantong koin), Event←Icon_3, Gamble←Icon_4,
+Boss←Icon_5, You←Icon_6. Ikon lama (iconBOSS/iconElit/…14 berkas) TIDAK dihapus, cuma
+tidak direferensikan lagi.
+CATATAN: sprite baru TIDAK persegi (300x437, 264x381, 384x491, dst) sementara kotak node
+persegi (`sizeDelta = size,size`). Aman — `_mapIcons[i].preserveAspect` memang sudah true
+sejak awal; kalau suatu saat dimatikan, ikon tegak akan gepeng.
+
+*(2) Jalur titik-titik peta tidak lagi kuning.* Keluhan: "map gw kuning, itu jadi nge-blend
+dan gak keliat". Akar: warna jalur TAWARAN (1; 0,85; 0,3) emas — angka itu lahir waktu
+latar peta masih biru-gelap, dan peta sekarang perkamen kuning. Dua tempat memakai angka
+itu (ruas antar node + jalur dari ruang tunggu ke lantai 1). Sekarang dua field tema baru:
+`MapPathOfferedInk` = merah (0,78; 0,09; 0,07) — sekeluarga dengan `MapYouInk` yang sudah
+terbukti terbaca di perkamen — dan `MapPathWalkedInk` = hijau tua (0,16; 0,42; 0,20) yang
+menggantikan hijau pucat (0,55; 0,85; 0,55), masalah yang sama tapi belum dilaporkan.
+Angka cadangan di kode juga BUKAN emas lagi, jadi tema kosong pun tetap terbaca.
+
+*(3) Garis evolusi jadi busur listrik.* Shader baru
+`Assets/Art/VFX/Shaders/UiArcBolt.shader` + material `Assets/Art/VFX/Materials/UiArcBolt.mat`
+(dirujuk `UiTheme.EvoBoltMaterial`; kosong = garis lurus polos seperti dulu, bukan hilang).
+  - Bentuk petirnya digambar DI DALAM satu kotak Image, bukan dengan memecah garis jadi
+    banyak potongan. Alasannya kolam: `EvoLinePool` cuma 40 dan dipakai bareng oleh
+    sambungan resep DAN kabel "bisa digabung dengan apa" dari kursor — memecah tiap garis
+    jadi 8 potong akan menghabiskan kolam lalu sambungan terakhir hilang diam-diam.
+  - Jalurnya jumlah tiga sinus berperbandingan TIDAK harmonis (tidak berulang dalam satu
+    bentang = patah-patah, bukan bergelombang) + untai kedua berlawanan arah, plus kedip.
+    Semua ukuran dalam pecahan tinggi kotak, jadi satu material melayani garis tipis (5px)
+    dan tebal (8px) sekaligus.
+  - Beda fase antar sambungan diambil dari `fwidth(uv.x)` (≈ 1/panjang garis) — tanpa itu
+    semua busur bergoyang serempak dan terbaca sebagai animasi berulang. Gratis: tidak
+    butuh material per garis, seluruh kolam tetap satu batch.
+  - `Blend SrcAlpha One` (aditif): ini cahaya, bukan cat. Cocok di atas papan buku gelap;
+    KALAU papan suatu saat jadi terang, nyalanya akan hilang dan blend-nya harus ditinjau.
+  - `GrimoireUI`: `DrawEvoLink` dari static jadi instance (butuh `_evoBolt`), dan tinggi
+    kotak dikali `EvoBoltHeightMul` 4,5 HANYA saat material terpasang — itu ruang goyang,
+    bukan tebal garis (tebal inti diatur shader lewat `_Core`).
+
+Kompilasi bersih: `compileFailed=False`; UiArcBolt & PropSeeThrough `hasError=False msgs=0`.
+**BELUM dinilai mata.** Punch list: ikon baru kebaca di ukuran node terkecil (76px) atau
+kekecilan? halo lembut sprite baru bikin kotor waktu ditinta gelap? merah jalur tawaran
+cukup beda dari merah node musuh/boss? goyangan & nyala busur listrik pas atau lebay
+(setel di material `UiArcBolt.mat`: `_Amplitude` 0,26 · `_Glow` 0,34 · `_GlowGain` 0,8 ·
+`_Speed` 9 · `_Detail` 7 · `_Flicker` 0,3 · `_Strand` 0,45).
+
+CATATAN KERJA PARALEL: sepanjang ronde ini `GrimoireUI.cs` juga sedang disunting sesi AI
+lain (deret kecepatan jadi prefab UGUI: `BuildSpeedBarFromPrefab`, `_speedFromPrefab`,
+`UiTheme.SpeedBarPrefab`, plus `ApplyCombatHudSeats`/`_bagFrame`). Sempat `compileFailed=True`
+dua kali karena setengah jadi milik mereka, bukan milik ronde ini. Semua suntingan di sini
+memakai pencocokan teks persis, jadi tidak ada yang saling menimpa — tapi kalau mau commit,
+kerja mereka ikut terbawa.
+
+**Ronde 7b (2026-08-18, "event kok dibuang?"):**
+
+Laporan: node KEJADIAN (pilih pakta / modifier dunia) hilang dari peta; yang diminta
+dibuang cuma SLOT. Diperiksa dulu, tidak ditambal duluan — dan kejadian ternyata TIDAK
+pernah dibuang. Bukti:
+- `RunNodeKind.Event` masih diundi `RunMap.Generate` (cabang utuh, tidak dikomentari).
+- `Room_Event.unity` masih terdaftar di `EditorBuildSettings` (5 scene, semua ada).
+- `ContentDatabase._pacts` = 22 pakta; `RollPacts` utuh; panel `_eventOpen` utuh.
+- `UiTheme.MapIconEvent` = Icon_3 (tanda tanya) — dipasang di Ronde 7.
+- Simulasi 12 peta: Event 5,0% dari node, ~5 per act. ADA, tapi langka.
+
+Akar yang sebenarnya: **jatah node SLOT yang dibuang tidak pernah dipindahkan.**
+`MapGambleChance` diturunkan 0,08 → 0 dan delapan persen itu jatuh SELURUHNYA ke
+pertarungan biasa. Kepadatan node istimewa turun 40% → 32%, dan Fight naik 68% → 75%.
+Kejadian sendiri memang cuma 0,07 sejak awal = ~1 node di seluruh layar peta, sering nol.
+Jadi membuang slot justru membuat peta LEBIH monoton, dan kejadian yang sudah langka
+berhenti pernah terlihat — yang terbaca sebagai "ikut dibuang".
+
+Fix: **kejadian mewarisi jatah slot.** `MapEventChance` 0,07 → **0,15** (0,07 + 0,08) di
+`Assets/GameData/GameBalance.asset`. Elite 0,15, Shop 0,10, Gamble 0 — TIDAK disentuh.
+Terverifikasi lewat generator asli (40 peta): Fight 68,4% · Event 11,7% · Shop 9,4% ·
+Elite 9,6% · Boss 1,0%; **11,6 kejadian per act (min 5, maks 17), ~2,3 per layar peta.**
+Kepadatan node istimewa kembali persis ke 40% seperti sebelum slot dicabut.
+Tooltip kedua field di `GameBalance.cs` ditulis ulang supaya alasannya tidak hilang —
+termasuk catatan: kalau slot dihidupkan lagi, turunkan event kembali ke 0,07.
+
+RISIKO YANG PERLU DIPUTUSKAN USER: kolam pakta cuma **22**, sementara sekarang ada ~11
+kejadian per act. Satu act aman. Kalau run menempuh DUA act dan pemain mengambil pakta
+tiap kali, kolamnya kering — `RollPacts` menurun anggun (menawarkan 1, lalu 0 pilihan,
+tidak error), tapi kejadian di act akhir jadi kosong. Butuh tambah pakta kalau act
+bertambah.
+
+**Ronde 8 (2026-08-18, "narik item di grid gak sesmooth backpack"):**
+
+Dua kandidat diperiksa, satu diukur dan GUGUR, satu terbukti dan diperbaiki.
+
+GUGUR — biaya per frame. Dugaan awal: `Grimoire.FindPendingGroups` dibangun ulang tiap
+kali petak ghost berganti (`ghostChanged`), dan itu HANYA terjadi di atas papan — di atas
+tas `ghostDef` null jadi cuma throttle 0,25 dtk yang jalan. Terlihat seperti biaya khusus
+papan. DIUKUR di edit mode (papan diisi 35 piece, database 111 resep / 127 piece):
+**0,200 ms per panggilan, ~0,4 KB alokasi.** Di anggaran 16,7 ms itu 1,2% — bukan penyebab
+tersendat. Jangan ulangi dugaan ini tanpa profiler.
+
+TERBUKTI — **magnet papan memilih tetangga berdasarkan URUTAN PERULANGAN, bukan posisi
+kursor.** `SnapAssist` memberi nilai `dx*dx + dy*dy`, jadi keempat tetangga bersisian
+(atas/bawah/kiri/kanan) bernilai SAMA = 1. Perbandingannya `d < bestD` (tegas), jadi yang
+menang selalu yang diperiksa duluan: urutan dy −1→1, dx −1→1 membuat **BAWAH** selalu
+mengalahkan kiri/kanan/atas. Akibatnya kursor menempel di tepi kanan petak, dua tetangga
+sama-sama sah, dan piece-nya loncat ke BAWAH. Gejala kedua: di garis perbatasan tidak ada
+titik penentu, jadi sorotannya bergetar bolak-balik antara dua petak.
+Tas tidak punya magnet sama sekali (`ScreenToBagCell` langsung ke `_bag.Place`) — itulah
+kenapa tas terasa jujur dan papan terasa punya kemauan sendiri.
+
+Fix: peringkat tetangga memakai JARAK KE KURSOR pecahan.
+- `GrimoireLayout.ScreenToCellF()` baru — petak yang ditunjuk kursor tanpa dibulatkan,
+  digeser −0,5 supaya sebidang dengan INDEKS petak (pusat petak 3 = tepat 3,0).
+- `SnapAssist` dapat parameter ke-4 `wanted`; badan pencariannya pindah ke `NearestSpot`
+  (dipakai dua kali: cari yang kosong dulu, baru yang bisa ditimpa). Urutan keputusan
+  LAMA dipertahankan persis: taruh-di-sini > taruh-di-dekat > timpa-di-sini > timpa-di-dekat.
+- `SnapTarget(cell, mouse)` jadi SATU pintu; tiga pemanggil (klik, `ResolveGhost`, sorotan
+  hover) diarahkan ke sana supaya mustahil berbeda pendapat.
+Terverifikasi angka: kursor di tepi kanan petak (3,3) → `ScreenToCellF` = (3,37; 3,00);
+jarak² KANAN 0,394 · BAWAH 1,138 · ATAS 1,138 · KIRI 1,883. Sebelumnya keempatnya 1,000
+dan BAWAH menang. Kompilasi bersih.
+
+BELUM DIPUTUSKAN USER (ditanyakan): apakah "gak smooth" juga berarti (b) gambar piece-nya
+sendiri harus MENEMPEL ke grid saat di atas papan — sekarang ia sengaja mengambang
+mengikuti kursor (keputusan sesi sebelumnya, ada alasannya di komentar `DrawLoose`), jadi
+gambar dan sorotan memang tidak sinkron — atau (c) fps yang jatuh, yang butuh profiler.
+
+**Ronde 8b (lanjutan — user memilih DUA-DUANYA saat ditanya):**
+Jawaban user: "arah snap ngaco + sorotan geter" DAN "gambar piece-nya ngambang, nggak
+nempel grid". Yang pertama sudah beres di Ronde 8; yang kedua dikerjakan di sini.
+
+**Gambar piece di tangan sekarang MENEMPEL ke petak sasaran selama di atas papan.**
+Selama gambarnya mengambang bebas sementara sorotan petak menempel ke kisi, mata melihat
+dua benda dengan aturan gerak berbeda dan yang satu selalu terlihat meleset dari yang
+lain. Tas terasa jujur karena di sana cuma ADA satu benda yang bergerak.
+- `HeldDrawPos()`: di atas papan → `GridDrawCentre(_held, _heldRot, SnapTarget(...))`;
+  di luar papan → kursor apa adanya (di lantai tidak ada kisi, dan menahannya di petak
+  terakhir membuat piece yang ditarik keluar terlihat menyangkut).
+- Perpindahannya DIHALUSKAN, bukan dipatok: peredam eksponensial `HeldSnapTau` 0,045 dtk,
+  kebal frame rate. Nol = melompat satu petak penuh tiap kali kursor melewati garis papan
+  (kedutan yang justru mau dihilangkan); terlalu besar = gambar tertinggal di belakang
+  kursor dan terbaca sebagai lag. Ini angka pertama yang disetel kalau rasanya belum pas.
+- `_heldDrawLive` di-reset saat tangan kosong, supaya piece BERIKUTNYA lahir di kursor,
+  bukan meluncur dari tempat piece sebelumnya dilepas.
+- Keputusan sesi lama TIDAK dibatalkan: alasannya dulu adalah gambar piece jangan sampai
+  HILANG saat ditimbang penempatannya. Ia tetap tergambar penuh; yang berubah letaknya.
+- `GridDrawCentre` diturunkan dari rumus `DrawPiece` (bukan dikira-kira). Bisa serapi ini
+  karena `LooseCellSize`/`LooseCellGap` memang dipetakan ke `CellSize`/`CellGap`, jadi
+  jarak antar petak gambar sudah sama dengan papan — tidak ada penskalaan sama sekali.
+  TERVERIFIKASI angka: piece 1x1 di petak (0,0) → pusat gambar 96 = pusat petak 96;
+  piece 2x1 di (2,3) → pusat.x 203,5 = titik tengah petak 2 & 3 (203,5).
+
+TAS SENGAJA TIDAK DISENTUH — user bilang tas sudah enak, dan tas tidak punya magnet
+(`ScreenToBagCell` langsung ke `_bag.Place`) jadi tidak ada dua benda yang bisa berselisih.
+Kompilasi bersih. BELUM dinilai mata.
+
+**Ronde 9 (2026-08-18): magnet boleh mengambil tempat piece lama.**
+
+Laporan: "harusnya bisa mengambil posisi item yg sudah dipasang, yg ini agak susah gara-gara
+nge-snap ... biar gampang pasang bongkarnya."
+
+Akar: tangga prioritas `SnapAssist` menaruh SELURUH petak kosong di sekitar di atas petak
+berpenghuni yang ditunjuk, tanpa syarat. Artinya selama masih ada satu saja petak kosong
+bersebelahan — dan di papan yang belum penuh selalu ada — piece lama MUSTAHIL dijadikan
+sasaran; magnetnya menarik tangan pemain menjauh dari benda yang sedang ditatapnya.
+Membongkar susunan jadi kerja dua langkah (angkat dulu yang lama, baru pasang yang baru).
+
+Fix: petak berpenghuni ikut bersaing lewat jarak ke kursor, dengan membayar `SwapBias`
+0,25 (satuan jarak petak kuadrat) → titik baliknya di ~37% lebar petak dari pusat. Bidik
+badan piece lama = ambil tempatnya; serempet tepinya = mengalah ke petak kosong sebelahnya.
+Nol akan membuat tiap serempetan menggusur; terlalu besar mengembalikan keluhan aslinya.
+`SameLayerOccupied()` baru — penting: `ClearFootprint` cuma mengusir rune oleh rune dan
+skill oleh skill, jadi skill yang berdiri di atas rune BUKAN penghuni bagi rune yang mau
+ditaruh di situ (ia ikut terangkat, tidak tergusur). `NearestSpot` sekarang mengembalikan
+ongkos (float) supaya keduanya bisa dibandingkan; urutan cadangan lama tetap di belakang.
+Yang tergusur jatuh ke lantai, bukan hilang.
+
+**Ronde 9b: bar HP boss selebar layar DICABUT, pindah ke atas kepala.**
+
+Permintaan: "hp bar bos cabut, buat dia punya hp kaya yg lain di atas kepalanya kalo ke-hit".
+- `GrimoireUI`: `BuildBossBar` / `SetBossBar` / `DrawBossBar` + field `_bossBg`/`_bossFill`/
+  `_bossLabel` dihapus, dua pemanggilnya dicabut, dan blok `SeatFromRig(rig.BossBar)` dilewati.
+  Kotak `CombatHudRig.BossBar` di prefab DIBIARKAN — tidak diisi apa pun; membuangnya berarti
+  menyentuh prefab HUD milik pekerjaan sesi lain yang sedang berjalan.
+- `EnemyHpBars.TickBoss()` baru: SATU palang di atas kepala ular, skala 1,9x, aturan tampil
+  sama persis dengan musuh biasa (muncul saat kena, memudar 0,5 dtk, hilang di 2,2 dtk).
+- Dua jebakan yang ditangani:
+  (a) **HurtSeen ada di RUAS yang tertembak, bukan di kepala.** Palangnya berdiri di kepala,
+      jadi tanpa menyapu seluruh ruas untuk `HurtSeen` terbesar, memukul EKOR tidak
+      memunculkan apa pun — pemain melihat angka damage terbang tapi tidak ada palang, dan
+      kesimpulannya "pukulanku tidak masuk".
+  (b) **HP ruas BUKAN HP boss** (`fresh.Hp = 1f`, `MaxHp = boss.MaxHp`). Yang dibaca
+      `boss.HpFraction`, bukan `e.Hp / e.MaxHp`.
+  (c) Boss digambar DULUAN dari kolam 40; boss yang antre di belakang gerombolan bisa
+      kehilangan palangnya justru di detik ia sedang dipukuli. `localScale` dikembalikan ke
+      satu di jalur musuh biasa — kalau tidak, satu grunt acak mewarisi palang seukuran boss.
+
+CATATAN KOMPILASI: saat ronde ini ditutup, `Assembly-CSharp` gagal karena
+`GrimoireUI.cs(559): AttachCombatUi does not exist` — milik sesi AI paralel yang sedang
+menulis payung UI combat, BUKAN dari perubahan di sini (tidak ada satu pun error lain yang
+dilaporkan). Perubahan Ronde 9 sudah terbukti masuk assembly terakhir yang baik
+(`SameLayerOccupied`, `SnapCost`, `NearestSpot` kembali `Single`); Ronde 9b belum bisa
+diverifikasi sampai metode mereka mendarat.
+
+**Ronde 10 (2026-08-18, "AI bego ngancurin semua UI gw — sikat semua"): migrasi TMP
+TUNTAS + layar mati dihidupkan + CombatHud.prefab jadi barang beneran.**
+
+AKAR LAYAR MATI (map ikut tumbang): `SpellPanel.prefab` bikinan sesi paralel masih membawa
+komponen **UI.Text LEGACY** di anak 'Text' (guid 5f7201a1... di YAML), sementara kodenya
+mencari `TextMeshProUGUI` → `_spellText[i]` null → **NullReference TIAP FRAME di
+DrawSpells** → `Redraw()` mati sebelum sampai peta/`UpdateTooltip` → seluruh UI beku.
+Error CS0029/`RigBoxOn` di screenshot user adalah state LAMA (file sudah berubah lagi
+08:07, kompilasi sebenarnya sudah lolos). Keluhan hover user (kartu nyangkut, ALT+evo tak
+muncul lagi) juga korban NRE ini — `UpdateTooltip` duduk di EKOR `Redraw`; logikanya
+sendiri diperiksa jalur demi jalur dan semua pintu keluar menutup kartu dengan benar.
+
+MIGRASI legacy→TMP (semua kompil & teruji play): `GrimoireUI` (±28 call site `MakeText` +
+seluruh field; factory `MakeText` DIHAPUS — `MakeTmp` satu-satunya pintu), `RecipePanel`,
+`StatusStrip`, `DamagePopups`, `DemoBar`, `PlaygroundBootstrap`, `VitalsRig` (field →
+TMP). Jebakan yang ditangani:
+- `Outline`/`Shadow` UGUI TIDAK berpengaruh pada TMP. Pengganti: outline SDF di material,
+  dan materialnya SATU BERSAMA per kolam (popup damage 48 label, floater reaksi) —
+  `outlineWidth` per label mencetak material instance per label dan memecah batching.
+  Banner pakai material instance sendiri (cuma satu objek).
+- `UiTheme.NumberFont` (Font legacy) → **`TmpNumberFont`** (TMP_FontAsset), diisi
+  `BarlowSemiCondensed-SemiBold SDF` — kembaran persis ttf yang lama, berat angka damage
+  tidak berubah. `UiFont` DIPERTAHANKAN: satu-satunya pemakainya TextMesh 3D "PEDAGANG/
+  BANDAR/PERTAPA" milik RunDirector di pulau singgah (bukan kanvas; sengaja tak disentuh).
+- `LocText` tetap membawa cabang legacy — ia jaring pengaman dua-arah, bukan pencipta.
+
+TIGA PREFAB DIBEDAH IN-PLACE (nilai, rect, alignment dipertahankan, font =
+`UiTheme.TmpFont`): SpellPanel 'Text', SpeedBar 'Label', TooltipCard 'Body'. TooltipCard:
+lebar 520 tataan tangan DIPERTAHANKAN (sempat salah dikecilkan ke 460 → dikembalikan);
+Body 15→17 — kartu hover dinilai user kekecilan. `RecipePanel` ikut dibesarkan (ikon
+44→54, baris 62→76, huruf 11→13, judul 14→17; lebar panel ±372→444).
+
+GERBANG BARU di `BuildSpellPanelFromPrefab`: keempat anak cetakan diperiksa SEBELUM
+di-clone — cetakan cacat sekarang gagal SEKALI dengan LogError + jatuh ke panel hitungan
+kode, bukan NRE per frame yang membekukan game.
+
+`CombatHud.prefab` DIISI jadi barang beneran + DICOLOK (slot `UiTheme.CombatHudPrefab`
+tadinya KOSONG dan seluruh wiring rig-nya null):
+- HudLine: plat Image → teks TMP 17 bone; HudPlaque: sprite `UIPanel_7` Sliced;
+  StartButton: `UIPanel_3` (glow) + anak baru `StartLabel` TMP 20 emas; ShopToggle:
+  `UIPanel_2` + `ShopLabel` TMP 14; BagPanel: `UIPanel_2`; BossBar **dinonaktifkan**
+  (fitur dicabut Ronde 9b, kotak disimpan). POSISI KOTAK TIDAK DISENTUH — sudah kloning
+  persis layout kode (plakat 8,-12 · start 0,120 · toko 417,196 · tas 403,6).
+- Adopsi di kode: `BuildShop` mengambil ShopToggle/ShopLabel rig; `BuildBackpack`
+  mengambil BagPanel sebagai ALAS (petak tas tetap hitungan GrimoireLayout — janji
+  tooltip rig); tombol yang prefabnya cuma bawa badan dapat label darurat yang menempel
+  SEBAGAI ANAK badannya (DrawBanner/DrawShop menulis .enabled/.text tanpa periksa null).
+- Guard `!hudOwnsStart`/`!hudOwnsShop` di `BuildShopFromPrefab`: blok reposisi tombol
+  menganggap anchor TENGAH; menulisnya ke kotak rig ber-anchor bebas akan MELEMPARKAN
+  tombol tataan tangan — sekarang dilewati saat rig yang memiliki tombolnya.
+
+TERVERIFIKASI PLAY MODE (screenshot): MainMenu utuh → peta pemilih TAMPIL LAGI (perkamen,
+node, jalur merah) → berangkat ke Fight → HUD lengkap (panel spell prefab per baris,
+speed bar prefab, bola HP/mana, plakat, alas tas kit) — console **0 error 0 warning**
+sepanjang sesi uji. HP boss dikonfirmasi tetap palang biasa di kepala (EnemyHpBars,
+1,9x — Ronde 9b utuh).
+
+BELUM DINILAI MATA USER: (a) ukuran kartu hover baru (tip 17 / resep ikon 54) cukup
+atau kurang; (b) ALT+evo muncul-hilang wajar setelah NRE hilang; (c) rupa default kit
+di tombol LANJUT/TOKO/alas tas — user berencana menata & mengganti sprite-nya sendiri
+di `Assets/Prefabs/UI/CombatHud.prefab`.
+
+**Ronde 10b (2026-08-18, feedback mata user atas Ronde 10):** hover HP hilang, tombol
+LANJUT pindah pojok, alas tas salah lapis, kartu resep dipatok + prefab + ukuran naik lagi.
+
+- **Hover bola HP/mana "hilang" — BUKAN prefab user.** `HoverHits` memberi
+  `RectangleContainsScreenPoint` mouse SATUAN KANVAS padahal API-nya minta PIKSEL layar
+  mentah — kebetulan benar hanya saat jendela game selebar referensi (skala 1), dan mati
+  di jendela lebih kecil ("kemarin bisa" = kemarin jendelanya beda). Fix: dikali balik
+  `GrimoireLayout.UiScale`. TERBUKTI angka di play mode: UiScale 0,31 → VitalsTooltip
+  menjawab "NYAWA 230/230 100%" di titik tengah kotak hover. CATATAN: user sedang
+  menduplikasi objek di VitalsPanel.prefab (ManaFill (1) dst) — TIDAK disentuh.
+- **Tombol LANJUT/MULAI → pojok kanan-bawah, konsep label PLAY menu**: kotak rig di
+  prefab dipindah (anchor kanan-bawah, −28,22, 300x56), badannya jadi transparan (kotak
+  klik saja), label TMP Barlow 30 warna persis PLAY (0.846, 0.768, 0.645) rata kanan.
+  Hit-test otomatis ikut (StartButtonOverride membaca kotak rig). Terverifikasi
+  screenshot: "CONTINUE (SPACE)" duduk di pojok kanan-bawah.
+- **Alas tas**: (1) salah LAPIS — ikut terangkat bersama rig ke pucuk kanvas dan
+  menutupi petak+isi tas; sekarang saat diadopsi ia DIPINDAH ke kanvas di titik build
+  alas lama (sebelum petak dibuat) jadi kembali jadi alas, bukan tutup. (2) garis
+  bawahnya diratakan ke garis bawah sampul buku (y=4, dihitung dari GridY − GridPad.y −
+  GrimoirePad.y); tepi kirinya memang sudah menempel persis di tepi kanan sampul (403).
+- **Kartu resep (ALT+hover)**: tiga permintaan sekaligus.
+  (1) DIPATOK: `RecipePanel.Show` menolak menata ulang selama piece-nya sama — kartu
+  tidak lagi mengejar mouse; dan `UpdateTooltip` TIDAK menutupnya selama ALT ditahan
+  (jalur hover-kosong dan jalur strip/vitals dua-duanya diberi gerbang `AltHeld +
+  Visible`) — mouse boleh ditarik ke kartunya untuk membaca bahan yang kurang.
+  Lepas ALT = tutup. Properti baru `RecipePanel.Visible`.
+  (2) PREFAB: `Assets/Prefabs/UI/RecipeCard.prefab` baru (root Image, default sprite
+  kit `UIPanel_2` Sliced) + slot `UiTheme.RecipeCardPrefab` — badan kartu milik user,
+  ukuran/posisi tetap kode (tinggi ikut jumlah baris). Fallback kotak gelap kalau kosong.
+  (3) UKURAN naik KEDUA kalinya: ikon 54→64, baris 76→92, huruf 13→15, judul 17→20,
+  lebar panel ±444→520.
+- **Hover skill & buff masih kekecilan** → TooltipCard Body 17→19 (lebar 520 milik user
+  tidak disentuh); fallback kode ikut (TipWidthDefault 520, font 19).
+- Kompilasi bersih; console 0 error sepanjang uji. Play test terpotong karena user
+  menghentikan play mode dari editor (sedang menilai sendiri). ALT suntikan Input System
+  untuk uji pin sudah DILEPAS (KeyboardState kosong) — tidak ada tombol nyangkut.
+
+BELUM DINILAI MATA USER: pin resep dirasakan langsung (tahan ALT, tarik mouse ke kartu),
+ukuran baru ketiga kartu, posisi CONTINUE kanan-bawah, alas tas di belakang isi tas.
+
+**Ronde 10c (2026-08-18, feedback beruntun user):** un-check = hilang, tombol LANJUT
+gaya menu penuh, alas tas versi final, kunci+inspeksi kartu resep, popup damage, teks sampah.
+
+- **Kontrak rig HUD DIUBAH — dua keadaan beda arti** (`CombatHudRig` didokumenkan ulang):
+  slot KOSONG = kode membangun versi gambar-kode (prefab boleh parsial); objek
+  DINONAKTIFKAN (un-check) = bagian itu HILANG BETULAN — tidak digambar, tidak diklik,
+  TIDAK dibangun penggantinya. Latar: user mematikan bagian di prefab dan fallback kode
+  menghidupkannya lagi ("yang gw keluarkan kenapa belum fix"). Adopsi kini membaca
+  `!= null` (bukan PartOn); PartOn tinggal untuk seat klik; tombol wired-tapi-off dapat
+  override rect NOL supaya klik hantunya ikut mati; hudOwns* juga jadi `!= null`.
+  CATATAN: perubahan user sebelumnya kemungkinan dibuat SAAT PLAY MODE (prefab tersimpan
+  masih semua aktif) — sudah diberitahu.
+- **Teks "(SPACE)" DIBUANG dari hud.start.wave/depart di SEMUA bahasa** (sed, termasuk
+  baris # TODO) — tombolnya memang bisa diklik sejak dulu; teksnya yang menyesatkan.
+- **Tombol LANJUT = baris menu beneran**: komponen `MenuLine` milik menu DIPASANG di
+  StartButton CombatHud (idle PUTIH — revisi user, semula warna PLAY; highlight amber
+  0.694/0.371/0.053; slide −16 CERMIN karena duduk di pojok kanan; marker `BulletGlow`
+  fade-in di kanan teks; speed 12). Badan Image transparan ber-raycastTarget (MenuLine
+  butuh EventSystem; ada di scene Proto). Label rata kanan, sisa 34px untuk bintang.
+  Hover TERBUKTI play mode (dipaksa `_hot` lalu difoto; state uji sudah dilepas).
+- **Alas tas versi FINAL**: rect alas MILIK KODE — memeluk petak (RightX−14, BagY−14,
+  +28) dihitung SAAT RUNTIME. Bukti kenapa wajib: `RightX()` runtime = **554** (ikut
+  GridOverride prefab buku), bukan 417 punya kloningan statis sesi paralel — itulah
+  "alasnya gak rata" dua kali. Sprite/warna tetap milik prefab; lapis tetap di bawah
+  petak (idx alas 174 vs petak 175, terverifikasi). Tooltip BagPanel di rig diperbarui.
+- **Kartu resep TERKUNCI saat meneliti**: begitu terpampang, hover ALT ke piece lain
+  TIDAK memindah target (mouse nyerempet item sebelah dalam perjalanan ke kartu). Ganti
+  target = lepas ALT dulu. **Ikon DI DALAM kartu bisa di-hover**: `RecipePanel.HoverPiece`
+  (rect ikon+label per baris, satuan kanvas) + `InspectRecipeIcon` di GrimoireUI —
+  memunculkan kartu keterangan item lewat TooltipBuilder, origin `hud.origin.recipe`
+  (key baru di en=RECIPE / id=RESEP; bahasa lain jatuh ke fallback "RESEP").
+- **Popup damage "berantakan"**: dua tersangka diperbaiki — (1) `FontStyles.Bold` DIBUANG
+  (font angka sudah SemiBold; faux-bold TMP menggeser vertex → gumpalan), (2) outline
+  0,22 → 0,12 (di 18-20pt outline setebal itu menelan rongga glyph). Atlas SemiBold SDF
+  dicek: dynamic (aman). BELUM dinilai mata (play dihentikan user saat reproduksi).
+- **Teks sampah DIHAPUS TUNTAS** (field+pembuat+pemakai): judul panel spell
+  (`_spellTitle`), label "TAS" (BagTitle), petunjuk kecepatan (SpeedHint, jalur fallback),
+  dan legenda peta (`_mapLegend` — "di map juga ada text gak jelas"). Loc key terkait
+  dibiarkan (tak dipakai, tak berbahaya). Kompilasi BERSIH.
+
+BELUM DINILAI MATA USER: rupa popup damage baru, hover bintang di CONTINUE (butuh
+mouse sungguhan), kunci+inspeksi kartu resep, layar tanpa teks-teks kecil.
+
+**Ronde 10d (2026-08-18, "hover mana susah banget, tempatnya kecil"):**
+
+Akar (diukur dari VitalsPanel.prefab): user membesarkan ART bola lewat duplikat
+`HpHolder (1)` / `ManaHolder (1)` (189x189) dan menggeser fill (15,-39 / 75,-39),
+sementara kotak hover rig masih holder lama 110x110 — bola yang DILIHAT mata tidak
+sama dengan kotak yang DIUJI kode, hover cuma menyala di irisan kecilnya.
+
+Fix: **menunjuk bagian mana pun dari bola = menunjuk bolanya.** `VitalsTooltip` kini
+menguji SELURUH pohon kotak di bawah daerah hover (`VitalHit` + cache
+`_hpHoverRects`/`_manaHoverRects`, diambil sekali lewat GetComponentsInChildren saat
+build — bukan alokasi per frame). Pohon bertumpang tindih dimenangkan HP (diuji dulu).
+Jalur bar gambar-kode (tanpa rig) tetap uji kotak tunggal. Prefab user TIDAK disentuh.
+
+TERBUKTI ANGKA di play mode: tengah + dua tepi art HP 189 → "NYAWA"; sisi kanan art
+mana → "MANA"; tengah layar → null (tidak ada positif palsu). Kompilasi bersih.
+
+**Ronde 10e (2026-08-18, badai laporan playtest user):** klik nyasar (CONTINUE/toko/map),
+popup damage menggerombol, pembesaran ronde ketiga, teks sampah lanjutan, tombol debug.
+
+- **TIGA bug klik = SATU akar, terukur live**: `StartButtonOverride` NULL di sesi user →
+  hit-test jatuh ke rect DEFAULT DI TENGAH LAYAR sementara tombolnya digambar di pojok.
+  Akibat ganda: CONTINUE tak bisa diklik (harus spasi), klik di badan panel TOKO terbaca
+  BERANGKAT ("beli sekali menunya hilang"), dan klik tengah layar setelah wave beres
+  membuka MAP. Fix: **`RefreshHudSeats()` — kotak klik tombol rig disegarkan TIAP FRAME**
+  (dipanggil di awal `Redraw`), bukan di-cache sekali di ApplyCombatHudSeats; cache basi
+  tidak mungkin lagi, dan menggeser tombol SAAT play pun kliknya ikut.
+- **Popup damage "ngumpul di pojok kiri bawah" — bug skala kanvas**: `WorldToScreenPoint`
+  (piksel layar) ditulis mentah ke `anchoredPosition` (satuan unit kanvas = piksel /
+  scaleFactor). Di jendela game kecil (scaleFactor 0,48) semua posisi tergencet 0,48x ke
+  kiri-bawah. Floater GrimoireUI sudah membagi `UiScale` sejak lama (makanya dia benar) —
+  yang lupa: **DamagePopups, EnemyHpBars (kedua jalur), floater PlaygroundBootstrap**.
+  Fix: dibagi `Canvas.scaleFactor` kanvas induk (di-cache di ctor; mandiri per kanvas,
+  tidak bergantung static UiScale yang hanya di-set GrimoireUI).
+- **Banner "PULAU REHAT — X" / "REST ISLE — ???" DICABUT** (RunDirector.OnAnnounce di
+  jalur rest) — pulaunya sendiri sudah panggung; teks tengah layar cuma menutupi barang.
+- **Footer kartu resep DIBUANG** ("di bawah ada text gak jelas") + pembesaran ronde
+  KETIGA semua hover: resep ikon 72 / baris 104 / huruf 18 / judul 24 (lebar ±584),
+  TooltipCard Body 22, fallback tip 22.
+- **SpellPanel.prefab digedein** (kekecilan tak terbaca): root 460x300, baris 52,
+  huruf 17; ekor "+N" & meter (kode) 12→15.
+- **Baris info wave/gold digeser & digedein** ("overlapping, pindahin biar kanan"):
+  HudLine → (300,−16) huruf 20, HudPlaque → (288,−8) tinggi 44 — duduk di KANAN bola
+  HP/mana yang sudah dibesarkan user, tidak menumpuk lagi.
+- **Tombol siang/malam (BTN DEBUG) DISEMBUNYIKAN** — saklar `ShowTimeDebugButton=false`,
+  kode utuh, klik berpagar `_timeButton != null`; DemoBar tetap bisa ganti wajah arena.
+- **Kartu hover DIANGKAT di atas kartu resep** (SetAsLastSibling setelah RecipePanel
+  lahir) — inspeksi ikon di dalam kartu resep sekarang tergambar DI ATASNYA.
+- Jawaban untuk user: prefab kartu hover = `Assets/Prefabs/UI/TooltipCard.prefab`
+  (root Image = bingkai/asset, anak 'Body' = teksnya).
+- Enam file tervalidasi 0 error; kompilasi penuh MENUNGGU user keluar play mode (Unity
+  menunda compile selama play) — user sudah diberi tahu harus STOP PLAY dulu.
+
+**Ronde 10f (2026-08-18, "ada button ketinggalan — BUANG" + "gak usah ada snap grid"):**
+
+- **Tombol tengah layar DIBUANG TOTAL, rumah tombol lanjut = SATU: pojok kanan-bawah.**
+  Kejadian sebenarnya: prefab CombatHud KETIMPA versi lama (StartButton balik ke tengah
+  0,120 anchor tengah; Marker bintang ikut hilang) — hampir pasti prefab stage lama milik
+  user yang masih terbuka ikut ke-save. Ditambah kursi StartButton dari rig TOKO dan
+  fallback gambar-kode di tengah, tombol tengah bisa bangkit dari TIGA jalur. Ketiganya
+  dimatikan permanen:
+  (1) `GrimoireLayout.StartButtonRect()` default → POJOK kanan-bawah (rect tengah lama =
+      sumber klik "misterius" yang menutup toko/membuka peta);
+  (2) fallback BuildHud tanpa prefab → tombol teks pojok (transparan + label putih), versi
+      tengah ber-skin DIHAPUS;
+  (3) kursi StartButton dari ShopRig + blok reposisinya DIHAPUS (hudOwnsStart ikut).
+  Prefab dipasang ulang ke pojok (idempoten: wiring dicek, Marker dibuat ulang, MenuLine
+  putih→amber, slide −16). TERBUKTI play mode: rect = (2232,22,300,56); tengah layar
+  Contains=False, pojok Contains=True; screenshot tanpa tombol tengah; console 0.
+- **MAGNET SNAP PAPAN DICABUT** ("waktu di-drop di grid itu ya beneran drop di grid itu"):
+  `SnapTarget` = petak yang ditunjuk kursor, titik — aturan tas. `SnapAssist`,
+  `NearestSpot`, `SnapCost`, `SwapBias`, `SameLayerOccupied` DIHAPUS (Ronde 8-9 magnet).
+  Menimpa piece lama tetap jalan — pemanggil memvalidasi CanPlace/CanReplaceAt di petak
+  itu (jalur klik 3329-3348), tergusur jatuh ke lantai. Sorotan/ghost/gambar-di-tangan
+  tetap satu pintu lewat SnapTarget. `ScreenToCellF` di GrimoireLayout dibiarkan (helper
+  pasif). JANGAN pasang lagi magnet ini tanpa perintah user.
+- Screenshot verifikasi juga mengonfirmasi ronde sebelumnya hidup: baris info di kanan
+  bola + plakat besar, panel spell besar terbaca, alas tas memeluk petak di belakangnya,
+  tombol debug siang/malam hilang. Kompilasi BERSIH, console 0 error/warning.
