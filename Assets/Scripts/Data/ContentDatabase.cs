@@ -73,8 +73,14 @@ namespace Proto
         /// Menyaring yang sudah dimiliki di sini, bukan di UI: satu tawaran yang berisi pakta yang
         /// sudah dipegang adalah pilihan yang tidak melakukan apa-apa, dan pemain baru tahu setelah
         /// mengkliknya — lalu kehilangan seluruh kejadiannya.
+        ///
+        /// <paramref name="exclude"/>: pakta yang PERNAH TAMPIL di run ini, diambil ataupun
+        /// ditolak. Aturan pemilik project: satu pakta cuma boleh muncul SEKALI per run — tanpa
+        /// saringan ini, KEBANGKITAN yang ditolak di kejadian pertama nongol lagi di kejadian
+        /// berikutnya dan terbaca sebagai undian yang rusak.
         /// </summary>
-        public int RollPacts(WorldPacts held, WorldModifierDefinition[] into)
+        public int RollPacts(WorldPacts held, WorldModifierDefinition[] into,
+            HashSet<WorldModifierDefinition> exclude = null)
         {
             if (into == null || into.Length == 0) return 0;
 
@@ -84,6 +90,7 @@ namespace Proto
             {
                 var p = _pacts[i];
                 if (p == null || (held != null && held.Has(p))) continue;
+                if (exclude != null && exclude.Contains(p)) continue;
                 _pool.Add(p);
             }
 

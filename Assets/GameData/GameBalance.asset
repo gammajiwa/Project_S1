@@ -103,9 +103,13 @@ MonoBehaviour:
   EliteCountMul: 1.25
   EliteDamageMul: 1.3
   EliteBossChance: 0.4
-  BossNodeCount: 2
-  BossNodeHpMul: 2.5
-  BossNodeAggroMul: 1.6
+  BossNodeCount: 3
+  BossNodeHpMul: 4
+  BossNodeAggroMul: 2
+  BossNodeEscortHpMul: 1
+  BossNodeEscortCountMul: 1
+  BossNodeEscortDamageMul: 1.15
+  BossNodeGrubsPerBoss: 2
   EventGoldGift: 80
   EventTradeCost: 45
   PriceRune: 20

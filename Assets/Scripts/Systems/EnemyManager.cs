@@ -977,6 +977,26 @@ namespace Proto
 
                 Hatch(def, wave, _nextBossHpMul, _nextBossAggro);
             }
+
+            // Tiap boss besar membawa grub pengawalnya sendiri, di atas jatah grub wave biasa.
+            // Bar HP raksasa tidak memaksa pemain bergerak; gigitan-gigitan kecil dari bawah
+            // tanah yang memaksa. Di-hatch polos — tanpa pengali nyawa/agresi node — karena
+            // tugas mereka mengganggu, bukan menghadang.
+            int grubs = Mathf.Max(0, _balance.BossNodeGrubsPerBoss) * _nextBossCount;
+            if (grubs > 0)
+            {
+                var minions = new List<BossDefinition>();
+
+                for (int i = 0; i < all.Count; i++)
+                {
+                    if (all[i] != null && all[i].Minion) minions.Add(all[i]);
+                }
+
+                for (int i = 0; minions.Count > 0 && i < grubs; i++)
+                {
+                    Hatch(minions[i % minions.Count], wave);
+                }
+            }
         }
 
         void TickBoss(float dt)

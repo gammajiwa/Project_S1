@@ -297,10 +297,14 @@ namespace Proto
                     Relocate();
                     Embark();
 
-                    // Puncak act: ular DAN kelabang sekaligus, tebal dan galak. Pengawalnya
-                    // ditipiskan — yang diuji di sini mesin damage pemain, bukan kesabarannya.
-                    int bosses = Mathf.Clamp(_balance.BossNodeCount + (Act - 1), 1, 4);
-                    _enemies.SetNextWaveMods(1f, 0.55f, 1f);
+                    // Puncak act: ular DAN kelabang sekaligus, tebal, galak, dan DIKAWAL penuh.
+                    // Dulu pengawalnya ditipiskan (0,55) supaya yang diuji cuma mesin damage —
+                    // dan build yang jadi menang sambil berdiri diam. Sekarang gerombolannya
+                    // ikut datang: mesin damage diuji sambil pemiliknya dipaksa bergerak.
+                    // Targetnya bukan "build bagus pasti menang" — kira-kira 3 dari 10.
+                    int bosses = Mathf.Clamp(_balance.BossNodeCount + (Act - 1), 1, 5);
+                    _enemies.SetNextWaveMods(_balance.BossNodeEscortHpMul,
+                        _balance.BossNodeEscortCountMul, _balance.BossNodeEscortDamageMul);
                     _enemies.ForceBossNode(bosses, _balance.BossNodeHpMul,
                         _balance.BossNodeAggroMul, true);
                     _enemies.StartWave(_enemies.Wave + 1);

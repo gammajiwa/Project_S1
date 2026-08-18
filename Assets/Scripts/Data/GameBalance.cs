@@ -22,6 +22,11 @@ namespace Proto
         public float BaseHpRegen = 0f;
         public float HealPerWaveClear = 20f;
 
+        [Tooltip("Detik kebal setelah pakta kebangkitan menyala. Tanpa jeda ini, revive di " +
+                 "tengah kerumunan langsung dimakan lagi oleh sisa peluru yang masih di udara " +
+                 "dan terbaca sebagai 'revive gak jalan'.")]
+        public float ReviveGraceSeconds = 1.5f;
+
         [Header("Gerak pemain")]
         [Tooltip("Kecepatan dasar menghindar. Bandingkan dengan EnemySpeedMin/Max: kalau terlalu " +
                  "jauh di atasnya, pemain tidak pernah tersentuh dan seluruh build HP/Defense mati.")]
@@ -379,15 +384,34 @@ namespace Proto
         [Range(0f, 1f)] public float EliteBossChance = 0.4f;
 
         [Tooltip("Boss puncak act 1: berapa ekor sekaligus. Act berikutnya menambah satu " +
-                 "per act sampai mentok jumlah jenis boss yang ada.")]
-        public int BossNodeCount = 2;
+                 "per act, mentok di 5 — lebih dari itu arena jadi bubur badan ular.")]
+        public int BossNodeCount = 3;
 
         [Tooltip("Pengali nyawa boss puncak. Puncak harus TEBAL — yang diuji bukan refleks " +
-                 "melainkan seluruh mesin damage yang dirakit sepanjang act.")]
-        public float BossNodeHpMul = 2.5f;
+                 "melainkan seluruh mesin damage yang dirakit sepanjang act. Kalibrasi: build " +
+                 "yang jadi menang kira-kira 3 dari 10 percobaan, bukan setiap kali.")]
+        public float BossNodeHpMul = 4f;
 
         [Tooltip("Pengali agresi boss puncak: jeda serangannya dibagi angka ini.")]
-        public float BossNodeAggroMul = 1.6f;
+        public float BossNodeAggroMul = 2f;
+
+        [Tooltip("Pengawal boss puncak: pengali NYAWA gerombolan. Sengaja 1 — pengawal harus " +
+                 "tetap gampang dibunuh. Yang tebal bosnya; pengawal cuma banyak dan menyengat.")]
+        public float BossNodeEscortHpMul = 1f;
+
+        [Tooltip("Pengawal boss puncak: pengali JUMLAH gerombolan. Dulu ditipiskan ke 0,55 dan " +
+                 "build bagus menang sambil berdiri diam. Sekarang penuh: mesin damage diuji " +
+                 "SAMBIL pemiliknya dikeroyok dan dipaksa bergerak.")]
+        public float BossNodeEscortCountMul = 1f;
+
+        [Tooltip("Pengawal boss puncak: pengali DAMAGE gerombolan — pengganggunya menyengat, " +
+                 "bukan cuma menuhin layar.")]
+        public float BossNodeEscortDamageMul = 1.15f;
+
+        [Tooltip("Grub pengawal per BOSS besar di puncak act, di atas jatah grub wave biasa. " +
+                 "Bar HP raksasa tidak memaksa pemain bergerak; gigitan kecil dari bawah tanah " +
+                 "yang memaksa.")]
+        public int BossNodeGrubsPerBoss = 2;
 
         [Header("Kejadian")]
         [Tooltip("Koin dari pilihan aman kejadian.")]

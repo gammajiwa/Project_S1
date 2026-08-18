@@ -117,6 +117,10 @@ namespace Proto
             Wire(_enemyShadowsNext, () => ToggleEnemyShadows());
             Wire(_weatherVfxPrev, () => ToggleWeatherVfx());
             Wire(_weatherVfxNext, () => ToggleWeatherVfx());
+            // Satu tombol reset untuk DUA data: codex DAN tanda tutorial. Sejarahnya bolak-
+            // balik dalam sehari (2026-08-19): semula diminta dicabut ("btn debug"), lalu
+            // dihidupkan lagi DIGABUNG reset tutorial supaya tutorialnya bisa diuji
+            // berulang-ulang. Labelnya ikut berganti: settings.reset.* / row.resetcodex.
             Wire(_resetCodex, ResetCodex);
 
             BindSlider(_masterSlider, _settings.MasterVolume, value =>
@@ -285,6 +289,11 @@ namespace Proto
 
             var log = DiscoveryLog.Load();
             log.Clear();
+
+            // Tanda tutorial ikut terhapus — tombol ini "reset data", bukan cuma codex.
+            // GrimoireUI membaca ulang tandanya tiap frame idle, jadi papan yang sedang
+            // terbuka langsung memutar tutorialnya lagi tanpa menunggu run baru.
+            TutorialOverlay.ResetSeen();
 
             DisarmReset();
             if (_resetHint != null) _resetHint.text = Loc.T("settings.reset.done");

@@ -217,8 +217,9 @@ namespace Proto.EditorTools
             a.HeadScale = 1.15f;
             a.TailScale = 0.45f;
 
-            // Setara beberapa musuh biasa, bukan boss. Ia mengganggu, bukan menghadang.
-            a.HpMultiplier = 5f;
+            // Setara beberapa musuh biasa, bukan boss. Ia mengganggu, bukan menghadang —
+            // tapi di 5 ia mati sebelum sempat menyengat, dan gangguannya tinggal visual.
+            a.HpMultiplier = 8f;
 
             a.Speed = 6.5f;
             a.LungeSpeed = 6.5f;
@@ -233,13 +234,13 @@ namespace Proto.EditorTools
             a.DiveInterval = 3.6f;
             a.DiveDepth = 3.5f;
 
-            a.BiteDamage = 9f;
+            a.BiteDamage = 12f;
             a.BiteRange = 1.7f;
             a.LungeInterval = 999f;
             a.Curse = null;
 
             a.SpitInterval = 1.4f;
-            a.SpitDamage = 6f;
+            a.SpitDamage = 8f;
             a.SpitSpeed = 10f;
             a.SpitCurse = null;
 

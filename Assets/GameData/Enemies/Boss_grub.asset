@@ -29,7 +29,7 @@ MonoBehaviour:
   BodyMeshRotation: {x: 0, y: 0, z: 90}
   TailMeshRotation: {x: 0, y: 0, z: 90}
   SpinDegreesPerSecond: 0
-  HpMultiplier: 5
+  HpMultiplier: 8
   OrbitRadius: 3
   Speed: 6.5
   LungeSpeed: 6.5
@@ -37,7 +37,7 @@ MonoBehaviour:
   Wander: 0.9
   LungeInterval: 999
   LungeDuration: 1.8
-  BiteDamage: 9
+  BiteDamage: 12
   BiteRange: 1.7
   Curse: {fileID: 0}
   Burrows: 1
@@ -48,7 +48,7 @@ MonoBehaviour:
   DiveInterval: 3.6
   DiveDepth: 3.5
   SpitInterval: 1.4
-  SpitDamage: 6
+  SpitDamage: 8
   SpitSpeed: 10
   SpitCurse: {fileID: 0}
   Minion: 1

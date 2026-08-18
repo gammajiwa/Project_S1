@@ -58,6 +58,12 @@ namespace Proto
             // A run that quit mid-wave can leave time scaled; the menu must never inherit that.
             Time.timeScale = 1f;
 
+            // Alasan yang sama untuk ukuran papan & tas: run yang mengambil pakta ADDENDUM /
+            // DEEP POCKETS meninggalkan Grimoire.Width = 7 / Backpack.Width = 5 di static,
+            // dan preview starter di menu akan menggambar ukuran run yang sudah lewat.
+            Grimoire.ResetSize();
+            Backpack.ResetSize();
+
             // Matches the game scene: without it the drifting backdrop freezes whenever focus is lost.
             Application.runInBackground = true;
 

@@ -280,6 +280,24 @@ namespace Proto.EditorTools
             swarm.EnemyHpMul = 0.55f;
             swarm.EnemySpeedMul = 0.85f;
             swarm.EnemyCountMul = 2f;
+
+            // ADDENDUM — satu-satunya pakta TANPA bane, atas perintah pemilik project
+            // ("buatin buff yang nambah grid grimoire, 6x6 jadi 7x7"). Aturan #1 di kepala
+            // file dilanggar SADAR di sini: hadiahnya papan itu sendiri, dan memasang pajak
+            // di atasnya membuat halaman baru terasa hukuman, bukan hadiah.
+            var leaf = P(into, "lembarbaru", "ADDENDUM", new Color(0.55f, 0.9f, 0.65f),
+                boon: "Papan grimoire MELEBAR - 6x6 jadi 7x7",
+                bane: "",
+                blurb: "\"Buku tua ini masih menyimpan halaman yang belum pernah kau buka.\"");
+            leaf.GridPlus = 1;
+
+            // DEEP POCKETS — saudara ADDENDUM untuk TAS: 4x4 jadi 5x5, juga tanpa bane atas
+            // perintah yang sama ("tas tetep 4x4, buatin buff baru yg bisa nge buat jadi 5x5").
+            var pockets = P(into, "kantongdalam", "DEEP POCKETS", new Color(0.78f, 0.62f, 0.42f),
+                boon: "Tas MELEBAR - 4x4 jadi 5x5",
+                bane: "",
+                blurb: "\"Jahitan tua. Masih kuat menampung lebih banyak.\"");
+            pockets.BagPlus = 1;
         }
 
         // =================================================================================
@@ -320,6 +338,8 @@ namespace Proto.EditorTools
             asset.HpPerKill = 0f;
             asset.EchoChance = 0f;
             asset.ReviveAt = 0f;
+            asset.GridPlus = 0;
+            asset.BagPlus = 0;
 
             EditorUtility.SetDirty(asset);
             into.Add(asset);

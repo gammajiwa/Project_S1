@@ -303,6 +303,15 @@ namespace Proto
         /// </summary>
         readonly WorldModifierDefinition[] _pactOffer = new WorldModifierDefinition[2];
 
+        /// <summary>
+        /// Pakta yang PERNAH TAMPIL di run ini — diambil ataupun ditolak. Aturan pemilik
+        /// project: satu pakta cuma boleh muncul sekali per run; yang ditolak tidak antre lagi
+        /// di kejadian berikutnya. Umurnya sepanjang UI ini (= sepanjang run), reset natural
+        /// bersama scene run baru.
+        /// </summary>
+        readonly HashSet<WorldModifierDefinition> _pactsOffered =
+            new HashSet<WorldModifierDefinition>();
+
         Image[] _evoLines;
         List<EvoPreview> _previews = new List<EvoPreview>();
         List<EvoPreview> _bagPreviews = new List<EvoPreview>();
@@ -334,6 +343,15 @@ namespace Proto
         bool _eventCardsSkinned;
 
         /// <summary>
+        /// Kotak pembatas gambar per slot toko, diukur SAAT ISINYA BERGANTI. <see cref="PieceBounds"/>
+        /// memutar bentuk dan menata ulang art untuk mengukur — kerja yang hasilnya tidak berubah
+        /// selama stoknya sama, jadi tidak ada alasan mengulanginya enam kali tiap frame.
+        /// </summary>
+        readonly PieceDefinition[] _shopBoundsFor = new PieceDefinition[ShopSlots];
+        readonly Vector2[] _shopBoundsSize = new Vector2[ShopSlots];
+        readonly Vector2[] _shopBoundsOffset = new Vector2[ShopSlots];
+
+        /// <summary>
         /// Visual panel toko datang dari PREFAB (ShopPanel.prefab membawa Image/TMP sendiri).
         /// Kode berhenti menulis posisi/ukurannya - "TERISI = milik prefab", aturan yang sama
         /// dengan CombatHud. Kode tinggal mengisi teks, warna keadaan, dan menggambar isi slot.
@@ -342,6 +360,18 @@ namespace Proto
 
         /// <summary>Kembarannya untuk panel kejadian.</summary>
         bool _eventVisualsFromPrefab;
+
+        /// <summary>
+        /// Akar instance prefab toko di kanvas. Buka-tutup panel MEMATIKAN SATU POHON lewat
+        /// SetActive, bukan memilih komponen satu per satu: apa pun yang ditata tangan di
+        /// prefab — header, ornamen, garis — ikut hidup dan mati tanpa perlu dikenali kode.
+        /// Kotak-kotak tata letak sudah dibaca ke Rect statis saat build, jadi pohon yang
+        /// mati tidak menghilangkan letak apa pun.
+        /// </summary>
+        GameObject _shopRigRoot;
+
+        /// <summary>Kembarannya untuk panel kejadian.</summary>
+        GameObject _eventRigRoot;
 
         /// <summary>Slot dagangan memakai sprite Chip - sama alasannya.</summary>
         bool _shopSlotsSkinned;
@@ -355,6 +385,8 @@ namespace Proto
         TextMeshProUGUI _overInfo;
         Image _overMenuBg;
         TextMeshProUGUI _overMenuLabel;
+        Image _overReviveBg;
+        TextMeshProUGUI _overReviveLabel;
         float _overFade;
 
         // --- umpan balik player kena hit ---
@@ -558,6 +590,13 @@ namespace Proto
             _tooltips = new TooltipBuilder(balance);
             _rerollCost = balance.RerollCostStart;
 
+            // Kebangkitan pakta HARUS berteriak. Satu-satunya umpan baliknya dulu kilat kecil
+            // di kaki pemain — di tengah ledakan wave tinggi tidak pernah terlihat, dan pemain
+            // yang tidak tahu jatahnya sudah terpakai menyebut kematian berikutnya "revive gak
+            // jalan". (OnRevived selama ini TIDAK punya satu pun pendengar.)
+            Player.OnRevived += () =>
+                Announce(Loc.T("hud.revive.announce"), new Color(1f, 0.88f, 0.45f));
+
             // SEMUA teks TMP — tidak ada lagi UI Text legacy (aturan pemilik project). Font
             // dari tema kalau ada; null berarti font bawaan TMP Settings, jadi tema yang lupa
             // diisi tetap tidak pernah membuat setengah layar jadi kotak kosong.
@@ -647,6 +686,12 @@ namespace Proto
             Player.ApplyLoadoutStats(hero);
 
             for (int i = 0; i < Book.Placed.Count; i++) Discover(Book.Placed[i].Def);
+
+            // PALING PUCUK kanvas, setelah semua pembangun lain (urutan pembuatan = urutan
+            // gambar): tutorial menggelapkan seluruh HUD dan menyorot satu objek, jadi tidak
+            // boleh ada apa pun yang lahir di atasnya kecuali layar GAME OVER (yang menaikkan
+            // dirinya sendiri — dan memang berhak menang).
+            _tut = new TutorialOverlay(_canvas.transform, TmpFont);
 
             SetSpeed(0);
             Redraw();
@@ -870,9 +915,16 @@ namespace Proto
 
         void BuildGrid()
         {
-            int count = Grimoire.Width * Grimoire.Height;
-            _baseCells = new Image[count];
-            _skillCells = new Image[count];
+            // Dialokasikan sampai KAPASITAS (8x8), bukan ukuran papan hari ini: pakta ADDENDUM
+            // menumbuhkan papan di tengah run, dan di kanvas ini urutan pembuatan = urutan
+            // gambar — petak yang lahir belakangan pasti mendarat di pucuk kanvas, menutupi
+            // panel. Petak cadangan lahir sekarang, nonaktif, dan cuma DIDUDUKKAN ULANG saat
+            // papan berubah (ReseatBoardCells). Indeks petak selalu y * Grimoire.Width + x
+            // dengan Width HARI INI, jadi pemetaan indeks ikut berubah bersama ukuran papan —
+            // aman karena DrawGrid menulis ulang warna/enabled SEMUA petak aktif tiap frame.
+            int cap = Grimoire.MaxWidth * Grimoire.MaxHeight;
+            _baseCells = new Image[cap];
+            _skillCells = new Image[cap];
 
             // Bingkai DULU, petak belakangan: di kanvas ini urutan bikin adalah urutan gambar,
             // jadi apa pun yang dibuat setelah ini duduk di atasnya. Dua lapis, dari luar ke
@@ -887,30 +939,22 @@ namespace Proto
             // petak karena di kanvas ini urutan bikin adalah urutan gambar.
             _artBehindLayer = MakeArtLayer("PieceArtBehind");
 
-            for (int y = 0; y < Grimoire.Height; y++)
+            for (int i = 0; i < cap; i++)
             {
-                for (int x = 0; x < Grimoire.Width; x++)
-                {
-                    int i = y * Grimoire.Width + x;
-
-                    _baseCells[i] = MakeImage($"Base_{x}_{y}", CellAnchor(x, y),
-                        new Vector2(CellSize, CellSize), CellIdle, Vector2.zero);
-                }
+                _baseCells[i] = MakeImage($"Base_{i}", Vector2.zero,
+                    new Vector2(CellSize, CellSize), CellIdle, Vector2.zero);
+                _baseCells[i].enabled = false;
             }
 
-            for (int y = 0; y < Grimoire.Height; y++)
+            for (int i = 0; i < cap; i++)
             {
-                for (int x = 0; x < Grimoire.Width; x++)
-                {
-                    int i = y * Grimoire.Width + x;
-
-                    _skillCells[i] = MakeImage($"Skill_{x}_{y}",
-                        CellAnchor(x, y) + new Vector2(SkillInset, SkillInset),
-                        new Vector2(CellSize - SkillInset * 2, CellSize - SkillInset * 2),
-                        Color.white, Vector2.zero);
-                    _skillCells[i].enabled = false;
-                }
+                _skillCells[i] = MakeImage($"Skill_{i}", Vector2.zero,
+                    new Vector2(CellSize - SkillInset * 2, CellSize - SkillInset * 2),
+                    Color.white, Vector2.zero);
+                _skillCells[i].enabled = false;
             }
+
+            ReseatBoardCells();
 
             // Lapisan art DI ATAS petak (bawaan) — sebelum widget skill, supaya cincin
             // cooldown tetap terbaca di atas art.
@@ -933,15 +977,61 @@ namespace Proto
             // dan membiarkannya null berarti menyebar pemeriksaan null ke seluruh pemakainya.
             if (_gridRig != null && !_gridRig.ShowTitle) _gridTitle.enabled = false;
 
-            // Below the three icon strips, which now own the band straight under the mana bar.
+            // Posisi awal cuma placeholder — ApplyCombatHudSeats mendudukkannya di bawah-tengah
+            // layar. PUTIH + 23 + outline hitam: teks ini melayang di atas arena (rumput terang
+            // sampai hutan gelap), dan tanpa tepi gelap ia hilang persis di latar yang salah
+            // ("gak kebaca" — screenshot pemilik project 2026-08-19).
             _heldText = MakeTmp("HeldInfo", new Vector2(Margin, StripAilmentY - 62f),
-                new Vector2(880, 28), 19, new Color(0.85f, 0.85f, 0.6f), new Vector2(0f, 1f),
+                new Vector2(880, 30), 23, new Color(0.96f, 0.96f, 0.96f), new Vector2(0f, 1f),
                 TextAlignmentOptions.Center);
+            _heldText.outlineWidth = 0.18f;
+            _heldText.outlineColor = new Color32(0, 0, 0, 220);
 
             _evolveText = MakeTmp("EvolveInfo", new Vector2(Margin, StripAilmentY - 84f),
-                new Vector2(880, 28), 19, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
+                new Vector2(880, 30), 23, new Color(0.55f, 1f, 0.7f), new Vector2(0f, 1f),
                 TextAlignmentOptions.Center);
+            _evolveText.outlineWidth = 0.18f;
+            _evolveText.outlineColor = new Color32(0, 0, 0, 220);
             _evolveText.text = "";
+        }
+
+        /// <summary>
+        /// Mendudukkan petak papan untuk ukuran Grimoire SAAT INI: petak aktif ke posisi &amp;
+        /// ukuran barunya (CellAnchor/CellSize sudah membaca lebar papan baru), petak cadangan
+        /// dimatikan. Dipanggil sekali di BuildGrid dan tiap papan berubah ukuran (ADDENDUM).
+        /// Cukup reseat, tanpa membuat objek: DrawGrid menulis ulang warna/enabled petak aktif
+        /// tiap frame, jadi sisa pekerjaan sudah beres dengan sendirinya.
+        /// </summary>
+        void ReseatBoardCells()
+        {
+            if (_baseCells == null) return;
+
+            float inner = CellSize - SkillInset * 2;
+
+            for (int y = 0; y < Grimoire.Height; y++)
+            {
+                for (int x = 0; x < Grimoire.Width; x++)
+                {
+                    int i = y * Grimoire.Width + x;
+                    var at = CellAnchor(x, y);
+
+                    var baseRt = _baseCells[i].rectTransform;
+                    baseRt.anchoredPosition = at;
+                    baseRt.sizeDelta = new Vector2(CellSize, CellSize);
+
+                    var skillRt = _skillCells[i].rectTransform;
+                    skillRt.anchoredPosition = at + new Vector2(SkillInset, SkillInset);
+                    skillRt.sizeDelta = new Vector2(inner, inner);
+                }
+            }
+
+            // Cadangan di luar papan hari ini: padam. DrawGrid tidak pernah menyentuh indeks
+            // di atas Width*Height, jadi yang tidak dipadamkan di sini menyala selamanya.
+            for (int i = Grimoire.Width * Grimoire.Height; i < _baseCells.Length; i++)
+            {
+                _baseCells[i].enabled = false;
+                _skillCells[i].enabled = false;
+            }
         }
 
         /// <summary>
@@ -1190,13 +1280,11 @@ namespace Proto
                 // mengikuti papan), jadi alas yang letaknya ditulis tangan PASTI meleset
                 // begitu papan bergeser — itulah "alasnya gak rata" yang sudah dua kali
                 // dilaporkan. Sprite, warna, dan bahan tetap milik prefab.
-                float bagW = Backpack.Width * (BagCell + BagGap) - BagGap;
-                float bagH = Backpack.Height * (BagCell + BagGap) - BagGap;
+                // Posisi & ukurannya diisi ReseatBag() di bawah — satu rumus untuk build
+                // pertama dan untuk papan yang berubah ukuran di tengah run (ADDENDUM).
                 var bagRt = _bagFrame.rectTransform;
                 bagRt.anchorMin = bagRt.anchorMax = Vector2.zero;
                 bagRt.pivot = Vector2.zero;
-                bagRt.anchoredPosition = new Vector2(RightX() - 14f, BagY - 14f);
-                bagRt.sizeDelta = new Vector2(bagW + 28f, bagH + 28f);
             }
             else if (_theme != null && _theme.BagPanel != null)
             {
@@ -1209,18 +1297,58 @@ namespace Proto
                     new Rect(RightX() - 14f, BagY - 14f, w + 28f, h + 28f));
             }
 
-            _bagCells = new Image[Backpack.Width * Backpack.Height];
+            // Kapasitas 6x6, alasan yang sama dengan petak papan: pakta DEEP POCKETS
+            // menumbuhkan tas di tengah run, dan objek yang lahir belakangan di kanvas ini
+            // mendarat di pucuk — menutupi panel. Sel cadangan lahir sekarang, dipadamkan
+            // ReseatBag, dan cuma didudukkan ulang saat tasnya berubah ukuran.
+            _bagCells = new Image[Backpack.MaxWidth * Backpack.MaxHeight];
+
+            for (int i = 0; i < _bagCells.Length; i++)
+            {
+                _bagCells[i] = MakeImage($"Bag_{i}", Vector2.zero,
+                    new Vector2(BagCell, BagCell), HiddenBagCell, Vector2.zero);
+            }
+
+            ReseatBag();
+        }
+
+        /// <summary>
+        /// Alas + petak tas didudukkan dari ukuran sel papan HARI INI (BagCell => CellSize).
+        /// Papan yang berubah ukuran (ADDENDUM 7x7) mengecilkan sel di kotak prefab yang sama,
+        /// dan tas wajib ikut di frame yang sama — RightX() sendiri nyaris tidak bergeser,
+        /// jadi yang berubah cuma ukuran sel tas, bukan letak kolomnya.
+        /// </summary>
+        void ReseatBag()
+        {
+            if (_bagFrame != null)
+            {
+                float bagW = Backpack.Width * (BagCell + BagGap) - BagGap;
+                float bagH = Backpack.Height * (BagCell + BagGap) - BagGap;
+                var bagRt = _bagFrame.rectTransform;
+                bagRt.anchoredPosition = new Vector2(RightX() - 14f, BagY - 14f);
+                bagRt.sizeDelta = new Vector2(bagW + 28f, bagH + 28f);
+            }
+
+            if (_bagCells == null) return;
 
             for (int y = 0; y < Backpack.Height; y++)
             {
                 for (int x = 0; x < Backpack.Width; x++)
                 {
                     int i = y * Backpack.Width + x;
-                    _bagCells[i] = MakeImage($"Bag_{x}_{y}", BagAnchor(x, y),
-                        new Vector2(BagCell, BagCell), HiddenBagCell, Vector2.zero);
+
+                    // Dinyalakan DI SINI, bukan di DrawBackpack: penggambar tas hanya menulis
+                    // warna, dan sel yang baru masuk jangkauan tas 5x5 harus bangun sendiri.
+                    _bagCells[i].enabled = true;
+
+                    var rt = _bagCells[i].rectTransform;
+                    rt.anchoredPosition = BagAnchor(x, y);
+                    rt.sizeDelta = new Vector2(BagCell, BagCell);
                 }
             }
 
+            for (int i = Backpack.Width * Backpack.Height; i < _bagCells.Length; i++)
+                _bagCells[i].enabled = false;
         }
 
         void BuildLoose()
@@ -1308,6 +1436,51 @@ namespace Proto
         }
 
         /// <summary>
+        /// Kotak pembatas piece pada skala 1 — PETAKNYA DAN ART-nya sekaligus.
+        ///
+        /// Art boleh lebih besar dari footprint petaknya (ArtSize di SO), dan mengukur muat-tidaknya
+        /// dari jumlah petak saja adalah sebab piece ber-art besar menindih baris nama & harga di
+        /// kartu toko: petaknya muat, gambarnya tidak. Seluruh matematika PieceArt linear terhadap
+        /// ukuran petak, jadi kotak yang diukur di sini boleh dikalikan skala berapa pun.
+        ///
+        /// <paramref name="offset"/> = pergeseran pusat kotak gabungan dari pusat bbox PETAK, yaitu
+        /// titik yang dipakai <see cref="DrawPiece"/> sebagai center. Kurangkan (sesudah dikali
+        /// skala) untuk menaruh gambarnya benar-benar di tengah kotak tujuan.
+        /// </summary>
+        static void PieceBounds(PieceDefinition def, int rot, out Vector2 size, out Vector2 offset)
+        {
+            var shape = Shapes.Rotate(def.Cells, rot);
+            var cells = PieceSize(shape);
+
+            float xMin = 0f, yMin = 0f, xMax = cells.x, yMax = cells.y;
+
+            // Rune tampil sebagai tile per petak dan art-nya TIDAK ikut tergambar (lihat penjaga
+            // `if (!tiled)` di DrawPiece). Menghitungnya di sini akan menyusutkan runenya supaya
+            // muat untuk gambar yang tidak pernah muncul.
+            bool tiled = RuneTiles.IsRuneGlyph(def.Icon);
+
+            if (!tiled && PieceArt.Layout(def, Vector2.zero, rot, LooseCellSize, LooseCellGap,
+                    out var artCentre, out var artSize, out var artAngle))
+            {
+                // Art boleh miring: yang dipakai kotak SEJAJAR SUMBU-nya, bukan lebar mentahnya —
+                // gambar 45 derajat memakan ruang lebih besar dari sisi-sisinya sendiri.
+                float rad = artAngle * Mathf.Deg2Rad;
+                float cos = Mathf.Abs(Mathf.Cos(rad)), sin = Mathf.Abs(Mathf.Sin(rad));
+                float aw = artSize.x * cos + artSize.y * sin;
+                float ah = artSize.x * sin + artSize.y * cos;
+
+                xMin = Mathf.Min(xMin, artCentre.x - aw * 0.5f);
+                xMax = Mathf.Max(xMax, artCentre.x + aw * 0.5f);
+                yMin = Mathf.Min(yMin, artCentre.y - ah * 0.5f);
+                yMax = Mathf.Max(yMax, artCentre.y + ah * 0.5f);
+            }
+
+            size = new Vector2(Mathf.Max(1f, xMax - xMin), Mathf.Max(1f, yMax - yMin));
+            offset = new Vector2((xMin + xMax) * 0.5f - cells.x * 0.5f,
+                                 (yMin + yMax) * 0.5f - cells.y * 0.5f);
+        }
+
+        /// <summary>
         /// Layar GAME OVER: seluruh layar MEMERAH, judul besar, dan satu pintu keluar.
         ///
         /// Tombol ULANG RUN dibuang atas perintah pemilik project — dan labelnya "(SPACE)"
@@ -1337,6 +1510,24 @@ namespace Proto
                 new Color(1f, 0.9f, 0.86f), Vector2.zero, TextAlignmentOptions.Center);
             _overMenuLabel.text = Loc.T("hud.gameover.menu");
 
+            // Tombol IDUP LAGI — cuma tampil selama pakta kebangkitan masih punya jatah
+            // (ShowGameOver yang menimbang). Hijau, bukan merah keluarga tombol pulang:
+            // satu-satunya tombol di layar ini yang MENERUSKAN run, dan warnanya yang bilang.
+            _overReviveBg = MakeImage("OverReviveBg", Vector2.zero, Vector2.zero,
+                new Color(0.06f, 0.14f, 0.05f, 0.96f), Vector2.zero);
+            Skin(_overReviveBg, _theme != null ? _theme.ButtonFrame : null);
+            _overReviveLabel = MakeTmp("OverReviveLabel", Vector2.zero,
+                new Vector2(OverButtonW, 30f), 24,
+                new Color(0.85f, 1f, 0.8f), Vector2.zero, TextAlignmentOptions.Center);
+            _overReviveLabel.text = Loc.T("hud.gameover.revive");
+
+            // Kalimatnya membawa keterangan "(pakai pakta)" dan beberapa bahasa menuliskannya
+            // panjang — menyusut lebih baik daripada tumpah keluar tombol (pola _hudText).
+            _overReviveLabel.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            _overReviveLabel.enableAutoSizing = true;
+            _overReviveLabel.fontSizeMax = 24f;
+            _overReviveLabel.fontSizeMin = 14f;
+
             ShowGameOver(false);
         }
 
@@ -1354,6 +1545,8 @@ namespace Proto
                 _overVeil.transform.SetAsLastSibling();
                 _overTitle.transform.SetAsLastSibling();
                 _overInfo.transform.SetAsLastSibling();
+                _overReviveBg.transform.SetAsLastSibling();
+                _overReviveLabel.transform.SetAsLastSibling();
                 _overMenuBg.transform.SetAsLastSibling();
                 _overMenuLabel.transform.SetAsLastSibling();
             }
@@ -1363,6 +1556,12 @@ namespace Proto
             _overInfo.enabled = on;
             _overMenuBg.enabled = on;
             _overMenuLabel.enabled = on;
+
+            // Ditimbang tiap panggilan, bukan sekali: jatahnya habis begitu tombolnya ditekan,
+            // dan kematian BERIKUTNYA di run yang sama harus tampil tanpa tombol ini.
+            bool revive = on && Player != null && Player.CanRevive;
+            _overReviveBg.enabled = revive;
+            _overReviveLabel.enabled = revive;
         }
 
         /// <summary>Menempatkan kotak &amp; label tombolnya. Tiap frame — layar bisa diubah ukurannya.</summary>
@@ -1384,7 +1583,10 @@ namespace Proto
 
             // Fanfare kalah SEKALI, di frame pertama kerudung mulai memerah — _overFade
             // masih nol hanya di frame itu (di-nol-kan lagi tiap frame selama masih hidup).
-            if (_overFade <= 0f && Sfx != null) Sfx.GameOverFanfare();
+            // TIDAK berbunyi selagi tombol IDUP LAGI masih ditawarkan: nada kalah untuk
+            // kematian yang mungkin dibatalkan itu bohong, dan ia mematikan musik combat
+            // yang harus tetap jalan kalau pemain memilih bangkit.
+            if (_overFade <= 0f && Sfx != null && !Player.CanRevive) Sfx.GameOverFanfare();
 
             ShowGameOver(true);
 
@@ -1412,6 +1614,17 @@ namespace Proto
             _overMenuBg.color = menu.Contains(mouse)
                 ? new Color(0.32f, 0.09f, 0.08f, 0.98f * _overFade)
                 : new Color(0.14f, 0.04f, 0.05f, 0.96f * _overFade);
+
+            if (Player.CanRevive)
+            {
+                var again = GameOverReviveRect();
+                Seat(_overReviveBg.rectTransform, again);
+                Seat(_overReviveLabel.rectTransform, again);
+                SetAlpha(_overReviveLabel, _overFade);
+                _overReviveBg.color = again.Contains(mouse)
+                    ? new Color(0.14f, 0.34f, 0.11f, 0.98f * _overFade)
+                    : new Color(0.06f, 0.14f, 0.05f, 0.96f * _overFade);
+            }
         }
 
         static void SetAlpha(UnityEngine.UI.Graphic g, float a)
@@ -2431,24 +2644,20 @@ namespace Proto
                 _ailmentOrigin = origin;
             }
 
-            // Dua baris keterangan (info piece dipegang + pesan evolusi) pindah ke ATAS MATA
-            // grimoire - perintah pemilik project: di kolom kiri mereka tertutup strip buff yang
-            // sekarang menetap. Di atas mata, kolomnya selalu kosong dan matanya sendiri jadi
-            // penunjuk arah baca. Dihitung dari GridRect (papan yang diadopsi dari prefab buku),
-            // jadi ikut bergeser kalau bukunya dipindah.
-            //
-            // GridRect memakai y-dari-BAWAH; anchor teks (0,1) memakai y-negatif-dari-atas -
-            // dikonversi lewat ScreenH, bukan disamakan mentah.
+            // Dua baris keterangan (info piece dipegang + pesan evolusi) — BAWAH-TENGAH layar.
+            // Sejarahnya pindah tiga kali: kolom kiri (ketutup strip), atas mata grimoire
+            // (118 → 154 → 190, tetap menimpa arena gelap dan "gak kebaca" — screenshot
+            // 2026-08-19), dan sekarang bawah-tengah atas tunjuk tangan pemilik project:
+            // jalur itu selalu kosong — LANJUT di kanan, tas di kiri, keduanya tidak pernah
+            // sampai ke tengah. Anchor teks (0,1) = y-negatif-dari-atas, konversi lewat ScreenH.
             {
-                var grid = GridRect();
-                float cx = grid.center.x - 440f;                       // lebar teks 880, pivot kiri
-                float eyeTop = grid.yMax + 118f;                       // di atas mata (mata ~90 px)
+                float cx = ScreenW * 0.5f - 440f;                     // lebar teks 880, pivot kiri
 
                 if (_heldText != null)
-                    _heldText.rectTransform.anchoredPosition = new Vector2(cx, eyeTop + 28f - ScreenH);
+                    _heldText.rectTransform.anchoredPosition = new Vector2(cx, 156f - ScreenH);
 
                 if (_evolveText != null)
-                    _evolveText.rectTransform.anchoredPosition = new Vector2(cx, eyeTop - ScreenH);
+                    _evolveText.rectTransform.anchoredPosition = new Vector2(cx, 122f - ScreenH);
             }
         }
 
@@ -3042,7 +3251,11 @@ namespace Proto
 
             if (_inputLock > 0f) _inputLock -= Time.unscaledDeltaTime;
 
-            if (ProtoInput.BackDown && _inputLock <= 0f)
+            // !TutorialBlocking: selama tutorial, ESC ikut ditelan. Tanpa pagar ini ESC bisa
+            // membuka setelan di atas dim yang beku — atau, pada tema tanpa prefab setelan,
+            // MEMBUANG RUN ke menu — dari balik layar yang sedang bilang "klik untuk lanjut".
+            // (Temuan verifikasi adversarial 2026-08-19.)
+            if (ProtoInput.BackDown && _inputLock <= 0f && !TutorialBlocking)
             {
                 // ESC membuka SETELAN, bukan langsung pulang ke menu. Perilaku lama membuang
                 // seluruh run karena satu tombol refleks — pulang sekarang lewat tombol di dalam
@@ -3059,8 +3272,20 @@ namespace Proto
             // di panel tidak boleh tembus jadi klik papan.
             if (_settingsOverlay != null) return;
 
-            bool consumed = HandleSpeed();
-            if (!consumed) HandleInput();
+            // Tutorial satu-kali (dim + sorotan). Selama aktif, SELURUH input permainan
+            // berhenti — klik apa pun cuma melanjutkan langkah tutorialnya. Redraw dan kawan-
+            // kawannya di bawah tetap jalan: papan yang disorot harus tetap tergambar.
+            UpdateTutorial();
+
+            if (TutorialBlocking)
+            {
+                if (ProtoInput.LeftClickDown) _tut.Advance();
+            }
+            else
+            {
+                bool consumed = HandleSpeed();
+                if (!consumed) HandleInput();
+            }
 
             if (_evolveTimer > 0f)
             {
@@ -3081,6 +3306,244 @@ namespace Proto
             _popups.Tick(Time.unscaledDeltaTime);
             if (_enemyBars != null) _enemyBars.Tick();
             HandleBanner();
+        }
+
+        // ---------- tutorial satu-kali ----------
+
+        TutorialOverlay _tut;
+
+        bool TutorialBlocking => _tut != null && _tut.Active;
+
+        /// <summary>
+        /// Dua babak, masing-masing SEKALI SEUMUR INSTALL (PlayerPrefs, bukan per run):
+        /// "intro" saat papan pertama kali dipandang (wave 0) — buku, tas, tombol LANJUT;
+        /// "rest" saat papan kembali setelah wave pertama — mana rune, mana skill, cara evolusi.
+        /// Pemicunya keadaan, bukan event: dicek tiap frame dan baru menyala saat papan
+        /// benar-benar sedang bebas dipandang, jadi ia tidak pernah menimpa peta/toko/kejadian.
+        /// </summary>
+        void UpdateTutorial()
+        {
+            if (_tut == null) return;
+
+            if (!Player.Alive)
+            {
+                if (_tut.Active) _tut.Hide();
+                return;
+            }
+
+            if (_tut.Active)
+            {
+                _tut.Draw();
+                return;
+            }
+
+            bool boardIdle = !Enemies.WaveActive && !_mapChoose && !_mapOpen && !_shopOpen
+                && !_eventOpen && _coverT <= 0f && _held == null;
+            if (!boardIdle) return;
+
+            // Tanda "sudah pernah" DIBACA ULANG tiap frame idle, bukan di-cache di field sesi:
+            // tombol reset di setelan (Codex & tutorial) menghapus tandanya, dan tutorial harus
+            // langsung menyala lagi di papan yang sama supaya bisa diuji berulang-ulang —
+            // menunggu run baru untuk tiap percobaan membunuh niat mengujinya. BeginOnce
+            // menandai dirinya sendiri, jadi cabang ini tetap sekali-jalan sampai direset lagi.
+            if (Enemies.Wave == 0)
+            {
+                if (TutorialOverlay.BeginOnce("intro")) _tut.Show(IntroSteps());
+            }
+            else if (TutorialOverlay.BeginOnce("rest"))
+            {
+                _tut.Show(RestSteps());
+            }
+        }
+
+        TutorialOverlay.Step[] IntroSteps() => new[]
+        {
+            new TutorialOverlay.Step(
+                () => Expand(GridRect(), new Vector4(12, 12, 12, 12)), "tut.intro.1"),
+            new TutorialOverlay.Step(TutorialBagRect, "tut.intro.2"),
+            new TutorialOverlay.Step(TutorialStartRect, "tut.intro.3"),
+        };
+
+        /// <summary>
+        /// Sasaran langkah "tekan LANJUT". Tombol yang DIMATIKAN di prefab meninggalkan
+        /// override 0x0 (RefreshHudSeats) — menyorot kotak nol berarti layar gelap penuh
+        /// tanpa lubang; jatuhnya ke papan, dan kalimatnya masih terbaca masuk akal.
+        /// </summary>
+        Rect TutorialStartRect()
+        {
+            var r = StartButtonRect();
+            return r.width < 1f || r.height < 1f
+                ? Expand(GridRect(), new Vector4(12, 12, 12, 12))
+                : r;
+        }
+
+        /// <summary>
+        /// Kotak kanvas sebuah bagian HUD (bola HP/mana, plakat baris atas). Papan sebagai
+        /// cadangan kalau bagiannya tidak ada — prefab HUD yang belum lengkap tidak boleh
+        /// membuat tutorialnya menyorot kekosongan.
+        /// </summary>
+        Rect TutorialHudRect(RectTransform area)
+        {
+            if (area != null)
+            {
+                var r = CanvasRectOf(area);
+                if (r.width > 1f && r.height > 1f)
+                    return Expand(r, new Vector4(8, 8, 8, 8));
+            }
+
+            return Expand(GridRect(), new Vector4(12, 12, 12, 12));
+        }
+
+        /// <summary>Pelukan seluruh deret tombol kecepatan — gabungan kotak tombol yang ada,
+        /// dari prefab maupun gambar-kode; rumus SpeedRect sebagai cadangan terakhir.</summary>
+        Rect TutorialSpeedRect()
+        {
+            var min = new Vector2(float.MaxValue, float.MaxValue);
+            var max = new Vector2(float.MinValue, float.MinValue);
+            bool any = false;
+
+            if (_speedButtons != null)
+            {
+                for (int i = 0; i < _speedButtons.Length; i++)
+                {
+                    if (_speedButtons[i] == null) continue;
+
+                    var r = CanvasRectOf(_speedButtons[i].rectTransform);
+                    if (r.width < 1f || r.height < 1f) continue;
+
+                    min = Vector2.Min(min, r.min);
+                    max = Vector2.Max(max, r.max);
+                    any = true;
+                }
+            }
+
+            if (any) return Expand(new Rect(min, max - min), new Vector4(8, 8, 8, 8));
+
+            var first = SpeedRect(0, Speeds.Length);
+            var last = SpeedRect(Speeds.Length - 1, Speeds.Length);
+            float yMin = Mathf.Min(first.yMin, last.yMin);
+            float yMax = Mathf.Max(first.yMax, last.yMax);
+            return Expand(new Rect(first.xMin, yMin, last.xMax - first.xMin, yMax - yMin),
+                new Vector4(8, 8, 8, 8));
+        }
+
+        /// <summary>Pelukan baris-baris panel spell yang sedang tampil — papan peringkat
+        /// damage. Union kotak bg baris yang menyala; papan sebagai cadangan.</summary>
+        Rect TutorialSpellsRect()
+        {
+            var min = new Vector2(float.MaxValue, float.MaxValue);
+            var max = new Vector2(float.MinValue, float.MinValue);
+            bool any = false;
+
+            if (_spellBg != null)
+            {
+                for (int i = 0; i < _spellBg.Length; i++)
+                {
+                    var bg = _spellBg[i];
+                    if (bg == null || !bg.enabled) continue;
+
+                    var r = CanvasRectOf(bg.rectTransform);
+                    if (r.width < 1f || r.height < 1f) continue;
+
+                    min = Vector2.Min(min, r.min);
+                    max = Vector2.Max(max, r.max);
+                    any = true;
+                }
+            }
+
+            if (any) return Expand(new Rect(min, max - min), new Vector4(8, 8, 8, 8));
+
+            return Expand(GridRect(), new Vector4(12, 12, 12, 12));
+        }
+
+        /// <summary>
+        /// Sorotan "barang tercecer": piece pertama di lantai kalau sudah ada. Drop bisa
+        /// masih TERBANG ke pemain saat tutorial mulai (pickup dunia baru memanggil AddLoose
+        /// begitu sampai), jadi cadangannya zona sebarnya sendiri — kotak tempat mereka
+        /// AKAN mendarat.
+        /// </summary>
+        Rect TutorialLooseRect()
+        {
+            if (_loosePos.Count > 0)
+            {
+                var p = _loosePos[0];
+                return new Rect(p.x - 80f, p.y - 80f, 160f, 160f);
+            }
+
+            float left = RightX() + 60f;
+            float right = Mathf.Max(left + 160f, ScreenW - 80f);
+            return new Rect(left, 70f, right - left, Mathf.Max(200f, ScreenH * 0.35f));
+        }
+
+        // Babak habis-wave memuat SEMUA materi lanjutan — termasuk HP/mana/speed/objektif
+        // yang tadinya mau jadi babak sendiri di tengah combat. Keputusan pemilik project:
+        // "taro tutorialnya semua abis wave aja biar gak bingung" — tidak ada tutorial yang
+        // menimpa pertarungan yang sedang jalan.
+        //
+        // Sasaran bola NYAWA/MANA = FILL-nya (cairan bola itu sendiri), BUKAN kotak hover:
+        // zona hover ditata tangan supaya gampang di-hover dan boleh lebih besar/geser dari
+        // bolanya — sorotan yang memakainya "meleset" (laporan playtest + screenshot).
+        TutorialOverlay.Step[] RestSteps() => new[]
+        {
+            new TutorialOverlay.Step(() => PlacedRect(skill: false), "tut.rest.1"),
+            new TutorialOverlay.Step(() => PlacedRect(skill: true, passive: false), "tut.rest.2"),
+            new TutorialOverlay.Step(() => PlacedRect(skill: true, passive: true), "tut.rest.sigil"),
+            new TutorialOverlay.Step(
+                () => Expand(GridRect(), new Vector4(12, 12, 12, 12)), "tut.rest.3"),
+            new TutorialOverlay.Step(TutorialBagRect, "tut.rest.bag"),
+            new TutorialOverlay.Step(TutorialLooseRect, "tut.rest.loose"),
+            new TutorialOverlay.Step(
+                () => TutorialHudRect(_hpFill != null ? _hpFill.rectTransform : _hpHover),
+                "tut.rest.hp"),
+            new TutorialOverlay.Step(
+                () => TutorialHudRect(_manaFill != null ? _manaFill.rectTransform : _manaHover),
+                "tut.rest.mana"),
+            new TutorialOverlay.Step(TutorialSpeedRect, "tut.rest.speed"),
+            new TutorialOverlay.Step(TutorialSpellsRect, "tut.rest.spells"),
+            new TutorialOverlay.Step(
+                () => TutorialHudRect(_hudPlaque != null ? _hudPlaque.rectTransform : null),
+                "tut.rest.goal"),
+        };
+
+        static Rect TutorialBagRect()
+        {
+            float w = Backpack.Width * (BagCell + BagGap) - BagGap;
+            float h = Backpack.Height * (BagCell + BagGap) - BagGap;
+            return new Rect(RightX() - 14f, BagY - 14f, w + 28f, h + 28f);
+        }
+
+        /// <summary>
+        /// Kotak layar piece TERPASANG pertama di lapisan yang diminta — sasaran sorotan
+        /// "ini rune / ini skill / ini sigil". <paramref name="passive"/> menyaring lapisan
+        /// skill lebih jauh: false = skill penyerang, true = sigil (IsPassive), null = bodo
+        /// amat. Starter selalu menaruh rune+skill di papan; sigil tidak dijamin (tergantung
+        /// hero) — kalau tidak ketemu, sorotan jatuh ke seluruh papan dan kalimat sigilnya
+        /// tetap terbaca sebagai definisi, bukan tudingan.
+        /// </summary>
+        Rect PlacedRect(bool skill, bool? passive = null)
+        {
+            for (int i = 0; i < Book.Placed.Count; i++)
+            {
+                var inst = Book.Placed[i];
+                if (inst == null || inst.Def == null) continue;
+                if ((inst.Def.Layer == Layer.Skill) != skill) continue;
+                if (passive != null && inst.Def.IsPassive != passive.Value) continue;
+
+                var shape = Shapes.Rotate(inst.Def.Cells, inst.Rot);
+                var min = new Vector2(float.MaxValue, float.MaxValue);
+                var max = new Vector2(float.MinValue, float.MinValue);
+
+                for (int k = 0; k < shape.Length; k++)
+                {
+                    var at = CellAnchor(inst.Origin.x + shape[k].x, inst.Origin.y + shape[k].y);
+                    min = Vector2.Min(min, at);
+                    max = Vector2.Max(max, at + new Vector2(CellSize, CellSize));
+                }
+
+                return new Rect(min, max - min);
+            }
+
+            return Expand(GridRect(), new Vector4(12, 12, 12, 12));
         }
 
         /// <summary>Returns true when this frame's click landed on a speed button.</summary>
@@ -3272,7 +3735,8 @@ namespace Proto
                         _bannerText.color = new Color(1f, 0.75f, 0.4f);
                         _bannerText.text += Loc.T("hud.banner.needskill");
                     }
-                    else if (ProtoInput.RestartDown && _inputLock <= 0f && CanDepart())
+                    else if (ProtoInput.RestartDown && _inputLock <= 0f && !TutorialBlocking
+                        && CanDepart())
                     {
                         DepartRun();
                     }
@@ -3290,7 +3754,7 @@ namespace Proto
                     _bannerText.color = new Color(1f, 0.75f, 0.4f);
                     _bannerText.text += Loc.T("hud.banner.needskill");
                 }
-                else if (ProtoInput.RestartDown && _inputLock <= 0f)
+                else if (ProtoInput.RestartDown && _inputLock <= 0f && !TutorialBlocking)
                 {
                     StartNextWave();
                 }
@@ -3315,6 +3779,16 @@ namespace Proto
                 if (!ProtoInput.LeftClickDown) return;
 
                 var dead = UiMouse;
+
+                // IDUP LAGI — pakta kebangkitan dibelanjakan DI SINI, oleh keputusan pemain,
+                // bukan otomatis saat HP habis. Revive otomatis yang tak terlihat itulah
+                // keluhan "punya revive kok langsung game over".
+                if (Player.CanRevive && GameOverReviveRect().Contains(dead))
+                {
+                    Player.ReviveNow();
+                    return;
+                }
+
                 if (GameOverMenuRect().Contains(dead)) LoadScene(MainMenuSceneName);
 
                 return;
@@ -4100,6 +4574,7 @@ namespace Proto
             EventOptionAOverride = null;
             EventOptionBOverride = null;
             EventRefuseOverride = null;
+            _eventRigRoot = null;
 
             if (_theme == null || _theme.EventPrefab == null) return;
 
@@ -4164,14 +4639,59 @@ namespace Proto
                 _eventCardsSkinned = imgA != null && imgA.sprite != null
                                   && imgB != null && imgB.sprite != null;
             }
+
+            // Kotak dan visualnya sudah selesai dibaca; POHONNYA DIPADAMKAN sampai pemain
+            // mendarat di pulau kejadian. Satu SetActive menutup seluruh isi prefab sekaligus —
+            // termasuk dekor yang ditata tangan dan tidak dikenal daftar adopsi di atas.
+            _eventRigRoot = go;
+            go.SetActive(false);
         }
 
-        /// <summary>TMP anak bernama <paramref name="childName"/> di bawah kotak rig, atau null.</summary>
+        /// <summary>
+        /// TMP bernama <paramref name="childName"/> DI MANA PUN di bawah kotak rig, atau null.
+        ///
+        /// Anak langsung didahulukan; kalau tidak ada, dicari sampai ke dalam. Pencarian satu
+        /// tingkat yang dulu dipakai di sini punya mode gagal yang diam-diam: begitu teksnya
+        /// DIPINDAHKAN ke dalam bingkai atau header yang ditata tangan di prefab, ia bukan lagi
+        /// anak langsung panel — hasilnya null, TMP prefab tidak pernah terisi teks, dan objek
+        /// gambar-kode penggantinya tertinggal menyala di TENGAH layar karena penataan letaknya
+        /// justru dilewati (prefab dianggap sudah mengurusnya sendiri).
+        /// </summary>
         static TextMeshProUGUI FindTmpChild(Component root, string childName)
         {
             if (root == null) return null;
+
             var t = root.transform.Find(childName);
-            return t != null ? t.GetComponent<TextMeshProUGUI>() : null;
+            if (t != null)
+            {
+                var direct = t.GetComponent<TextMeshProUGUI>();
+                if (direct != null) return direct;
+            }
+
+            var all = root.GetComponentsInChildren<TextMeshProUGUI>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i] != null && all[i].name == childName) return all[i];
+
+            return null;
+        }
+
+        /// <summary>
+        /// Kotak bernama <paramref name="childName"/> di mana pun di bawah <paramref name="root"/>,
+        /// atau null. Aturan pencariannya sama dengan <see cref="FindTmpChild"/>: anak langsung
+        /// dulu, baru menembus ke dalam.
+        /// </summary>
+        static RectTransform FindRectChild(Component root, string childName)
+        {
+            if (root == null) return null;
+
+            var direct = root.transform.Find(childName) as RectTransform;
+            if (direct != null) return direct;
+
+            var all = root.GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i] != null && all[i].name == childName) return all[i];
+
+            return null;
         }
 
         void BuildShopFromPrefab()
@@ -4180,6 +4700,8 @@ namespace Proto
             ShopSlotsOverride = null;
             ShopRerollOverride = null;
             StartButtonOverride = null;
+            ShopIconsOverride = null;
+            _shopRigRoot = null;
 
             if (_theme == null || _theme.ShopPrefab == null) return;
 
@@ -4230,6 +4752,7 @@ namespace Proto
                     _panelTitleInk = title.color;
                     _panelTitle.enabled = false;
                 }
+
             }
 
             if (_shopVisualsFromPrefab && rig.Slots != null)
@@ -4277,16 +4800,28 @@ namespace Proto
             if (rig.Slots != null && rig.Slots.Length > 0)
             {
                 var slots = new Rect[rig.Slots.Length];
+                var icons = new Rect[rig.Slots.Length];
                 bool any = false;
+                bool anyIcon = false;
 
                 for (int i = 0; i < rig.Slots.Length; i++)
                 {
                     if (rig.Slots[i] == null) continue;
                     slots[i] = CanvasRectOf(rig.Slots[i]);
                     any = true;
+
+                    // Anak "Icon" = jatah ruang GAMBAR di kartu itu. Kosong = pemusatan
+                    // hitungan lama, jadi slot yang belum diberi kotak tidak berubah apa pun.
+                    var icon = FindRectChild(rig.Slots[i], "Icon");
+                    if (icon != null)
+                    {
+                        icons[i] = CanvasRectOf(icon);
+                        anyIcon = true;
+                    }
                 }
 
                 if (any) ShopSlotsOverride = slots;
+                if (anyIcon) ShopIconsOverride = icons;
             }
 
             // Tombol TOKO: hit-test membaca
@@ -4308,6 +4843,13 @@ namespace Proto
                     _shopBtnLabel.rectTransform.sizeDelta = r.size;
                 }
             }
+
+            // Dipadamkan sampai toko dibuka, alasan yang sama dengan panel kejadian. Kotak
+            // StartButton & ShopToggle di prefab ini murni PENANDA LETAK — tidak membawa Image,
+            // dan gambarnya lahir terpisah di BuildShop — jadi tombolnya tetap tampil selagi
+            // pohon ini padam.
+            _shopRigRoot = go;
+            go.SetActive(false);
         }
 
         void OnRestEntered(RunNodeKind kind)
@@ -4330,7 +4872,12 @@ namespace Proto
                 // Diundi di sini, sekali. Yang sudah dipegang disaring di dalam RollPacts — tawaran
                 // yang berisi pakta yang sudah dimiliki adalah pilihan yang tidak melakukan apa-apa,
                 // dan pemain baru tahu setelah mengkliknya, lalu kehilangan seluruh kejadiannya.
-                _db.RollPacts(Player.Pacts, _pactOffer);
+                // Yang PERNAH TAMPIL juga disaring (_pactsOffered): satu pakta = satu kali muncul
+                // per run, ditolak pun tidak antre lagi — keluhan "KEBANGKITAN nongol dua kali".
+                _db.RollPacts(Player.Pacts, _pactOffer, _pactsOffered);
+
+                for (int i = 0; i < _pactOffer.Length; i++)
+                    if (_pactOffer[i] != null) _pactsOffered.Add(_pactOffer[i]);
             }
 
             ShowRoomFor(kind);
@@ -5536,22 +6083,61 @@ namespace Proto
         {
             var pact = slot >= 0 && slot < _pactOffer.Length ? _pactOffer[slot] : null;
 
-            // Katalog habis (semua sudah dipegang) — kartunya menampilkan tawaran koin, jadi
-            // kliknya harus membayar koin itu, bukan diam saja.
-            if (pact == null)
-            {
-                RefusePact();
-                return;
-            }
+            // Slot kosong tidak digambar lagi (DrawEvent menyembunyikan kartunya), jadi klik
+            // di kotak hantunya tidak boleh diam-diam membayar koin — koin diambil lewat
+            // tombol bawah yang memang kelihatan.
+            if (pact == null) return;
 
             if (Player.Pacts == null || !Player.Pacts.Take(pact)) return;
 
             Announce(PactName(pact), pact.Color);
 
+            // Pakta ukuran (ADDENDUM papan / DEEP POCKETS tas): berubah SEKARANG, di depan
+            // mata — hadiah yang baru terasa wave depan bukan hadiah, cuma janji.
+            if (pact.GridPlus > 0 || pact.BagPlus > 0) ApplyPactLayout();
+
             _pactOffer[0] = null;
             _pactOffer[1] = null;
             _eventDone = true;
             _eventOpen = false;
+        }
+
+        /// <summary>
+        /// Menyamakan ukuran papan DAN tas dengan jatah pakta (Base + GridBonus/BagBonus),
+        /// lalu mendudukkan ulang petaknya. Kotak GridArea milik prefab TIDAK berubah —
+        /// sel papan mengecil mengisi kotak yang sama (Step membagi kotak dengan jumlah
+        /// sel), tas mengikuti sel papan (BagCell => CellSize) sehingga kolom kanan
+        /// bergeser nol piksel, dan tas yang melebar tumbuh ke kanan-atas dari pangkal
+        /// yang sama: tidak ada yang bisa tumpang tindih dengan buku.
+        /// </summary>
+        void ApplyPactLayout()
+        {
+            var pacts = Player != null ? Player.Pacts : null;
+            int gridBonus = pacts != null ? pacts.GridBonus : 0;
+            int bagBonus = pacts != null ? pacts.BagBonus : 0;
+
+            bool changed = false;
+
+            int w = Grimoire.BaseWidth + gridBonus;
+            int h = Grimoire.BaseHeight + gridBonus;
+            if (w != Grimoire.Width || h != Grimoire.Height)
+            {
+                Grimoire.SetSize(w, h);
+                ReseatBoardCells();
+                changed = true;
+            }
+
+            int bw = Backpack.BaseWidth + bagBonus;
+            int bh = Backpack.BaseHeight + bagBonus;
+            if (bw != Backpack.Width || bh != Backpack.Height)
+            {
+                Backpack.SetSize(bw, bh);
+                changed = true;
+            }
+
+            // Tas didudukkan ulang untuk KEDUA jalur: papan yang berubah menggeser ukuran
+            // sel tas, tas yang berubah menggeser jumlah petaknya.
+            if (changed) ReseatBag();
         }
 
         /// <summary>Menolak keduanya. Bayarannya koin — kecil, karena melewatkan harus terasa.</summary>
@@ -5569,15 +6155,28 @@ namespace Proto
         void DrawEvent()
         {
             bool open = _eventOpen && _run != null;
+
+            // SATU POHON, satu saklar. Ini yang menutup dekor tambahan di prefab; baris-baris
+            // .enabled di bawah tinggal mengurus visual gambar-kode untuk tema TANPA prefab.
+            // Ditaruh SEBELUM penjaga null di bawah: prefab yang panelnya belum diberi Image
+            // tetap harus bisa dipadamkan.
+            if (_eventRigRoot != null) _eventRigRoot.SetActive(open);
+
             if (_eventBg == null) return;
+
+            // Kartu yang tidak punya pakta TIDAK digambar sama sekali — bukan kartu abu-abu
+            // "tawaran koin" lama. Perintah pemilik project: kalau tidak ada buff yang bisa
+            // dipakai, hadiahnya koin lewat SATU tombol, sisanya hilang.
+            bool hasA = open && _pactOffer[0] != null;
+            bool hasB = open && _pactOffer[1] != null;
 
             _eventBg.enabled = open;
             _eventTitle.enabled = open;
             _eventBody.enabled = open;
-            _eventABg.enabled = open;
-            _eventBBg.enabled = open;
-            _eventALabel.enabled = open;
-            _eventBLabel.enabled = open;
+            _eventABg.enabled = hasA;
+            _eventBBg.enabled = hasB;
+            _eventALabel.enabled = hasA;
+            _eventBLabel.enabled = hasB;
             _eventCBg.enabled = open;
             _eventCLabel.enabled = open;
 
@@ -5595,10 +6194,12 @@ namespace Proto
             }
 
             _eventTitle.text = Loc.T("event.title");
-            _eventBody.text = Loc.T("event.body");
 
-            PaintPactCard(0, EventOptionRect(0), _eventABg, _eventALabel);
-            PaintPactCard(1, EventOptionRect(1), _eventBBg, _eventBLabel);
+            // Katalog kering = kalimat pamitan, bukan tawaran dagang yang tidak ada barangnya.
+            _eventBody.text = Loc.T(hasA || hasB ? "event.body" : "event.empty");
+
+            if (hasA) PaintPactCard(0, EventOptionRect(0), _eventABg, _eventALabel);
+            if (hasB) PaintPactCard(1, EventOptionRect(1), _eventBBg, _eventBLabel);
 
             var c = EventRefuseRect();
             if (!_eventVisualsFromPrefab)
@@ -5607,7 +6208,10 @@ namespace Proto
                 _eventCBg.rectTransform.sizeDelta = c.size;
                 _eventCLabel.rectTransform.anchoredPosition = c.center;
             }
-            _eventCLabel.text = Loc.F("event.refuse", _balance.EventGoldGift);
+            // Tanpa satu pun tawaran, "MENOLAK" bohong — tidak ada yang ditolak. Tombolnya
+            // berganti kalimat jadi ambil koin, dan RefusePact yang sama tetap membayarnya.
+            _eventCLabel.text = Loc.F(hasA || hasB ? "event.refuse" : "event.takegold",
+                _balance.EventGoldGift);
         }
 
         /// <summary>
@@ -5628,17 +6232,9 @@ namespace Proto
 
             var pact = slot < _pactOffer.Length ? _pactOffer[slot] : null;
 
-            // Katalog kehabisan pakta yang belum dipegang. Kartunya tidak dikosongkan — kartu kosong
-            // terbaca sebagai panel yang rusak. Ia jatuh kembali ke tawaran koin lama, dan kliknya
-            // memang membayar koin itu.
-            if (pact == null)
-            {
-                bg.color = _eventCardsSkinned
-                    ? new Color(0.62f, 0.6f, 0.66f, 1f)
-                    : new Color(0.25f, 0.22f, 0.27f, 0.9f);
-                label.text = Loc.F("event.nothing", _balance.EventGoldGift);
-                return;
-            }
+            // Slot kosong tidak pernah sampai ke sini lagi — DrawEvent menyembunyikan kartunya
+            // (aturan "hadiah koin lewat satu tombol"). Penjaga ini tinggal jaring.
+            if (pact == null) return;
 
             var tone = pact.Color;
 
@@ -5651,8 +6247,12 @@ namespace Proto
 
             _sb.Length = 0;
             _sb.Append(PactName(pact)).Append("\n\n");
-            _sb.Append("+  ").Append(PactBoon(pact)).Append("\n\n");
-            _sb.Append("-  ").Append(PactBane(pact));
+            _sb.Append("+  ").Append(PactBoon(pact));
+
+            // Pakta tanpa bane (ADDENDUM) tidak menggambar baris minus kosong — tanda "-" yang
+            // tidak diikuti apa pun terbaca sebagai teks yang gagal dimuat.
+            var bane = PactBane(pact);
+            if (!string.IsNullOrEmpty(bane)) _sb.Append("\n\n").Append("-  ").Append(bane);
 
             label.text = _sb.ToString();
         }
@@ -6717,6 +7317,9 @@ namespace Proto
             bool eventOn = ShopEventActive;
             if (!eventOn) _shopOpen = false;
 
+            // Alasan yang sama dengan panel kejadian: satu pohon, satu saklar.
+            if (_shopRigRoot != null) _shopRigRoot.SetActive(_shopOpen);
+
             _panelBg.enabled = _shopOpen;
             _panelTitle.enabled = _shopOpen;
             _rerollBg.enabled = _shopOpen;
@@ -6789,12 +7392,42 @@ namespace Proto
                 _shopSlotText[i].text = _sb.ToString();
                 _shopSlotText[i].color = afford ? Color.white : new Color(0.95f, 0.55f, 0.5f);
 
-                // Dipaskan ke kotaknya: 40 px bawah milik teks harga, sisanya milik piece.
-                var pieceSize = PieceSize(Shapes.Rotate(def.Cells, 0));
-                float fit = Mathf.Min(1f, (rect.width - 24f) / Mathf.Max(1f, pieceSize.x),
-                    (rect.height - 60f) / Mathf.Max(1f, pieceSize.y));
+                var iconBox = ShopIconRect(i);
+                if (iconBox.HasValue)
+                {
+                    // Kotak "Icon" yang ditata tangan MENANG: gambarnya dipaskan utuh ke dalamnya
+                    // — petak DAN art — lalu dipusatkan di situ. Menggeser atau mengecilkan
+                    // kotaknya di prefab memindahkan dan mengecilkan gambarnya, tanpa kode.
+                    var box = iconBox.Value;
 
-                cursor = DrawPiece(def, 0, new Vector2(rect.center.x, rect.center.y + 18f), cursor, 1f, fit);
+                    // Diukur ulang hanya saat isi slotnya BERGANTI: hasilnya tetap sama selama
+                    // stoknya tidak dikocok, dan mengukur enam kali per frame cuma memberi makan
+                    // GC lewat bentuk yang diputar dan art yang ditata ulang.
+                    if (!ReferenceEquals(_shopBoundsFor[i], def))
+                    {
+                        PieceBounds(def, 0, out _shopBoundsSize[i], out _shopBoundsOffset[i]);
+                        _shopBoundsFor[i] = def;
+                    }
+
+                    var bounds = _shopBoundsSize[i];
+
+                    // Batas 1 = ukuran petak papan, DIPERTAHANKAN dari rumus lama. Tanpa ini,
+                    // kotak yang lebih besar dari piece-nya akan menggelembungkan piece 1 petak
+                    // sampai berkali-kali lipat: semua barang jadi tampak seukuran, bentuk
+                    // footprint-nya tidak lagi terbaca dari etalase padahal itu informasi beli,
+                    // dan garis tepi 2 px ikut membesar jadi kabur.
+                    float fit = Mathf.Min(1f, box.width / bounds.x, box.height / bounds.y);
+                    cursor = DrawPiece(def, 0, box.center - _shopBoundsOffset[i] * fit, cursor, 1f, fit);
+                }
+                else
+                {
+                    // Dipaskan ke kotaknya: 40 px bawah milik teks harga, sisanya milik piece.
+                    var pieceSize = PieceSize(Shapes.Rotate(def.Cells, 0));
+                    float fit = Mathf.Min(1f, (rect.width - 24f) / Mathf.Max(1f, pieceSize.x),
+                        (rect.height - 60f) / Mathf.Max(1f, pieceSize.y));
+
+                    cursor = DrawPiece(def, 0, new Vector2(rect.center.x, rect.center.y + 18f), cursor, 1f, fit);
+                }
             }
 
             var reroll = RerollRect();
@@ -6808,8 +7441,14 @@ namespace Proto
                 : new Color(0.3f, 0.15f, 0.13f, 0.95f);
 
             if (!_shopVisualsFromPrefab)
+            {
                 _rerollLabel.rectTransform.anchoredPosition = new Vector2(reroll.xMin, reroll.yMin + 8f);
-            _rerollLabel.rectTransform.sizeDelta = new Vector2(reroll.width, 22f);
+
+                // Ukurannya ikut MASUK penjaga: di luar sini ia ditulis tiap frame, dan tinggi
+                // label REROLL yang disetel tangan di prefab kembali ke 22 px sendiri.
+                _rerollLabel.rectTransform.sizeDelta = new Vector2(reroll.width, 22f);
+            }
+
             _rerollLabel.text = Loc.F("shop.reroll", _rerollCost);
 
             return cursor;

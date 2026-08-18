@@ -83,6 +83,15 @@ namespace Proto
                  "pernah. Ini pakta paling mahal yang bisa ditawarkan, jadi kutuknya harus berat.")]
         [Range(0f, 1f)] public float ReviveAt;
 
+        [Tooltip("Petak papan grimoire TAMBAHAN per sisi selama run. 1 = papan 6x6 jadi 7x7. " +
+                 "Papan hanya MEMBESAR — tidak pernah menyusut balik di tengah run, karena " +
+                 "menyusut meninggalkan piece terpasang di luar papan.")]
+        [Range(0, 2)] public int GridPlus;
+
+        [Tooltip("Petak TAS tambahan per sisi selama run. 1 = tas 4x4 jadi 5x5. " +
+                 "Aturan yang sama dengan GridPlus: hanya membesar.")]
+        [Range(0, 2)] public int BagPlus;
+
         [TextArea(2, 4)]
         [Tooltip("Suara si penawar. Muncul di panel kejadian, bukan di strip HUD.")]
         public string Blurb;

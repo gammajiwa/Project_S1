@@ -2,8 +2,8 @@
 
 <!-- STATUS -->
 Epic: Grimoire Haven — arah bullet-haven
-Feature: Ruangan singgah (Penjual toko, Altar kejadian) + pencabutan slot
-Task: Slot dicabut tuntas + pemulihan pasca mati lampu; retopo Penjual/Altar & hit-test peta menunggu
+Feature: Revive & pakta 1x/run + papan 7x7 (ADDENDUM) + tutorial satu-kali
+Task: Dinilai mata (Ronde 17): tombol IDUP LAGI, kejadian koin-saja, 7x7 vs tas, tutorial + tombol resetnya
 <!-- /STATUS -->
 
 ## Baca ini dulu
@@ -4184,3 +4184,148 @@ tak terdaftar TETAP di luar daftar. Catatan faktual: Icon & Art kesembilannya se
 TERISI (hasil generator), tapi keputusan kurasi milik user - jalur MaxHp cukup lewat efek
 samping di 9 piece terdaftar + 2 buff + 1 pakta (Ronde 15b). ATURAN BARU: jangan pernah
 mendaftarkan piece ke ContentDatabase tanpa izin eksplisit user.
+
+*Ronde 16:* **Boss puncak act di-rebalance ke target "menang ~3 dari 10"** (user main sampai
+boss dan menang terus dengan build bagus; minta lebih banyak, lebih tebal, pengganggu diberatkan.
+Disetujui via AskUserQuestion — opsi UKURAN ruas/kepala TIDAK dicentang, jangan disentuh).
+Angka: `BossNodeCount` 2→3 + clamp per act 4→5 di RunDirector (act 1: 2 ular + 1 cacing, act 3:
+5 ekor) · `BossNodeHpMul` 2.5→4 · `BossNodeAggroMul` 1.6→2. Pengawal wave boss yang dulu
+hardcoded `SetNextWaveMods(1, 0.55, 1)` dipromosikan jadi field GameBalance:
+`BossNodeEscortHpMul` 1 (sengaja — pengawal tetap gampang mati) · `BossNodeEscortCountMul` 1
+(dari 0.55, arena penuh lagi — filosofi lama "pengawal ditipiskan" resmi dibalik atas arahan
+user) · `BossNodeEscortDamageMul` 1.15. Field baru `BossNodeGrubsPerBoss` 2: tiap boss besar
+bawa 2 grub sendiri (di `SpawnBossNode`, di atas jatah grub wave biasa). Grub dibuatkan gigi:
+HpMult 5→8, gigit 9→12, sembur 6→8 — diubah di `Boss_grub.asset` DAN `BossPass.cs` (pass itu
+menimpa asset tiap dijalankan; kalau tidak sinkron, buff-nya ke-revert diam-diam).
+BELUM DINILAI MATA: target 3/10 tebakan pertama. Kalau masih gampang → naikkan `BossNodeHpMul`;
+kalau jadi tembok → turunkan `BossNodeEscortDamageMul` ke 1 dulu, baru `BossNodeHpMul` ke 3.5.
+Semua knob di Inspector GameBalance.asset, tanpa sentuh kode.
+
+*Ronde 17 (2026-08-19):* **Lima laporan user disikat — detail teknis penuh di AI-HANDOFF §44.**
+Unity MCP TIDAK ada di sesi ini; verifikasi = `dotnet build` csproj Unity (rebuild penuh
+0 error, 5 warning — identik baseline). Unity akan compile sendiri saat dibuka; `.meta`
+untuk `TutorialOverlay.cs` dibiarkan digenerate Unity.
+
+1. **"Punya revive (KEBANGKITAN) kok langsung game over"** — jalur `SpendRevive` sehat,
+   tapi `OnRevived` NOL pendengar (revive otomatis = kilat kecil yang tak pernah
+   terlihat) dan bisa dimakan lagi oleh peluru yang masih di udara. **Desain final
+   (arahan user, iterasi kedua hari yang sama): revive TIDAK otomatis** — mati selalu
+   berhenti dulu, layar mati menampilkan tombol hijau **IDUP LAGI** di atas tombol
+   pulang selama `CanRevive`; klik → `ReviveNow()` (bangkit + announce + lapangan
+   jalan lagi + kebal `ReviveGraceSeconds` 1,5 dtk). Fanfare kalah TIDAK berbunyi
+   selama tombolnya masih ditawarkan (nada kalah utk kematian yang bisa dibatalkan =
+   bohong, dan ia mematikan musik combat). `PlayerBurnout` sudah lama siap bangkit.
+2. **"KEBANGKITAN nongol 2x di event"** — `RollPacts` cuma nyaring yang DIPEGANG;
+   yang DITOLAK antre lagi. Kini `_pactsOffered` (per run) + param `exclude`:
+   **satu pakta = satu kali tampil per run, titik.**
+3. **"Kalau buff habis, hadiahnya duit aja, btn-nya ilang"** — kartu slot kosong tidak
+   digambar lagi (dulu kartu abu tawaran koin); dua-duanya kosong → body `event.empty`
+   + tombol tunggal `event.takegold` (+koin). Klik bekas kartu = no-op.
+4. **Pakta baru ADDENDUM (`Pact_lembarbaru`, GridPlus 1): papan 6x6 → 7x7.**
+   `Grimoire.Width/Height` bukan const lagi — static + **WAJIB `ResetSize()` di titik
+   masuk** (sudah: `PlayerCaster.Init`, `MainMenuController.Awake`; play-mode tanpa
+   domain reload!). UI: petak dialokasikan sampai 8x8 sejak build, pertumbuhan cuma
+   reseat (`ReseatBoardCells`/`ReseatBag`) — sel mengecil di kotak GridArea yang sama,
+   `RightX()` geser NOL piksel karena papan persegi → **mustahil tabrak tas**.
+   Aset ditulis tangan + didaftarkan ke ContentDatabase (23 pakta) + PactPass di-update
+   (idempoten, bane KOSONG sengaja — perintah user "buff"). Icon placeholder 7x7
+   (baris atas + kolom kanan terang) — **user akan ganti art-nya sendiri**.
+5. **Tutorial gambar satu-kali** (`View/TutorialOverlay.cs`, pola StatusStrip): dim 4
+   panel + lubang terang + bingkai emas denyut + plakat; klik = lanjut. Babak `intro`
+   (wave 0: buku → tas → LANJUT) dan `rest` (habis wave 1: rune → skill → evolusi).
+   Sekali seumur install via PlayerPrefs `GrimTut_intro`/`GrimTut_rest` (ditandai saat
+   MULAI), **dibaca ulang tiap frame idle — TIDAK di-cache di field sesi**, supaya
+   tombol reset (butir 6) langsung memutar ulang tutorial di papan yang sama.
+   Pagar input EMPAT lapis: HandleSpeed/HandleInput di-skip, SPACE dipagari, **ESC
+   dipagari**, dan **panel dim ber-raycastTarget=true** (tombol speed prefab itu
+   Button UGUI sungguhan yang tembus hit-test ProtoInput) — dua terakhir temuan
+   verifikasi adversarial. Playground tak ber-GrimoireUI → flag aman dari test bench.
+6. **Tombol setelan jadi RESET CODEX + TUTORIAL (digabung)** — riwayat bolak-balik
+   sehari: semula diminta dicabut ("btn debug"), lalu dihidupkan lagi digabung reset
+   tutorial biar bisa "test terus-terusan". `ResetCodex()` kini juga
+   `TutorialOverlay.ResetSeen()`; label 10 bahasa diganti; `SettingsTabs` balik
+   PERSIS ke bentuk lamanya (API sembunyikan-tab yang sempat kutambah sudah dicabut).
+
+Loc: +13 kunci × 10 bahasa (event.empty/takegold, hud.revive.announce,
+hud.gameover.revive, pact.lembarbaru.name/boon, tut.intro.1-3/rest.1-3/next;
+ja/ko/zh `# TODO`) + 3 nilai settings.reset.*/row.resetcodex diganti.
+
+*Tweak kecil:* teks info drag (held + evolve) di atas mata grimoire dinaikkan —
+`eyeTop` 118 → 154 → **190** di `ApplyCombatHudSeats` (GrimoireUI) — dua kali dilaporkan
+masih nyentuh pendar mata ("buat agak lebih tinggi lagi"). Satu angka, dua baris ikut naik.
+
+**Verifikasi adversarial (agent pembantah, 11 klaim): 10 CONFIRMED, 1 REFUTED
+sebagian** — kebocoran ESC & tombol speed selama tutorial (DITAMBAL, lihat butir 5)
++ hazard editor `StarterSeatPass` memakai papan 7x7 sisa play mode (DITAMBAL:
+`ResetSize()` di awal pass; keluar play TIDAK me-reload domain). Sisa temuan
+kosmetik dibiarkan sadar: `_shopBoundsSize` meleset beberapa persen sampai stok
+toko dikocok pasca-ADDENDUM, preview starter bisa 7x7 satu frame di urutan
+OnEnable langka. Kompilasi: rebuild penuh dotnet 0 error / 5 warning = baseline.
+BELUM DINILAI MATA SEMUA: enam butir di atas.
+
+*Ronde 17b (2026-08-19, lanjutan):* **Tutorial rest jadi 9 langkah + pakta tas DEEP POCKETS.**
+
+- User sempat minta babak tutorial TERPISAH di tengah combat pertama (mana HP/mana/
+  speed/objektif), lalu MEREVISI SENDIRI: "taro tutorialnya semua abis wave aja biar
+  gak bingung". Hasil: TIDAK ada tutorial yang menimpa pertarungan; babak `rest`
+  (habis wave 1) sekarang **9 langkah**: rune → skill → evolusi → **tas** (skill &
+  sigil cadangan, isi tas tidak menembak, RUNE TIDAK BISA masuk — ini aturan nyata
+  `Backpack.CanPlace`, bukan karangan tutorial) → **tercecer = dijual otomatis saat
+  berangkat** → **bola NYAWA** → **bola MANA** → **deret speed** → **objektif** (plakat
+  STAGE/kill). Target sorotan baru: `TutorialHudRect` (CanvasRectOf `_hpHover`/
+  `_manaHover`/plakat, fallback papan), `TutorialSpeedRect` (union kotak `_speedButtons`,
+  fallback rumus SpeedRect), `TutorialLooseRect` (piece tercecer pertama; kalau drop
+  masih terbang ke pemain → zona sebarnya). Loc `tut.rest.bag/loose/hp/mana/speed/goal`
+  × 10 bahasa. Babak & flag TIDAK berubah (tetap `intro`+`rest`) — tombol reset lama
+  tetap menjangkau semua.
+- **Pakta baru `Pact_kantongdalam` "DEEP POCKETS"** (boon-only, `BagPlus 1`): tas
+  4x4 → **5x5**, kembar pola ADDENDUM. `Backpack.Width/Height` bukan const lagi
+  (Base 4, Max 6, `SetSize`/`ResetSize`) — **reset WAJIB di titik masuk**, sudah:
+  `PlayerCaster.Init` + `MainMenuController.Awake` (bareng Grimoire). Sel tas
+  dialokasikan sampai 6x6 di BuildBackpack (36, cadangan padam), `ReseatBag` kini
+  juga menyalakan sel aktif & memadamkan sisanya (DrawBackpack cuma menulis warna).
+  `ApplyBoardSize` → **`ApplyPactLayout`** (menangani GridBonus + BagBonus sekaligus;
+  TakePact memicu bila salah satu > 0). WorldPacts.BagBonus + WorldModifierDefinition
+  .BagPlus + PactPass (id `kantongdalam`, warna kulit 0.78/0.62/0.42, blurb jahitan
+  tua) + aset tulisan tangan (guid pakta `979e9399...`, icon `3770f09a...` — placeholder
+  5x5 kulit, baris atas + kolom kanan terang, **user akan ganti art-nya**) + terdaftar
+  di ContentDatabase (**24 pakta**). Loc `pact.kantongdalam.name/boon` × 10.
+- Tas 5x5 tumbuh ke KANAN-ATAS dari pangkal yang sama (RightX/BagY tetap) — tidak
+  menyentuh buku; area kanan memang zona sebar piece tercecer sejak dulu.
+- Kompilasi: rebuild penuh dotnet **0 error / 5 warning = baseline**.
+
+*Ronde 17c (2026-08-19, feedback playtest pertama + screenshot):* rest jadi **11 langkah**.
+
+- **Sorotan bola NYAWA/MANA meleset** (screenshot user) — sasaran diganti dari kotak
+  hover (`_hpHover` — zona tangan yang boleh lebih besar/geser dari bolanya) ke
+  **FILL bolanya sendiri** (`_hpFill`/`_manaFill`, ada di jalur prefab & fallback).
+  Kalau masih meleset, tersangka berikutnya: rect fill di prefab tidak memeluk bola.
+- **Langkah baru SIGIL** (setelah skill): definisi piece pasif — tidak menembak,
+  memberi stat/efek selama di atas rune. Sasaran `PlacedRect(skill:true, passive:true)`
+  (filter `IsPassive` baru); hero tanpa sigil terpasang → fallback papan.
+- **Teks speed DITULIS ULANG** (semua bahasa) — koreksi user: ini game nonton, TIDAK
+  ada risiko naik/turun; naikin = melewatkan serunya, bukan gambling. Teks lama
+  ("balik ke 1x saat berbahaya") menyiratkan risiko yang tidak ada.
+- **Langkah baru PANEL DAMAGE** (`tut.rest.spells`, sebelum objektif): papan peringkat
+  skill diurut dari damage yang benar-benar dihasilkan, menampung 5 tertinggi.
+  Sasaran `TutorialSpellsRect` = union baris `_spellBg` yang menyala, fallback papan.
+- Urutan final rest: rune → skill → **sigil** → evolusi → tas → tercecer → NYAWA →
+  MANA → speed → **panel damage** → objektif. Loc +2 kunci (sigil/spells) × 10 bahasa,
+  speed diganti × 10. Rebuild penuh **0 error / 5 warning = baseline**.
+
+*Ronde 17d (2026-08-19, penutup + COMMIT):*
+
+- **Teks info drag & pesan evolusi pindah ke BAWAH-TENGAH layar** (rumah ke-4:
+  kolom kiri → atas mata 118/154/190 → bawah-tengah, tunjuk tangan user di
+  screenshot). Sekalian 19→**23px**, held jadi PUTIH, keduanya diberi **outline
+  hitam** (TMP outlineWidth 0.18) — di atas arena gelap tanpa tepi mereka hilang.
+  Posisi kini murni layar (ScreenW/2, y 156/122 dari bawah) — tidak lagi terikat
+  papan. Jalur bawah-tengah selalu kosong: LANJUT kanan, tas kiri.
+- **Sapuan register kalimat tutorial** (perintah user: "kata-katanya kaya anak
+  nongkrong") — seluruh kalimat casual ("Gaspol saja", "kosong berarti mati",
+  "Siap?") ditulis ulang profesional-hangat di 10 bahasa; isi/fakta tidak berubah.
+- **DI-COMMIT atas perintah user** ("kalo udah tolong commit dah semua") — satu
+  commit sapu bersih termasuk sisa Ronde 16 (boss rebalance) yang belum pernah
+  di-commit. Tanpa baris atribusi, sesuai aturan repo.
+  BELUM DINILAI MATA: sorotan bola pasca-fix, 11 langkah, DEEP POCKETS, teks
+  bawah-tengah, kalimat baru.

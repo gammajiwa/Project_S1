@@ -326,6 +326,15 @@ namespace Proto
 
         public static Rect? ShopPanelOverride;
         public static Rect[] ShopSlotsOverride;
+
+        /// <summary>
+        /// Kotak GAMBAR di dalam tiap slot dagang — anak bernama "Icon" di prefab. Terpisah dari
+        /// kotak slot supaya gambar dan tulisan punya jatah ruangnya masing-masing: sebelum ada
+        /// ini, gambar dipusatkan dengan rumus tetap di tengah slot dan piece ber-art besar
+        /// menindih baris nama & harga di bawahnya.
+        /// </summary>
+        public static Rect[] ShopIconsOverride;
+
         public static Rect? ShopRerollOverride;
         public static Rect? StartButtonOverride;
         public static Rect? ShopButtonOverride;
@@ -368,6 +377,18 @@ namespace Proto
             return new Rect(x, y, ShopSlotW, ShopSlotH);
         }
 
+        /// <summary>
+        /// Kotak gambar slot ke-<paramref name="i"/>, atau null kalau prefab tidak menyediakannya
+        /// — pemanggil jatuh ke pemusatan hitungan lama.
+        /// </summary>
+        public static Rect? ShopIconRect(int i)
+        {
+            if (ShopIconsOverride == null || i < 0 || i >= ShopIconsOverride.Length) return null;
+
+            var r = ShopIconsOverride[i];
+            return r.width > 1f && r.height > 1f ? r : (Rect?)null;
+        }
+
         public static Rect RerollRect()
         {
             if (ShopRerollOverride.HasValue) return ShopRerollOverride.Value;
@@ -399,6 +420,17 @@ namespace Proto
             float cx = ScreenW * 0.5f;
             float cy = ScreenH * 0.5f - 60f;
             return new Rect(cx - OverButtonW * 0.5f, cy - OverButtonH * 0.5f, OverButtonW, OverButtonH);
+        }
+
+        /// <summary>
+        /// Tombol IDUP LAGI, tepat di atas tombol pulang. Hanya digambar selagi pakta
+        /// kebangkitan masih punya jatah (PlayerCaster.CanRevive) — layar mati biasa
+        /// tetap satu pintu.
+        /// </summary>
+        public static Rect GameOverReviveRect()
+        {
+            var menu = GameOverMenuRect();
+            return new Rect(menu.xMin, menu.yMax + 26f, menu.width, menu.height);
         }
 
         /// <summary>Panel peta run saat MEMILIH: satu layar penuh, tegak ala Slay the Spire —

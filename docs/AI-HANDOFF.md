@@ -1,7 +1,8 @@
 # Handoff untuk agent AI
 
 Dokumen ini ditulis supaya agent lain bisa lanjut kerja tanpa harus menebak.
-Baca ini **sebelum** menyentuh kode. Terakhir diperbarui: sesi 2026-08-06
+Baca ini **sebelum** menyentuh kode. Terakhir diperbarui: sesi 2026-08-19
+(revive + pakta 1x/run + papan 7x7 + tutorial + setelan — **§44**); sebelumnya 2026-08-06
 (skill non-serangan, kamera dead-zone, drop jadi benda nyata, solver keseimbangan —
 **§13**; tes build ★5 penuh + bug anggaran mana — **§14**;
 kamera/DebugConfig/Playground — **§15**; boss ular + biome — **§16**;
@@ -3297,3 +3298,197 @@ sculpt high-poly-nya sendiri, bukan versi low-poly. Room_Shop sekarang membawa
 3,1 juta tris untuk SATU NPC diam; Room_Event ~2 juta tris. Bandingkan dengan arena:
 500 musuh @ 59 fps, 5 draw call. Retopo/decimate + bake ke low-poly adalah pekerjaan
 yang belum dilakukan, bukan pilihan gaya.
+
+---
+
+## 44. Revive yang bisu, pakta 1x/run, papan 7x7 (ADDENDUM), tutorial, setelan (2026-08-19)
+
+### 44.1 "Punya revive kok langsung game over" — revive jadi TOMBOL di layar mati
+
+Laporan: ambil KEBANGKITAN (user menyebutnya "idup 2x"), mati → langsung layar
+GAME OVER. Investigasi menemukan jalur `Drain → SpendRevive` SEHAT, tapi
+`PlayerCaster.OnRevived` TIDAK PUNYA SATU PUN pendengar (revive otomatis yang
+terjadi cuma kilat kecil — di wave ramai tak pernah terlihat), dan revive bisa
+langsung dimakan lagi oleh peluru yang masih di udara (`Push` hanya mendorong musuh).
+
+**Desain final (arahan user di hari yang sama): revive TIDAK otomatis lagi.**
+
+- `Drain` pada HP habis SELALU mematikan (`Alive=false`, `Enemies.Running=false`)
+  tanpa menyentuh jatah revive.
+- Layar mati menampilkan tombol kedua **IDUP LAGI** (hijau, di atas tombol pulang,
+  `GameOverReviveRect()`) HANYA selama `PlayerCaster.CanRevive` (jatah pakta masih
+  ada). Klik → `PlayerCaster.ReviveNow()`: SpendRevive, HP = MaxHp×porsi,
+  `Alive=true`, `Enemies.Running=true`, Push + flash + `OnRevived` (kini di-
+  subscribe GrimoireUI → Announce `hud.revive.announce`). `PlayerBurnout` sudah
+  sejak lama memulihkan badan saat `Alive` balik true — tidak perlu disentuh.
+- **Fanfare kalah TIDAK berbunyi selama tombol IDUP LAGI ditawarkan** — nada kalah
+  untuk kematian yang bisa dibatalkan itu bohong, dan `GameOverFanfare` mematikan
+  musik combat yang harus tetap jalan kalau pemain bangkit. Kematian FINAL
+  (jatah habis / tak pernah ada) tetap berbunyi seperti dulu.
+- Field baru `GameBalance.ReviveGraceSeconds` (1,5 dtk, Inspector): kebal sesaat
+  setelah `ReviveNow` supaya bangkit tidak langsung dimakan sisa peluru.
+- Loc baru `hud.gameover.revive` (10 bahasa); labelnya auto-shrink (pola _hudText)
+  karena beberapa bahasa menuliskannya panjang.
+
+Ditolak nongol dua kali → lihat 44.2.
+
+### 44.2 Pakta = SATU KALI TAMPIL per run, dan kejadian tanpa stok = koin saja
+
+- `GrimoireUI._pactsOffered` (HashSet, umur = umur UI = satu run) mencatat SEMUA
+  pakta yang pernah tampil — diambil ATAU ditolak. `ContentDatabase.RollPacts`
+  dapat parameter `exclude` dan menyaringnya. Perintah pemilik project:
+  "1 buff sekali di event".
+- Kartu yang slotnya kosong **TIDAK DIGAMBAR** (dulu: kartu abu-abu "tawaran koin").
+  Dua-duanya kosong → body ganti `event.empty`, tombol bawah ganti label
+  `event.takegold` (+N koin, jalur `RefusePact` yang sama). Klik di bekas kotak
+  kartu = tidak terjadi apa-apa (`TakePact` slot null → return, bukan RefusePact).
+- `PaintPactCard` tidak lagi menggambar baris "-" untuk pakta tanpa bane.
+
+### 44.3 Papan 7x7 (ADDENDUM) &amp; tas 5x5 (DEEP POCKETS) — ukuran grid jadi dinamis
+
+**`Grimoire.Width/Height` BUKAN const lagi** — static mutable, bawaan 6x6
+(`BaseWidth/BaseHeight`), pagar `MaxWidth/MaxHeight = 8`, diubah lewat `SetSize`.
+
+**INVARIAN BARU (play mode tanpa domain reload!): setiap titik masuk WAJIB
+`Grimoire.ResetSize()`.** Sudah terpasang di `PlayerCaster.Init` (sebelum
+`new Grimoire`) dan `MainMenuController.Awake` (preview starter). Lupa reset =
+run/menu berikutnya mewarisi 7x7 diam-diam.
+
+Rantai datanya: `WorldModifierDefinition.GridPlus` (int, baru) →
+`WorldPacts.GridBonus` (dijumlah di Recompute) → `GrimoireUI.TakePact` memanggil
+`ApplyBoardSize()` → `Grimoire.SetSize` + `ReseatBoardCells()` + `ReseatBag()`.
+
+Kenapa UI-nya tidak perlu dirombak: kotak `GridArea` prefab TETAP — `Step` membagi
+kotak dengan jumlah sel, jadi 7 kolom = sel mengecil di kotak yang sama. Karena
+papan persegi, `Width*(CellSize+CellGap)` konstan → `RightX()` (kolom tas) geser
+NOL piksel; `BagCell => CellSize` jadi sel tas ikut mengecil. Tabrakan dengan tas
+mustahil secara aritmetika.
+
+**Jebakan yang dihindari:** petak papan di kanvas ini dibuat SEKALI dan urutan
+pembuatan = urutan gambar, jadi `BuildGrid` sekarang mengalokasikan petak sampai
+KAPASITAS 8x8 (64 base + 64 skill, cadangan nonaktif) dan pertumbuhan hanya
+MENDUDUKKAN ULANG (`ReseatBoardCells`), tidak pernah membuat objek baru — objek
+baru akan lahir di pucuk kanvas dan menutupi panel. Indeks petak selalu
+`y * Grimoire.Width + x` dengan Width HARI INI; aman karena `DrawGrid` menulis
+ulang seluruh petak aktif tiap frame, dan petak di atas `Width*Height` dipadamkan
+di reseat.
+
+Aset dibuat TANGAN (Unity tidak jalan di sesi ini): `Pact_lembarbaru.asset`
+(+meta, guid `c07d0db9...`), `Icon_pact_lembarbaru.png` 64px (+meta, guid
+`3b03edb3...`, grid 7x7 — baris atas & kolom kanan lebih terang), didaftarkan ke
+`ContentDatabase.asset _pacts`. `PactPass` ikut di-update (id
+`lembarbaru`, GridPlus 1, bane KOSONG — sengaja melanggar aturan "tidak ada pakta
+cuma untung" atas perintah pemilik project) + `P()` men-zero `GridPlus`, jadi
+menjalankan ulang pass TIDAK menghapus pakta ini. Loc: `pact.lembarbaru.name =
+ADDENDUM` (semua bahasa), boon en/id beda, 5 bahasa lain Inggris, ja/ko/zh TODO.
+
+**TAS ikut dapat kembarannya: `Pact_kantongdalam` "DEEP POCKETS" (BagPlus 1) —
+4x4 jadi 5x5.** Pola identik ADDENDUM dari ujung ke ujung:
+
+- `Backpack.Width/Height` bukan const lagi: `BaseWidth/Height = 4`,
+  `MaxWidth/Height = 6`, `SetSize`/`ResetSize`. **Invarian reset yang sama** —
+  `PlayerCaster.Init` dan `MainMenuController.Awake` sudah me-reset KEDUANYA
+  (papan + tas) berdampingan.
+- `WorldModifierDefinition.BagPlus` → `WorldPacts.BagBonus` →
+  `GrimoireUI.ApplyPactLayout()` (pengganti ApplyBoardSize: menangani GridBonus
+  DAN BagBonus dalam satu jalan; TakePact memicunya bila salah satu > 0).
+- Sel tas dialokasikan sampai 6x6 di `BuildBackpack` (cadangan padam);
+  `ReseatBag` sekarang juga MENYALAKAN sel aktif dan memadamkan sisanya —
+  `DrawBackpack` hanya menulis warna, tidak pernah menyentuh `.enabled`.
+  `DrawBagTiles` meneruskan `Backpack.Width/Height` hidup-hidup, jadi lapisan
+  tile ikut tanpa disentuh.
+- Tas tumbuh ke KANAN-ATAS dari pangkal tetap (RightX/BagY tidak bergeser) —
+  tidak pernah menyentuh buku; sisi kanan memang zona sebar piece tercecer.
+- Aset tangan: guid pakta `979e9399...`, icon `3770f09a...` (placeholder 5x5
+  kulit — user akan mengganti art-nya), ContentDatabase = **24 pakta**.
+  Loc `pact.kantongdalam.name = DEEP POCKETS` semua bahasa.
+
+### 44.4 Tutorial satu-kali (dim + sorotan)
+
+`View/TutorialOverlay.cs` (baru, bukan MonoBehaviour — pola StatusStrip): empat
+panel gelap mengepung SATU kotak terang, bingkai emas berdenyut, plakat kalimat,
+klik di mana pun = langkah berikutnya. Dibangun PALING AKHIR di `GrimoireUI.Init`
+supaya duduk di pucuk kanvas; layar GAME OVER tetap menang (ia menaikkan dirinya
+sendiri, dan `UpdateTutorial` menyembunyikan tutorial saat pemain mati).
+
+Dua babak, pemicunya KEADAAN (dicek tiap frame, baru menyala saat papan benar-benar
+bebas dipandang — tidak saat wave/peta/toko/kejadian/tirai/piece di kursor):
+
+| Babak | Kapan | Isi |
+|---|---|---|
+| `intro` | wave 0, papan pertama tampil | 3 langkah: buku (GridRect) → tas → tombol LANJUT |
+| `rest` | papan kembali setelah wave >= 1 | **11 langkah**: rune → skill → **sigil** (pasif, `IsPassive`) → evolusi → tas (skill & sigil cadangan; isi tas tidak menembak; RUNE TIDAK BISA masuk — aturan nyata `Backpack.CanPlace`) → tercecer dijual otomatis saat berangkat → bola NYAWA → bola MANA → deret speed (teks: game nonton, NOL risiko — naikin = skip keseruan) → **panel damage** (peringkat 5 skill ter-damage) → objektif (plakat STAGE) |
+
+Materi HP/mana/speed/objektif SENGAJA di babak rest, bukan babak sendiri di tengah
+combat — user memintanya lalu MEREVISI SENDIRI: "taro tutorialnya semua abis wave
+aja biar gak bingung". Jangan menghidupkan lagi tutorial yang menimpa pertarungan.
+Target sorotan HUD: `TutorialHudRect` (CanvasRectOf **`_hpFill`/`_manaFill` — FILL
+bolanya, BUKAN kotak hover**: zona hover ditata tangan dan boleh geser dari bolanya,
+sorotan yang memakainya meleset — screenshot playtest 2026-08-19; plakat untuk
+objektif; fallback papan), `TutorialSpeedRect` (union `_speedButtons`, fallback rumus
+SpeedRect), `TutorialSpellsRect` (union baris `_spellBg` yang menyala),
+`TutorialLooseRect` (piece tercecer pertama; drop yang masih terbang ke pemain belum
+masuk `_loosePos`, jadi cadangannya zona sebar).
+
+Sekali seumur INSTALL: `PlayerPrefs` `GrimTut_intro` / `GrimTut_rest`
+(`TutorialOverlay.BeginOnce` — ditandai saat MULAI, bukan saat selesai).
+**Tanda dibaca ulang tiap frame idle, TIDAK di-cache di field sesi** — tombol
+reset di setelan (44.5) menghapusnya lewat `TutorialOverlay.ResetSeen()`, dan
+tutorial langsung menyala lagi di papan yang sama supaya bisa diuji berulang.
+Babak baru cukup didaftarkan di `TutorialOverlay.Chapters`.
+
+Selama aktif seluruh input permainan berhenti — dan pagarnya EMPAT lapis, tiga
+di antaranya lahir dari verifikasi adversarial: `Update` melewati
+`HandleSpeed`/`HandleInput`; dua jalur SPACE di `HandleBanner` dipagari
+`!TutorialBlocking`; **ESC ikut dipagari** (tanpa itu ia membuka setelan di atas
+dim beku — atau membuang run ke menu pada tema tanpa prefab setelan); dan
+**empat panel dim ber-`raycastTarget = true`** karena deret tombol kecepatan
+prefab adalah Button UGUI sungguhan yang kliknya tembus hit-test ProtoInput.
+Panel setelan tidak terhalang perisai itu — ia di-Instantiate belakangan, duduk
+di atas overlay. Sasaran langkah LANJUT ber-fallback ke papan bila tombolnya
+dimatikan di prefab (override 0x0). Playground TIDAK membuat GrimoireUI, jadi
+test bench tidak akan memakan flag-nya. Loc `tut.*` x 10 bahasa (+`tut.next`
+pakai {0}/{1} counter).
+
+### 44.5 Tombol setelan: RESET CODEX + TUTORIAL (satu tombol, riwayat bolak-balik)
+
+Sejarah SATU HARI yang sama (2026-08-19): tombol HAPUS CODEX semula diminta
+dicabut ("btn debug"), lalu diperintahkan hidup lagi **digabung reset tutorial**
+supaya tutorialnya bisa diuji berulang-ulang. Keadaan akhir:
+
+- `SettingsPanel.ResetCodex()` (tetap dua-klik ala lama) kini menghapus codex
+  DAN memanggil `TutorialOverlay.ResetSeen()`. Karena GrimoireUI membaca tanda
+  tutorial tiap frame idle, papan yang sedang terbuka langsung memutar
+  tutorialnya lagi — reset dari ESC di tengah run pun bekerja.
+- Label diganti di 10 bahasa: `settings.reset.idle` = "RESET CODEX + TUTORIAL",
+  `settings.reset.done`, `settings.row.resetcodex` = "Codex & tutorial".
+- `SettingsTabs` kembali PERSIS ke bentuk lamanya — API `HideTabContaining`
+  (sempat ditambahkan untuk mencabut tab DATA) sudah DICABUT lagi, tidak ada
+  pemakainya. Kalau suatu hari tab perlu disembunyikan lagi, tulis ulang; jangan
+  cari API-nya di sini.
+
+### 44.6 Verifikasi sesi ini — dan batasnya
+
+Unity MCP TIDAK tersedia di sesi ini. Kompilasi diverifikasi lewat
+`dotnet build Assembly-CSharp.csproj` (csproj generate-an Unity, compiler +
+referensi yang sama): **rebuild penuh 0 error, 5 warning — identik dengan
+baseline sebelum perubahan** (warning CS0414 `_eventDone` sudah ada sejak dulu).
+`TutorialOverlay.cs` ditambahkan manual ke csproj (Unity menimpanya saat regenerate
+— tidak apa-apa).
+
+**Verifikasi adversarial terpisah (11 klaim, agent pembantah):** 10 CONFIRMED,
+1 REFUTED sebagian — dua kebocoran input selama tutorial (ESC, dan tombol
+kecepatan UGUI prefab yang tembus dim). Keduanya plus dua temuan minornya SUDAH
+ditambal di sesi yang sama: pagar `!TutorialBlocking` di ESC, `raycastTarget=true`
+pada panel dim, `Grimoire.ResetSize()` di awal `StarterSeatPass.Run()` (keluar
+play mode TIDAK me-reload domain — pass yang jalan setelah sesi play ber-ADDENDUM
+akan menulis seat starter untuk papan 7x7), dan fallback sorotan LANJUT saat
+tombolnya dimatikan prefab. Sisa temuan KOSMETIK yang sengaja dibiarkan:
+`_shopBoundsSize` di-cache dengan CellSize lama sampai stok dikocok (meleset
+beberapa persen setelah ADDENDUM), preview starter bisa 7x7 SATU frame pada
+urutan OnEnable yang langka, dan `RecipeDefinition.OnValidate` membaca papan
+runtime di edit mode (validasi longgar, bukan korupsi).
+
+Yang BELUM: kompilasi Unity sungguhan, .meta untuk `TutorialOverlay.cs` (Unity
+generate sendiri saat fokus), dan SEMUA penilaian mata: tombol IDUP LAGI,
+kejadian tanpa stok, papan 7x7 + tas, tutorial + tombol resetnya.

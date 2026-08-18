@@ -78,8 +78,27 @@ namespace Proto
     /// </summary>
     public class Backpack
     {
-        public const int Width = 4;
-        public const int Height = 4;
+        // 4x4 bawaan. TIDAK lagi const: pakta DEEP POCKETS (BagPlus) menumbuhkannya di
+        // tengah run — pola yang sama persis dengan papan (lihat Grimoire di bawah),
+        // termasuk kewajiban ResetSize() di tiap titik masuk: play mode tanpa domain
+        // reload mewarisi ukuran run sebelumnya tanpa satu pun pesan.
+        public const int BaseWidth = 4;
+        public const int BaseHeight = 4;
+        public const int MaxWidth = 6;
+        public const int MaxHeight = 6;
+
+        public static int Width { get; private set; } = BaseWidth;
+        public static int Height { get; private set; } = BaseHeight;
+
+        public static void ResetSize() => SetSize(BaseWidth, BaseHeight);
+
+        /// <summary>Hanya MEMBESAR yang aman saat run berjalan — alasan yang sama dengan papan:
+        /// menyusut meninggalkan isi tas di luar petak.</summary>
+        public static void SetSize(int w, int h)
+        {
+            Width = Mathf.Clamp(w, 1, MaxWidth);
+            Height = Mathf.Clamp(h, 1, MaxHeight);
+        }
 
         public readonly List<RuneInstance> Placed = new List<RuneInstance>();
 
@@ -238,10 +257,38 @@ namespace Proto
     /// </summary>
     public class Grimoire
     {
-        // 6x6, dulu 7x7 — keputusan pemilik project: papan lebih sempit membuat tiap petak
-        // lebih besar di kotak GridArea yang sama, dan pilihan penempatan yang lebih ketat.
-        public const int Width = 6;
-        public const int Height = 6;
+        // 6x6 bawaan, dulu 7x7 — keputusan pemilik project: papan lebih sempit membuat tiap
+        // petak lebih besar di kotak GridArea yang sama, dan pilihan penempatan lebih ketat.
+        //
+        // TIDAK lagi const: pakta ADDENDUM (GridPlus) menumbuhkannya DI TENGAH run. Static
+        // mutable — seluruh layout (GrimoireLayout) dan model membaca satu ukuran yang sama —
+        // dan karena itu WAJIB di-ResetSize() di tiap titik masuk (PlayerCaster.Init, menu):
+        // play mode tanpa domain reload mewarisi nilai sesi sebelumnya tanpa satu pun pesan.
+        public const int BaseWidth = 6;
+        public const int BaseHeight = 6;
+
+        // Pagar alokasi UI: GrimoireUI membangun petak sebanyak ini sejak awal supaya papan
+        // yang tumbuh tidak perlu melahirkan objek baru di tengah kanvas (urutan pembuatan
+        // adalah urutan gambar — objek baru pasti mendarat di pucuk, menutupi panel).
+        public const int MaxWidth = 8;
+        public const int MaxHeight = 8;
+
+        public static int Width { get; private set; } = BaseWidth;
+        public static int Height { get; private set; } = BaseHeight;
+
+        /// <summary>Kembali ke ukuran bawaan. Panggil di awal run dan di menu.</summary>
+        public static void ResetSize() => SetSize(BaseWidth, BaseHeight);
+
+        /// <summary>
+        /// Mengganti ukuran papan. Hanya MEMBESAR yang aman saat run berjalan — piece yang
+        /// sudah duduk tetap dalam batas karena petak lama adalah subset petak baru. Menyusut
+        /// di tengah run akan meninggalkan piece di luar papan, jadi jangan.
+        /// </summary>
+        public static void SetSize(int w, int h)
+        {
+            Width = Mathf.Clamp(w, 1, MaxWidth);
+            Height = Mathf.Clamp(h, 1, MaxHeight);
+        }
 
         public readonly List<RuneInstance> Placed = new List<RuneInstance>();
         public readonly List<CompiledSpell> Spells = new List<CompiledSpell>();

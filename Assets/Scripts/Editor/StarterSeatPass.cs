@@ -22,6 +22,11 @@ namespace Proto.EditorTools
         [MenuItem("Tools/Grimoire/Tata Ulang Seat Starter")]
         public static void Run()
         {
+            // Keluar play mode TIDAK me-reload domain: sesi play yang mengambil pakta ADDENDUM
+            // meninggalkan Grimoire.Width = 7 di edit mode, dan pass ini akan memvalidasi/
+            // menulis seat starter untuk papan yang salah — Origin bisa tersimpan di luar 6x6.
+            Grimoire.ResetSize();
+
             var guids = AssetDatabase.FindAssets("t:HeroLoadout", new[] { "Assets/GameData/Heroes" });
             var report = new System.Text.StringBuilder();
             int moved = 0, stuck = 0;

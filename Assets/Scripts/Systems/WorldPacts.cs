@@ -46,6 +46,15 @@ namespace Proto
         public float ReviveAt { get; private set; }
 
         /// <summary>
+        /// Petak papan tambahan per sisi, dijumlah dari semua pakta ber-GridPlus. Pemakainya
+        /// (GrimoireUI) yang mengeksekusi lewat Grimoire.SetSize — data di sini, aksi di sana.
+        /// </summary>
+        public int GridBonus { get; private set; }
+
+        /// <summary>Petak tas tambahan per sisi (BagPlus). Aturan yang sama dengan GridBonus.</summary>
+        public int BagBonus { get; private set; }
+
+        /// <summary>
         /// Kebangkitan sudah dipakai. Disimpan di sini, bukan di pemain: aset paktanya dipakai
         /// bersama seluruh run yang pernah dimainkan, dan menulis "sudah dipakai" ke dalam aset
         /// berarti run berikutnya lahir tanpa jatah kebangkitannya.
@@ -102,6 +111,8 @@ namespace Proto
             ManaPerKill = 0f;
             HpPerKill = 0f;
             ReviveAt = 0f;
+            GridBonus = 0;
+            BagBonus = 0;
 
             // Peluang gema digabung sebagai peluang TIDAK ADA yang menggema, lalu dibalik. Menjumlah
             // langsung akan menembus 100% di pakta ketiga, dan "peluang" yang selalu terjadi bukan
@@ -131,6 +142,9 @@ namespace Proto
                 // Yang paling murah hati menang, bukan yang terakhir diambil. Dua pakta kebangkitan
                 // tetap satu kebangkitan — jatahnya dipegang di sini, bukan di paktanya.
                 if (p.ReviveAt > ReviveAt) ReviveAt = p.ReviveAt;
+
+                GridBonus += Mathf.Max(0, p.GridPlus);
+                BagBonus += Mathf.Max(0, p.BagPlus);
             }
 
             EchoChance = 1f - noEcho;

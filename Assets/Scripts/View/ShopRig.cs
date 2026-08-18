@@ -59,7 +59,35 @@ namespace Proto
             if (Slots == null) return;
             var faint = GuideInk;
             faint.a *= 0.55f;
-            for (int i = 0; i < Slots.Length; i++) Draw(Slots[i], faint);
+
+            for (int i = 0; i < Slots.Length; i++)
+            {
+                Draw(Slots[i], faint);
+                if (Slots[i] == null) continue;
+
+                // Kotak GAMBAR di dalam kartu, kalau ada. Digambar dengan warna berbeda supaya
+                // jatah gambar dan jatah tulisan terlihat terpisah selagi keduanya ditata.
+                Draw(FindDeep(Slots[i], "Icon"), new Color(0.45f, 0.9f, 1f, GuideInk.a));
+            }
+        }
+
+        /// <summary>
+        /// Kotak bernama <paramref name="name"/> DI MANA PUN di bawah <paramref name="root"/>.
+        /// Aturannya harus sama persis dengan pencarian GrimoireUI saat run — panduan yang mencari
+        /// dengan aturan berbeda akan menggambar kotak yang bukan kotak yang benar-benar dipakai.
+        /// </summary>
+        static RectTransform FindDeep(Transform root, string name)
+        {
+            if (root == null) return null;
+
+            var direct = root.Find(name) as RectTransform;
+            if (direct != null) return direct;
+
+            var all = root.GetComponentsInChildren<RectTransform>(true);
+            for (int i = 0; i < all.Length; i++)
+                if (all[i] != null && all[i].name == name) return all[i];
+
+            return null;
         }
 
         static void Draw(RectTransform area, Color ink)

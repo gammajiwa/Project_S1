@@ -707,6 +707,11 @@ namespace Proto
             _db = database;
             _balance = balance;
 
+            // Papan & tas SELALU lahir di ukuran bawaan — keduanya static dan play mode
+            // tanpa domain reload mewarisi ukuran milik run sebelumnya yang mengambil
+            // pakta ADDENDUM (papan 7x7) / DEEP POCKETS (tas 5x5).
+            Grimoire.ResetSize();
+            Backpack.ResetSize();
             Book = new Grimoire(database);
 
             BaseMaxHp = balance.BaseMaxHp;
@@ -1874,9 +1879,18 @@ namespace Proto
         /// <summary>Raised saat damage benar-benar menembus. Tidak menyala untuk yang tertahan perisai.</summary>
         public System.Action OnHurt;
 
+        /// <summary>
+        /// Batas waktu kebal singkat setelah pakta kebangkitan menyala. Tanpa ini, revive di
+        /// tengah kerumunan bisa dimakan lagi DI FRAME BERIKUTNYA oleh sisa peluru/zone yang
+        /// masih di udara — Push hanya mendorong musuh, bukan proyektilnya — dan yang dirasakan
+        /// pemain: "punya revive tapi tetap langsung game over".
+        /// </summary>
+        float _reviveGraceUntil = -1f;
+
         void Drain(float amount)
         {
             if (Cheats != null && Cheats.CheatInvulnerable) return;
+            if (Time.time < _reviveGraceUntil) return;
 
             // Perisai dimakan lebih dulu, dan sisa yang tembus tetap diteruskan ke HP dalam pukulan
             // yang sama. Kalau perisai menelan seluruh pukulan hanya karena dia sempat aktif, satu
@@ -1894,29 +1908,51 @@ namespace Proto
 
             if (Hp > 0f) return;
 
-            // Pakta kebangkitan. Jatahnya dipegang WorldPacts, bukan aset paktanya — aset itu
-            // dipakai bersama tiap run yang pernah dimainkan, dan menandainya "sudah dipakai"
-            // akan membuat run berikutnya lahir tanpa jatah yang sudah dibayar pemiliknya.
-            float revive = Pacts != null ? Pacts.SpendRevive() : 0f;
-
-            if (revive > 0f)
-            {
-                Hp = MaxHp * revive;
-                Shield = 0f;
-
-                // Lapangan dibersihkan sekalian. Bangkit lalu langsung mati lagi di frame yang
-                // sama — karena kerumunan yang membunuh masih menempel — bukan kebangkitan,
-                // itu jeda seperempat detik yang berbiaya satu pakta.
-                if (_enemies != null) _enemies.Push(transform.position, 9f, 26f);
-
-                SpawnFlash(transform.position, 9f, 0.6f, new Color(1f, 0.9f, 0.5f));
-                OnRevived?.Invoke();
-                return;
-            }
-
+            // Mati SELALU menghentikan lapangan dulu — pakta kebangkitan tidak lagi menyala
+            // otomatis di sini. Dulu otomatis, dan di tengah ledakan wave tinggi tidak ada
+            // yang melihat jatahnya terpakai ("punya revive kok langsung game over"). Sekarang
+            // layar mati menawarkan tombol IDUP LAGI (ReviveNow) selama jatahnya masih ada;
+            // keputusannya milik pemain, dan terpakainya jatah jadi kejadian yang DILIHAT.
             Hp = 0f;
             Alive = false;
             if (_enemies != null) _enemies.Running = false;
+        }
+
+        /// <summary>Masih ada jatah kebangkitan yang bisa dibelanjakan layar mati.</summary>
+        public bool CanRevive =>
+            !Alive && Pacts != null && !Pacts.ReviveSpent && Pacts.ReviveAt > 0f;
+
+        /// <summary>
+        /// Membelanjakan pakta kebangkitan dari LAYAR MATI. Jatahnya dipegang WorldPacts,
+        /// bukan aset paktanya — aset itu dipakai bersama tiap run yang pernah dimainkan,
+        /// dan menandainya "sudah dipakai" akan membuat run berikutnya lahir tanpa jatah
+        /// yang sudah dibayar pemiliknya.
+        /// </summary>
+        public bool ReviveNow()
+        {
+            if (Alive) return false;
+
+            float revive = Pacts != null ? Pacts.SpendRevive() : 0f;
+            if (revive <= 0f) return false;
+
+            Alive = true;
+            Hp = MaxHp * revive;
+            Shield = 0f;
+            _reviveGraceUntil = Time.time +
+                (_balance != null ? _balance.ReviveGraceSeconds : 1.5f);
+
+            // Lapangan dibersihkan sekalian. Bangkit lalu langsung mati lagi di frame yang
+            // sama — karena kerumunan yang membunuh masih menempel — bukan kebangkitan,
+            // itu jeda seperempat detik yang berbiaya satu pakta.
+            if (_enemies != null)
+            {
+                _enemies.Push(transform.position, 9f, 26f);
+                _enemies.Running = true;
+            }
+
+            SpawnFlash(transform.position, 9f, 0.6f, new Color(1f, 0.9f, 0.5f));
+            OnRevived?.Invoke();
+            return true;
         }
 
         /// <summary>Menyala saat pakta kebangkitan membatalkan kematian. UI mengumumkannya.</summary>
