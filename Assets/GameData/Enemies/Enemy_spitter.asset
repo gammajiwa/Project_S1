@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
   Id: spitter
   DisplayName: Spitter
-  FromWave: 7
+  FromWave: 26
   Weight: 1
   WeightPerWave: 0.3
   WeightMax: 20
   HpMultiplier: 1.15
   SpeedMultiplier: 0.9
-  Scale: 1.1
+  Scale: 1.3
   HoverHeight: 0
   UseTint: 1
   Tint: {r: 0.45, g: 0.62, b: 0.35, a: 1}

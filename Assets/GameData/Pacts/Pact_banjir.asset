@@ -16,7 +16,7 @@ MonoBehaviour:
   DisplayName: BANJIR
   Color: {r: 0.3, g: 0.55, b: 0.7, a: 1}
   Icon: {fileID: 21300000, guid: 41544940e0c249178dd43c73d4cee1f5, type: 3}
-  BoonText: Tiap kill mengembalikan 0,5 mana dan 0,35 nyawa
+  BoonText: Tiap kill mengembalikan 1,5 mana dan 0,6 nyawa
   BaneText: Musuh yang datang 60% LEBIH BANYAK
   Boon: []
   Bane: []
@@ -26,8 +26,8 @@ MonoBehaviour:
   EnemyCountMul: 1.6
   ManaRegenMul: 1
   HpRegenMul: 1
-  ManaPerKill: 0.5
-  HpPerKill: 0.35
+  ManaPerKill: 1.5
+  HpPerKill: 0.6
   EchoChance: 0
   ReviveAt: 0
   Blurb: '"Kubuka pintunya lebar-lebar. Semoga tanganmu cukup cepat."'

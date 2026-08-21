@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a6c106bc3bffeb4bb0c7c37ebd107c3, type: 3}
+  m_Name: Enemy_drake_storm
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
+  Id: drake_storm
+  DisplayName: Storm Drake
+  FromWave: 16
+  Weight: 0.5
+  WeightPerWave: 0.05
+  WeightMax: 2.5
+  HpMultiplier: 4.5
+  SpeedMultiplier: 0.85
+  Scale: 1.5
+  HoverHeight: 2.8
+  UseTint: 0
+  Tint: {r: 1, g: 1, b: 1, a: 1}
+  Vat: {fileID: 11400000, guid: 264a6454df01c764a96098284567ea55, type: 2}
+  PreferredRange: 10
+  Flanks: 0
+  AttackInterval: 1.6
+  AttackDamage: 10
+  ShotSpeed: 22
+  ShotColor: {r: 0.72, g: 0.85, b: 1, a: 1}
+  Curse: {fileID: 0}
+  Blurb: Rides its own thunderhead. The bolts are faster than your excuses.

@@ -23,7 +23,7 @@ MonoBehaviour:
     Value: 0.8
   Bane:
   - Type: 1
-    Value: -60
+    Value: -40
   EnemyHpMul: 1
   EnemySpeedMul: 1
   EnemyDamageMul: 1

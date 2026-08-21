@@ -16,18 +16,18 @@ MonoBehaviour:
   DisplayName: PERJANJIAN DARAH
   Color: {r: 0.7, g: 0.15, b: 0.3, a: 1}
   Icon: {fileID: 21300000, guid: def311cfef424799a0d326b50cc60ab8, type: 3}
-  BoonText: Tiap musuh mati memulihkan 0,8 nyawa
-  BaneText: Nyawa tidak pulih sendiri, dan musuh memukul 30% lebih keras
+  BoonText: Tiap musuh mati memulihkan 1,5 nyawa
+  BaneText: Nyawa tidak pulih sendiri, dan musuh memukul 20% lebih keras
   Boon: []
   Bane: []
   EnemyHpMul: 1
   EnemySpeedMul: 1
-  EnemyDamageMul: 1.3
+  EnemyDamageMul: 1.2
   EnemyCountMul: 1
   ManaRegenMul: 1
   HpRegenMul: 0
   ManaPerKill: 0
-  HpPerKill: 0.8
+  HpPerKill: 1.5
   EchoChance: 0
   ReviveAt: 0
   Blurb: '"Lukamu menutup dengan darah mereka. Hanya dengan darah mereka."'

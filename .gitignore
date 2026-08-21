@@ -171,3 +171,10 @@ Assets/Art/VFX/Packs/Adrift Team.meta
 # yang di-push, dan 2 GB bahan mentah yang 99%-nya tidak akan dipakai bukan
 # tempat menghabiskannya. Sumbernya aman di riwayat project_b.
 SoundSource/
+
+# Bahan mentah (arsip font dll) - bukan aset game
+_raw/
+
+# Log & state sesi AI - append jutaan baris, bukan buat repo
+production/session-logs/
+production/session-state/

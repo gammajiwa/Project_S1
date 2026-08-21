@@ -72,7 +72,8 @@ MonoBehaviour:
   ManaCostScale: 1.4
   KillDropChance: 0.035
   WaveClearDrops: 1
-  RuneShareOfDrops: 0.25
+  RuneShareOfDrops: 0.1
+  RunePityDrops: 12
   DropStarWeights:
   - 82
   - 12

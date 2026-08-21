@@ -20,7 +20,7 @@ MonoBehaviour:
   WeightMax: 20
   HpMultiplier: 1
   SpeedMultiplier: 1
-  Scale: 1
+  Scale: 0.85
   HoverHeight: 0
   UseTint: 0
   Tint: {r: 1, g: 1, b: 1, a: 1}

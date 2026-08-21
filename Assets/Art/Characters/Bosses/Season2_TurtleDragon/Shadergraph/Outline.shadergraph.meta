@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 3af76227a09b54c4bac1bd3738f350ff
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 33030
+  packageName: Season2_TurtleDragon
+  packageVersion: Season2_TurtleDragon_Major
+  assetPath: Assets/Season2_TurtleDragon/Shadergraph/Outline.shadergraph
+  uploadId: 800816

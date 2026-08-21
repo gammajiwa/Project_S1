@@ -17,10 +17,10 @@ MonoBehaviour:
   Color: {r: 0.4, g: 0.32, b: 0.28, a: 1}
   Icon: {fileID: 21300000, guid: 1ecf172dd48e4bf085c7b5449340d229, type: 3}
   BoonText: Musuh bergerak 40% LEBIH LAMBAT
-  BaneText: Musuh bernyawa +70%
+  BaneText: Musuh bernyawa +50%
   Boon: []
   Bane: []
-  EnemyHpMul: 1.7
+  EnemyHpMul: 1.5
   EnemySpeedMul: 0.6
   EnemyDamageMul: 1
   EnemyCountMul: 1

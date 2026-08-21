@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60a99c0ec6edd6949b3bd8806b6ae064, type: 3}
+  m_Name: Place_forest
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BiomePlace
+  Id: forest
+  DisplayName: Verdant Hollow
+  Faces:
+  - {fileID: 11400000, guid: 597559a2b5a9d6b48b78f0c88205ab4f, type: 2}
+  - {fileID: 11400000, guid: 95d3fe2aa0dfdbd4dafdfe920c1cef02, type: 2}
+  - {fileID: 11400000, guid: 51b986cfee21d3e429b1051b8d690986, type: 2}
+  - {fileID: 11400000, guid: 128f4f15a02757d42ab7b2288c502749, type: 2}

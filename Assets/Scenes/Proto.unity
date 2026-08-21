@@ -150,6 +150,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.ProtoBootstrap
   _database: {fileID: 11400000, guid: 8708f361bba8963448777fbd31d0841e, type: 2}
   _balance: {fileID: 11400000, guid: 204b8609925fbdf4cb6815d958fd17d6, type: 2}
+  _rig_setup: {fileID: 0}
   _look: {fileID: 11400000, guid: f84d1dadffc81bb4c9b7fc7b93d1d2fa, type: 2}
   _biomes:
   - {fileID: 11400000, guid: 597559a2b5a9d6b48b78f0c88205ab4f, type: 2}
@@ -157,11 +158,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 51b986cfee21d3e429b1051b8d690986, type: 2}
   - {fileID: 11400000, guid: 128f4f15a02757d42ab7b2288c502749, type: 2}
   _restBiome: {fileID: 11400000, guid: 178c655f2ae39df40ae5c1b0f04cf39f, type: 2}
+  _places:
+  - {fileID: 11400000, guid: 272d042899b7f81468f2687d5f18dd9b, type: 2}
+  - {fileID: 11400000, guid: 5f4d79c135218984b92691d00961a240, type: 2}
+  - {fileID: 11400000, guid: a2cd7663275c85c4b99f9d19a3f8201e, type: 2}
   _uiTheme: {fileID: 11400000, guid: d4cb4486fcf10c645a7e3509badfe802, type: 2}
   _enemyVat: {fileID: 11400000, guid: 5fb199d5acbc08d4cbf0de7302027150, type: 2}
   _playerAvatarPrefab: {fileID: 5805998038933991893, guid: f2e9010d5b079664385d449aa23cee5e, type: 3}
   _fx: {fileID: 11400000, guid: ecc9af586fc46764bac32e949527dc61, type: 2}
-  _demoBar: 1
   _cheats: {fileID: 11400000, guid: e38904ef8c695ea46b7f3a938296f413, type: 2}
 --- !u!4 &982952184
 Transform:

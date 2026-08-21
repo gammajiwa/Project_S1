@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
   Id: stalker
   DisplayName: Stalker
-  FromWave: 5
+  FromWave: 14
   Weight: 1.5
   WeightPerWave: 0.35
   WeightMax: 20
   HpMultiplier: 0.5
   SpeedMultiplier: 1.55
-  Scale: 0.75
+  Scale: 0.9
   HoverHeight: 2.3
   UseTint: 1
   Tint: {r: 0.55, g: 0.78, b: 0.95, a: 1}

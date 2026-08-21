@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cc383ad6c618d4aae22343ea7830c2, type: 3}
+  m_Name: Boss_dragon
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BossDefinition
+  Id: dragon
+  DisplayName: The Usurper
+  SummitMinAct: 3
+  MaxSegments: 3
+  MinSegments: 2
+  Spacing: 1.05
+  HeadScale: 11
+  TailScale: 1
+  HeadMesh: {fileID: 0}
+  BodyMesh: {fileID: 0}
+  TailMesh: {fileID: 0}
+  BoneSkin: {fileID: 0}
+  HeadMeshScale: 12
+  BodyMeshScale: 21
+  HeadMeshRotation: {x: 0, y: 0, z: 0}
+  BodyMeshRotation: {x: 0, y: 0, z: 0}
+  TailMeshRotation: {x: 0, y: 0, z: 0}
+  SpinDegreesPerSecond: 0
+  Body: 1
+  Vat: {fileID: 11400000, guid: 489e711067fdfc941a7b62c3ab1394bb, type: 2}
+  FlyHeight: 8
+  StrafeWidth: 32
+  ClimbRate: 4
+  BreathInterval: 2.5
+  BreathDuration: 3
+  BreathWindup: 0.5
+  BreathDamage: 60
+  BreathRange: 30
+  BreathGroundRadius: 3.2
+  BreathAngle: 24
+  BreathVfx: {fileID: 2053101587433184381, guid: 38fa03b9f83f85942a9ca809a73abe9b, type: 3}
+  BreathMuzzle: {x: -0.001624215, y: 0.5988355, z: 0.38521883}
+  BreathVfxScale: 3.5
+  BreathVfxDelay: 0.5
+  BreathVfxRotation: {x: 90, y: 0, z: 0}
+  HpMultiplier: 90
+  OrbitRadius: 13
+  Speed: 10
+  LungeSpeed: 15
+  TurnRate: 150
+  Wander: 1.4
+  LungeInterval: 6
+  LungeDuration: 1.8
+  BiteDamage: 26
+  BiteRange: 2.6
+  Curse: {fileID: 0}
+  Burrows: 0
+  ArcDuration: 1.1
+  ArcHeight: 4.5
+  BreachBurst: 3
+  DipDuration: 0.45
+  DiveInterval: 5.5
+  DiveDepth: 5
+  SpitInterval: 0
+  SpitDamage: 14
+  SpitSpeed: 11
+  SpitCurse: {fileID: 0}
+  Minion: 0
+  MinionFromWave: 6
+  MinionCount: 2
+  HeadColor: {r: 1, g: 1, b: 1, a: 1}
+  BodyColor: {r: 1, g: 1, b: 1, a: 1}
+  HeadEmission: {r: 0, g: 0, b: 0, a: 1}
+  BodyEmission: {r: 0, g: 0, b: 0, a: 1}
+  HeadMeshFile: 
+  BodyMeshFile: 
+  TailMeshFile: 
+  BoneSkinFile: 

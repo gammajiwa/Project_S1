@@ -14,13 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
   Id: cursed
   DisplayName: Cursed
-  FromWave: 3
+  FromWave: 10
   Weight: 1.2
   WeightPerWave: 0.25
   WeightMax: 20
   HpMultiplier: 1.6
   SpeedMultiplier: 0.85
-  Scale: 1.45
+  Scale: 1.05
   HoverHeight: 0
   UseTint: 1
   Tint: {r: 0.5, g: 0.32, b: 0.5, a: 1}

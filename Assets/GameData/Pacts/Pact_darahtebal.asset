@@ -16,13 +16,11 @@ MonoBehaviour:
   DisplayName: DARAH TEBAL
   Color: {r: 0.75, g: 0.2, b: 0.22, a: 1}
   Icon: {fileID: 21300000, guid: 6e958042875c471092b5dc8098f9cd5d, type: 3}
-  BoonText: Damage seluruh bukumu +35%
+  BoonText: Damage seluruh bukumu +50%
   BaneText: Semua musuh bernyawa +40%
   Boon:
   - Type: 7
-    Value: 0.35
-  - Type: 1
-    Value: 500
+    Value: 0.5
   Bane: []
   EnemyHpMul: 1.4
   EnemySpeedMul: 1

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 91dc060b070cd6b49b1774965fef260e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 33030
+  packageName: Season2_TurtleDragon
+  packageVersion: Season2_TurtleDragon_Major
+  assetPath: Assets/Season2_TurtleDragon/Materials/Outline_TurtleDragon.mat
+  uploadId: 800816

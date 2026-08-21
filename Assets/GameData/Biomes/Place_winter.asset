@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60a99c0ec6edd6949b3bd8806b6ae064, type: 3}
+  m_Name: Place_winter
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BiomePlace
+  Id: winter
+  DisplayName: Frozen Hollow
+  Faces:
+  - {fileID: 11400000, guid: ff15792f116541b439c4d22d2f6322b8, type: 2}
+  - {fileID: 11400000, guid: 8dfcfc427577c974a905c881cf76e78a, type: 2}
+  - {fileID: 11400000, guid: 9a964009cf8d25e489853ac7bdec641d, type: 2}
+  - {fileID: 11400000, guid: 37f26c5c857acec4a927c9810b3d6bd4, type: 2}
