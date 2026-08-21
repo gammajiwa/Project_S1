@@ -1,0 +1,269 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce75cd28cacacec4e80208fad6326994, type: 3}
+  m_Name: Biome_cinder_night
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BiomeDefinition
+  Id: cinder
+  DisplayName: Cinderwaste
+  GroundColor: {r: 0.1, g: 0.08, b: 0.08, a: 1}
+  HorizonColor: {r: 0.14, g: 0.07, b: 0.06, a: 1}
+  GroundMaterial: {fileID: 0}
+  GroundLayers: []
+  GroundSize: {x: 140, y: 120}
+  GroundPatchSize: 26
+  GroundPatchCoverage: 0.28
+  Skybox: {fileID: 0}
+  PostProcess: {fileID: 11400000, guid: ef8eb60ca37533d4199c31bf56321cc8, type: 2}
+  SunColor: {r: 0.8, g: 0.3, b: 0.2, a: 1}
+  SunPitch: 30
+  SunYaw: 300
+  SunIntensity: 0.55
+  AmbientSky: {r: 0.18, g: 0.11, b: 0.1, a: 1}
+  AmbientEquator: {r: 0.14, g: 0.09, b: 0.08, a: 1}
+  AmbientGround: {r: 0.1, g: 0.07, b: 0.06, a: 1}
+  FogEnabled: 1
+  FogColor: {r: 0.12, g: 0.07, b: 0.06, a: 1}
+  FogStart: 30
+  FogEnd: 95
+  TreeCount: 55
+  TrunkHeightRange: {x: 5, y: 8}
+  TrunkWidthRange: {x: 0.18, y: 0.34}
+  CanopyWidthRatio: {x: 0.5, y: 0.8}
+  CanopyFlatten: 0.6
+  TrunkColors:
+  - {r: 0.1, g: 0.08, b: 0.07, a: 1}
+  - {r: 0.14, g: 0.1, b: 0.09, a: 1}
+  CanopyColors:
+  - {r: 0.25, g: 0.2, b: 0.18, a: 1}
+  - {r: 0.32, g: 0.24, b: 0.2, a: 1}
+  - {r: 0.2, g: 0.16, b: 0.15, a: 1}
+  - {r: 0.38, g: 0.28, b: 0.22, a: 1}
+  MeshTreeShare: 1
+  MeshTrees:
+  - Name: UNS_Spruce_01 LOD2 (blight)
+    Mesh: {fileID: -8119823694327777837, guid: af68f6de6ee33a841b3b0572f41ddcad, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 24fc3acdf24e0244f988b58d56e8ce18, type: 2}
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 2.5
+    SizeMultiplier: 1
+  - Name: UNS_Spruce_02 LOD2 (blight)
+    Mesh: {fileID: -3548344128078573343, guid: 9813ed0b3eddc834a8202f421870eeb2, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 24fc3acdf24e0244f988b58d56e8ce18, type: 2}
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 3.5
+    SizeMultiplier: 1
+  - Name: UNS_Stump LOD1 (blight)
+    Mesh: {fileID: -760317851530913945, guid: e019a327afd8a364a8cae984935ca573, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 0.7
+    SizeMultiplier: 0.4
+  ScatterCount: 260
+  ScatterShape: 3
+  ScatterScaleRange: {x: 0.12, y: 0.3}
+  ScatterFlatten: 2.4
+  ScatterColors:
+  - {r: 0.8, g: 0.25, b: 0.06, a: 1}
+  - {r: 0.95, g: 0.4, b: 0.1, a: 1}
+  - {r: 0.2, g: 0.15, b: 0.14, a: 1}
+  MeshScatterShare: 1
+  MeshScatterWidth: {x: 0.7, y: 1.5}
+  MeshScatter:
+  - Name: UNS_Bush LOD1 (blight)
+    Mesh: {fileID: -2133559501275986802, guid: c1d6b7954ca8dfe48885597ce4ef6e20, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 99e8cc36fe17f2b4e9c27eef7c73d01a, type: 2}
+    Weight: 3
+    SizeMultiplier: 1.1
+  - Name: UNS_Standard_Rock_01 LOD1 (blight)
+    Mesh: {fileID: 8564540033975349723, guid: 872845ac0a2b8c6469d5e67ad0aba08e, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 1.5
+    SizeMultiplier: 0.8
+  - Name: UNS_Standard_Rock_05 LOD1 (blight)
+    Mesh: {fileID: 2516196251272623502, guid: 650b26816a2483e4c972cd13717f309d, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 0.8
+    SizeMultiplier: 0.95
+  - Name: UNS_Mushroom_Patch LOD1 (blight)
+    Mesh: {fileID: 5096643413501159055, guid: 27c3f4d36f77dde429372ccba3513837, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 0.6
+    SizeMultiplier: 0.55
+  - Name: UNS_Tiny_Rock_01 LOD1 (blight)
+    Mesh: {fileID: -1681221848613178537, guid: b8e57dbb292ab3e48afcd12d26691529, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 0.7
+    SizeMultiplier: 0.6
+  - Name: UNS_Log LOD1 (blight)
+    Mesh: {fileID: 4157133302036085136, guid: 2fc4f35c395a8444a8864c11b6d62042, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 0.3
+    SizeMultiplier: 0.95
+  - Name: UNS_Branch LOD1 (blight)
+    Mesh: {fileID: 6286432733348144391, guid: 9ee3751895b69084d8e785d402243c60, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 1f34ce9df69d546498e9fe2badd00eb3, type: 2}
+    Weight: 0.3
+    SizeMultiplier: 0.75
+  MeshGrass:
+  - Name: UNS_Grass LOD2 (blight)
+    Mesh: {fileID: 8288663934865301322, guid: b64664a15804c6a40b649fb352af0896, type: 3}
+    Materials:
+    - {fileID: 2100000, guid: 846c76c309740a5419bce0134af3c711, type: 2}
+    Weight: 1
+    SizeMultiplier: 1
+  GrassPerChunk: 0
+  GrassWidth: {x: 0.7, y: 1.3}
+  TreeShadows: 1
+  AmbientVfx: []
+  WeatherMoods:
+  - Name: Sunyi
+    Effects: []
+    Weight: 1
+    Speed: 1
+    Wet: 0
+    Overcast: 0
+  - Name: Berangin
+    Effects:
+    - Prefab: {fileID: 3501809873251455815, guid: db99e97c24f2af843b251dd516fe01ce, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 0.1
+      Grain: 1
+      CoverageOnly: 0
+      Height: 15
+      Tilt: 0
+      Offset: {x: -22, y: 0}
+      HideInRain: 0
+      OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
+      FollowCamera: 0
+    - Prefab: {fileID: 5934260843391118005, guid: 759cb2b5117f71a44958ae09d3735fc5, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 0.09
+      Grain: 1
+      CoverageOnly: 0
+      Height: 14
+      Tilt: 0
+      Offset: {x: -26, y: 0}
+      HideInRain: 0
+      OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
+      FollowCamera: 0
+    Weight: 5
+    Speed: 0.8
+    Wet: 0
+    Overcast: 0
+  - Name: Gerimis
+    Effects:
+    - Prefab: {fileID: 462285787367926183, guid: 930b1612c29db3342ac0d3b6b97d692c, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 2.4
+      Grain: 1.1
+      CoverageOnly: 1
+      Height: 0
+      Tilt: 0
+      Offset: {x: 0, y: 0}
+      HideInRain: 0
+      OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
+      FollowCamera: 0
+    Weight: 2.4
+    Speed: 0.85
+    Wet: 1
+    Overcast: 0.25
+  - Name: Hujan
+    Effects:
+    - Prefab: {fileID: 1598139546896201481, guid: 8a45e81b43a1eb6489c7fd455eae937d, type: 3}
+      Chance: 1
+      RepeatEvery: 0
+      Lifetime: 14
+      Count: 1
+      MinDistance: 6
+      Spread: 16
+      Scale: 2.6
+      Grain: 1.1
+      CoverageOnly: 1
+      Height: 0
+      Tilt: 0
+      Offset: {x: 0, y: 0}
+      HideInRain: 0
+      OnlyClear: 0
+      Tint: {r: 1, g: 1, b: 1, a: 1}
+      CullSheets: 0
+      Stretch: 1
+      FollowCamera: 0
+    Weight: 1.6
+    Speed: 1
+    Wet: 1
+    Overcast: 0.4
+  OvercastSun: 0.55
+  OvercastAmbient: 1.3
+  OvercastCloud: 0.42
+  RainPlayerLight: 5.5
+  SmokePocket: {fileID: 0}
+  GloomLayers: 1
+  GloomWobble: 11
+  GloomCeiling: 0.55
+  GloomFollowsCamera: 1
+  GloomMaterial: {fileID: 2100000, guid: 745f0fbe544115243bc98ae7480740dc, type: 2}
+  GloomColor: {r: 0.012, g: 0.02, b: 0.045, a: 1}
+  GloomStart: 22
+  GloomEnd: 40
+  GloomSize: 11
+  GloomChurn: 0.11
+  GloomDrift: 0.5
+  GloomDotSize: 16
+  GloomSmooth: 0.6
+  CloudColor: {r: 0.02, g: 0.03, b: 0.08, a: 0.16}
+  CloudSize: 44
+  CloudCoverage: 0.42
+  CloudSpeed: 13
+  LampCount: 6
+  LampColor: {r: 1, g: 0.72, b: 0.36, a: 1}
+  LampColorCool: {r: 0.36, g: 0.58, b: 1, a: 1}
+  LampIntensity: 5
+  LampRange: 28
+  LampHeight: 5.5
+  PlayerLightIntensity: 7.5
+  PlayerLightColor: {r: 0.72, g: 0.85, b: 1, a: 1}
+  PlayerLightRange: 20
+  PlayerLightHeight: 2.2
+  ClearingRadius: 10

@@ -162,6 +162,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 272d042899b7f81468f2687d5f18dd9b, type: 2}
   - {fileID: 11400000, guid: 5f4d79c135218984b92691d00961a240, type: 2}
   - {fileID: 11400000, guid: a2cd7663275c85c4b99f9d19a3f8201e, type: 2}
+  - {fileID: 11400000, guid: 14185772c3a6ad04f8c29eb0d1d5958c, type: 2}
   _uiTheme: {fileID: 11400000, guid: d4cb4486fcf10c645a7e3509badfe802, type: 2}
   _enemyVat: {fileID: 11400000, guid: 5fb199d5acbc08d4cbf0de7302027150, type: 2}
   _playerAvatarPrefab: {fileID: 5805998038933991893, guid: f2e9010d5b079664385d449aa23cee5e, type: 3}

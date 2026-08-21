@@ -133,22 +133,27 @@ namespace Proto
                 }
             }
 
-            // Ikon ASETNYA yang bicara di kartu; siluet turun jadi bayangan tapak redup di
-            // belakangnya. Rune tetap bahasa tile (DrawTiles), dan yang belum ditemukan tetap
-            // siluet buta — kontrak codex tidak berubah, cuma kotak warna-warni yang pensiun.
+            // Yang DITEMUKAN = IKON PENUH, TANPA petak ("gak mau ada grid-grid, buat
+            // iconnya gede-gede aja" — pemilik project; percobaan gaya-papan sebelumnya
+            // justru ditolak). Ikonnya dibesarkan mengisi SELURUH kotak seni, bukan
+            // seukuran petak. Grid tinggal milik yang BELUM ditemukan (siluet buta "???")
+            // — dan rune tetap bahasa tile karena begitulah rupanya di mana pun.
             bool tiledRune = RuneTiles.IsRuneGlyph(piece.Icon);
             var icon = IconImage();
-            bool iconShown = icon != null && known && !tiledRune && piece.Icon != null;
+            var full = piece.Icon != null ? piece.Icon : piece.Art;
+            bool iconShown = icon != null && known && !tiledRune && full != null;
 
             if (icon != null)
             {
                 icon.enabled = iconShown;
-                if (iconShown) icon.sprite = piece.Icon;
+                if (iconShown)
+                {
+                    icon.sprite = full;
+                    icon.preserveAspect = true;
+                    FitIconToShapeBox(icon);
+                }
             }
 
-            // Kartu ber-ikon dibersihkan TOTAL dari siluet — permintaan pemilik project: di
-            // codex, ikonnya saja yang bicara. Siluet tinggal untuk yang belum ditemukan
-            // (kontrak "ada yang belum kamu punya") dan piece yang belum punya ikon.
             if (iconShown && _shapeCells != null)
             {
                 for (int i = 0; i < _shapeCells.Length; i++)
@@ -162,6 +167,36 @@ namespace Proto
             }
 
             DrawTiles(piece, known);
+        }
+
+        /// <summary>
+        /// Ikon dibesarkan MENGISI kotak siluet — "buat dia gede-gede aja", bukan seukuran
+        /// petak. Kotaknya sendiri tetap milik prefab; ikon cuma meminjam tempat & luasnya.
+        /// Kalau ikon dan kotak beda induk (prefab menata sendiri), hanya UKURANNYA yang
+        /// disamakan — posisinya tetap milik tangan user.
+        /// </summary>
+        void FitIconToShapeBox(Image icon)
+        {
+            if (_shapeBox == null && _shapeCells != null && _shapeCells.Length > 0 &&
+                _shapeCells[0] != null)
+            {
+                _shapeBox = _shapeCells[0].transform.parent as RectTransform;
+            }
+            if (_shapeBox == null) return;
+
+            var rt = icon.rectTransform;
+            if (rt.parent == _shapeBox.parent)
+            {
+                rt.anchorMin = _shapeBox.anchorMin;
+                rt.anchorMax = _shapeBox.anchorMax;
+                rt.pivot = _shapeBox.pivot;
+                rt.anchoredPosition = _shapeBox.anchoredPosition;
+                rt.sizeDelta = _shapeBox.sizeDelta;
+            }
+            else
+            {
+                rt.sizeDelta = _shapeBox.rect.size;
+            }
         }
 
         /// <summary>

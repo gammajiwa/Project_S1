@@ -32,14 +32,17 @@ namespace Proto
         // yang memakan tempat.
         //
         // Sekarang tiga tingkat saja, dan urutannya benar: judul > angka > keterangan.
-        const string Head = "<size=26>";   // nama benda. Satu-satunya yang lebih besar dari angka.
-        const string Sub = "<size=20>";    // keterangan: jenis, asal, harga, catatan.
-                                           // 20, bukan 16: badan kartu 22, dan 16 masih
-                                           // dilaporkan tidak kebaca. Yang membedakan
-                                           // tingkatan sekarang WARNA (abu redup), bukan
-                                           // ukuran - ukuran cuma perlu cukup beda untuk
-                                           // terbaca sebagai keterangan, bukan untuk
-                                           // memaksa mata menyipit.
+        const string Head = "<size=30>";   // nama benda. Tetap satu-satunya di atas angka.
+        const string Num = "<size=26><b>"; // BARIS ANGKA KEPUTUSAN: damage/cd/mana, aura rune.
+                                           // Tier sendiri di atas badan 22 — "info paling
+                                           // penting kecil banget" (pemilik project): angka
+                                           // yang dipakai membandingkan dua piece tidak boleh
+                                           // berbagi ukuran dengan keterangan di sekitarnya.
+        const string NumEnd = "</b></size>";
+        const string Sub = "<size=22>";    // keterangan: jenis, asal, harga, catatan.
+                                           // 22 = ukuran badan; 20 pun masih dilaporkan
+                                           // kekecilan. Yang membedakan tingkatan sekarang
+                                           // murni WARNA (abu redup), bukan ukuran.
         const string SizeEnd = "</size>";
 
         // Warna kartu. Dipisah jadi konstanta karena tiap potongan dipakai di beberapa tempat,
@@ -56,12 +59,12 @@ namespace Proto
         /// <summary>
         /// Kartu hover dalam TIGA lapis, dan urutannya yang menentukan apakah ia terbaca:
         ///
-        /// 1. <b>Kepala</b> (26) — nama dan bintang, lalu satu baris keterangan (16): jenis benda
+        /// 1. <b>Kepala</b> (30) — nama dan bintang, lalu satu baris keterangan (22): jenis benda
         ///    dan dari mana ia datang. Ini yang menjawab "benda apa ini".
-        /// 2. <b>Angka</b> (22, ukuran badan kartu) — tanpa hiasan. Ini yang dicari mata saat
-        ///    membandingkan dua piece, jadi ia tidak boleh berbagi ukuran dengan apa pun di atas
-        ///    atau di bawahnya.
-        /// 3. <b>Kaki</b> (16, redup) — harga jual. Satu baris, tanpa garis pemisah.
+        /// 2. <b>Angka</b> (26, bold — tier sendiri di atas badan 22) — damage/cd/mana dan aura
+        ///    rune. Ini yang dicari mata saat membandingkan dua piece, jadi ia tidak boleh
+        ///    berbagi ukuran dengan apa pun di sekitarnya.
+        /// 3. <b>Kaki</b> (22, emas) — harga jual. Satu baris, tanpa garis pemisah.
         ///
         /// <b>Kartu ini pernah dirombak karena "kebanyakan informasi, layoutnya bikin pusing".</b>
         /// Yang dibuang: bentuk dan jumlah petak (sedang dipandangi pemain saat itu juga), garis
@@ -124,7 +127,8 @@ namespace Proto
             // ditulis pada ukuran yang tidak terbaca — jadi ia menghabiskan dua sampai tiga baris
             // kartu untuk sesuatu yang bahkan tidak sampai ke mata pemain. Teksnya sendiri tidak
             // hilang dari project: `def.Blurb` tetap ada dan tetap dipakai di tempat lain.
-            _sb.Append(Sub).Append(Dim)
+            // Emas, bukan abu mati: harga jual itu uang, dan warna uang di seluruh UI ini emas.
+            _sb.Append(Sub).Append(Gold)
                .Append(Loc.F("tip.sell", _balance.SellValueOf(def)))
                .Append(End).Append(SizeEnd);
 
@@ -187,8 +191,10 @@ namespace Proto
 
         void AppendAura(string sign, string what, float value, int perCell)
         {
-            _sb.Append(Loc.F("tip.aura", sign, Mathf.RoundToInt(value * 100f), what, perCell))
-                .Append('\n');
+            // Baris aura = angka keputusan milik rune, sederajat dengan damage/cd/mana skill.
+            _sb.Append(Num)
+                .Append(Loc.F("tip.aura", sign, Mathf.RoundToInt(value * 100f), what, perCell))
+                .Append(NumEnd).Append('\n');
         }
 
         void AppendSigil(PieceDefinition def, CompiledSpell spell, string origin)
@@ -293,10 +299,12 @@ namespace Proto
             float radius = spell != null ? spell.Radius : def.Radius;
 
             // Bentuk piece-nya sudah dibawa baris jenis di kepala kartu; yang di sini murni angka.
+            _sb.Append(Num);
             _sb.Append(Loc.F(def.Kind == CastKind.Heal ? "tip.skill.heal" : "tip.skill.damage",
                 BigNumber.Short(dmg)));
             _sb.Append(Loc.F("tip.skill.cd", cd.ToString("0.00")));
-            _sb.Append(Loc.F("tip.skill.mana", Mathf.RoundToInt(def.ManaCost))).Append('\n');
+            _sb.Append(Loc.F("tip.skill.mana", Mathf.RoundToInt(def.ManaCost)))
+                .Append(NumEnd).Append('\n');
 
             if (range > 0f) _sb.Append(Loc.F("tip.skill.range", range.ToString("0.0")));
             if (def.Kind == CastKind.Nova)

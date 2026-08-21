@@ -1624,13 +1624,14 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 8806256467609023281}
   m_Father: {fileID: 2502830850889539468}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 304.63998}
-  m_SizeDelta: {x: 411, y: 103}
+  m_AnchoredPosition: {x: 0, y: 392.28}
+  m_SizeDelta: {x: 648.8673, y: 162.6115}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4384723810966994171
 CanvasRenderer:
@@ -1660,7 +1661,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6276700d859954740bedaf30338a8ddc, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 41bc9cb6073e66b45b9e6f84ce3c5e43, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -5772,7 +5773,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 8548594492159183616}
-  - {fileID: 8806256467609023281}
   - {fileID: 6081975975215515872}
   - {fileID: 8214018436009498680}
   - {fileID: 2851999757636193057}
@@ -6537,6 +6537,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.MenuLine
   _label: {fileID: 6139212800371370993}
   _marker: {fileID: 5563049039002114044}
+  _backdrop: {fileID: 0}
+  _backdropIdle: 0.35
   _idle: {r: 0.74, g: 0.68, b: 0.56, a: 1}
   _highlight: {r: 0.69390786, g: 0.3710626, b: 0.052900795, a: 1}
   _slide: 16
@@ -7661,18 +7663,18 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5682787884060522547}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2502830850889539468}
+  m_Father: {fileID: 8548594492159183616}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 1}
-  m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -300, y: -36}
-  m_SizeDelta: {x: 600, y: 52}
-  m_Pivot: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: -2.3}
+  m_SizeDelta: {x: 312.5, y: 52}
+  m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &3179723591560827861
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -9627,6 +9629,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.MenuLine
   _label: {fileID: 2973541355954180212}
   _marker: {fileID: 1906297589739272389}
+  _backdrop: {fileID: 0}
+  _backdropIdle: 0.35
   _idle: {r: 0.74, g: 0.68, b: 0.56, a: 1}
   _highlight: {r: 0.69390786, g: 0.3710626, b: 0.052900795, a: 1}
   _slide: 16
@@ -9750,6 +9754,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.MenuLine
   _label: {fileID: 4242315177724148741}
   _marker: {fileID: 586280658511842763}
+  _backdrop: {fileID: 0}
+  _backdropIdle: 0.35
   _idle: {r: 0.74, g: 0.68, b: 0.56, a: 1}
   _highlight: {r: 0.69390786, g: 0.3710626, b: 0.052900795, a: 1}
   _slide: 16
@@ -9873,6 +9879,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.MenuLine
   _label: {fileID: 7363927645509647879}
   _marker: {fileID: 1347109737489331458}
+  _backdrop: {fileID: 0}
+  _backdropIdle: 0.35
   _idle: {r: 0.74, g: 0.68, b: 0.56, a: 1}
   _highlight: {r: 0.69390786, g: 0.3710626, b: 0.052900795, a: 1}
   _slide: 16
@@ -10977,7 +10985,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 81ca1bc9ec50703408acf25a5d0788bf, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 1e376fc5edc0f9343a43c881186e6001, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -12883,6 +12891,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.MenuLine
   _label: {fileID: 2237663856404132454}
   _marker: {fileID: 3868111494621593294}
+  _backdrop: {fileID: 0}
+  _backdropIdle: 0.35
   _idle: {r: 0.74, g: 0.68, b: 0.56, a: 1}
   _highlight: {r: 0.69390786, g: 0.3710626, b: 0.052900795, a: 1}
   _slide: 16

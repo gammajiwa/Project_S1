@@ -2546,6 +2546,7 @@ namespace Proto
                     new Color(0.06f, 0.06f, 0.09f, 0.96f), Vector2.zero);
                 _tipBg.rectTransform.pivot = new Vector2(0f, 1f);
                 _tipBg.enabled = false;
+                _tipBase = _tipBg.color;
 
                 // Bingkai kit UI kalau temanya membawa — kartu info memakai bahasa panel yang
                 // sama dengan halaman menu, bukan kotak gelap telanjang. Sliced: tingginya
@@ -3476,11 +3477,21 @@ namespace Proto
             // (Temuan verifikasi adversarial 2026-08-19.)
             if (ProtoInput.BackDown && _inputLock <= 0f && !TutorialBlocking)
             {
-                // ESC membuka SETELAN, bukan langsung pulang ke menu. Perilaku lama membuang
-                // seluruh run karena satu tombol refleks — pulang sekarang lewat tombol di dalam
-                // panelnya, satu langkah yang disengaja. Tanpa prefab setelan (tema kosong),
-                // perilaku lama dipertahankan: ESC yang tidak melakukan apa-apa lebih buruk.
+                // ESC = MUNDUR SATU LAPIS, dari yang paling atas — "kadang gw pencet esc
+                // ko gak back" (pemilik project): dulu semua cabang langsung membuka
+                // setelan DI ATAS panel yang sedang terbuka. Yang boleh di-back ESC hanya
+                // yang BISA DIBALIKKAN: bawaan toko di tangan, peta mode intip, banner
+                // wave. Toko/kejadian/peta-memilih TIDAK ditutup ESC — meninggalkannya
+                // memakan node run, keputusan itu milik tombolnya sendiri, bukan refleks
+                // (kehati-hatian yang sama dengan temuan adversarial 2026-08-19).
                 if (_settingsOverlay != null) CloseSettings();
+                else if (_heldShopSlot >= 0) CancelShopCarry();
+                else if (_mapOpen && !_mapChoose) _mapOpen = false;
+                else if (_waveBanner != null && _waveBanner.activeSelf) _waveBanner.SetActive(false);
+                // ESC membuka SETELAN, bukan langsung pulang ke menu. Perilaku lama membuang
+                // seluruh run karena satu tombol refleks — pulang sekarang lewat tombol di
+                // dalam panelnya, satu langkah yang disengaja. Tanpa prefab setelan (tema
+                // kosong), perilaku lama dipertahankan: ESC diam lebih buruk.
                 else if (_theme != null && _theme.SettingsPrefab != null) OpenSettings();
                 else LoadScene(MainMenuSceneName);
 
@@ -3526,6 +3537,7 @@ namespace Proto
             if (_evoFx != null) _evoFx.Tick(Time.unscaledDeltaTime);
             TickReveals(Time.unscaledDeltaTime);
             TickWaveBanner(Time.unscaledDeltaTime);
+            TickGoldFloats(Time.unscaledDeltaTime);
             if (_enemyBars != null) _enemyBars.Tick();
             HandleBanner();
         }
@@ -4324,9 +4336,17 @@ namespace Proto
                     if (_heldShopSlot >= 0) CancelShopCarry();
 
                     _gold -= _rerollCost;
+                    PopGold(-_rerollCost, RerollRect().center);
                     _rerollCost += _balance.RerollCostIncrement;
                     RollShop();
                     if (Sfx != null) Sfx.UiReroll();
+                }
+                else
+                {
+                    // Dompet kosong dijawab, bukan didiamkan — jalur beli sudah lama bersuara
+                    // dan bernag; reroll dulu bisu ("kasih sfx kalo gak punya duit").
+                    _shopNag = 1.6f;
+                    if (Sfx != null) Sfx.UiDeny();
                 }
 
                 return true;
@@ -4386,7 +4406,10 @@ namespace Proto
                 // jawaban atas tarikan — yang dibutuhkan adalah sesuatu yang berubah TEPAT
                 // saat pemain mencoba.
                 _shopNag = 1.6f;
-                if (Sfx != null) Sfx.UiClick();
+
+                // Dulu UiClick — bunyi yang sama dengan persetujuan. Penolakan harus
+                // TERDENGAR beda, bukan cuma terlihat beda.
+                if (Sfx != null) Sfx.UiDeny();
                 return true;
             }
 
@@ -4459,7 +4482,9 @@ namespace Proto
         {
             if (_heldShopSlot < 0 || _held == null) return;
 
-            _gold -= _balance.PriceOf(_held);
+            int price = _balance.PriceOf(_held);
+            _gold -= price;
+            PopGold(-price, UiMouse);
             _heldShopSlot = -1;
             if (Sfx != null) Sfx.UiBuy();
         }
@@ -4851,6 +4876,88 @@ namespace Proto
         /// <summary>Jeda antar ritual saat antrean dilepas — evolusi berantai yang meledak
         /// serempak cuma jadi satu kilatan; berurutan, tiap perubahan wujud dapat panggungnya.</summary>
         float _revealGap;
+
+        // ---------- popup duit di lapisan UI ----------
+
+        sealed class GoldFloat
+        {
+            public TextMeshProUGUI Text;
+            public float Age;
+            public Vector2 From;
+        }
+
+        readonly List<GoldFloat> _goldFloats = new List<GoldFloat>();
+
+        /// <summary>
+        /// Popup duit untuk transaksi yang terjadi DI DALAM panel: beli, reroll, hadiah
+        /// menolak pakta. PushFloater hidup di dunia — di BELAKANG kanvas — jadi teksnya
+        /// tenggelam di bawah panel toko ("jangan di belakang UI-nya" — pemilik project).
+        /// Yang ini anak kanvas dan diangkat ke pucuk TIAP tampil, sebab rig prefab lahir
+        /// lebih akhir daripada kolam ini. Naik cepat lalu melayang; pudarnya hanya di
+        /// paruh kedua supaya angkanya sempat terbaca dulu.
+        /// </summary>
+        void PopGold(int delta, Vector2 at)
+        {
+            if (delta == 0) return;
+
+            GoldFloat f = null;
+            for (int i = 0; i < _goldFloats.Count; i++)
+            {
+                if (_goldFloats[i].Text.enabled) continue;
+                f = _goldFloats[i];
+                break;
+            }
+
+            if (f == null && _goldFloats.Count >= 8)
+            {
+                // Banjir klik: rampas yang paling tua, jangan tumbuh tanpa batas.
+                f = _goldFloats[0];
+                for (int i = 1; i < _goldFloats.Count; i++)
+                    if (_goldFloats[i].Age > f.Age) f = _goldFloats[i];
+            }
+
+            if (f == null)
+            {
+                f = new GoldFloat();
+                f.Text = MakeTmp("GoldFloat", Vector2.zero, new Vector2(240f, 44f), 27f,
+                    Color.white, Vector2.zero, TextAlignmentOptions.Center);
+                if (_theme != null && _theme.TmpNumberFont != null)
+                    f.Text.font = _theme.TmpNumberFont;
+                f.Text.fontStyle = FontStyles.Bold;
+                f.Text.enabled = false;
+                _goldFloats.Add(f);
+            }
+
+            f.Age = 0f;
+            f.From = at;
+            f.Text.text = (delta > 0 ? "+" : "-") + Mathf.Abs(delta);
+            f.Text.color = delta > 0
+                ? new Color(1f, 0.84f, 0.37f)
+                : new Color(1f, 0.47f, 0.36f);
+            f.Text.rectTransform.anchoredPosition = at + new Vector2(0f, 34f);
+            f.Text.enabled = true;
+            RaiseTipToTop(f.Text.transform);
+        }
+
+        void TickGoldFloats(float dt)
+        {
+            for (int i = 0; i < _goldFloats.Count; i++)
+            {
+                var f = _goldFloats[i];
+                if (!f.Text.enabled) continue;
+
+                f.Age += dt;
+                float t = f.Age / 1.05f;
+                if (t >= 1f) { f.Text.enabled = false; continue; }
+
+                float rise = 1f - (1f - t) * (1f - t) * (1f - t);
+                f.Text.rectTransform.anchoredPosition = f.From + new Vector2(0f, 34f + rise * 54f);
+
+                var c = f.Text.color;
+                c.a = t < 0.5f ? 1f : 1f - (t - 0.5f) * 2f;
+                f.Text.color = c;
+            }
+        }
 
         // ---------- banner wave beres ----------
 
@@ -6976,6 +7083,7 @@ namespace Proto
         void RefusePact()
         {
             _gold += _balance.EventGoldGift;
+            PopGold(_balance.EventGoldGift, EventRefuseRect().center);
             Announce(Loc.F("event.gift", _balance.EventGoldGift), new Color(1f, 0.84f, 0.32f));
 
             _pactOffer[0] = null;
@@ -7944,7 +8052,10 @@ namespace Proto
                 // terasa lepas dari ikonnya ("hover buff jaraknya jauh" — pemilik project);
                 // ikonnya kecil, cukup digeser sedikit supaya kursor tidak menutupi kartu.
                 var drop = vitals != null ? new Vector2(46f, -64f) : new Vector2(14f, -36f);
-                ShowCard(strip ?? vitals ?? spellRow ?? hudCard ?? evt, UiMouse + drop);
+                // Kartu kejadian MERAH SEMUA ("kalo di event semuanya merah aja") — pakta
+                // adalah tawaran berdarah, dan merah bintang-4 sudah jadi bahasa bahayanya.
+                ShowCard(strip ?? vitals ?? spellRow ?? hudCard ?? evt, UiMouse + drop,
+                    evt != null ? TipStarTint[4] : (Color?)null);
                 Player.HideRange();
                 return;
             }
@@ -8075,7 +8186,8 @@ namespace Proto
             }
 
             _recipes.Hide();
-            ShowCard(_tooltips.Build(hovered, spell, origin));
+            ShowCard(_tooltips.Build(hovered, spell, origin), null,
+                TipStarTint[Mathf.Clamp(hovered.Stars, 0, 5)]);
             ShowHoverRange(hovered, spell);
         }
 
@@ -8093,7 +8205,8 @@ namespace Proto
 
             if (inspect != null)
             {
-                ShowCard(_tooltips.Build(inspect, null, Loc.T("hud.origin.recipe", "RESEP")));
+                ShowCard(_tooltips.Build(inspect, null, Loc.T("hud.origin.recipe", "RESEP")),
+                    null, TipStarTint[Mathf.Clamp(inspect.Stars, 0, 5)]);
                 return;
             }
 
@@ -8156,8 +8269,30 @@ namespace Proto
 
             _tipBg = bg;
             _tipText = body;
+
+            // Warna bingkai ASLI prefab disimpan sekali: tint bintang DIKALIKAN ke sini
+            // tiap kartu tampil, bukan menimpa — kit putih tetap milik prefab.
+            _tipBase = bg.color;
             return true;
         }
+
+        Color _tipBase = Color.white;
+
+        // Tint kartu per BINTANG piece — bahasa yang sama dengan sweep outline pemasangan:
+        // 1 putih, 2 biru, 3 ungu, 4 MERAH, 5 EMAS (bukan kebalikannya — pemilik project
+        // sendiri ragu "kalo gak salah", dan aturan yang sudah tayang di papan yang menang).
+        // Indeks 0 = kartu non-piece (buff, bola HP, baris spell): krem keabu-abuan.
+        // Pastel muda dengan sengaja: tint DIKALIKAN ke bingkai prefab (kit putih), dan
+        // teks di atasnya harus tetap terbaca pada kelima warna.
+        static readonly Color[] TipStarTint =
+        {
+            new Color(0.92f, 0.90f, 0.85f),   // 0: krem — kartu umum
+            new Color(0.96f, 0.95f, 0.91f),   // 1: putih gading
+            new Color(0.74f, 0.84f, 1f),      // 2: biru
+            new Color(0.85f, 0.76f, 1f),      // 3: ungu
+            new Color(1f, 0.70f, 0.66f),      // 4: merah
+            new Color(1f, 0.85f, 0.52f),      // 5: emas
+        };
 
         /// <summary>
         /// Menaruh kartu hover di sebelah kursor, dijepit supaya tidak pernah keluar layar.
@@ -8167,8 +8302,12 @@ namespace Proto
         /// kosong, sementara skill dengan sepuluh baris menulis keluar dari kotaknya sendiri —
         /// dan yang keluar itu justru baris terakhir, tempat blurb-nya berada.
         /// </summary>
-        void ShowCard(string body, Vector2? at = null)
+        void ShowCard(string body, Vector2? at = null, Color? tint = null)
         {
+            // Warna kartu mengikuti ISINYA: piece memakai warna bintangnya, kartu kejadian
+            // merah, sisanya krem — dikalikan ke warna asli prefab, tidak pernah menimpanya.
+            _tipBg.color = _tipBase * (tint ?? TipStarTint[0]);
+
             _tipText.text = body;
 
             var textRect = _tipText.rectTransform;

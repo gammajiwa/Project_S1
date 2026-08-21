@@ -300,6 +300,13 @@ namespace Proto
         public void UiClose() => PlayClip(Theme != null ? Theme.PanelClose : null, 0.7f, 1f, 0);
 
         /// <summary>
+        /// "Nuh-uh" dompet kosong: PanelClose diturunkan jauh (0.6x) jadi debam pendek yang
+        /// jelas bukan klik persetujuan. Tanpa klip khusus dengan sengaja — yang dibeli
+        /// cuma PEMBEDAAN: tolakan tidak boleh berbunyi sama dengan berhasil.
+        /// </summary>
+        public void UiDeny() => PlayClip(Theme != null ? Theme.PanelClose : null, 1f, 0.6f, 0);
+
+        /// <summary>
         /// "Tuk" pantulan peluru. Volume 0.55 dengan sengaja DI ATAS cast biasa: pantulan
         /// adalah stat yang dibeli pemain lewat segel, dan pantulan yang tidak terdengar
         /// tidak pernah terasa dimiliki. Prioritas 1 + dedup per-klip menahan hujannya.

@@ -17,13 +17,13 @@ MonoBehaviour:
   Color: {r: 0.78, g: 0.62, b: 0.42, a: 1}
   Icon: {fileID: 21300000, guid: 31ecfead4b0bf5e44a3f61742bc3c980, type: 3}
   BoonText: Tas MELEBAR - 4x4 jadi 5x5
-  BaneText: 
+  BaneText: Kabar kantong penuh menyebar - musuh datang 15% LEBIH BANYAK
   Boon: []
   Bane: []
   EnemyHpMul: 1
   EnemySpeedMul: 1
   EnemyDamageMul: 1
-  EnemyCountMul: 1
+  EnemyCountMul: 1.15
   ManaRegenMul: 1
   HpRegenMul: 1
   ManaPerKill: 0

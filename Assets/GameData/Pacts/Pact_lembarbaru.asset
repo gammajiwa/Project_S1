@@ -17,14 +17,14 @@ MonoBehaviour:
   Color: {r: 0.55, g: 0.9, b: 0.65, a: 1}
   Icon: {fileID: 21300000, guid: c3182add706d2e640b3efa5110b23bb5, type: 3}
   BoonText: Papan grimoire MELEBAR - 6x6 jadi 7x7
-  BaneText: 
+  BaneText: Halaman baru meminta tinta - regen mana -12%
   Boon: []
   Bane: []
   EnemyHpMul: 1
   EnemySpeedMul: 1
   EnemyDamageMul: 1
   EnemyCountMul: 1
-  ManaRegenMul: 1
+  ManaRegenMul: 0.88
   HpRegenMul: 1
   ManaPerKill: 0
   HpPerKill: 0

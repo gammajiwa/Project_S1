@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 60a99c0ec6edd6949b3bd8806b6ae064, type: 3}
+  m_Name: Place_cinder
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BiomePlace
+  Id: blight
+  DisplayName: Blighted Hollow
+  Faces:
+  - {fileID: 11400000, guid: 97b628d4446a33649a68707c3b84993a, type: 2}
+  - {fileID: 11400000, guid: 293535061e41167438e73d207a1def92, type: 2}
+  - {fileID: 11400000, guid: e8b46a1d3f0473c41abd35c94969d6d7, type: 2}
+  - {fileID: 11400000, guid: 28a49305f40f72445a32bb4cd2475054, type: 2}

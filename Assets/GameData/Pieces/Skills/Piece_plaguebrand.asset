@@ -31,7 +31,7 @@ MonoBehaviour:
   Element: 3
   BaseDamage: 5
   BaseCooldown: 2.4
-  Radius: 5.5
+  Radius: 3
   Range: 11
   Hits: 1
   Forks: 1

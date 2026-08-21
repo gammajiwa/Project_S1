@@ -343,9 +343,26 @@ namespace Proto
             {
                 BiomePlace lastPlace = null;
 
+                // URUTAN TEMPAT DIKOCOK PENUH per run (Fisher-Yates) — bukan sekadar digeser.
+                // Alasannya pemain: act 1 saja belum pernah lolos, jadi "tempat baru tiap act"
+                // berarti tidak pernah melihat apa pun selain hutan ("tiap biom di-random biar
+                // kerasa tiap run beda-beda"). Permutasi, bukan undian per act: dua act
+                // berurutan mustahil dapat tempat yang sama, dan semua tempat kebagian sebelum
+                // ada yang mengulang. Sekali per pemuatan scene = sekali per run — revive
+                // tidak mengocok ulang, run baru iya.
+                var order = new int[_places.Length];
+                for (int i = 0; i < order.Length; i++) order[i] = i;
+                for (int i = order.Length - 1; i > 0; i--)
+                {
+                    int j = Random.Range(0, i + 1);
+                    int keep = order[i];
+                    order[i] = order[j];
+                    order[j] = keep;
+                }
+
                 run.OnEmbark += () =>
                 {
-                    var place = _places[(Mathf.Max(1, run.Act) - 1) % _places.Length];
+                    var place = _places[order[(Mathf.Max(1, run.Act) - 1) % order.Length]];
 
                     if (place == null || place == lastPlace) return;
                     if (place.Faces == null || place.Faces.Length == 0) return;
