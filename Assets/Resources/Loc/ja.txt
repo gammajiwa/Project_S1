@@ -59,7 +59,7 @@ hud.hp.label=HP  {0} / {1}
 hud.hp.regen=   (+{0}/s)
 hud.line.enemies=   ·   敵 <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   残りを片付ける
-hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> コイン</color>
+hud.line.gold=   ·   <color=#FFD75E><mspace=0.52em>{0}</mspace> コイン</color>
 hud.line.kills=   ·   撃破 <mspace=0.52em>{0}</mspace>
 hud.line.left=   ·   残り <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
 hud.line.wave=<color=#E3C079>ステージ <mspace=0.52em>{0}</mspace></color>
@@ -73,6 +73,8 @@ hud.origin.locked=配置済み - ロック中、進化の対象外
 hud.origin.placed=配置済み
 hud.pact.tip={0}   (誓約 - 永続)
 hud.regen=\n毎秒{0}回復
+hud.regen.mana=\n毎秒{0}回復
+毎秒{0}回復
 hud.speed.hint=速度  (キー 1/2/3/4)
 hud.spells.title=発動中のスペル
 hud.spells.more=+他{0}件

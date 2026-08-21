@@ -61,7 +61,7 @@ hud.hp.label=HP  {0} / {1}
 hud.hp.regen=   (+{0}/dtk)
 hud.line.enemies=   ·   musuh <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   HABISKAN SISANYA
-hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> koin</color>
+hud.line.gold=   ·   <color=#FFD75E><mspace=0.52em>{0}</mspace> koin</color>
 hud.line.kills=   ·   kills <mspace=0.52em>{0}</mspace>
 hud.line.left=   ·   sisa <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
 hud.line.wave=<color=#E3C079>STAGE <mspace=0.52em>{0}</mspace></color>
@@ -76,6 +76,8 @@ hud.origin.placed=KEPASANG
 hud.origin.recipe=RESEP
 hud.pact.tip={0}   (PAKTA - permanen)
 hud.regen=\npulih {0} per detik
+hud.regen.mana=\nterisi {0} per detik
+terisi {0} per detik
 hud.revive.announce=KEMATIAN DITOLAK - PAKTA TERPAKAI
 hud.speed.hint=kecepatan  (tombol 1/2/3/4)
 hud.spells.title=SPELL AKTIF

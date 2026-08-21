@@ -61,7 +61,7 @@ hud.hp.label=PV  {0} / {1}
 hud.hp.regen=   (+{0}/s)
 hud.line.enemies=   ·   ennemis <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   ACHÈVE LES DERNIERS
-hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> pièces</color>
+hud.line.gold=   ·   <color=#FFD75E><mspace=0.52em>{0}</mspace> pièces</color>
 hud.line.kills=   ·   éliminations <mspace=0.52em>{0}</mspace>
 hud.line.left=   ·   restants <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
 hud.line.wave=<color=#E3C079>NIVEAU <mspace=0.52em>{0}</mspace></color>
@@ -75,6 +75,8 @@ hud.origin.locked=POSÉ - VERROUILLÉ, ignoré par l'évolution
 hud.origin.placed=POSÉ
 hud.pact.tip={0}   (PACTE - permanent)
 hud.regen=\nsoigne {0} par seconde
+hud.regen.mana=\nrégénère {0} par seconde
+régénère {0} par seconde
 hud.revive.announce=MORT REFUSÉE - LE PACTE EST DÉPENSÉ
 hud.speed.hint=vitesse  (touches 1/2/3/4)
 hud.spells.title=SORTS ACTIFS

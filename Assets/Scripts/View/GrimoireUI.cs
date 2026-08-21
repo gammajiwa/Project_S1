@@ -2112,6 +2112,17 @@ namespace Proto
             _speedIdle = new GameObject[Speeds.Length];
             _speedActive = new GameObject[Speeds.Length];
 
+            // CETAKAN MENANG soal RUPA. Tombol nyata Speed_0..3 tetap menang soal LETAK,
+            // tapi sprite & warna Idle/Active-nya DISALIN dari ButtonTemplate tiap build —
+            // pemilik project dua kali mengedit template dan bertanya-tanya kenapa tombolnya
+            // tidak berubah ("current state-nya gak bisa diganti"). Satu tempat edit, empat
+            // tombol ikut. Mau tombol tertentu beda? Kosongkan sprite di template, lalu isi
+            // per-tombol — sprite template yang kosong tidak menyalin apa-apa.
+            var tplIdle = template.Find("Idle") != null
+                ? template.Find("Idle").GetComponent<Image>() : null;
+            var tplActive = template.Find("Active") != null
+                ? template.Find("Active").GetComponent<Image>() : null;
+
             for (int i = 0; i < Speeds.Length; i++)
             {
                 // Tombol NYATA di prefab menang. Dulu SATU template di-clone empat kali di sini,
@@ -2129,6 +2140,18 @@ namespace Proto
                 var active = clone.transform.Find("Active");
                 _speedIdle[i] = idle != null ? idle.gameObject : null;
                 _speedActive[i] = active != null ? active.gameObject : null;
+
+                if (tplIdle != null && tplIdle.sprite != null && idle != null)
+                {
+                    var img = idle.GetComponent<Image>();
+                    if (img != null) { img.sprite = tplIdle.sprite; img.color = tplIdle.color; }
+                }
+
+                if (tplActive != null && tplActive.sprite != null && active != null)
+                {
+                    var img = active.GetComponent<Image>();
+                    if (img != null) { img.sprite = tplActive.sprite; img.color = tplActive.color; }
+                }
 
                 var label = clone.GetComponentInChildren<TextMeshProUGUI>(true);
                 if (label != null) label.text = SpeedLabels[i];
@@ -2883,7 +2906,8 @@ namespace Proto
                 return VitalsCard(Loc.T("vitals.hp"), Player.Hp, Player.MaxHp, Player.HpRegen);
 
             if (VitalHit(_manaHoverRects, _manaHover, mouse))
-                return VitalsCard(Loc.T("vitals.mana"), Player.Mana, Player.MaxMana, Player.ManaRegen);
+                return VitalsCard(Loc.T("vitals.mana"), Player.Mana, Player.MaxMana,
+                    Player.ManaRegen, "hud.regen.mana");
 
             return null;
         }
@@ -2924,7 +2948,11 @@ namespace Proto
             RectTransformUtility.RectangleContainsScreenPoint(
                 area, mouse * GrimoireLayout.UiScale, null);
 
-        string VitalsCard(string title, float now, float max, float regen)
+        /// <param name="regenKey">Kunci baris regen. HP memakai "hud.regen" (menyembuhkan);
+        /// mana punya kuncinya sendiri — "MANA heals 11.3 per second" itu salah bahasa
+        /// (laporan pemilik project): mana TERISI, bukan sembuh.</param>
+        string VitalsCard(string title, float now, float max, float regen,
+            string regenKey = "hud.regen")
         {
             _sb.Length = 0;
             _sb.Append(title).Append('\n');
@@ -2939,9 +2967,60 @@ namespace Proto
             // Baris regen hanya kalau ada. Menulis "pulih 0/dtk" itu janji palsu — pemain yang
             // membacanya akan menunggu isian yang tidak akan pernah datang.
             if (regen > 0f)
-                _sb.Append(Loc.F("hud.regen", regen.ToString("0.#")));
+                _sb.Append(Loc.F(regenKey, regen.ToString("0.#")));
 
             return _sb.ToString();
+        }
+
+        /// <summary>
+        /// Kartu baca untuk BARIS PANEL SPELL yang di-hover. Barisnya sendiri sengaja padat
+        /// dan kecil (meteran, bukan bacaan) — kartu inilah versi ukuran-bacanya, dan DPS
+        /// DIDULUKAN paling besar: damage besar tapi jarang kalah oleh kecil tapi sering,
+        /// dan DPS satu-satunya angka yang memeringkatkan keduanya dengan jujur
+        /// (permintaan pemilik project).
+        /// </summary>
+        string SpellRowTooltip(Vector2 mouse)
+        {
+            if (_spellBg == null) return null;
+
+            var spells = Book.Spells;
+
+            for (int i = 0; i < _spellRowsShown && i < MaxSpellRows; i++)
+            {
+                var bg = _spellBg[i];
+                if (bg == null || !bg.enabled) continue;
+                if (!CanvasRectOf(bg.rectTransform).Contains(mouse)) continue;
+                if (i >= _spellOrder.Length || _spellOrder[i] >= spells.Count) break;
+
+                var s = spells[_spellOrder[i]];
+                float dps = s.Cooldown <= 0f ? 0f : s.Damage / s.Cooldown;
+
+                _sb.Length = 0;
+                _sb.Append(PieceName(s.Source.Def)).Append("  ")
+                   .Append(Shapes.StarText(s.Source.Def.Stars)).Append('\n');
+
+                _sb.Append("<size=145%><b>").Append(BigNumber.Short(dps))
+                   .Append(Loc.T("spell.dps")).Append("</b></size>\n");
+
+                _sb.Append(BigNumber.Short(s.Damage)).Append(Loc.T("spell.dmg"))
+                   .Append("   /   ").Append(s.Cooldown.ToString("0.00")).Append("s\n");
+
+                _sb.Append(Mathf.RoundToInt(s.Source.Def.ManaCost)).Append(Loc.T("spell.mana"));
+
+                int share = _meter.ShareOf(s.Source.Def.DisplayName);
+                if (share > 0) _sb.Append("   ").Append(share).Append('%');
+
+                if (s.DamageBonus > 0f)
+                    _sb.Append("\n+").Append(Mathf.RoundToInt(s.DamageBonus * 100f)).Append("%D");
+                if (s.CooldownBonus > 0f)
+                    _sb.Append("  -").Append(Mathf.RoundToInt(s.CooldownBonus * 100f)).Append("%CD");
+                if (s.RadiusBonus > 0f)
+                    _sb.Append("  +").Append(Mathf.RoundToInt(s.RadiusBonus * 100f)).Append("%A");
+
+                return _sb.ToString();
+            }
+
+            return null;
         }
 
         /// <summary>Description of whichever strip icon the cursor is over, or null.</summary>
@@ -4183,12 +4262,10 @@ namespace Proto
             // diambil, tanpa satu pun tanda kenapa.
             if (ScreenToLoose(mouse) >= 0) return false;
 
-            // Klik di luar panel LOLOS ke lapangan, dan panelnya TETAP TERBUKA. Dulu klik
-            // pertama di luar dipakai menutup toko — tapi tombol pembuka-tutupnya sudah dicabut,
-            // jadi menutup di sini berarti toko yang tertutup tak sengaja tidak bisa dibuka lagi
-            // sampai singgah berikutnya. Toko sekarang cuma tutup saat pemain berangkat.
-            if (!PanelRect().Contains(mouse)) return false;
-
+            // REROLL diperiksa SEBELUM pagar panel: tombolnya milik prefab ShopRig dan
+            // pemilik project bebas menaruhnya DI LUAR kotak panel — persis yang terjadi
+            // ("reroll gak jalan"): kliknya gugur di pagar bawah sebelum sempat dites.
+            // Tanpa batas hitungan, sengaja — pagarnya cuma harga yang terus menanjak.
             if (RerollRect().Contains(mouse))
             {
                 if (_gold >= _rerollCost)
@@ -4205,6 +4282,12 @@ namespace Proto
 
                 return true;
             }
+
+            // Klik di luar panel LOLOS ke lapangan, dan panelnya TETAP TERBUKA. Dulu klik
+            // pertama di luar dipakai menutup toko — tapi tombol pembuka-tutupnya sudah dicabut,
+            // jadi menutup di sini berarti toko yang tertutup tak sengaja tidak bisa dibuka lagi
+            // sampai singgah berikutnya. Toko sekarang cuma tutup saat pemain berangkat.
+            if (!PanelRect().Contains(mouse)) return false;
 
             return true;
         }
@@ -7696,8 +7779,9 @@ namespace Proto
             // is unambiguous — and their whole reason to exist is answering "what is this".
             string strip = StripTooltip(UiMouse);
             string vitals = strip == null ? VitalsTooltip(UiMouse) : null;
+            string spellRow = strip == null && vitals == null ? SpellRowTooltip(UiMouse) : null;
 
-            if (strip != null || vitals != null)
+            if (strip != null || vitals != null || spellRow != null)
             {
                 // Selama ALT ditahan, kartu resep yang sedang dibaca MENANG: kursor yang
                 // kebetulan lewat di atas bola HP tidak boleh merampas panel yang dipatok.
@@ -7715,8 +7799,8 @@ namespace Proto
                 // sebelahnya. Kartu IKON STRIP (buff/kutukan/pakta) dulu ikut jarak itu dan
                 // terasa lepas dari ikonnya ("hover buff jaraknya jauh" — pemilik project);
                 // ikonnya kecil, cukup digeser sedikit supaya kursor tidak menutupi kartu.
-                var drop = strip != null ? new Vector2(14f, -36f) : new Vector2(46f, -64f);
-                ShowCard(strip ?? vitals, UiMouse + drop);
+                var drop = vitals != null ? new Vector2(46f, -64f) : new Vector2(14f, -36f);
+                ShowCard(strip ?? vitals ?? spellRow, UiMouse + drop);
                 Player.HideRange();
                 return;
             }
@@ -7894,16 +7978,13 @@ namespace Proto
             var bodyRect = body.rectTransform;
 
             // Ukuran diambil SEBELUM pivot diseragamkan, selagi masih persis seperti di prefab.
+            // Tepi dalamnya diberi LANTAI, bukan cuma fallback-nol: bingkai KitRune bermotif
+            // tebal, dan Body yang insetnya beberapa piksel mendudukkan teks DI ATAS ukiran
+            // ("terlalu mepet" — pemilik project, kartu pakta). Prefab boleh minta tepi lebih
+            // lebar dari lantai ini; lebih sempit tidak.
             _tipWidth = Mathf.Max(40f, cardRect.rect.width);
-            _tipPadX = Mathf.Max(0f, bodyRect.offsetMin.x);
-            _tipPadY = Mathf.Max(0f, -bodyRect.offsetMax.y);
-            if (_tipPadX < 0.5f && _tipPadY < 0.5f)
-            {
-                // Body dibentang penuh tanpa tepi — pakai tepi bawaan supaya teks tidak menempel
-                // ke bingkai.
-                _tipPadX = TipPadXDefault;
-                _tipPadY = TipPadYDefault;
-            }
+            _tipPadX = Mathf.Max(20f, bodyRect.offsetMin.x);
+            _tipPadY = Mathf.Max(16f, -bodyRect.offsetMax.y);
 
             // Kode menaruh kartu lewat anchoredPosition kiri-atas; anchor/pivot diseragamkan
             // supaya angka itu berarti sama apa pun yang disetel di prefab.

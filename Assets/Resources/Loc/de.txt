@@ -61,7 +61,7 @@ hud.hp.label=LP  {0} / {1}
 hud.hp.regen=   (+{0}/s)
 hud.line.enemies=   ·   Gegner <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   MACH DEN REST FERTIG
-hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> Münzen</color>
+hud.line.gold=   ·   <color=#FFD75E><mspace=0.52em>{0}</mspace> Münzen</color>
 hud.line.kills=   ·   Kills <mspace=0.52em>{0}</mspace>
 hud.line.left=   ·   übrig <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
 hud.line.wave=<color=#E3C079>STUFE <mspace=0.52em>{0}</mspace></color>
@@ -75,6 +75,8 @@ hud.origin.locked=GELEGT - GESPERRT, von Evolution übersprungen
 hud.origin.placed=GELEGT
 hud.pact.tip={0}   (PAKT - dauerhaft)
 hud.regen=\nheilt {0} pro Sekunde
+hud.regen.mana=\nregeneriert {0} pro Sekunde
+regeneriert {0} pro Sekunde
 hud.revive.announce=TOD VERWEIGERT - DER PAKT IST VERBRAUCHT
 hud.speed.hint=Tempo  (Tasten 1/2/3/4)
 hud.spells.title=AKTIVE ZAUBER

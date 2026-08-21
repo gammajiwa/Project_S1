@@ -61,7 +61,7 @@ hud.hp.label=ЗД  {0} / {1}
 hud.hp.regen=   (+{0}/с)
 hud.line.enemies=   ·   врагов <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   ДОБЕЙ ОСТАЛЬНЫХ
-hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> монет</color>
+hud.line.gold=   ·   <color=#FFD75E><mspace=0.52em>{0}</mspace> монет</color>
 hud.line.kills=   ·   убийств <mspace=0.52em>{0}</mspace>
 hud.line.left=   ·   осталось <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
 hud.line.wave=<color=#E3C079>ЭТАП <mspace=0.52em>{0}</mspace></color>
@@ -75,6 +75,8 @@ hud.origin.locked=УСТАНОВЛЕНО - ЗАПЕРТО, эволюция пр
 hud.origin.placed=УСТАНОВЛЕНО
 hud.pact.tip={0}   (ПАКТ - навсегда)
 hud.regen=\nлечит {0} в секунду
+hud.regen.mana=\nвосстанавливает {0} в секунду
+восстанавливает {0} в секунду
 hud.revive.announce=СМЕРТЬ ОТВЕРГНУТА - ПАКТ ИЗРАСХОДОВАН
 hud.speed.hint=скорость  (клавиши 1/2/3/4)
 hud.spells.title=АКТИВНЫЕ ЗАКЛИНАНИЯ

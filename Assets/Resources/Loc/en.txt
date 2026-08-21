@@ -61,7 +61,7 @@ hud.hp.label=HP  {0} / {1}
 hud.hp.regen=   (+{0}/s)
 hud.line.enemies=   ·   enemies <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   FINISH THE REST
-hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> coins</color>
+hud.line.gold=   ·   <color=#FFD75E><mspace=0.52em>{0}</mspace> coins</color>
 hud.line.kills=   ·   kills <mspace=0.52em>{0}</mspace>
 hud.line.left=   ·   left <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
 hud.line.wave=<color=#E3C079>STAGE <mspace=0.52em>{0}</mspace></color>
@@ -76,6 +76,8 @@ hud.origin.placed=PLACED
 hud.origin.recipe=RECIPE
 hud.pact.tip={0}   (PACT - permanent)
 hud.regen=\nheals {0} per second
+hud.regen.mana=\nregenerates {0} per second
+regenerates {0} per second
 hud.revive.announce=DEATH REFUSED - THE PACT IS SPENT
 hud.speed.hint=speed  (keys 1/2/3/4)
 hud.spells.title=ACTIVE SPELLS

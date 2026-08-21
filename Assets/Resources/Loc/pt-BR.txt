@@ -61,7 +61,7 @@ hud.hp.label=PV  {0} / {1}
 hud.hp.regen=   (+{0}/s)
 hud.line.enemies=   ·   inimigos <mspace=0.52em>{0}</mspace>
 hud.line.finish=   ·   ACABE COM O RESTO
-hud.line.gold=   ·   <color=#E3C079><mspace=0.52em>{0}</mspace> moedas</color>
+hud.line.gold=   ·   <color=#FFD75E><mspace=0.52em>{0}</mspace> moedas</color>
 hud.line.kills=   ·   abates <mspace=0.52em>{0}</mspace>
 hud.line.left=   ·   restam <mspace=0.52em>{0}</mspace>/<mspace=0.52em>{1}</mspace>
 hud.line.wave=<color=#E3C079>FASE <mspace=0.52em>{0}</mspace></color>
@@ -75,6 +75,8 @@ hud.origin.locked=POSICIONADO - TRAVADO, ignorado pela evolução
 hud.origin.placed=POSICIONADO
 hud.pact.tip={0}   (PACTO - permanente)
 hud.regen=\ncura {0} por segundo
+hud.regen.mana=\nregenera {0} por segundo
+regenera {0} por segundo
 hud.revive.announce=MORTE RECUSADA - O PACTO FOI GASTO
 hud.speed.hint=velocidade  (teclas 1/2/3/4)
 hud.spells.title=MAGIAS ATIVAS

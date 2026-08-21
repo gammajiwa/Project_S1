@@ -191,6 +191,7 @@ MonoBehaviour:
   m_Name: spider_myOldOne_vat
   m_EditorClassIdentifier: Assembly-CSharp::Proto.VatClipSet
   Mesh: {fileID: -8223451759273893843}
+  MeshRotation: {x: -90, y: 0, z: 0}
   Positions: {fileID: 7155478438623608784}
   SourceMaterial: {fileID: 2100000, guid: 1035394dba39c5b41a002d49c4b0cb88, type: 2}
   BurnNoise: {fileID: 0}

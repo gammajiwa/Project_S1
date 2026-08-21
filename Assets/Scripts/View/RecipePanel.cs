@@ -30,9 +30,14 @@ namespace Proto
         const float PartColumn = 124f;
         const float PadX = 18f;
 
-        /// <summary>Napas atas-bawah kartu. Dulu judul cuma 6 px dari tepi atas dan baris
-        /// terakhir 18 px dari dasar — "terlalu mepet atas dan bawah" (pemilik project).</summary>
-        const float PadY = 16f;
+        /// <summary>Napas ATAS kartu. Dulu judul cuma 6 px dari tepi — "terlalu mepet"
+        /// (pemilik project); 16 pertama masih kurang, dinaikkan lagi.</summary>
+        const float PadY = 24f;
+
+        /// <summary>Napas BAWAH, sengaja lebih tebal dari atas: baris terakhir masih
+        /// menggantungkan teks stat DI BAWAH ikonnya, jadi dasar kartu butuh ruang ekstra —
+        /// "masih keluar-keluar teksnya" (pemilik project, revisi kedua).</summary>
+        const float PadBottom = 38f;
 
         const float TitleHeight = 44f;
 
@@ -270,17 +275,29 @@ namespace Proto
                 return false;
             }
 
-            float height = PadY * 2f + TitleHeight + _rows.Count * RowHeight;
+            // Lebar MENYUSUT ke resep terlebar yang benar-benar tampil. Lebar tetap untuk
+            // 3 bahan meninggalkan kolom kanan kosong pada resep 2 bahan — "kiri mepet,
+            // kanan kosong" (pemilik project). Isi memenuhi kartu = kartu terlihat center.
+            int widest = 1;
+            for (int r = 0; r < _rows.Count; r++)
+            {
+                var parts = _rows[r].Ingredients;
+                if (parts != null) widest = Mathf.Max(widest, Mathf.Min(parts.Length, MaxParts));
+            }
+
+            float panelW = PadX * 2f + ResultColumn + ArrowColumn + widest * PartColumn;
+
+            float height = PadY + TitleHeight + _rows.Count * RowHeight + PadBottom;
 
             // Pivot is the top-left corner, so `top` is where the panel starts and it grows down.
             // Satuan kanvas, bukan piksel mentah — mouse yang diterima panel ini juga sudah
             // dibagi skala kanvas oleh pemanggilnya.
-            float left = Mathf.Min(mouse.x + 18f, Mathf.Max(8f, GrimoireLayout.ScreenW - PanelWidth - 8f));
+            float left = Mathf.Min(mouse.x + 18f, Mathf.Max(8f, GrimoireLayout.ScreenW - panelW - 8f));
             float top = Mathf.Max(mouse.y + 8f, height + 12f);
             var origin = new Vector2(left, top);
 
             _bg.enabled = true;
-            _bg.rectTransform.sizeDelta = new Vector2(PanelWidth, height);
+            _bg.rectTransform.sizeDelta = new Vector2(panelW, height);
             _bg.rectTransform.anchoredPosition = origin;
 
             _title.enabled = true;

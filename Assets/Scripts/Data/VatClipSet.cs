@@ -64,6 +64,12 @@ namespace Proto
                  "tersimpan di sini cuma pose netral.")]
         public Mesh Mesh;
 
+        [Tooltip("Koreksi rotasi MODEL, derajat — untuk FBX yang diekspor dengan sumbu " +
+                 "bukan-Unity (laba-laba tua Z-up jalan pakai punggungnya tanpa ini). " +
+                 "Dipakai renderer gerombolan; boss punya slot koreksinya sendiri di " +
+                 "BossDefinition.")]
+        public Vector3 MeshRotation;
+
         [Tooltip("Tekstur posisi: satu texel per vertex mendatar, satu baris per frame.")]
         public Texture2D Positions;
 

@@ -663,7 +663,8 @@ namespace Proto
                 // tidak menambah apa pun selain biaya — yang dibayar mahal itu justru siluetnya.
                 _renderers[i] = new EnemyRenderer(
                     EnemyRenderer.BorrowPrimitiveMesh(PrimitiveType.Capsule),
-                    BuildPalette(), Capacity, body, true, vat, EnemyShadows && baked);
+                    BuildPalette(), Capacity, body, true, vat, EnemyShadows && baked,
+                    null, vat != null ? vat.MeshRotation : Vector3.zero);
             }
         }
 
