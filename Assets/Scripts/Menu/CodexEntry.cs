@@ -48,6 +48,11 @@ namespace Proto
                  "mungkin menabrak teks. Matikan kalau mau bentuk nempel pojok kiri-atas.")]
         [SerializeField] bool _centerShape = true;
 
+        [Tooltip("Jarak aman siluet 3x3 (dan tile rune) ke tepi kotaknya. Kotak seni boleh " +
+                 "digedein sesuka hati untuk IKON — siluet menghitung ulang ukuran selnya " +
+                 "sendiri supaya tidak pernah menubruk bingkai kartu.")]
+        [SerializeField] float _shapeInset = 10f;
+
         [Header("Tata letak kartu — semua boleh disetel di sini")]
         [Tooltip("MATI secara bawaan: posisi tiap anak kartu sepenuhnya milik tanganmu di " +
                  "prefab, komponen ini tidak menyentuhnya. Nyalakan cuma kalau kamu mau " +
@@ -139,6 +144,12 @@ namespace Proto
             // seukuran petak. Grid tinggal milik yang BELUM ditemukan (siluet buta "???")
             // — dan rune tetap bahasa tile karena begitulah rupanya di mana pun.
             bool tiledRune = RuneTiles.IsRuneGlyph(piece.Icon);
+
+            // Sel siluet dihitung ulang dari ukuran kotak HARI INI: kotaknya digedein user
+            // untuk ikon penuh, dan grid yang ikut membesar menubruk bingkai kartu
+            // ("kasih padding dong"). Ikon tidak lewat grid, jadi tetap segede kotaknya.
+            FitGridToBox();
+
             var icon = IconImage();
             var full = piece.Icon != null ? piece.Icon : piece.Art;
             bool iconShown = icon != null && known && !tiledRune && full != null;
@@ -167,6 +178,43 @@ namespace Proto
             }
 
             DrawTiles(piece, known);
+        }
+
+        /// <summary>
+        /// Sel grid 3x3 dihitung dari ukuran kotak dikurangi jarak aman, lalu blok griднya
+        /// dipusatkan lewat padding dasar — _gridPadBase ditimpa supaya CenterShapeBox
+        /// menggeser dari titik tengah yang benar. Tanpa ini, kotak yang digedein untuk
+        /// ikon membuat sel siluet ikut membesar sampai keluar bingkai kartu.
+        /// </summary>
+        void FitGridToBox()
+        {
+            if (_shapeBox == null && _shapeCells != null && _shapeCells.Length > 0 &&
+                _shapeCells[0] != null)
+            {
+                _shapeBox = _shapeCells[0].transform.parent as RectTransform;
+            }
+            if (_shapeBox == null) return;
+
+            var grid = _shapeBox.GetComponent<GridLayoutGroup>();
+            if (grid == null) return;
+
+            float w = _shapeBox.rect.width;
+            float h = _shapeBox.rect.height;
+            if (w < 8f || h < 8f) return;
+
+            float side = Mathf.Min(w, h) - _shapeInset * 2f;
+            float cell = (side - grid.spacing.x * (ShapeGrid - 1)) / ShapeGrid;
+            if (cell < 4f) return;
+
+            grid.cellSize = new Vector2(cell, cell);
+
+            float blockW = cell * ShapeGrid + grid.spacing.x * (ShapeGrid - 1);
+            float blockH = cell * ShapeGrid + grid.spacing.y * (ShapeGrid - 1);
+            int padL = Mathf.RoundToInt((w - blockW) * 0.5f);
+            int padT = Mathf.RoundToInt((h - blockH) * 0.5f);
+
+            _gridPadBase = new RectOffset(padL, padL, padT, padT);
+            grid.padding = new RectOffset(padL, padL, padT, padT);
         }
 
         /// <summary>

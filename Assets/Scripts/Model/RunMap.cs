@@ -57,17 +57,24 @@ namespace Proto
             var dice = new System.Random(seed);
 
             // ---- tata letak: berapa node per lantai, di lajur mana ----
+            //
+            // Lajur TIDAK lagi diundi bebas dari seluruh papan. Undian bebas menaruh node di
+            // lajur 0 dan 4 sekaligus lalu mengosongkan tengahnya — node loncat-loncat, dan
+            // sambungan |Δ|<=1 gagal sampai jaring Nearest menggambar garis silang panjang:
+            // persis "berantakan posisinya" yang dilaporkan. Sekarang tiap lantai adalah
+            // JENDELA MENEMPEL (node bersebelahan) yang wajib menyinggung jendela lantai
+            // sebelumnya — jalur jadi anyaman rapat yang menyerong pelan, dan Nearest turun
+            // pangkat jadi jaring pengaman langka.
             var byFloor = new List<RunNode>[floors];
+            int prevStart = lanes / 2, prevEnd = lanes / 2;
 
             for (int f = 0; f < floors; f++)
             {
                 byFloor[f] = new List<RunNode>();
 
-                // Puncak selalu SATU node boss. Lantai PERTAMA 3–5: langkah pembuka adalah
-                // pilihan terlebar di seluruh act (permintaan pemilik project — "jangan
-                // terkesan cuma 3 arah"). Lantai lain 2–4: petanya harus terasa PENUH, dan
-                // lajur yang dipakai berganti-ganti tiap lantai, jadi jalurnya menyerong
-                // sendiri tanpa diatur.
+                // Puncak selalu SATU node boss di tengah. Lantai PERTAMA 3–5: langkah
+                // pembuka adalah pilihan terlebar di seluruh act ("jangan terkesan cuma
+                // 3 arah"). Lantai lain 2–4: petanya harus terasa penuh.
                 int count;
 
                 if (f == floors - 1) count = 1;
@@ -78,27 +85,63 @@ namespace Proto
 
                 count = System.Math.Min(count, lanes);
 
-                var open = new List<int>();
-                for (int l = 0; l < lanes; l++) open.Add(l);
+                int start;
 
-                // Boss duduk di lajur tengah; sisanya diundi dari lajur yang masih kosong.
                 if (f == floors - 1)
                 {
-                    open.Clear();
-                    open.Add(lanes / 2);
+                    count = 1;
+                    start = lanes / 2;
+                }
+                else
+                {
+                    // Lebar lantai berubah paling banyak ±1 dari lantai sebelumnya — lompatan
+                    // 2 lajur -> 4 lajur membuat jendela mustahil saling menutupi.
+                    if (f > 0)
+                    {
+                        int prevLen = prevEnd - prevStart + 1;
+                        count = System.Math.Max(prevLen - 1, System.Math.Min(prevLen + 1, count));
+                        count = System.Math.Min(count, lanes);
+                    }
+
+                    // Jendela wajib SALING MENUTUPI dua arah: tiap node atas punya orang tua
+                    // |Δ|<=1, tiap node bawah punya jalan keluar |Δ|<=1. Menyinggung saja
+                    // tidak cukup — node di tepi jauh jendela tetap minta garis silang
+                    // panjang dari jaring Nearest, dan garis itulah "berantakan"-nya.
+                    int lo = System.Math.Max(0,
+                        System.Math.Max(prevStart - 1, prevEnd - count));
+                    int hi = System.Math.Min(lanes - count,
+                        System.Math.Min(prevStart + 1, prevEnd + 2 - count));
+
+                    // Jaring: kalau syarat ketat mustahil (tepi papan), mundur ke aturan
+                    // menyinggung — Nearest yang menambal sisanya.
+                    if (hi < lo)
+                    {
+                        lo = System.Math.Max(0, prevStart - count + 1);
+                        hi = System.Math.Min(lanes - count, prevEnd);
+                        if (hi < lo) hi = lo;
+                    }
+
+                    // Lantai terakhir sebelum boss digiring menyinggung lajur tengah,
+                    // supaya muara ke boss tidak butuh garis silang jauh.
+                    if (f == floors - 2)
+                    {
+                        lo = System.Math.Max(lo, System.Math.Max(0, lanes / 2 - count + 1));
+                        hi = System.Math.Min(hi, System.Math.Min(lanes - count, lanes / 2));
+                        if (hi < lo) { lo = System.Math.Max(0, lanes / 2 - count + 1); hi = lo; }
+                    }
+
+                    start = lo + dice.Next(hi - lo + 1);
                 }
 
                 for (int i = 0; i < count; i++)
                 {
-                    int pick = open[dice.Next(open.Count)];
-                    open.Remove(pick);
-
-                    var node = new RunNode { Index = map.Nodes.Count, Floor = f, Lane = pick };
+                    var node = new RunNode { Index = map.Nodes.Count, Floor = f, Lane = start + i };
                     map.Nodes.Add(node);
                     byFloor[f].Add(node);
                 }
 
-                byFloor[f].Sort((a, b) => a.Lane.CompareTo(b.Lane));
+                prevStart = start;
+                prevEnd = start + count - 1;
             }
 
             // ---- sambungan antar lantai ----
@@ -135,27 +178,57 @@ namespace Proto
                 }
             }
 
-            // ---- jenis node ----
+            // ---- jenis node: KUOTA per pita lantai, bukan dadu per node ----
             //
-            // Lantai pertama selalu pertarungan: run harus dibuka dengan bermain, bukan dengan
-            // belanja. Node istimewa tidak boleh berjenis sama dengan ORANG TUANYA — dua toko
-            // beruntun di satu jalur berarti satu di antaranya bohong.
+            // Dadu independen per node menghasilkan paceklik dan gerombolan ("kaya bener
+            // random gak jelas distribusinya" — pemilik project): sepuluh lantai tanpa toko
+            // di satu peta, dua toko bersebelahan di peta lain. Sekarang peluangnya dibaca
+            // sebagai TAKARAN: lantai 1..floors-2 dipotong jadi pita ~6 lantai, tiap pita
+            // dapat jatah pasti (peluang x jumlah node pita, pecahannya diundi sekali),
+            // lalu jatah disebar dengan aturan SATU istimewa per lantai. Kepadatan jadi
+            // rata di sepanjang act; letak persisnya tetap milik seed. Lantai pertama
+            // selalu pertarungan: run dibuka dengan bermain, bukan belanja.
             foreach (var node in map.Nodes)
             {
-                if (node.Floor == floors - 1) { node.Kind = RunNodeKind.Boss; continue; }
-                if (node.Floor == 0) { node.Kind = RunNodeKind.Fight; continue; }
-
-                double roll = dice.NextDouble();
-                RunNodeKind kind;
-
-                if (node.Floor >= eliteMinFloor && roll < eliteChance) kind = RunNodeKind.Elite;
-                else if (roll < eliteChance + shopChance) kind = RunNodeKind.Shop;
-                else if (roll < eliteChance + shopChance + eventChance) kind = RunNodeKind.Event;
-                else kind = RunNodeKind.Fight;
-
-                node.Kind = kind;
+                node.Kind = node.Floor == floors - 1 ? RunNodeKind.Boss : RunNodeKind.Fight;
             }
 
+            const int Band = 6;
+
+            for (int bandStart = 1; bandStart < floors - 1; bandStart += Band)
+            {
+                int bandEnd = System.Math.Min(bandStart + Band - 1, floors - 2);
+
+                int nodeCount = 0;
+                for (int f = bandStart; f <= bandEnd; f++) nodeCount += byFloor[f].Count;
+
+                SpreadKind(byFloor, dice, RunNodeKind.Elite,
+                    Quota(dice, eliteChance * nodeCount), bandStart, bandEnd, eliteMinFloor, floors);
+                SpreadKind(byFloor, dice, RunNodeKind.Shop,
+                    Quota(dice, shopChance * nodeCount), bandStart, bandEnd, 0, floors);
+                SpreadKind(byFloor, dice, RunNodeKind.Event,
+                    Quota(dice, eventChance * nodeCount), bandStart, bandEnd, 0, floors);
+            }
+
+            // Ritual belanja pra-boss: minimal SATU toko di enam lantai terakhir sebelum
+            // boss. Kuota pita bisa saja menumpuk tokonya di awal, dan act panjang tanpa
+            // tempat membelanjakan tabungan menutup dengan rasa tertipu.
+            bool lateShop = false;
+            int lateFrom = System.Math.Max(1, floors - 7);
+
+            for (int f = lateFrom; f <= floors - 2 && !lateShop; f++)
+            {
+                foreach (var node in byFloor[f])
+                {
+                    if (node.Kind == RunNodeKind.Shop) { lateShop = true; break; }
+                }
+            }
+
+            if (!lateShop)
+                SpreadKind(byFloor, dice, RunNodeKind.Shop, 1, lateFrom, floors - 2, 0, floors);
+
+            // Dua istimewa sejenis beruntun di SATU JALUR tetap dilarang — kuota menjaga
+            // takaran, pagar ini menjaga rasa pilihan.
             foreach (var node in map.Nodes)
             {
                 foreach (int next in node.Next)
@@ -172,13 +245,53 @@ namespace Proto
 
             // Lantai TERAKHIR sebelum boss dibersihkan dari elite — dua wave keras beruntun
             // menutup act dengan tembok ganda, dan pemain tidak punya cara menghindarinya
-            // karena semua jalur bermuara ke boss yang sama.
+            // karena semua jalur bermuara ke boss yang sama. (Penempatan sudah melewatinya;
+            // sapuan ini tinggal pagar ganda.)
             foreach (var node in byFloor[floors - 2])
             {
                 if (node.Kind == RunNodeKind.Elite) node.Kind = RunNodeKind.Fight;
             }
 
             return map;
+        }
+
+        /// <summary>Takaran pecahan diundi SEKALI: 1,6 berarti pasti 1, kadang-kadang 2.</summary>
+        static int Quota(System.Random dice, double expected)
+        {
+            int whole = (int)expected;
+            return whole + (dice.NextDouble() < expected - whole ? 1 : 0);
+        }
+
+        /// <summary>
+        /// Menyebar sejumlah node berjenis <paramref name="kind"/> ke pita lantai
+        /// [from..to]: satu istimewa per lantai, hanya menimpa Fight, menghormati lantai
+        /// minimum (gerbang elite), dan elite tidak pernah duduk di lantai pra-boss.
+        /// Kehabisan tempat = sisa jatah hangus — takaran boleh meleset satu, bentuk peta
+        /// tidak boleh dipaksa.
+        /// </summary>
+        static void SpreadKind(List<RunNode>[] byFloor, System.Random dice, RunNodeKind kind,
+            int quota, int from, int to, int minFloor, int floors)
+        {
+            for (int q = 0; q < quota; q++)
+            {
+                for (int attempt = 0; attempt < 24; attempt++)
+                {
+                    int f = from + dice.Next(to - from + 1);
+                    if (f < minFloor || f > floors - 2) continue;
+                    if (kind == RunNodeKind.Elite && f == floors - 2) continue;
+
+                    bool floorTaken = false;
+                    foreach (var n in byFloor[f])
+                    {
+                        if (n.Kind != RunNodeKind.Fight) { floorTaken = true; break; }
+                    }
+                    if (floorTaken) continue;
+
+                    var node = byFloor[f][dice.Next(byFloor[f].Count)];
+                    node.Kind = kind;
+                    break;
+                }
+            }
         }
 
         static RunNode Nearest(List<RunNode> pool, int lane)

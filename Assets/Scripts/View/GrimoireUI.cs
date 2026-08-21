@@ -8282,16 +8282,17 @@ namespace Proto
         // 1 putih, 2 biru, 3 ungu, 4 MERAH, 5 EMAS (bukan kebalikannya — pemilik project
         // sendiri ragu "kalo gak salah", dan aturan yang sudah tayang di papan yang menang).
         // Indeks 0 = kartu non-piece (buff, bola HP, baris spell): krem keabu-abuan.
-        // Pastel muda dengan sengaja: tint DIKALIKAN ke bingkai prefab (kit putih), dan
-        // teks di atasnya harus tetap terbaca pada kelima warna.
+        // MENCOLOK dengan sengaja (revisi dari pastel — "warnanya kurang kelihatan"):
+        // yang mengambil tint paling kuat adalah BINGKAI putih sprite-nya, sedangkan
+        // badan kartunya gelap, jadi saturasi tinggi tidak pernah menelan teks.
         static readonly Color[] TipStarTint =
         {
-            new Color(0.92f, 0.90f, 0.85f),   // 0: krem — kartu umum
-            new Color(0.96f, 0.95f, 0.91f),   // 1: putih gading
-            new Color(0.74f, 0.84f, 1f),      // 2: biru
-            new Color(0.85f, 0.76f, 1f),      // 3: ungu
-            new Color(1f, 0.70f, 0.66f),      // 4: merah
-            new Color(1f, 0.85f, 0.52f),      // 5: emas
+            new Color(0.95f, 0.86f, 0.68f),   // 0: KREM beneran — kartu umum ("kasih cream")
+            new Color(0.93f, 0.91f, 0.86f),   // 1: putih gading keabu-abuan
+            new Color(0.35f, 0.62f, 1f),      // 2: biru
+            new Color(0.72f, 0.42f, 1f),      // 3: ungu
+            new Color(1f, 0.32f, 0.28f),      // 4: merah
+            new Color(1f, 0.72f, 0.15f),      // 5: emas
         };
 
         /// <summary>

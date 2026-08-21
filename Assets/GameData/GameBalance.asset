@@ -90,7 +90,7 @@ MonoBehaviour:
   RerollCostStart: 20
   RerollCostIncrement: 15
   ShopHighRollChance: 0.18
-  MapFloorsPerAct: 34
+  MapFloorsPerAct: 18
   MapLanes: 5
   MapEliteChance: 0.15
   MapShopChance: 0.1
