@@ -56,127 +56,68 @@ namespace Proto
             var map = new RunMap { Floors = floors, Lanes = lanes, Act = act };
             var dice = new System.Random(seed);
 
-            // ---- tata letak: berapa node per lantai, di lajur mana ----
+            // ---- tata letak: JALUR-JALUR BERKELANA, ala peta Slay the Spire ----
             //
-            // Lajur TIDAK lagi diundi bebas dari seluruh papan. Undian bebas menaruh node di
-            // lajur 0 dan 4 sekaligus lalu mengosongkan tengahnya — node loncat-loncat, dan
-            // sambungan |Δ|<=1 gagal sampai jaring Nearest menggambar garis silang panjang:
-            // persis "berantakan posisinya" yang dilaporkan. Sekarang tiap lantai adalah
-            // JENDELA MENEMPEL (node bersebelahan) yang wajib menyinggung jendela lantai
-            // sebelumnya — jalur jadi anyaman rapat yang menyerong pelan, dan Nearest turun
-            // pangkat jadi jaring pengaman langka.
+            // Bukan "berapa node per lantai" — melainkan beberapa JALUR yang masing-masing
+            // berjalan dari lantai dasar ke puncak, tiap lantai bergeser paling jauh satu
+            // lajur. Node hanya lahir di petak yang DILEWATI jalur; dua jalur yang lewat
+            // petak sama MELEBUR (itulah simpangnya) lalu boleh berpisah lagi. Hasilnya
+            // kepang longgar bercelah — punya pola, tapi tidak pernah kotak penuh.
+            //
+            // Sejarahnya dua ekstrem: undian lajur bebas = "berantakan posisinya" (garis
+            // silang panjang ke mana-mana), lalu jendela-menempel = "terlalu rapih bahkan
+            // kaya jahitan" (pemilik project, menunjuk peta StS sebagai acuan). Jalur
+            // berkelana adalah cara StS sendiri berdiri di antara keduanya.
             var byFloor = new List<RunNode>[floors];
-            int prevStart = lanes / 2, prevEnd = lanes / 2;
+            for (int f = 0; f < floors; f++) byFloor[f] = new List<RunNode>();
 
-            for (int f = 0; f < floors; f++)
+            var grid = new RunNode[floors, lanes];
+            var walked = new HashSet<int>();
+            var starts = new List<int>();
+            int pathCount = System.Math.Max(4, lanes);
+
+            for (int p = 0; p < pathCount; p++)
             {
-                byFloor[f] = new List<RunNode>();
+                // Tiga jalur pertama wajib berangkat dari lajur BERBEDA: langkah pembuka
+                // harus pilihan lebar ("jangan terkesan cuma 3 arah").
+                int lane;
+                do { lane = dice.Next(lanes); }
+                while (p < 3 && starts.Contains(lane));
+                starts.Add(lane);
 
-                // Puncak selalu SATU node boss di tengah. Lantai PERTAMA 3–5: langkah
-                // pembuka adalah pilihan terlebar di seluruh act ("jangan terkesan cuma
-                // 3 arah"). Lantai lain 2–4: petanya harus terasa penuh.
-                int count;
+                var node = TouchNode(map, byFloor, grid, 0, lane);
 
-                if (f == floors - 1) count = 1;
-                else if (f == 0) count = 3 + (dice.NextDouble() < 0.5 ? 1 : 0)
-                                          + (dice.NextDouble() < 0.35 ? 1 : 0);
-                else count = 2 + (dice.NextDouble() < 0.6 ? 1 : 0)
-                             + (dice.NextDouble() < 0.35 ? 1 : 0);
-
-                count = System.Math.Min(count, lanes);
-
-                int start;
-
-                if (f == floors - 1)
+                for (int f = 0; f < floors - 2; f++)
                 {
-                    count = 1;
-                    start = lanes / 2;
-                }
-                else
-                {
-                    // Lebar lantai berubah paling banyak ±1 dari lantai sebelumnya — lompatan
-                    // 2 lajur -> 4 lajur membuat jendela mustahil saling menutupi.
-                    if (f > 0)
-                    {
-                        int prevLen = prevEnd - prevStart + 1;
-                        count = System.Math.Max(prevLen - 1, System.Math.Min(prevLen + 1, count));
-                        count = System.Math.Min(count, lanes);
-                    }
+                    int target = lane + dice.Next(3) - 1;
+                    if (target < 0) target = 0;
+                    if (target > lanes - 1) target = lanes - 1;
 
-                    // Jendela wajib SALING MENUTUPI dua arah: tiap node atas punya orang tua
-                    // |Δ|<=1, tiap node bawah punya jalan keluar |Δ|<=1. Menyinggung saja
-                    // tidak cukup — node di tepi jauh jendela tetap minta garis silang
-                    // panjang dari jaring Nearest, dan garis itulah "berantakan"-nya.
-                    int lo = System.Math.Max(0,
-                        System.Math.Max(prevStart - 1, prevEnd - count));
-                    int hi = System.Math.Min(lanes - count,
-                        System.Math.Min(prevStart + 1, prevEnd + 2 - count));
+                    // Anti-silang: tapak (L -> L+1) dilarang kalau sudah ada (L+1 -> L)
+                    // di sela lantai yang sama — dua tapak menyilang membentuk X yang
+                    // tidak terbaca sebagai jalan. Mengalah = jalan lurus, selalu aman.
+                    if (target == lane + 1 && walked.Contains(EdgeKey(f, lane + 1, lane)))
+                        target = lane;
+                    else if (target == lane - 1 && walked.Contains(EdgeKey(f, lane - 1, lane)))
+                        target = lane;
 
-                    // Jaring: kalau syarat ketat mustahil (tepi papan), mundur ke aturan
-                    // menyinggung — Nearest yang menambal sisanya.
-                    if (hi < lo)
-                    {
-                        lo = System.Math.Max(0, prevStart - count + 1);
-                        hi = System.Math.Min(lanes - count, prevEnd);
-                        if (hi < lo) hi = lo;
-                    }
+                    var next = TouchNode(map, byFloor, grid, f + 1, target);
+                    if (!node.Next.Contains(next.Index)) node.Next.Add(next.Index);
+                    walked.Add(EdgeKey(f, lane, target));
 
-                    // Lantai terakhir sebelum boss digiring menyinggung lajur tengah,
-                    // supaya muara ke boss tidak butuh garis silang jauh.
-                    if (f == floors - 2)
-                    {
-                        lo = System.Math.Max(lo, System.Math.Max(0, lanes / 2 - count + 1));
-                        hi = System.Math.Min(hi, System.Math.Min(lanes - count, lanes / 2));
-                        if (hi < lo) { lo = System.Math.Max(0, lanes / 2 - count + 1); hi = lo; }
-                    }
-
-                    start = lo + dice.Next(hi - lo + 1);
+                    lane = target;
+                    node = next;
                 }
 
-                for (int i = 0; i < count; i++)
-                {
-                    var node = new RunNode { Index = map.Nodes.Count, Floor = f, Lane = start + i };
-                    map.Nodes.Add(node);
-                    byFloor[f].Add(node);
-                }
-
-                prevStart = start;
-                prevEnd = start + count - 1;
+                // Semua jalur bermuara ke SATU boss di lajur tengah puncak — corong
+                // penutup act, sama seperti acuannya.
+                var boss = TouchNode(map, byFloor, grid, floors - 1, lanes / 2);
+                if (!node.Next.Contains(boss.Index)) node.Next.Add(boss.Index);
             }
 
-            // ---- sambungan antar lantai ----
-            //
-            // Aturannya dua arah dan dua-duanya wajib: tiap node punya JALAN KELUAR (lajur
-            // bersebelahan), dan tiap node lantai atas punya JALAN MASUK. Tanpa yang kedua,
-            // generator sesekali melahirkan node yatim yang tergambar di peta tapi tidak akan
-            // pernah bisa diinjak — terlihat seperti konten, padahal cuma hiasan.
-            for (int f = 0; f < floors - 1; f++)
-            {
-                var here = byFloor[f];
-                var above = byFloor[f + 1];
-
-                foreach (var node in here)
-                {
-                    foreach (var target in above)
-                    {
-                        if (System.Math.Abs(target.Lane - node.Lane) <= 1) node.Next.Add(target.Index);
-                    }
-
-                    if (node.Next.Count == 0) node.Next.Add(Nearest(above, node.Lane).Index);
-                }
-
-                foreach (var target in above)
-                {
-                    bool reachable = false;
-
-                    foreach (var node in here)
-                    {
-                        if (node.Next.Contains(target.Index)) { reachable = true; break; }
-                    }
-
-                    if (!reachable) Nearest(here, target.Lane).Next.Add(target.Index);
-                }
-            }
+            // Sambungan antar lantai sudah lahir BERSAMA jalurnya — tiap node pasti punya
+            // jalan keluar (jalurnya sendiri berlanjut) dan jalan masuk (tapak yang
+            // melahirkannya), jadi node yatim mustahil secara konstruksi.
 
             // ---- jenis node: KUOTA per pita lantai, bukan dadu per node ----
             //
@@ -294,19 +235,22 @@ namespace Proto
             }
         }
 
-        static RunNode Nearest(List<RunNode> pool, int lane)
+        /// <summary>Node di petak (lantai, lajur) — lahir saat tapak pertama menyentuhnya.</summary>
+        static RunNode TouchNode(RunMap map, List<RunNode>[] byFloor, RunNode[,] grid,
+            int floor, int lane)
         {
-            RunNode best = pool[0];
-            int gap = System.Math.Abs(best.Lane - lane);
+            var node = grid[floor, lane];
+            if (node != null) return node;
 
-            for (int i = 1; i < pool.Count; i++)
-            {
-                int d = System.Math.Abs(pool[i].Lane - lane);
-                if (d < gap) { best = pool[i]; gap = d; }
-            }
-
-            return best;
+            node = new RunNode { Index = map.Nodes.Count, Floor = floor, Lane = lane };
+            map.Nodes.Add(node);
+            byFloor[floor].Add(node);
+            grid[floor, lane] = node;
+            return node;
         }
+
+        /// <summary>Kunci tapak (lantai, dari, ke) untuk larangan silang. Lajur &lt; 10.</summary>
+        static int EdgeKey(int floor, int from, int to) => (floor * 100 + from) * 10 + to;
 
         /// <summary>Node yang boleh diinjak sekarang. Sebelum melangkah: seluruh lantai dasar.</summary>
         public List<RunNode> Reachable()
