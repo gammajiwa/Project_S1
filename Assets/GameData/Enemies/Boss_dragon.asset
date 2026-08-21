@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Proto.BossDefinition
   Id: dragon
   DisplayName: The Usurper
-  SummitMinAct: 3
+  SummitMinAct: 4
   MaxSegments: 3
   MinSegments: 2
   Spacing: 1.05

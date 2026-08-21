@@ -75,6 +75,34 @@ namespace Proto
         [Tooltip("Ditempelkan ke pemain saat menyentuh. Kosong = tidak mengutuk.")]
         public BuffDefinition Curse;
 
+        [Tooltip("Ditempelkan ke pemain saat PELURUNYA kena — jaring laba-laba yang " +
+                 "memperlambat, dsb. Kosong = peluru polos. Butuh penembak (Shoots).")]
+        public BuffDefinition ShotCurse;
+
+        [Header("Menyeruduk (0 = tidak)")]
+        [Tooltip("Jeda antar serudukan, detik. Di atas nol musuh ini sesekali BERHENTI " +
+                 "sejenak (ancang-ancang — itulah aba-abanya untuk menghindar) lalu melesat " +
+                 "lurus ke posisi pemain saat ancang-ancang selesai.")]
+        [Min(0f)] public float ChargeEvery;
+
+        [Tooltip("Lama ancang-ancang. Terlalu pendek = tidak sempat dibaca; ini janji " +
+                 "keadilan serudukan, bukan angka rasa.")]
+        [Min(0.2f)] public float ChargeWindup = 0.7f;
+
+        [Tooltip("Pengali kecepatan saat melesat.")]
+        [Min(1f)] public float ChargeSpeedMul = 4f;
+
+        [Tooltip("Lama melesat, detik. Arahnya DIKUNCI saat berangkat — menyingkir dari " +
+                 "garisnya adalah jawabannya.")]
+        [Min(0.2f)] public float ChargeSeconds = 0.8f;
+
+        [Header("Pecah saat mati")]
+        [Tooltip("Arketipe ANAK yang menetas di bangkainya. Kosong = tidak pecah. Jangan " +
+                 "menunjuk dirinya sendiri — rantainya tidak dipagari kode.")]
+        public EnemyArchetype SplitInto;
+
+        [Range(0, 6)] public int SplitCount;
+
         [TextArea(2, 3)]
         public string Blurb;
 

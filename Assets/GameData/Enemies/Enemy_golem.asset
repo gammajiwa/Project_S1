@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a6c106bc3bffeb4bb0c7c37ebd107c3, type: 3}
+  m_Name: Enemy_golem
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
+  Id: golem
+  DisplayName: Golem
+  FromWave: 18
+  Weight: 0.7
+  WeightPerWave: 0.07
+  WeightMax: 3
+  HpMultiplier: 3.2
+  SpeedMultiplier: 0.72
+  Scale: 1.35
+  HoverHeight: 0
+  UseTint: 0
+  Tint: {r: 1, g: 1, b: 1, a: 1}
+  Vat: {fileID: 11400000, guid: 6a218bc0bc3ee16409bd238741fd672b, type: 2}
+  PreferredRange: 0
+  Flanks: 1
+  AttackInterval: 0
+  AttackDamage: 18
+  ShotSpeed: 11
+  ShotColor: {r: 0.7, g: 1, b: 0.5, a: 1}
+  Curse: {fileID: 0}
+  ShotCurse: {fileID: 0}
+  ChargeEvery: 5.5
+  ChargeWindup: 0.7
+  ChargeSpeedMul: 4.5
+  ChargeSeconds: 0.75
+  SplitInto: {fileID: 0}
+  SplitCount: 0
+  Blurb: Older, angrier stone. Sidestep the line or become part of the road.

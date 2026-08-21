@@ -1,0 +1,82 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 70cc383ad6c618d4aae22343ea7830c2, type: 3}
+  m_Name: Boss_turtle
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.BossDefinition
+  Id: turtle
+  DisplayName: The World-Bearer
+  SummitMinAct: 3
+  MaxSegments: 3
+  MinSegments: 2
+  Spacing: 1.05
+  HeadScale: 15
+  TailScale: 1
+  HeadMesh: {fileID: 0}
+  BodyMesh: {fileID: 0}
+  TailMesh: {fileID: 0}
+  BoneSkin: {fileID: 0}
+  HeadMeshScale: 12
+  BodyMeshScale: 21
+  HeadMeshRotation: {x: 0, y: 0, z: 0}
+  BodyMeshRotation: {x: 0, y: 0, z: 0}
+  TailMeshRotation: {x: 0, y: 0, z: 0}
+  SpinDegreesPerSecond: 0
+  Body: 1
+  Vat: {fileID: 11400000, guid: 5654ee4f6d306f148b817d918273df23, type: 2}
+  FlyHeight: 2.6
+  StrafeWidth: 14
+  ClimbRate: 2.5
+  BreathInterval: 3.5
+  BreathDuration: 3.5
+  BreathWindup: 0.8
+  BreathDamage: 70
+  BreathRange: 24
+  BreathGroundRadius: 4.2
+  BreathAngle: 30
+  BreathVfx: {fileID: 2053101587433184381, guid: 38fa03b9f83f85942a9ca809a73abe9b, type: 3}
+  BreathMuzzle: {x: -0.001624215, y: 0.5988355, z: 0.38521883}
+  BreathVfxScale: 4.5
+  BreathVfxDelay: 0.5
+  BreathVfxRotation: {x: 90, y: 0, z: 0}
+  HpMultiplier: 130
+  OrbitRadius: 13
+  Speed: 5
+  LungeSpeed: 9
+  TurnRate: 80
+  Wander: 0.8
+  LungeInterval: 7
+  LungeDuration: 2
+  BiteDamage: 34
+  BiteRange: 3.2
+  Curse: {fileID: 0}
+  Burrows: 0
+  ArcDuration: 1.1
+  ArcHeight: 4.5
+  BreachBurst: 3
+  DipDuration: 0.45
+  DiveInterval: 5.5
+  DiveDepth: 5
+  SpitInterval: 0
+  SpitDamage: 30
+  SpitSpeed: 9
+  SpitCurse: {fileID: 11400000, guid: dcc12827fc895ed42a13d5adde720e4f, type: 2}
+  Minion: 0
+  MinionFromWave: 6
+  MinionCount: 2
+  HeadColor: {r: 1, g: 1, b: 1, a: 1}
+  BodyColor: {r: 1, g: 1, b: 1, a: 1}
+  HeadEmission: {r: 0, g: 0, b: 0, a: 1}
+  BodyEmission: {r: 0, g: 0, b: 0, a: 1}
+  HeadMeshFile: 
+  BodyMeshFile: 
+  TailMeshFile: 
+  BoneSkinFile: 

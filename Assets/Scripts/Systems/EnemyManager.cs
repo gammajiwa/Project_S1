@@ -107,6 +107,19 @@ namespace Proto
             /// <summary>Sisa dorongan dari ledakan, meluruh sendiri. Bukan fisika, cuma inersia.</summary>
             public Vector3 Knock;
 
+            /// <summary>Hitung mundur ke serudukan berikutnya (arketipe ber-ChargeEvery).</summary>
+            public float ChargeTimer;
+
+            /// <summary>0 = jalan biasa, 1 = ancang-ancang (diam), 2 = melesat.</summary>
+            public int ChargePhase;
+
+            /// <summary>Sisa detik fase ancang-ancang / lesatan yang sedang berjalan.</summary>
+            public float ChargeLeft;
+
+            /// <summary>Arah lesatan, DIKUNCI saat ancang-ancang selesai — itulah yang membuat
+            /// serudukan bisa dihindari dengan melangkah ke samping.</summary>
+            public Vector3 ChargeDir;
+
             /// <summary>
             /// Ular yang memiliki ruas ini, kalau ada. Terisi = damage masuk ke kolam HP boss,
             /// ruasnya tidak pernah mati sendiri, dan gerakannya disetir boss bukan oleh AI swarm.
@@ -1500,7 +1513,9 @@ namespace Proto
         /// undian per-wave membuat itu mustahil: meminta sepuluh ekor jenis tertentu berarti
         /// menekan tombol sampai undiannya kebetulan mengeluarkan yang dicari.
         /// </param>
-        bool SpawnOne(float distanceScale = 1f, EnemyArchetype forced = null)
+        /// <param name="at">Titik lahir PAKSA (pecahan broodmother lahir di bangkai induknya,
+        /// bukan di tepi layar). Null = kotak spawn biasa di luar pandangan.</param>
+        bool SpawnOne(float distanceScale = 1f, EnemyArchetype forced = null, Vector3? at = null)
         {
             var e = GetFree();
             if (e == null) return false;
@@ -1508,7 +1523,7 @@ namespace Proto
             var kind = forced != null ? forced : _db.RollArchetype(Wave);
             e.Kind = kind;
 
-            e.Pos = SpawnPoint(distanceScale);
+            e.Pos = at ?? SpawnPoint(distanceScale);
 
             // Tiga lapis pengali, dan ketiganya DIKALIKAN bukan saling menimpa: saklar curang,
             // modifier node peta (elite — sekali pakai), dan pakta (permanen seumur run). Elite
@@ -1545,6 +1560,14 @@ namespace Proto
             e.GroundY = e.Pos.y;
             e.LiftTimer = 0f;
             e.Knock = Vector3.zero;
+
+            // Slot bekas penyeruduk tidak boleh mewariskan fase lesatannya ke penghuni baru.
+            e.ChargePhase = 0;
+            e.ChargeLeft = 0f;
+            e.ChargeDir = Vector3.zero;
+            e.ChargeTimer = kind != null && kind.ChargeEvery > 0f
+                ? kind.ChargeEvery * Random.Range(0.6f, 1.3f)
+                : 0f;
 
             // Slot bekas musuh yang baru saja dipukul akan lahir sambil memamerkan bar HP penuh
             // kalau ini tidak dibersihkan.
@@ -1782,6 +1805,71 @@ namespace Proto
                 Vector3 apart = Separation(e, pos, _balance.EnemySeparation) * _balance.SeparationWeight;
                 float distance = Mathf.Sqrt(sqr);
 
+                // ---- MENYERUDUK ----
+                // Ancang-ancang yang BERHENTI TOTAL adalah aba-abanya — pemain diberi
+                // ChargeWindup penuh untuk membaca garisnya. Arah lesatan dikunci saat
+                // berangkat, jadi melangkah ke samping selalu jadi jawaban yang benar.
+                if (e.Kind != null && e.Kind.ChargeEvery > 0f && e.Boss == null)
+                {
+                    if (e.ChargePhase == 1)
+                    {
+                        e.ChargeLeft -= dt;
+                        e.Yaw = Mathf.Atan2(delta.x, delta.z) * Mathf.Rad2Deg;
+
+                        if (e.ChargeLeft <= 0f && distance > 0.01f)
+                        {
+                            e.ChargePhase = 2;
+                            e.ChargeLeft = e.Kind.ChargeSeconds;
+                            e.ChargeDir = delta / distance;
+                        }
+
+                        continue;
+                    }
+
+                    if (e.ChargePhase == 2)
+                    {
+                        e.ChargeLeft -= dt;
+
+                        float rush = e.Speed * e.Kind.ChargeSpeedMul * speedMul * dt;
+                        pos.x += e.ChargeDir.x * rush;
+                        pos.z += e.ChargeDir.z * rush;
+                        e.Pos = pos;
+                        e.Yaw = Mathf.Atan2(e.ChargeDir.x, e.ChargeDir.z) * Mathf.Rad2Deg;
+
+                        Vector3 ram = target - pos;
+                        ram.y = 0f;
+
+                        // Tabrakan = SATU pukulan, bukan tetesan per frame — serudukan yang
+                        // kena harus terbaca sebagai kejadian, dan lesatannya berhenti di situ.
+                        if (ram.sqrMagnitude < 1.1f)
+                        {
+                            _caster.TakeHit(e.Kind.AttackDamage * _balance.EnemyDamageScale(Wave)
+                                * _nextDamageMul * PactDamageMul);
+                            if (e.Kind.Curse != null) _caster.ApplyDebuff(e.Kind.Curse);
+                            e.ChargeLeft = 0f;
+                        }
+
+                        if (e.ChargeLeft <= 0f)
+                        {
+                            e.ChargePhase = 0;
+                            e.ChargeTimer = e.Kind.ChargeEvery * Random.Range(0.85f, 1.25f);
+                        }
+
+                        continue;
+                    }
+
+                    e.ChargeTimer -= dt;
+
+                    // Terlalu dekat = serudukan tak terbaca; terlalu jauh = pemain keburu
+                    // pergi dari garisnya. Di luar jendela, jam menunggu di nol.
+                    if (e.ChargeTimer <= 0f && distance > 3f && distance < 16f)
+                    {
+                        e.ChargePhase = 1;
+                        e.ChargeLeft = e.Kind.ChargeWindup;
+                        continue;
+                    }
+                }
+
                 // Shooters hold their distance and fire. Once the wave is closing they abandon the
                 // range entirely and charge — otherwise a build with no long-range skill could
                 // never finish a wave, and the safety timeout would fire every single round.
@@ -1940,7 +2028,10 @@ namespace Proto
             shot.Damage = from.Kind.AttackDamage * _balance.EnemyDamageScale(Wave)
                           * _nextDamageMul * PactDamageMul;
             shot.Tint = _shotTint.TryGetValue(from.Kind, out int tint) ? tint : 0;
-            shot.Curse = null;
+
+            // Jaring laba-laba dkk.: peluru boleh membawa kutukan — jalur yang sama dengan
+            // ludah boss, cuma sumbernya arketipe.
+            shot.Curse = from.Kind.ShotCurse;
 
             // Just past its own range, so a shot the player outran expires instead of chasing.
             shot.Life = from.Kind.PreferredRange * 1.5f / speed;
@@ -2357,6 +2448,23 @@ namespace Proto
             e.Alive = false;
             Kills++;
             StartBurn(e);
+
+            // PECAH SAAT MATI: broodmother menetaskan anak-anaknya DI BANGKAINYA — musuh
+            // baru yang lahir di tepi layar tidak akan pernah terbaca sebagai "isi perutnya".
+            // Ruas boss dikecualikan: kematian ruas bukan kematian makhluk.
+            var split = e.Kind != null ? e.Kind.SplitInto : null;
+            if (split != null && e.Kind.SplitCount > 0 && e.Boss == null)
+            {
+                float parentHover = e.Kind.HoverHeight;
+                var basePos = new Vector3(e.Pos.x, e.GroundY - parentHover, e.Pos.z);
+
+                for (int i = 0; i < e.Kind.SplitCount; i++)
+                {
+                    var jitter = new Vector3(Random.Range(-0.8f, 0.8f), 0f, Random.Range(-0.8f, 0.8f));
+                    if (!SpawnOne(1f, split, basePos + jitter)) break;
+                }
+            }
+
             OnKill?.Invoke(e.Pos);
         }
 

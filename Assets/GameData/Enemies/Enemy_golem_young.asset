@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a6c106bc3bffeb4bb0c7c37ebd107c3, type: 3}
+  m_Name: Enemy_golem_young
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
+  Id: golem_young
+  DisplayName: Young Golem
+  FromWave: 9
+  Weight: 0.9
+  WeightPerWave: 0.08
+  WeightMax: 4
+  HpMultiplier: 2.2
+  SpeedMultiplier: 0.75
+  Scale: 1.15
+  HoverHeight: 0
+  UseTint: 0
+  Tint: {r: 1, g: 1, b: 1, a: 1}
+  Vat: {fileID: 11400000, guid: c91e9a8e1772cf947ac9a04223e53f11, type: 2}
+  PreferredRange: 0
+  Flanks: 1
+  AttackInterval: 0
+  AttackDamage: 12
+  ShotSpeed: 11
+  ShotColor: {r: 0.7, g: 1, b: 0.5, a: 1}
+  Curse: {fileID: 0}
+  ShotCurse: {fileID: 0}
+  ChargeEvery: 6
+  ChargeWindup: 0.75
+  ChargeSpeedMul: 4.5
+  ChargeSeconds: 0.7
+  SplitInto: {fileID: 0}
+  SplitCount: 0
+  Blurb: Stone that learned to sprint. The pause before it moves is your whole warning.

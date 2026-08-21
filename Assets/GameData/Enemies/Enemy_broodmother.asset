@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a6c106bc3bffeb4bb0c7c37ebd107c3, type: 3}
+  m_Name: Enemy_broodmother
+  m_EditorClassIdentifier: Assembly-CSharp::Proto.EnemyArchetype
+  Id: broodmother
+  DisplayName: Broodmother
+  FromWave: 14
+  Weight: 0.6
+  WeightPerWave: 0.06
+  WeightMax: 3
+  HpMultiplier: 3.5
+  SpeedMultiplier: 0.8
+  Scale: 1.7
+  HoverHeight: 0
+  UseTint: 0
+  Tint: {r: 1, g: 1, b: 1, a: 1}
+  Vat: {fileID: 11400000, guid: b54a882ed740fca41afc8d576e2fbb2e, type: 2}
+  PreferredRange: 0
+  Flanks: 1
+  AttackInterval: 0
+  AttackDamage: 8
+  ShotSpeed: 11
+  ShotColor: {r: 0.7, g: 1, b: 0.5, a: 1}
+  Curse: {fileID: 0}
+  ShotCurse: {fileID: 0}
+  ChargeEvery: 0
+  ChargeWindup: 0.7
+  ChargeSpeedMul: 4
+  ChargeSeconds: 0.8
+  SplitInto: {fileID: 11400000, guid: ebf8236b8f92a254081c5de44ad07221, type: 2}
+  SplitCount: 4
+  Blurb: Killing it is the easy half. The hard half hatches where it fell.

@@ -271,6 +271,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c9551c71751a5824cbdbece966057e2f, type: 2}
   - {fileID: 11400000, guid: 17f3979a6dafd1849a5cee717e5c857a, type: 2}
   - {fileID: 11400000, guid: 6acb2b5dbdd9db34ab604f9ffaab7562, type: 2}
+  - {fileID: 11400000, guid: e1af16438de49624b82d004ec49abbd9, type: 2}
+  - {fileID: 11400000, guid: ebf8236b8f92a254081c5de44ad07221, type: 2}
+  - {fileID: 11400000, guid: 0e1b08a2400554247b7762db2dee62c3, type: 2}
+  - {fileID: 11400000, guid: dff605d9b3b096c49898d97c68508952, type: 2}
+  - {fileID: 11400000, guid: db90132eb51902041b69a00e43d86348, type: 2}
+  - {fileID: 11400000, guid: e032aef4c9d4df643a75be60d1e2fd5e, type: 2}
+  - {fileID: 11400000, guid: 5862d5da8f3427b4790646e169abe4d2, type: 2}
+  - {fileID: 11400000, guid: f2c69b8c684ed06448f3292058cdf32b, type: 2}
   _heroes:
   - {fileID: 11400000, guid: 0d10ecc59e6b67a4d8814f0e27c6c5be, type: 2}
   - {fileID: 11400000, guid: 1422e891b65a3ea41a21b6cf8211b4c7, type: 2}
@@ -280,6 +288,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 565e8a598382e964789aef273f0709c2, type: 2}
   - {fileID: 11400000, guid: 3af09e0ec18510d479a3b92d6290ec03, type: 2}
   - {fileID: 11400000, guid: 1954850936595254295b514630b3214d, type: 2}
+  - {fileID: 11400000, guid: 1c5e48cfcc5d48e47b32077b152a2814, type: 2}
   _pacts:
   - {fileID: 11400000, guid: 81860fab22d5dbc4cbfa8cc5ada624fe, type: 2}
   - {fileID: 11400000, guid: 3edd6951b7ff9544495d52a0e9260ab1, type: 2}
