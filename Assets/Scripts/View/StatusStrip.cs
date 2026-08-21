@@ -22,6 +22,10 @@ namespace Proto
         readonly string[] _tooltips;
         readonly Rect[] _rects;
 
+        /// <summary>Alas di belakang tiap ikon — clone dari cetakan IconPlate milik prefab
+        /// StatusStripsRig. Null = tanpa alas, ikon telanjang seperti sebelum slot itu ada.</summary>
+        readonly Image[] _plates;
+
         readonly float _slot;
         readonly float _icon;
 
@@ -40,7 +44,8 @@ namespace Proto
         int _used;
 
         public StatusStrip(Transform canvas, TMP_FontAsset font, int capacity, float iconSize,
-            Color numberColor, bool vertical = false, float slotPadding = -1f)
+            Color numberColor, bool vertical = false, float slotPadding = -1f,
+            Image plateTemplate = null)
         {
             _icon = iconSize;
             _vertical = vertical;
@@ -56,6 +61,23 @@ namespace Proto
             _numbers = new TextMeshProUGUI[capacity];
             _tooltips = new string[capacity];
             _rects = new Rect[capacity];
+
+            // Alas dibuat SEBELUM ikon: di kanvas ini urutan lahir = urutan gambar, dan
+            // alas yang lahir belakangan akan menutupi ikon yang seharusnya ia bingkai.
+            if (plateTemplate != null && plateTemplate.sprite != null)
+            {
+                _plates = new Image[capacity];
+
+                for (int i = 0; i < capacity; i++)
+                {
+                    _plates[i] = MakeImage(canvas, $"StripPlate_{i}", iconSize);
+                    _plates[i].sprite = plateTemplate.sprite;
+                    _plates[i].color = plateTemplate.color;
+                    _plates[i].material = plateTemplate.material;
+                    _plates[i].type = plateTemplate.type;
+                    _plates[i].enabled = false;
+                }
+            }
 
             for (int i = 0; i < capacity; i++)
             {
@@ -134,6 +156,17 @@ namespace Proto
             _icons[_used].color = ink;
             _icons[_used].rectTransform.anchoredPosition = new Vector2(x, y);
 
+            if (_plates != null)
+            {
+                // Sedikit lebih besar dari ikonnya — alas yang pas-pasan terbaca sebagai
+                // bagian dari gambar ikon, bukan sebagai bingkai di belakangnya.
+                float pad = _icon * 0.16f;
+                var plate = _plates[_used];
+                plate.enabled = true;
+                plate.rectTransform.sizeDelta = new Vector2(_icon + pad * 2f, _icon + pad * 2f);
+                plate.rectTransform.anchoredPosition = new Vector2(x - pad, y + pad);
+            }
+
             _numbers[_used].enabled = !dim && !string.IsNullOrEmpty(number);
             _numbers[_used].text = number;
             _numbers[_used].rectTransform.anchoredPosition =
@@ -157,6 +190,7 @@ namespace Proto
             {
                 _icons[i].enabled = false;
                 _numbers[i].enabled = false;
+                if (_plates != null) _plates[i].enabled = false;
             }
         }
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Proto
 {
@@ -47,6 +48,14 @@ namespace Proto
                  "membawa angka — sediakan sekitar 900 piksel mendatar supaya dua belas pakta " +
                  "muat tanpa keluar layar.")]
         public RectTransform PactArea;
+
+        [Tooltip("CETAKAN ALAS IKON (opsional) — satu-satunya RUPA strip yang bisa di-skin " +
+                 "dari prefab ini, karena ikonnya sendiri digambar kode (\"gak ada image " +
+                 "yang bisa gw ganti\" — memang tidak ada, sampai slot ini). Taruh Image " +
+                 "ber-sprite di prefab (nonaktifkan objeknya — ini cetakan, bukan tampilan), " +
+                 "tunjuk di sini: kode meng-clone-nya jadi alas di belakang TIAP ikon strip. " +
+                 "Sprite, warna, dan materialnya milikmu. Kosong = ikon telanjang seperti lama.")]
+        public Image IconPlate;
 
         [Header("Bantuan menata (editor saja)")]
         [Tooltip("Gambar kotak ketiga strip di Scene view. RectTransform kosong tidak menggambar " +

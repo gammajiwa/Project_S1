@@ -66,6 +66,15 @@ namespace Proto
         [Tooltip("Dua piece melebur (banner EVOLVE!).")]
         public AudioClip EvolveStinger;
 
+        [Tooltip("Bunyi WAVE BERES — sting kemenangan kecil, sekelas di bawah WinStinger " +
+                 "milik boss. Kosong = arpeggio lonceng sintesis (cadangan lama).")]
+        public AudioClip WaveClear;
+
+        [Tooltip("Lapisan KILAU di atas WaveClear — dimainkan bersamaan, lebih pelan. " +
+                 "Satu klip saja jarang terdengar 'menang'; pengumuman + gemerlap itulah " +
+                 "resepnya (pola yang sama dengan JackpotBlast). Kosong = tanpa lapisan.")]
+        public AudioClip WaveClearSparkle;
+
         [Header("Volume musik")]
         [Tooltip("Pengali di bawah slider MUSIC milik pemain. Musik itu alas, bukan lawan " +
                  "bicara — di 1.0 ia bertarung dengan SFX memperebutkan telinga.")]

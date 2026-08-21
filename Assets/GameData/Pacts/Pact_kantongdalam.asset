@@ -15,9 +15,9 @@ MonoBehaviour:
   Id: kantongdalam
   DisplayName: DEEP POCKETS
   Color: {r: 0.78, g: 0.62, b: 0.42, a: 1}
-  Icon: {fileID: 21300000, guid: 3770f09a9f374d7fb3e43e9f813511c2, type: 3}
+  Icon: {fileID: 21300000, guid: 31ecfead4b0bf5e44a3f61742bc3c980, type: 3}
   BoonText: Tas MELEBAR - 4x4 jadi 5x5
-  BaneText:
+  BaneText: 
   Boon: []
   Bane: []
   EnemyHpMul: 1

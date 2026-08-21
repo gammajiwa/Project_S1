@@ -357,31 +357,64 @@ namespace Proto
             else if (Theme == null || Theme.EvolveBurst == null) Play(Sound.Reaction);
         }
 
-        AudioClip _waveTing;
-        AudioClip _waveNing;
+        AudioClip[] _waveClearArp;
+        AudioClip _waveClearLow;
 
         /// <summary>
-        /// Wave beres: "ting-ning" — dua LONCENG kecil menanjak (E6 lalu B6), renyah dan
-        /// sebentar. Versi pertama memakai dentang Reaction yang di-pitch dan terdengar
-        /// bulat-aneh ("kurang crispy" — pemilik project); lonceng Bell di bawah punya
-        /// serangan tajam dan kilau yang padam cepat, persis rasa renyah yang diminta.
-        /// Fanfare penuh tetap milik boss (VictoryFanfare).
+        /// Wave beres: MINI WIN STING — arpeggio mayor menanjak C6-E6-G6 lalu puncak C7
+        /// yang diberi BADAN (lonceng C5 rendah berbunyi bersamaan). Deretan naik yang
+        /// mendarat di oktafnya adalah kosakata "menang" paling tua di game — dan versi
+        /// dua-nada sebelumnya berhenti sebelum kalimatnya selesai ("terlalu sederhana,
+        /// kurang win" — pemilik project). Tetap sebentar (~0,8 dtk): fanfare penuh
+        /// milik boss (VictoryFanfare), wave datang tiap dua menit.
         /// </summary>
         public void WaveClearChime()
         {
-            if (_waveTing == null) _waveTing = Bell("sfx_waveclear_a", 0.22f, 1319f);
-            if (_waveNing == null) _waveNing = Bell("sfx_waveclear_b", 0.28f, 1976f);
+            // Klip TEMA menang atas sintesis: arpeggio lonceng — sebagus apa pun disetel —
+            // tetap terdengar sekeluarga dengan gemerincing koin ("kaya coin, bukan win
+            // stage" — pemilik project). DUA LAPIS, seperti JackpotBlast: pengumuman
+            // (End Round) + gemerlap perayaan di atasnya — satu klip sendirian dinilai
+            // "masih kurang win". Keduanya bisa ditukar kapan pun di AudioTheme.
+            if (Theme != null && Theme.WaveClear != null)
+            {
+                PlayClip(Theme.WaveClear, 0.85f, 1f, 2);
+
+                if (Theme.WaveClearSparkle != null)
+                    PlayClip(Theme.WaveClearSparkle, 0.5f, 1f, 1);
+
+                return;
+            }
+
+            if (_waveClearArp == null)
+            {
+                _waveClearArp = new[]
+                {
+                    Bell("sfx_waveclear_1", 0.18f, 1047f),
+                    Bell("sfx_waveclear_2", 0.18f, 1319f),
+                    Bell("sfx_waveclear_3", 0.20f, 1568f),
+                    Bell("sfx_waveclear_4", 0.55f, 2093f)
+                };
+
+                _waveClearLow = Bell("sfx_waveclear_low", 0.45f, 523f);
+            }
 
             StartCoroutine(WaveClearRoutine());
         }
 
         System.Collections.IEnumerator WaveClearRoutine()
         {
-            PlayClip(_waveTing, 0.5f, 1f, 1);
+            // Realtime — deretannya tidak boleh molor saat dunia berhenti antar wave.
+            PlayClip(_waveClearArp[0], 0.4f, 1f, 1);
+            yield return new WaitForSecondsRealtime(0.08f);
+            PlayClip(_waveClearArp[1], 0.45f, 1f, 1);
+            yield return new WaitForSecondsRealtime(0.08f);
+            PlayClip(_waveClearArp[2], 0.5f, 1f, 1);
+            yield return new WaitForSecondsRealtime(0.1f);
 
-            // Realtime — bunyi kedua tidak boleh molor saat dunia berhenti antar wave.
-            yield return new WaitForSecondsRealtime(0.09f);
-            PlayClip(_waveNing, 0.55f, 1f, 1);
+            // Puncaknya: nada tertinggi + lonceng rendah SERENTAK — kilau di atas,
+            // badan di bawah. Tanpa yang rendah, tangga nada ini cuma gemerincing.
+            PlayClip(_waveClearArp[3], 0.6f, 1f, 2);
+            PlayClip(_waveClearLow, 0.35f, 1f, 1);
         }
 
         /// <summary>Boss tumbang. Fanfare penuh sengaja disimpan untuk ini — bukan tiap wave.</summary>

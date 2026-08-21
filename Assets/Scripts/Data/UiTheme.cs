@@ -361,6 +361,11 @@ namespace Proto
         [Tooltip("Token pemain di peta. Kosong = bulatan polos seperti sebelumnya.")]
         public Sprite MapIconYou;
 
+        [Tooltip("GEMBOK di piece yang dikunci (papan & tas). Kunci = resep buta terhadap " +
+                 "piece itu, tidak akan pernah evolusi — dan itu harus KELIHATAN, bukan " +
+                 "cuma tile redup. Kosong = tanpa badge, seperti sebelumnya.")]
+        public Sprite LockIcon;
+
         // ------------------------------------------------------------------ garis evolusi
 
         [Header("Garis evolusi")]

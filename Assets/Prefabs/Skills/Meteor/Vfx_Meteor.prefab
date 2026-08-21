@@ -96,6 +96,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: vfx_SingleComet01_Fire
       objectReference: {fileID: 0}
+    - target: {fileID: 2457285412779223385, guid: 6795531b2ad890246a47816714b40274, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -16,6 +16,8 @@ MonoBehaviour:
   CombatLoop: {fileID: 8300000, guid: 7c55da5c7ab23494a9f2ce2f75ddb741, type: 3}
   ShopLoop: {fileID: 8300000, guid: 0a2949eb98cd0654bb1f344027c9ff39, type: 3}
   WinStinger: {fileID: 8300000, guid: 7e41bb31cadc23a4185c503bec476320, type: 3}
+  WaveClear: {fileID: 8300000, guid: b34d6b331c02f4f43af81e9990dd6dfc, type: 3}
+  WaveClearSparkle: {fileID: 0}
   LoseStinger: {fileID: 8300000, guid: d34fc742d3165d4498934b9703430f88, type: 3}
   EvolveStinger: {fileID: 0}
   MusicTrim: 0.7

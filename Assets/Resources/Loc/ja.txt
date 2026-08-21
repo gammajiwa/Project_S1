@@ -669,3 +669,8 @@ tut.rest.goal=目標：ステージの敵をすべて倒し、ドロップを集
 tut.rest.sigil=これがシジルです - パッシブなピースです。決して発動せず、\nルーンの上に乗っている間、能力値や効果を与え続けます。
 tut.rest.spells=ダメージランキング - 実際に与えたダメージ順にスキルを並べたものです。\n最も貢献度の高い5つが表示されます。
 
+hud.card.act=第{0}幕
+hud.card.floor=マップ階層 {0}/{1}
+hud.card.alive=敵の生存 {0}（+{1}接近中）
+hud.card.enemyhp=敵HP 約{0}
+hud.card.pacts=契約 {0}

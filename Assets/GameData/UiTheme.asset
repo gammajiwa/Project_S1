@@ -77,5 +77,6 @@ MonoBehaviour:
   MapIconEvent: {fileID: -259064076, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
   MapIconBoss: {fileID: -1445156730, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
   MapIconYou: {fileID: -773895012, guid: 9d4e9cd4c62592e41a5e513a458996ed, type: 3}
+  LockIcon: {fileID: 21300000, guid: a095a4323e0239f4683a86c714bcd30e, type: 3}
   EvoBoltMaterial: {fileID: 2100000, guid: e16998999fca6394a80799ef723566a0, type: 2}
   PeekScreenFraction: {x: 0.56, y: 0.78}

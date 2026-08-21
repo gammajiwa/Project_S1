@@ -103,6 +103,23 @@ namespace Proto
 
         [Range(0, 6)] public int SplitCount;
 
+        [Header("Regenerasi ekor (0 = tidak)")]
+        [Tooltip("Sisa HP (fraksi 0-1) yang memicunya KABUR sambil menumbuhkan lukanya — " +
+                 "kadal melepas ekor. Nol = tidak pernah. Saat kabur ia tidak menyeruduk " +
+                 "dan tidak menyentuh; mengejarnya sampai habis atau merelakannya pulih " +
+                 "adalah pilihan pemain, dan larinya sendiri adalah aba-abanya.")]
+        [Range(0f, 1f)] public float RegenBelow;
+
+        [Tooltip("Pulih per detik sebagai FRAKSI MaxHp (0.1 = 10%/dtk) — ikut skala HP " +
+                 "wave dengan sendirinya; angka HP mentah akan tertinggal di wave larut.")]
+        [Range(0f, 1f)] public float RegenFracPerSecond = 0.1f;
+
+        [Tooltip("Lama kabur, detik. Pulih penuh menghentikannya lebih awal.")]
+        [Min(0.5f)] public float RegenSeconds = 3f;
+
+        [Tooltip("Berapa kali per nyawa. Habis = luka berikutnya final.")]
+        [Range(0, 3)] public int RegenUses = 1;
+
         [TextArea(2, 3)]
         public string Blurb;
 

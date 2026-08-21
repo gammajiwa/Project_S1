@@ -120,6 +120,12 @@ namespace Proto
             /// serudukan bisa dihindari dengan melangkah ke samping.</summary>
             public Vector3 ChargeDir;
 
+            /// <summary>Sisa detik fase kabur-dan-pulih (arketipe ber-RegenBelow).</summary>
+            public float RegenLeft;
+
+            /// <summary>Sisa jatah kabur-dan-pulih untuk nyawa ini.</summary>
+            public int RegenUsesLeft;
+
             /// <summary>
             /// Ular yang memiliki ruas ini, kalau ada. Terisi = damage masuk ke kolam HP boss,
             /// ruasnya tidak pernah mati sendiri, dan gerakannya disetir boss bukan oleh AI swarm.
@@ -1570,6 +1576,10 @@ namespace Proto
                 ? kind.ChargeEvery * Random.Range(0.6f, 1.3f)
                 : 0f;
 
+            // Jatah regen milik nyawa BARU — slot bekas kadal tidak mewariskan sisa kaburnya.
+            e.RegenLeft = 0f;
+            e.RegenUsesLeft = kind != null ? kind.RegenUses : 0;
+
             // Slot bekas musuh yang baru saja dipukul akan lahir sambil memamerkan bar HP penuh
             // kalau ini tidak dibersihkan.
             e.HurtSeen = -999f;
@@ -1805,6 +1815,33 @@ namespace Proto
 
                 Vector3 apart = Separation(e, pos, _balance.EnemySeparation) * _balance.SeparationWeight;
                 float distance = Mathf.Sqrt(sqr);
+
+                // ---- REGENERASI EKOR ----
+                // Kabur MENJAUH sambil menumbuhkan lukanya — ekor kadal yang putus. Larinya
+                // adalah aba-abanya: kejar dan habisi sebelum utuh, atau relakan ia kembali.
+                if (e.RegenLeft > 0f && e.Kind != null)
+                {
+                    e.RegenLeft -= dt;
+                    e.Hp = Mathf.Min(e.MaxHp, e.Hp + e.MaxHp * e.Kind.RegenFracPerSecond * dt);
+
+                    // Utuh sebelum waktunya = tidak ada lagi yang ditumbuhkan, berhenti lari.
+                    if (e.Hp >= e.MaxHp) e.RegenLeft = 0f;
+
+                    // Pagar 26 m: tanpa pagar ia lari keluar dunia. Di luarnya ia berdiri
+                    // memulihkan diri di tempat — tetap terkejar, tetap terlihat.
+                    if (distance > 0.01f && distance < 26f)
+                    {
+                        Vector3 flee = delta / -distance + apart;
+                        if (flee.sqrMagnitude > 0.0001f) flee.Normalize();
+
+                        pos.x += flee.x * e.Speed * 1.35f * speedMul * dt;
+                        pos.z += flee.z * e.Speed * 1.35f * speedMul * dt;
+                        e.Pos = pos;
+                        e.Yaw = Mathf.Atan2(flee.x, flee.z) * Mathf.Rad2Deg;
+                    }
+
+                    continue;
+                }
 
                 // ---- MENYERUDUK ----
                 // Ancang-ancang yang BERHENTI TOTAL adalah aba-abanya — pemain diberi
@@ -2605,6 +2642,22 @@ namespace Proto
             }
 
             e.Hp -= dealt;
+
+            // ---- REGENERASI EKOR (pemicu) ----
+            // Luka yang menembus ambang membuatnya kabur memulihkan diri. Dicek di corong
+            // yang dilewati SEMUA jalur damage — sebab yang sama dengan HurtSeen di atas —
+            // dan hanya saat masih hidup: regen bukan pengganti mati.
+            if (e.Hp > 0f && e.Kind != null && e.Kind.RegenBelow > 0f && e.RegenUsesLeft > 0 &&
+                e.RegenLeft <= 0f && e.Hp < e.MaxHp * e.Kind.RegenBelow)
+            {
+                e.RegenUsesLeft--;
+                e.RegenLeft = e.Kind.RegenSeconds;
+
+                // Serudukan yang sedang berjalan batal — kabur dan melesat tidak bisa barengan.
+                e.ChargePhase = 0;
+                e.ChargeLeft = 0f;
+            }
+
             if (e.Hp <= 0f) Kill(e);
         }
 

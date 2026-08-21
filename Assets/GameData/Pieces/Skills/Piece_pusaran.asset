@@ -31,14 +31,14 @@ MonoBehaviour:
   Element: 3
   BaseDamage: 12
   BaseCooldown: 3.2
-  Radius: 4
+  Radius: 2.8
   Range: 10
   Hits: 1
   Forks: 1
   Bounces: 0
   BounceRange: 6
   ManaCost: 2
-  ZoneDuration: 4
+  ZoneDuration: 3
   ZoneTickInterval: 0.5
   ZoneDrift: 0
   CastVfx: {fileID: 788153968160340963, guid: cb97836bdfacb6a469d0411f9372a70f, type: 3}

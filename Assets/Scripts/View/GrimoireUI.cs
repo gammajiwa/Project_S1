@@ -479,6 +479,7 @@ namespace Proto
 
         /// <summary>Kolom tegak di tepi kanan: pakta run ini. Terpisah dari tiga strip di kiri.</summary>
         StatusStrip _pactStrip;
+        StatusStripRig _stripRig;
 
         /// <summary>
         /// Versi pakta yang terakhir digambar. Strip pakta hanya berubah beberapa kali per RUN,
@@ -2112,17 +2113,12 @@ namespace Proto
             _speedIdle = new GameObject[Speeds.Length];
             _speedActive = new GameObject[Speeds.Length];
 
-            // CETAKAN MENANG soal RUPA. Tombol nyata Speed_0..3 tetap menang soal LETAK,
-            // tapi sprite & warna Idle/Active-nya DISALIN dari ButtonTemplate tiap build —
-            // pemilik project dua kali mengedit template dan bertanya-tanya kenapa tombolnya
-            // tidak berubah ("current state-nya gak bisa diganti"). Satu tempat edit, empat
-            // tombol ikut. Mau tombol tertentu beda? Kosongkan sprite di template, lalu isi
-            // per-tombol — sprite template yang kosong tidak menyalin apa-apa.
-            var tplIdle = template.Find("Idle") != null
-                ? template.Find("Idle").GetComponent<Image>() : null;
-            var tplActive = template.Find("Active") != null
-                ? template.Find("Active").GetComponent<Image>() : null;
-
+            // KODE TIDAK MENYENTUH SPRITE TOMBOL, SAMA SEKALI. Sempat ada aturan "template
+            // menang soal rupa" (sprite template disalin ke keempat tombol tiap build) — dan
+            // itu persis yang dilaporkan sebagai "gimanapun gw ganti, balik lagi ke yang
+            // jelek": pemilik project mengedit Speed_0..3 langsung, lalu build menimpanya
+            // dengan isi template yang lama. Dicabut. Yang tampil = persis isi prefab;
+            // template tinggal cetakan clone untuk prefab lama tanpa tombol nyata.
             for (int i = 0; i < Speeds.Length; i++)
             {
                 // Tombol NYATA di prefab menang. Dulu SATU template di-clone empat kali di sini,
@@ -2140,18 +2136,6 @@ namespace Proto
                 var active = clone.transform.Find("Active");
                 _speedIdle[i] = idle != null ? idle.gameObject : null;
                 _speedActive[i] = active != null ? active.gameObject : null;
-
-                if (tplIdle != null && tplIdle.sprite != null && idle != null)
-                {
-                    var img = idle.GetComponent<Image>();
-                    if (img != null) { img.sprite = tplIdle.sprite; img.color = tplIdle.color; }
-                }
-
-                if (tplActive != null && tplActive.sprite != null && active != null)
-                {
-                    var img = active.GetComponent<Image>();
-                    if (img != null) { img.sprite = tplActive.sprite; img.color = tplActive.color; }
-                }
 
                 var label = clone.GetComponentInChildren<TextMeshProUGUI>(true);
                 if (label != null) label.text = SpeedLabels[i];
@@ -2646,14 +2630,17 @@ namespace Proto
 
             BuildStripAnchors();
 
+            // Alas ikon dari prefab rig — satu cetakan untuk keempat strip; kosong = telanjang.
+            var plate = _stripRig != null ? _stripRig.IconPlate : null;
+
             _buffStrip = new StatusStrip(_canvas.transform, TmpFont, 6, StripIcon,
-                new Color(1f, 0.92f, 0.55f));
+                new Color(1f, 0.92f, 0.55f), plateTemplate: plate);
 
             _debuffStrip = new StatusStrip(_canvas.transform, TmpFont, 4, StripIcon,
-                new Color(1f, 0.5f, 0.5f));
+                new Color(1f, 0.5f, 0.5f), plateTemplate: plate);
 
             _ailmentStrip = new StatusStrip(_canvas.transform, TmpFont, 8, StripIcon,
-                new Color(0.85f, 0.88f, 0.95f));
+                new Color(0.85f, 0.88f, 0.95f), plateTemplate: plate);
 
             // Kapasitas 12: katalognya 22, tapi node kejadian datang beberapa kali per act dan
             // pakta tidak pernah bisa diambil dua kali. Dua belas adalah run yang sangat panjang.
@@ -2663,7 +2650,7 @@ namespace Proto
             // Ikon pakta SATU TINGKAT LEBIH BESAR dari buff/debuff biasa - permintaan pemilik
             // project: pakta itu aturan dunia sepanjang run, bukan efek lewat.
             _pactStrip = new StatusStrip(_canvas.transform, TmpFont, 12, StripIcon * 1.35f,
-                new Color(1f, 0.82f, 0.4f));
+                new Color(1f, 0.82f, 0.4f), plateTemplate: plate);
         }
 
         /// <summary>
@@ -2704,6 +2691,15 @@ namespace Proto
                 Destroy(go);
                 return;
             }
+
+            // Disimpan: pembangun strip membaca cetakan alas ikon (IconPlate) darinya.
+            _stripRig = rig;
+
+            // Cetakan yang lupa di-un-check ikut tergambar sebagai kotak nyasar di pojok
+            // strip ("kenapa ngerubah BUFF WTF" — pemilik project). Kode yang memadamkannya:
+            // cetakan adalah bahan, bukan tampilan, dan itu tidak boleh bergantung pada
+            // checkbox yang gampang terlupa.
+            if (rig.IconPlate != null) rig.IconPlate.gameObject.SetActive(false);
 
             // Sudut dunia baru benar setelah kanvas menghitung tata letaknya. Prefab yang baru
             // ditempel di frame yang sama masih memakai rect bawaannya, dan pangkal yang dibaca
@@ -3023,6 +3019,46 @@ namespace Proto
             return null;
         }
 
+        /// <summary>
+        /// Kartu baca untuk PLAKAT STAGE (baris wave/kill/koin kanan-atas) — permintaan
+        /// pemilik project: barisnya sempit, dan yang tidak pernah muat di sana justru
+        /// bacaan perencanaan: act & lantai peta, berapa musuh masih hidup dan berapa
+        /// yang masih akan datang, seberapa tebal HP musuh wave ini, berapa pakta dipegang.
+        /// </summary>
+        string HudLineTooltip(Vector2 mouse)
+        {
+            var anchor = _hudPlaque != null && _hudPlaque.enabled
+                ? _hudPlaque.rectTransform
+                : _hudText != null ? _hudText.rectTransform : null;
+
+            if (anchor == null || !CanvasRectOf(anchor).Contains(mouse)) return null;
+
+            _sb.Length = 0;
+
+            _sb.Append(Loc.F("hud.line.wave", Enemies.Wave));
+            if (_run != null) _sb.Append("   ").Append(Loc.F("hud.card.act", _run.Act));
+            _sb.Append('\n');
+
+            if (_run != null && _run.Map != null)
+            {
+                _sb.Append(Loc.F("hud.card.floor",
+                    Mathf.Max(0, _run.Map.CurrentFloor) + 1, _run.Map.Floors)).Append('\n');
+            }
+
+            _sb.Append(Loc.F("hud.card.alive", Enemies.AliveCount, Enemies.PendingSpawns))
+               .Append('\n');
+
+            // HP per ekor SETELAH pakta — angka yang menjawab "kenapa mereka tebal banget".
+            float pactMul = Player.Pacts != null ? Player.Pacts.EnemyHpMul : 1f;
+            _sb.Append(Loc.F("hud.card.enemyhp",
+                BigNumber.Short(_balance.EnemyHpFor(Enemies.Wave) * pactMul)));
+
+            if (Player.Pacts != null && Player.Pacts.Count > 0)
+                _sb.Append('\n').Append(Loc.F("hud.card.pacts", Player.Pacts.Count));
+
+            return _sb.ToString();
+        }
+
         /// <summary>Description of whichever strip icon the cursor is over, or null.</summary>
         string StripTooltip(Vector2 mouse) =>
             _buffStrip.TooltipAt(mouse) ?? _debuffStrip.TooltipAt(mouse) ??
@@ -3090,13 +3126,26 @@ namespace Proto
         /// persis yang dilaporkan pemilik project.
         /// </summary>
         static string PactName(WorldModifierDefinition p)
-            => p == null ? "" : Loc.T("pact." + p.Id + ".name", p.DisplayName);
+            => p == null ? "" : PactText("pact." + p.Id + ".name", p.DisplayName);
 
         static string PactBoon(WorldModifierDefinition p)
-            => p == null ? "" : Loc.T("pact." + p.Id + ".boon", p.BoonText);
+            => p == null ? "" : PactText("pact." + p.Id + ".boon", p.BoonText);
 
         static string PactBane(WorldModifierDefinition p)
-            => p == null ? "" : Loc.T("pact." + p.Id + ".bane", p.BaneText);
+            => p == null ? "" : PactText("pact." + p.Id + ".bane", p.BaneText);
+
+        /// <summary>
+        /// Loc.T yang TIDAK PERNAH membocorkan kunci mentah. T mengembalikan kunci saat
+        /// kunci tak dikenal dan cadangannya kosong — untuk teks papan itu benar (terlihat
+        /// = ketahuan belum diterjemahkan), tapi pakta ADDENDUM memang TIDAK PUNYA bane:
+        /// "pact.kantongdalam.bane" pernah tayang di kartu hermit sebagai teks sungguhan.
+        /// Kosong yang jujur lebih benar daripada kunci yang menyamar jadi kalimat.
+        /// </summary>
+        static string PactText(string key, string fromAsset)
+        {
+            var s = Loc.T(key, fromAsset);
+            return s == key ? "" : s;
+        }
 
         /// <summary>
         /// Nama REAKSI lewat tabel bahasa. ReactionDefinition tidak punya field Id, jadi
@@ -7040,6 +7089,43 @@ namespace Proto
             label.text = _sb.ToString();
         }
 
+        /// <summary>
+        /// Kartu hover di panel KEJADIAN: nama besar + boon/bane + paragraf panjang opsional.
+        /// Teks di kartu paktanya sendiri kecil dan sesak ("kasih hover buat memperjelas" —
+        /// pemilik project), dan kartu hover ini sekaligus rumah untuk deskripsi panjang
+        /// yang belum tentu muat di kartu: isi kunci "pact.&lt;id&gt;.lore" di tabel bahasa
+        /// dan paragrafnya muncul di sini — tanpa kunci, kartunya tetap tampil tanpa lore.
+        /// Tombol menolak ikut dapat kartu lewat "event.refuse.lore" ({0} = koinnya).
+        /// </summary>
+        string EventTooltip(Vector2 mouse)
+        {
+            if (!_eventOpen || _run == null) return null;
+
+            for (int side = 0; side < 2; side++)
+            {
+                var pact = side < _pactOffer.Length ? _pactOffer[side] : null;
+                if (pact == null || !EventOptionRect(side).Contains(mouse)) continue;
+
+                _sb.Length = 0;
+                _sb.Append("<size=145%><b>").Append(PactName(pact)).Append("</b></size>\n\n");
+                _sb.Append("+  ").Append(PactBoon(pact));
+
+                var bane = PactBane(pact);
+                if (!string.IsNullOrEmpty(bane)) _sb.Append("\n-  ").Append(bane);
+
+                var lore = PactText("pact." + pact.Id + ".lore", null);
+                if (!string.IsNullOrEmpty(lore))
+                    _sb.Append("\n\n<i>").Append(lore).Append("</i>");
+
+                return _sb.ToString();
+            }
+
+            if (EventRefuseRect().Contains(mouse) && Loc.Has("event.refuse.lore"))
+                return Loc.F("event.refuse.lore", _balance.EventGoldGift);
+
+            return null;
+        }
+
         void Redraw()
         {
             RefreshHudSeats();
@@ -7052,6 +7138,7 @@ namespace Proto
             DrawSkillWidgets(Time.deltaTime);
             DrawBackpack();
             DrawLoose();
+            DrawLockBadges();
             DrawSpells();
             DrawHud();
             DrawBuffs();
@@ -7364,6 +7451,55 @@ namespace Proto
             return def != null && def.Art != null
                 ? DrawPieceArt(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose, dim)
                 : DrawPieceIcon(def, shapeBottomLeft, rot, cellPx, gapPx, alpha, loose, dim);
+        }
+
+        /// <summary>
+        /// GEMBOK di tiap piece yang DIKUNCI — papan dan tas. Kunci membuat resep buta
+        /// terhadap piece itu (tidak akan pernah ikut evolusi), dan sebelum badge ini
+        /// satu-satunya tandanya tile yang agak redup plus sebaris teks di tooltip —
+        /// "icon lock-nya belum ada" (pemilik project). Duduk di pojok kanan-atas sel
+        /// jangkar; ikonnya milik tema (LockIcon), kosong = tanpa badge.
+        /// </summary>
+        void DrawLockBadges()
+        {
+            var icon = _theme != null ? _theme.LockIcon : null;
+            if (icon == null) return;
+
+            for (int i = 0; i < Book.Placed.Count; i++)
+            {
+                var inst = Book.Placed[i];
+                if (!inst.Locked) continue;
+
+                LockBadge(GridPoint(new Vector2(inst.Origin.x, inst.Origin.y)),
+                    CellSize, icon, loose: false);
+            }
+
+            for (int i = 0; i < _bag.Placed.Count; i++)
+            {
+                var inst = _bag.Placed[i];
+                if (!inst.Locked) continue;
+
+                LockBadge(BagPoint(new Vector2(inst.Origin.x, inst.Origin.y)),
+                    BagCell, icon, loose: true);
+            }
+        }
+
+        void LockBadge(Vector2 cellCenter, float cellPx, Sprite icon, bool loose)
+        {
+            // Kolam art yang sama dengan gambar piece: frame-scoped, batching ikut. Tas
+            // memakai lapisan LOOSE karena lapisan depan papan duduk di bawah panel tas.
+            var img = TakeArt(false, loose);
+            img.sprite = icon;
+            img.color = Color.white;
+            img.type = Image.Type.Simple;
+            img.fillAmount = 1f;
+            img.preserveAspect = true;
+
+            var rt = img.rectTransform;
+            rt.localScale = Vector3.one;
+            rt.localEulerAngles = Vector3.zero;
+            rt.sizeDelta = Vector2.one * (cellPx * 0.46f);
+            rt.anchoredPosition = cellCenter + new Vector2(cellPx * 0.30f, cellPx * 0.30f);
         }
 
         void DrawPlacedArt()
@@ -7780,8 +7916,16 @@ namespace Proto
             string strip = StripTooltip(UiMouse);
             string vitals = strip == null ? VitalsTooltip(UiMouse) : null;
             string spellRow = strip == null && vitals == null ? SpellRowTooltip(UiMouse) : null;
+            string hudCard = strip == null && vitals == null && spellRow == null
+                ? HudLineTooltip(UiMouse) : null;
 
-            if (strip != null || vitals != null || spellRow != null)
+            // Kartu kejadian dicek paling akhir: panelnya melayang di tengah, sumber lain
+            // hidup di pojok-pojok HUD, jadi tidak pernah benar-benar rebutan.
+            string evt = strip == null && vitals == null && spellRow == null && hudCard == null
+                ? EventTooltip(UiMouse) : null;
+
+            if (strip != null || vitals != null || spellRow != null || hudCard != null ||
+                evt != null)
             {
                 // Selama ALT ditahan, kartu resep yang sedang dibaca MENANG: kursor yang
                 // kebetulan lewat di atas bola HP tidak boleh merampas panel yang dipatok.
@@ -7800,7 +7944,7 @@ namespace Proto
                 // terasa lepas dari ikonnya ("hover buff jaraknya jauh" — pemilik project);
                 // ikonnya kecil, cukup digeser sedikit supaya kursor tidak menutupi kartu.
                 var drop = vitals != null ? new Vector2(46f, -64f) : new Vector2(14f, -36f);
-                ShowCard(strip ?? vitals ?? spellRow, UiMouse + drop);
+                ShowCard(strip ?? vitals ?? spellRow ?? hudCard ?? evt, UiMouse + drop);
                 Player.HideRange();
                 return;
             }
@@ -7818,8 +7962,24 @@ namespace Proto
             {
                 var mouse = UiMouse;
 
+                // Etalase toko dicek DULU: panelnya melayang di atas papan, dan tanpa
+                // prioritas ini petak papan DI BELAKANG panel yang menjawab hover-nya.
+                // Kartunya kartu piece lengkap yang sama dengan papan/tas — "kasih hover
+                // di shop juga" (pemilik project).
+                if (_shopOpen)
+                {
+                    for (int i = 0; i < ShopSlots; i++)
+                    {
+                        if (_shop[i] == null || !ShopSlotRect(i).Contains(mouse)) continue;
+
+                        hovered = _shop[i];
+                        origin = Loc.T("hud.origin.shop");
+                        break;
+                    }
+                }
+
                 int looseIndex = ScreenToLoose(mouse);
-                if (looseIndex >= 0)
+                if (hovered == null && looseIndex >= 0)
                 {
                     hovered = _loose[looseIndex];
                     origin = Loc.T("hud.origin.loose");
@@ -8033,8 +8193,30 @@ namespace Proto
 
             _tipBg.rectTransform.anchoredPosition = new Vector2(x, y);
             textRect.anchoredPosition = new Vector2(x + _tipPadX, y - _tipPadY);
+
+            // Rig prefab (kejadian, toko, banner) lahir SETELAH kartu info dan menutupinya —
+            // pengangkatan satu kali saat build kalah oleh apa pun yang lahir belakangan.
+            // Diangkat saat kartu BERALIH dari sembunyi ke tampil, bukan tiap frame:
+            // memindahkan sibling tiap frame memaksa kanvas membangun ulang batch (alasan
+            // yang sama dengan ShowGameOver), dan rig-rig itu cuma di-SetActive setelah
+            // build — urutan sibling tidak berubah lagi. Yang diangkat leluhur langsung di
+            // bawah kanvas, bukan _tipBg-nya: tip milik prefab bisa bersarang dalam rig.
+            // Kerudung mati tetap menang — ia mengangkat diri SESUDAH tooltip di Redraw.
+            if (!_tipBg.enabled)
+            {
+                RaiseTipToTop(_tipBg.transform);
+                RaiseTipToTop(_tipText.transform);
+            }
+
             _tipBg.enabled = true;
             _tipText.enabled = true;
+        }
+
+        void RaiseTipToTop(Transform t)
+        {
+            if (t == null) return;
+            while (t.parent != null && t.parent != _canvas.transform) t = t.parent;
+            t.SetAsLastSibling();
         }
 
         void ShowHoverRange(PieceDefinition hovered, CompiledSpell spell)
